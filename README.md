@@ -631,7 +631,8 @@ ACKNOWLEDGMENTS
       and greatly aided the development of Qodem's emulation layer.
 
       Miquel van Smoorenburg and the many developers involved in
-      minicom who licensed their work under the GNU Public License.
+      minicom who licensed their work under the GNU General Public
+      License.
 
       The developers involved in libssh2 who licensed their work under
       a BSD-like license.
