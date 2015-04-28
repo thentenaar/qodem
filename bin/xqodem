@@ -1,0 +1,98 @@
+#!/bin/sh
+
+# This script runs qodem under X11.  It looks for qodem-x11 first.  If
+# that is not found, it then looks for uxterm, konsole, gnome-terminal
+# and x-terminal-emulator (in that order) and starts it up with qodem
+# inside it.
+#
+# CREDITS: this script is based on the 'xminicom' script from minicom.
+#
+# This program is licensed under the GNU General Public License
+# Version 2.  Please see the file "COPYING" in this directory for more
+# information about the GNU General Public License Version 2.
+#
+#     Copyright (C) 2015  Kevin Lamonte
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA
+
+# Qodem needs a Unicode font that includes the CP437 glyphs.  Terminus
+# does the job nicely.  bolkhov-vga (uni_vga) does even better, but is
+# a bit small on large displays.  If uxterm is found, then the
+# following fonts are searched in order to see if any is present, if
+# not found then a default Terminus is used.  For any other terminal
+# (gnome-terminal, x-terminal-emulator, ...), we do not try to set the
+# font.
+FONTS="-*-terminus-*-r-normal-*-20-*-*-*-*-*-iso10646-* -bolkhov-vga-medium-r-normal--*-*-*-*-*-*-iso10646-*"
+
+findcmd()
+{
+  IFS=:
+  for i in $PATH
+  do
+	if [ -x $i\/$1 ]
+	then
+		result=$i\/$1
+		IFS=
+		return 0
+	fi
+  done
+  result=
+  IFS=
+  return 1
+}
+
+if findcmd qodem-x11
+  then
+  exec $result
+  exit 1
+fi
+
+if findcmd uxterm
+  then
+  uxtermbin=$result
+  if findcmd xlsfonts && findcmd wc
+    then
+    IFS=\ 
+    for i in $FONTS
+      do
+      count=`xlsfonts -fn $i 2>/dev/null | wc -l`
+      if test ! "X$count" = "X0"
+        then
+        echo "Using font $i"
+        exec $uxtermbin -fn $i -T qodem -bg black -fg white -n qodem -geometry 80x25 -e "if ! qodem ; then echo Press ENTER to continue...; read; fi"
+      fi
+    done
+  fi
+  # None of the fonts was found, go with the default and see what
+  # xterm finds.
+  exec $uxtermbin -fn -*-terminus-*-r-normal-*-24-*-*-*-*-*-iso10646-* -T qodem -bg black -fg white -n qodem -geometry 80x25 -e "if ! qodem ; then echo Press ENTER to continue...; read; fi"
+  exit 1
+fi
+
+if findcmd gnome-terminal
+  then
+  exec $result --title qodem --geometry 80x25 -e "if ! qodem ; then echo Press ENTER to continue...; read; fi"
+  exit 1
+fi
+
+if findcmd x-terminal-emulator
+  then
+  exec $result -T qodem -e "if ! qodem ; then echo Press ENTER to continue...; read; fi"
+  exit 1
+fi
+
+echo "xqodem: qodem-x11, uxterm, gnome-terminal, and x-terminal-emulator NOT found!" 1>&2
+exit 1
