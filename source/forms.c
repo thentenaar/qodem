@@ -29,9 +29,7 @@
 #include <ctype.h>                      /* isspace() */
 #include <errno.h>                      /* strerror() */
 #include <stdlib.h>                     /* realloc() */
-#ifndef __BORLANDC__
 #include <libgen.h>                     /* dirname() */
-#endif
 #if defined(Q_PDCURSES_WIN32) && !defined(__BORLANDC__)
 #include <shlwapi.h>                    /* PathMatchSpec() */
 #else

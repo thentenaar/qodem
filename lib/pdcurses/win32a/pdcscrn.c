@@ -1047,13 +1047,13 @@ INLINE int set_default_sizes_from_registry( const int n_cols, const int n_rows,
         extern int PDC_font_size;
 
         if( IsZoomed( PDC_hWnd))    /* -1x-1 indicates a maximized window */
-            _sntprintf( buff, sizeof( buff),
+            _stprintf( buff,
                       _T( "-1x-1,%d,0,0,%d"), PDC_font_size, menu_shown);
         else
-            _sntprintf( buff, sizeof( buff),
+            _stprintf( buff,
                       _T( "%dx%d,%d,%d,%d,%d"), n_cols, n_rows, PDC_font_size,
                        xloc, yloc, menu_shown);
-        _sntprintf( buff + _tcslen( buff), sizeof( buff) - _tcslen( buff),
+        _stprintf( buff + _tcslen( buff),
                   _T(";%d,%d,%d,%d:"),
                   min_lines, max_lines,
                   min_cols, max_cols);

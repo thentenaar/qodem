@@ -26,8 +26,10 @@
 #include "qcurses.h"
 #include "common.h"
 
+#include <assert.h>
 #include <stdlib.h>                     /* getenv() */
 #include <string.h>                     /* strstr(), strncpy(), memset() */
+#include <libgen.h>                     /* dirname() */
 #ifndef __BORLANDC__
 #include <unistd.h>                     /* access() */
 #endif
@@ -964,6 +966,40 @@ static struct option_struct * find_option(const Q_OPTION option) {
 } /* ---------------------------------------------------------------------- */
 
 /*
+ * Create a directory, using either Windows or POSIX calls.  This will
+ * also create any directories that are missing in the middle.
+ */
+static Q_BOOL create_directory(const char * path) {
+
+        assert(directory_exists(path) == Q_FALSE);
+
+        char * path_copy = Xstrdup(path, __FILE__, __LINE__);
+        char * parent_dir = Xstrdup(dirname(path_copy), __FILE__, __LINE__);
+        if (directory_exists(parent_dir) == Q_FALSE) {
+                create_directory(parent_dir);
+        }
+        Xfree(parent_dir, __FILE__, __LINE__);
+        Xfree(path_copy, __FILE__, __LINE__);
+
+#ifdef Q_PDCURSES_WIN32
+        BOOL rc = CreateDirectoryA(path, NULL);
+        if (rc == TRUE) {
+                return Q_TRUE;
+        } else {
+                return Q_FALSE;
+        }
+#else
+        int i = mkdir(path, S_IRUSR | S_IWUSR | S_IXUSR);
+        if (i == 0) {
+                return Q_TRUE;
+        } else {
+                return Q_FALSE;
+        }
+#endif /* Q_PDCURSES_WIN32 */
+} /* ---------------------------------------------------------------------- */
+
+
+/*
  * Load options from all the files.  We search the following:
  *     $HOME/.qodemrc
  *     INSTALL_DIR/qodemrc
@@ -973,6 +1009,7 @@ static struct option_struct * find_option(const Q_OPTION option) {
  */
 void load_options() {
         int i;
+        Q_BOOL rc;
         int state;
         char * begin;
         unsigned char ch = 0;
@@ -1033,19 +1070,14 @@ void load_options() {
                         i = getchar();
                         if ((tolower(i) == 'y') || (i == '\r') || (i == '\n')) {
 #endif /* ASK_TO_CREATE */
-#ifdef Q_PDCURSES_WIN32
                                 /*
                                  * Create both qodem and qodem/prefs directory
                                  */
-                                /* i = mkdir(working_dir); */
-                                i = CreateDirectoryA(working_dir, NULL);
-#else
-                                i = mkdir(working_dir, S_IRUSR | S_IWUSR | S_IXUSR);
-#endif /* Q_PDCURSES_WIN32 */
-                                if (i != 0) {
+                                rc = create_directory(working_dir);
+                                if (rc == Q_FALSE) {
                                         printf(_(""
-"Could not create the directory %s (%d).  You may have to specify full paths\n"
-"when you load key bindings, phone books, etc.\n"), working_dir, i);
+"Could not create the directory %s.  You may have to specify full paths\n"
+"when you load key bindings, phone books, etc.\n"), working_dir);
                                 } else {
                                         printf(_("Created directory %s.\n"), working_dir);
 
@@ -1169,16 +1201,9 @@ void load_options() {
 #else
         substituted_filename = substitute_string("$HOME/.qodem/scripts", "$HOME", env_string);
 #endif /* Q_PDCURSES_WIN32 */
-
-#ifdef Q_PDCURSES_WIN32
-        /* Blindly try to create it */
-        CreateDirectoryA(substituted_filename, NULL);
-#else
-        if (access(substituted_filename, F_OK) != 0) {
-                /* Try to create it */
-                mkdir(substituted_filename, S_IRUSR | S_IWUSR | S_IXUSR);
+        if (directory_exists(substituted_filename) == Q_FALSE) {
+                create_directory(substituted_filename);
         }
-#endif /* Q_PDCURSES_WIN32 */
         /* Free leak */
         Xfree(substituted_filename, __FILE__, __LINE__);
 
@@ -1232,12 +1257,8 @@ void load_options() {
                 i = getchar();
                 if ((tolower(i) == 'y') || (i == '\r') || (i == '\n')) {
 #endif /* ASK_TO_CREATE */
-#ifdef Q_PDCURSES_WIN32
-                        i = CreateDirectoryA(working_dir, NULL);
-#else
-                        i = mkdir(working_dir, S_IRUSR | S_IWUSR | S_IXUSR);
-#endif /* Q_PDCURSES_WIN32 */
-                        if (i < 0) {
+                        rc = create_directory(working_dir);
+                        if (rc == Q_FALSE) {
                                 printf(_(""
 "Could not create the directory %s.  You may have to specify full paths\n"
 "when you download files, enable capture/log, etc.\n"), working_dir);
@@ -1272,12 +1293,8 @@ void load_options() {
                 i = getchar();
                 if ((tolower(i) == 'y') || (i == '\r') || (i == '\n')) {
 #endif /* ASK_TO_CREATE */
-#ifdef Q_PDCURSES_WIN32
-                        i = CreateDirectoryA(working_dir, NULL);
-#else
-                        i = mkdir(working_dir, S_IRUSR | S_IWUSR | S_IXUSR);
-#endif /* Q_PDCURSES_WIN32 */
-                        if (i < 0) {
+                        rc = create_directory(working_dir);
+                        if (rc == Q_FALSE) {
                                 printf(_(""
 "Could not create the directory %s.  You may have to specify full paths\n"
 "when you download files, enable capture/log, etc.\n"), working_dir);

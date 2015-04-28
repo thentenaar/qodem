@@ -53,6 +53,13 @@ __RCSID("$NetBSD: strptime.c,v 1.35 2009/12/14 20:45:02 matt Exp $");
 #define uint unsigned int
 #define TM_YEAR_BASE 1900
 #define __UNCONST(X) X
+#include <stdint.h>
+
+#ifdef __BORLANDC__
+#define strncasecmp strncmpi
+#define tzname _tzname
+#endif
+
 #endif
 
 #ifdef __weak_alias

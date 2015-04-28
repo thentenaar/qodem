@@ -90,7 +90,14 @@ LDFLAGS = $(LDLIBS)
 
 .SUFFIXES: .o .c
 
-QODEM_SRC = $(QODEM_SRC_DIR)/ansi.c \
+$(QODEM_OBJS_DIR):
+	-mkdir $(QODEM_OBJS_DIR)
+
+$(QODEM_BIN_DIR): $(QODEM_OBJS_DIR)
+	-mkdir $(QODEM_BIN_DIR)
+
+QODEM_SRC = \
+$(QODEM_SRC_DIR)/ansi.c \
 $(QODEM_SRC_DIR)/avatar.c \
 $(QODEM_SRC_DIR)/codepage.c \
 $(QODEM_SRC_DIR)/colors.c \
@@ -125,7 +132,8 @@ $(QODEM_SRC_DIR)/vt52.c \
 $(QODEM_SRC_DIR)/xmodem.c \
 $(QODEM_SRC_DIR)/zmodem.c
 
-QODEM_OBJS = $(QODEM_OBJS_DIR)/ansi.o \
+QODEM_OBJS = \
+$(QODEM_OBJS_DIR)/ansi.o \
 $(QODEM_OBJS_DIR)/avatar.o \
 $(QODEM_OBJS_DIR)/codepage.o \
 $(QODEM_OBJS_DIR)/colors.o \
@@ -165,7 +173,7 @@ clean:
 
 qodem: $(QODEM_EXE)
 
-$(QODEM_EXE): $(QODEM_OBJS)
+$(QODEM_EXE): $(QODEM_BIN_DIR) $(QODEM_OBJS)
 	$(CC) $(LDFLAGS) -o $(QODEM_EXE) $(QODEM_OBJS)
 
 $(QODEM_OBJS_DIR)/%.o : $(QODEM_SRC_DIR)/%.c

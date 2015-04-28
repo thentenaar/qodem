@@ -143,6 +143,9 @@ extern Q_BOOL directory_exists(const char * path);
 /* Borland C 5.02 support ------------------------------------------------- */
 
 #ifdef __BORLANDC__
+
+#include <snprintf.h>
+
 typedef int pid_t;
 
 #define strcasecmp strcmpi
@@ -150,11 +153,7 @@ typedef int pid_t;
 #define wmemset _wmemset
 #define wmemcpy _wmemcpy
 
-// TODO: implement these
-extern int snprintf(char *buffer, const int n, const char *format, ...);
-extern int strncasecmp(const char *s1, const char *s2, const int n);
-extern char * dirname(const char *s);
-extern char * basename(const char *s);
+/* Implemented in common.c */
 extern wchar_t * wmemmove(wchar_t * dest, const wchar_t * src, size_t n);
 
 #endif /* __BORLANDC__ */

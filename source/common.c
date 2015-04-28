@@ -153,7 +153,7 @@ char * Xstrdup(const char * ptr, const char * file, const int line) {
 #endif /* DEBUG */
 
         if (local_ptr != NULL) {
-                for (i=0;i<length;i++) {
+                for (i = 0; i < length; i++) {
                         local_ptr[i] = ptr[i];
                 }
         }
@@ -266,7 +266,6 @@ Q_BOOL file_exists(const char * filename) {
         return Q_TRUE;
 } /* ---------------------------------------------------------------------- */
 
-
 /*
  * Returns Q_TRUE if path exists and is a directory.
  */
@@ -291,3 +290,14 @@ Q_BOOL directory_exists(const char * path) {
         /* Directory does not exist */
         return Q_FALSE;
 } /* ---------------------------------------------------------------------- */
+
+#ifdef __BORLANDC__
+
+/*
+ * wmemmove
+ */
+extern wchar_t * wmemmove(wchar_t * dest, const wchar_t * src, size_t n) {
+        return (wchar_t *)memmove(dest, src, n * sizeof(wchar_t));
+} /* ---------------------------------------------------------------------- */
+
+#endif

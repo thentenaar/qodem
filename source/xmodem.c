@@ -101,9 +101,9 @@
 #include <io.h>
 #define ftruncate chsize
 #else
-#include <libgen.h>
 #include <unistd.h>
 #endif
+#include <libgen.h>
 #include <string.h>
 #include <stdlib.h>
 #include <utime.h>

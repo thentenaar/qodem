@@ -30,9 +30,9 @@
 #include <stdio.h>
 #else
 #include <wctype.h>
-#include <libgen.h>     /* basename */
 #include <unistd.h>
 #endif
+#include <libgen.h>     /* basename */
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>

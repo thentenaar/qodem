@@ -103,9 +103,9 @@
 
 #ifndef __BORLANDC__
 #include <unistd.h>
-#include <libgen.h>
 #endif
 
+#include <libgen.h>
 #include <sys/time.h>
 #include <string.h>
 #include <assert.h>

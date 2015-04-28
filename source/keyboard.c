@@ -91,9 +91,8 @@
 #include <stdlib.h>
 #ifdef __BORLANDC__
 #include <mem.h>                        /* _wmemset(), _wmemcpy() */
-#else
-#include <libgen.h>                     /* basename() */
 #endif
+#include <libgen.h>                     /* basename() */
 #include "qodem.h"
 #include "screen.h"
 #include "forms.h"

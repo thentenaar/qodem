@@ -49,9 +49,9 @@
 #ifdef __BORLANDC__
 #include <strptime.h>
 #else
-#include <libgen.h>
 #include <unistd.h>
 #endif
+#include <libgen.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>

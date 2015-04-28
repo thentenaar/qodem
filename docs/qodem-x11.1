@@ -1,0 +1,621 @@
+.TH qodem-x11 1 "July 1, 2015"
+
+.SH NAME
+qodem-x11 \- Qodem Terminal Emulator (X11 Version)
+
+.SH SYNOPSIS
+.ll +8
+.B qodem-x11
+.RI "[ \-\-enable\-capture FILENAME ]"
+.br
+.in 13
+.RI "[ \-\-enable\-logging FILENAME ]"
+.br
+.RI "[ \-\-play MUSIC ]"
+.br
+.RI "[ \-\-play-exit ]"
+.br
+.RI "[ [ \-\-dial n ]                                   | "
+.br
+.RI "[ [ \-\-connect HOST [ \-\-connect\-method method ] "
+.br
+.RI "  [ \-\-username name ]                          ] |"
+.br
+.in 15
+.RI   "args...                                      ] "
+.br
+.ll -8
+
+.TP
+.BR qodem " \-\-version"
+
+.TP
+.BR qodem " [ \-\-help | \-h | \-? ]"
+
+.SH DESCRIPTION
+.I Qodem
+is an open\-source clone implementation of the popular DOS\-based
+Qmodem serial communications program.  Qodem incorporates many
+features that are useful on several kinds of text\-based consoles such
+as scrollback buffer, session capture, screen dump, dialing directory,
+and also includes serial port handling and modem dialing.
+
+The major features of Qodem are:
+
+  * Unicode display: translation of CP437 (PC VGA), VT100 DEC Special
+    Graphics characters, VT220 National Replacement Character sets,
+    etc., to Unicode
+
+  * Terminal interface conveniences: scrollback buffer, capture file,
+    screen dump, dialing directory, keyboard macros, script support
+
+  * Connection methods: serial, local shell, command line, telnet,
+    ssh, rlogin, raw socket
+
+  * Emulations: ANSI, Avatar, VT52, VT100/102, VT220, Linux, and XTerm
+
+  * Transfer protocols: Xmodem, Ymodem, Zmodem, and Kermit
+
+.SH TERMINAL REQUIREMENTS
+
+Qodem requires the following characteristics of its shell/terminal:
+
+  * Unicode capability.  The raw Linux console, UXTerm, URxvt,
+    Konsole, and gnome-terminal all work well.
+
+  * A Unicode font that includes the CP437 (PC VGA) glyphs.
+
+  * The meta key must use escape prefixing rather than setting the 8th
+    bit on the character.  Many terminal emulators do this by
+    default.  Qodem sends an xterm escape sequence to enable this
+    behavior.  For XTerm, this can be enabled by clicking
+    CTRL\-Mouse1 (left button) and checking "Meta Sends Escape", or by
+    adding the following lines to ~/.Xresources:
+.br
+	XTerm*metaSendsEscape:   true
+.br
+	UXTerm*metaSendsEscape:  true
+
+.SH EMULATIONS
+
+Emulations supported by Qodem and their status follows.  Note that
+TTY, DEBUG, ANSI.SYS, AVATAR, LINUX, and XTERM emulations can use both
+CP437 (PC VGA) and ISO\-8859\-1 glyphs for 8\-bit characters (see Alt\-;
+Codepage below).  If ISO\-8859\-1 is used, the C0 control characters
+(0x00 \- 0x1F) are mapped to the equivalent CP437 glyphs since there
+are no glyphs defined in that range for ISO\-8859\-1.
+.TP
+.B
+ANSI
+This is the DOS\-based "ANSI.SYS" emulation plus a few more codes than
+the original ANSI.SYS.  It supports DSR 6 (Cursor Position) which many
+BBSes used to "autodetect" ANSI, and the following ANSI X3.64
+functions: ICH, DCH, IL, DL, VPA, CHA, CHT, and REP.  It also supports
+"ANSI Music" sequences that follow the "PLAY" command syntax;  it
+plays these tones via SDL.
+.TP
+.B
+AVATAR
+This is the BBS\-era Avatar ("Advanced Video Attribute Terminal
+Assembler and Recreator") emulation.  It supports all of the "Extended
+AVT/0" commands as per George A. Stanislav's 1 May 1989 document
+except for transmitting PC keyboard scan codes.  It also includes ANSI
+fallback capability.
+.TP
+.B
+VT52
+Fairly complete.  Does not support HOLD SCREEN mode.  Graphics mode
+glyphs that do not have direct Unicode equivalents render as a hatch.
+.TP
+.B
+VT100
+Identical to VT102 except in how it responds to Device Attributes
+function.
+.TP
+.B
+VT102
+Fairly complete.  Double\-width characters are not displayed with wide
+glyhps due to curses\-based output.  Does not support smooth
+scrolling, printing, keyboard locking, and hardware tests.  Many
+numeric keypad characters also do not work correctly due to console
+NUM LOCK handling.  132\-column output is only supported if the host
+console / window is already 132 columns or wider; Qodem does
+.B not
+issue resize commands to the host console for 80/132 column switching
+codes.
+.TP
+.B
+VT220
+Fairly complete.  Converts National Replacement Character sets and DEC
+Supplemental Graphics characters to Unicode.  In addition to
+limitations of VT102, also the following features are not supported:
+user\-defined keys (DECUDK), downloadable fonts (DECDLD), VT100/ANSI
+compatibility mode (DECSCL).
+.TP
+.B
+TTY
+This emulation supports bare control character handling (backspace,
+newline, etc.) and litte else.  Characters that would be overwritten
+with underscores are instead made underlined as old teletypes would
+do.
+.TP
+.B
+DEBUG
+This emulation displays all incoming characters in a format similar to
+a hex dump.
+.TP
+.B
+LINUX
+This emulation has two modes: PC VGA (LINUX) and UTF\-8 (L_UTF8).
+This emulation is similar to VT102 but also recognizes the Linux
+private mode sequences and ECMA\-48 sequences VPA, CNL, CPL, ECH, CHA,
+VPA, VPR, and HPA.  In addition to VT102 limitations, also the
+following features are not supported: selecting ISO 646/ISO
+8859\-1/UTF\-8 character sets, X11 mouse reporting, and setting the
+scroll/caps/numlock leds.
+.TP
+.B
+XTERM
+This emulation has two modes: PC VGA (XTERM) and UTF\-8 (X_UTF8).  It
+recognizes everything in LINUX but also a few XTerm sequences in order
+to discard them to maintain a clean display.  As such it is not a true
+XTerm and does not support many of the features unique to XTerm such
+as Tektronix 4014 mode, mouse tracking, alternate screen buffer, and
+many more.  It is intended to support XTerm applications that only use
+the sequences in the 'xterm' terminfo entry.
+
+.SH "FILE TRANSFER PROTOCOLS"
+Protocols supported by Qodem and their status follows:
+.TP
+.B
+XMODEM
+Supports original Xmodem, Xmodem\-1k, Xmodem\-CRC16, and Xmodem\-G.  Also
+supports "Xmodem Relaxed", a variant of original Xmodem with longer
+timeouts.
+.TP
+.B
+YMODEM
+Supports Ymodem and Ymodem\-G.  If a file exists, it will be appended to.
+.TP
+.B
+ZMODEM
+Supports resume (crash recovery) and auto\-start.  Does not yet support
+changing block size on errors, so transfers over unreliable
+serial/modem connections might incur significant performance
+penalties.
+.TP
+.B
+KERMIT
+Supports the original robust (slow) Kermit plus streaming, sliding
+windows, and autostart.  On reliable connections with streaming it
+should perform reasonably well.  Does not yet support long or
+extra\-long packets, RESEND/REGET, or server mode.
+
+.SH INTERFACE
+.B Phone Book
+.br
+When qodem first starts up, by default it will start in the phone
+book.  The menu on the bottom half of the screen lists the various
+actions available.  When editing a phone book entry, the status line
+will change to show options for each field.  Connecting to a system or
+leaving the phone book puts qodem in Terminal Mode.
+
+.B Terminal Mode
+.br
+Terminal Mode is the main qodem terminal emulator interface.
+.B Alt\-Z
+will bring up a help menu.  While in Terminal Mode the following
+actions are supported:
+.TP
+.B Alt\-D Phone Book
+This brings up the phone book.
+.TP
+.B Alt\-G Term Emulation
+This brings up a menu to select the terminal emulation.  Selecting the
+active terminal emulation will prompt to reset the emulation state;
+this may be useful to recover from corrupted escape sequences.
+.TP
+.B Alt\-C Clear Screen
+This clears the screen and homes the cursor.
+.TP
+.B Alt\-F Execute Script
+This prompts for a filename, and then executes that file as a script.
+Any program that reads from standard input and writes to standard
+output can be run as a script.  See the section below on script
+support.
+.TP
+.B Alt\-K Send BREAK
+When connected via serial mode or modem, this calls tcsendbreak() to
+send a true "Break Signal" on the serial line.
+.TP
+.B Alt\-P Capture File
+Enable/disable capture to file.  Four capture formats are supported:
+"raw", "normal", "html", and "ask".  "Raw" format saves every byte as
+received from the other side before emulation processing; "normal"
+saves UTF\-8 characters after emulation processing; "html" saves in
+HTML format with Unicode entities and color attributes after emulation
+processing; "ask" will bring up a dialog to select which format to use
+every time capture is enabled.  ASCII file transfers will be included
+in the capture file; other file transfers (Xmodem, Ymodem, Zmodem,
+Kermit) are excluded from the capture file.
+.TP
+.B Alt\-S Split Screen
+This actives split screen mode, in which local characters are
+accumulated in a buffer before sending to the remote side.  To send
+carriage return, enter "^M".
+.TP
+.B Alt\-T Screen Dump
+This prompts for a filename, and then saves the current view to that
+file.  Three screen dump formats are supported: "normal", "html", and
+"ask".  "normal" saves UTF\-8 characters after emulation processing;
+"html" saves in HTML format with Unicode entities and color attributes
+after emulation processing; "ask" will bring up a dialog to select
+which format to use every time the screen is dumped.
+.TP
+.B Alt\-Y COM Parameters
+This brings up a menu to alter the serial port settings.
+.TP
+.B PgUp Upload Files
+This brings up the file upload menu.  Note that CTRL\-PgUp and ALT\-PgUp
+may also work depending on the terminfo for the host terminal.
+.TP
+.B PgDn Download Files
+This brings up the file download menu.  Note that CTRL\-PgDn and
+ALT\-PgDn may also work depending on the terminfo for the host
+terminal.
+.TP
+.B Alt\-\\\\ Compose Key
+This brings up a dialog to enter the 3\-digit decimal value (0\-255) for
+an 8\-bit byte or a 4\-digit hexadecimal value (0\-ffff) for a 16\-bit
+Unicode character (L_UTF8 and X_UTF8 only).
+.TP
+.B Alt\-; Codepage
+This brings up a dialog to change the current codepage.  Codepages are
+limited by the current emulation.  VT52, VT100, VT102, VT220, L_UTF8,
+and X_UTF8 can only be set to the DEC codepage; LINUX, XTERM, ANSI,
+AVATAR, TTY, and DEBUG emulations can be set to: CP437 (VGA),
+ISO\-8859\-1, CP720 (Arabic), CP737 (Greek), CP775 (Baltic Rim), CP850
+(Western European), CP852 (Central European), CP857 (Turkish), CP858
+(Western European with euro), CP860 (Portuguese), CP862 (Hebrew),
+CP863 (Quebec French), CP866 (Cyrillic), CP1250 (Central/Eastern
+European), CP1251 (Cyrillic), CP1252 (Western European), KOI8_R
+(Russian),and KOI8_U (Ukrainian).
+.TP
+.B Alt\-/ Scroll Back
+This selects the scrollback buffer.  When viewing the buffer, "S"
+saves to file and "C" clears the scrollback buffer.  By default qodem
+supports up to 20000 lines of scrollback; this can be changed by
+editing scrollback_max in scrollback.c.  Three scrollback save formats
+are supported: "normal", "html", and "ask".  "normal" saves UTF\-8
+characters after emulation processing; "html" saves in HTML format
+with Unicode entities and color attributes after emulation processing;
+"ask" will bring up a dialog to select which format to use every time
+the scrollback is saved.
+.TP
+.B Alt\-H Hangup/Close
+This hangs up the modem (drops DTR) or closes the remote connection
+(kills the child process).
+.TP
+.B Alt\-L Log View
+This brings the session log up in an editor.  The session log stores
+information about connect, disconnect, and file upload/download
+events.
+.TP
+.B Alt\-M Mail Reader
+This spawns the mail reader, by default
+.BR mm "."
+.TP
+.B Alt\-X Exit Qodem
+This prompts to exit qodem.  When not connected, Ctrl\-C will also
+bring up the exit prompt.
+.TP
+.B Alt\-A Translate Table
+This brings up the translate table editor.  Both incoming and outgoing
+bytes can be changed or stripped (set to ASCII NUL (0)).  Note that
+translation occurs before both emulation processing and UTF\-8
+decoding.
+.TP
+.B Alt\-J Function Keys
+This brings up the keyboard macro editor.  Keyboard macros support
+substitutions for control characters including carriage return ("^M"),
+the phone book entry username ("$USERNAME"), and the phone book entry
+password ("$PASSWORD").
+.TP
+.B Alt\-N Configuration
+This brings the
+.B qodemrc
+options file up in an editor.
+.TP
+.B Alt\-: Colors
+This brings the
+.B colors.cfg
+colors file up in an editor.
+.TP
+.B Alt\-O Modem Config
+This brings up the modem configuration dialog.
+.TP
+.B Alt\-R OS Shell
+This spawns a system shell.
+.TP
+.B Alt\-V View File
+This brings up a prompt to view a file in an editor.
+.TP
+.B Alt\-W List Directory
+This brings up a directory listing.
+.TP
+.B Alt\-0 Session Log
+This toggles the session log on or off.
+.TP
+.B Alt\-1 XON/XOFF Flow Ctrl
+When connected via modem or serial port, this toggles XON/XOFF on or off.
+.TP
+.B Alt\-2 Backspace/Del Mode
+This selects whether the backspace key on the keyboard sends an ASCII
+backspace (^H) or an ASCII DEL (127) character.  Ctrl\-H can always be
+used to send true backspace; Ctrl\-? can be used to send true DEL.
+Note that VT220 emulation always sends DEL when the backspace key is
+pressed.
+.TP
+.B Alt\-3 Line Wrap
+This toggles line wrap mode on or off.  When line wrap mode is
+enabled, if a character is received when the cursor is at the right
+margin it will wrap to the first column of the next line.
+.TP
+.B Alt\-4 Display NULL
+This selects whether ASCII NUL (0) will be displayed as a blank/space
+or stripped.
+.TP
+.B Alt\-5 Host Mode
+This switches qodem into Host Mode.
+.TP
+.B Alt\-6 Batch Entry Window
+This brings up the list of upload files used by Ymodem, Zmodem, and
+Kermit uploads.
+.TP
+.B Alt\-7 Status Line Info
+This selects between two formats for the status line.
+.TP
+.B Alt\-8 Hi\-Bit Strip
+This selects whether or not to clear the 8th bit of all incoming
+bytes.  Note that high\-bit stripping occurs before both emulation
+processing and UTF\-8 decoding.
+.TP
+.B Alt\-9 Serial Port
+This opens or closes the serial port.  If already connected to a
+non\-serial/modem remote host, this does nothing.
+.TP
+.B Alt\-B Beeps & Bells
+This toggles beep support on or off.  When beep support is on, beeps
+from the remote host will be played by qodem.  In LINUX emulation,
+qodem supports setting the tone and duration of the beep as specified
+in
+.BR console\-codes "(4)."
+.TP
+.B Alt\-E Half/Full Duplex
+This toggles between half and full duplex.
+.TP
+.B Alt\-I Qodem Information
+This displays the qodem splash screen which includes the version and
+build date.
+.TP
+.B Alt\-U Scrollback Record
+This selects whether or not lines that scroll off the top of the
+screen will be saved to the scrollback buffer.
+.TP
+.B Alt\-= Doorway Mode
+This selects between three doorway modes: "Doorway OFF", "Doorway
+MIXED" and "Doorway FULL".  When doorway mode is "Doorway OFF",
+terminal mode responds to all of its command keys as described in this
+section.  When doorway mode is "Doorway FULL", all Alt\- command
+keystrokes except
+.B Alt\-=
+are passed to the remote side.  When doorway mode is "Doorway MIXED",
+terminal mode supports a few commands but passes the majority of Alt\-
+command keystrokes to the remote side.  The default commands supported
+in "Doorway MIXED" mode are:
+     Alt\-D Phone Book
+     Alt\-P Capture
+     Alt\-T Screen Dump
+     Alt\-Y COM Parameters
+     Alt\-Z Menu
+     Alt\-/ Scrollback
+     Alt\-PgUp or Ctrl\-PgUp Upload Files
+     Alt\-PgDn or Ctrl\-PgDn Download Files
+.TP
+.B Alt\-\- Status Lines
+This toggles the status line on or off.
+.TP
+.B Alt\-+ CR/CRLF Mode
+This toggles whether or not received carriage returns imply line feed
+or not.
+.TP
+.B Alt\-, ANSI Music
+This toggles ANSI music support on or off.
+
+.SH UNICODE SUPPORT
+
+Qodem supports Unicode (UTF\-8 encoding only) in the following
+functions only: keyboard macros; phone book entries (NAME, USERNAME,
+and PASSWORD); modem device name.
+
+UTF\-8 is NOT supported in filenames, modem strings, and remote
+addresses.
+
+.SH SCRIPT SUPPORT
+
+Qodem does not have its own scripting language.  Instead, any program
+that reads and writes to the standard input and output can be run as a
+Qodem script:
+
+    * Characters sent from the remote connection are visible to the
+      script in its standard input.
+
+    * Characters the script emits to its standard output are passed on
+      the remote connection.
+
+    * Messages to the standard error are reported to the user and also
+      recorded in the session log.
+
+Since scripts are communicating with the remote system and not Qodem
+itself, they are unable to script Qodem's behavior, e.g. change the
+terminal emulation, hangup and dial another phone book entry, download
+a file, etc.  However, they can be written in any language, and they
+can be tested outside Qodem.
+
+Scripts replace the user, and as such have similar constraints:
+
+  * Script standard input, output, and error must all be in UTF\-8 encoding.
+
+  * Scripts should send carriage return (0x0D, or \\r) instead of new
+    line (0x0A, or \\n) to the remote side \- the same as if a user
+    pressed the Enter key.  They should expect to see either bare
+    carriage return (0x0D, or \\r) or carriage return followed by
+    newline (0x0D 0x0A, or \\r\\n) from the remote side.
+
+  * Input and output translate byte translation (the Alt\-A Translate Tables) are honored for scripts.
+
+  * While a script is running:
+        \- Zmodem and Kermit autostart are disabled.
+        \- Keyboard function key macros are disabled.
+        \- Qodem functions accessed through the Alt\-character
+          combinations and PgUp/PgDn are unavailable.
+        \- Pressing Alt\-P will pause the script.
+
+  * While a script is paused:
+        \- The script will receive nothing on its standard input.
+        \- Anything in the script's standard output will be held until
+          the script is resumed.
+        \- The script process will not be signaled; it may continue
+          running in its own process.
+        \- The only Alt\-character function recognized is Alt\P to
+          resume the script.  All other Alt\- keys will be ignored.
+        \- Keys pressed will be sent directly to the remote system.
+        \- Keyboard function key macros will work.
+
+Scripts are launched in two ways:
+
+  * In TERMINAL mode, press Alt\-F and enter the script filename.  The
+    script will start immediately.
+
+  * In the phone book, add a script filename to a phone book entry.
+    The script will start once that entry is connected.
+
+Script command\-line arguments can be passed directly in both the
+Alt\-F script dialog and the phone book linked script field.  For
+example, pressing Alt\-F and entering "my_script.pl arg1" will launch
+my_script.pl and with its first command\-line argument ($ARGV[0] in
+Perl) set to "arg1".
+
+
+.SH OPTIONS
+.TP
+.B \-\-enable\-capture FILENAME
+Capture the entire session and save to FILENAME.
+.TP
+.B \-\-enable\-capture FILENAME
+Start the session log and log to FILENAME.
+.TP
+.B \-\-play MUSIC
+Play the MUSIC string as ANSI Music.  For more information on ANSI
+Music, see http://www.textfiles.com/artscene/ansimusic/, or the
+GWBASIC PLAY statement.
+.TP
+.B \-\-play\-exit
+If \-\-play was specified, exit immediately after playing MUSIC.
+.TP
+.B \-\-dial n
+Immediately open a connection to the phone book entry number n.  The
+first phone book entry has n=1.
+.TP
+.B \-\-connect HOST
+Immediately open a connection to HOST.  The default connection method is
+"ssh" unless specified with the
+.B \-\-connect\-method
+option.
+.TP
+.B \-\-connect\-method METHOD
+Use METHOD to connect for the
+.B \-\-connect
+option.  Valid values are "ssh", "rlogin", "telnet", "socket", and
+"shell".
+.TP
+.B \-\-username USERNAME
+Use USERNAME when connecting with the
+.B \-\-connect
+option.  This value is passed on the command line to
+.BR ssh ", and " rlogin "."
+.TP
+.B args...
+Spawn a local shell and pass args to it.
+.TP
+.BR \-\-version
+Display program version and brief copyright statement.
+.TP
+.BR \-\-help ", " \-h ", " \-?
+Display usage screen.
+
+.SH ENVIRONMENT VARIABLES
+.TP
+Qodem makes use of the following variables:
+.TP
+.B HOME
+The user's home directory.  Qodem creates two directories:
+.BR "$HOME/.qodem" " for qodem's internal files (phone book, keyboard macro files, translate tables, etc.) and " "$HOME/qodem" " for uploaded and downloaded files, session log, capture, etc."
+.TP
+.B EDITOR
+If present, this will be used when spawning external editors (log
+view, edit configuration, view file, edit phone book note).  If not
+present, by default (editable in the options file) use
+.BR vi "."
+.TP
+.B ESCDELAY
+This is a timeout value in milliseconds used by the ncurses
+.BR get_wch() " and " wget_wch()
+functions to determine if a user pressed bare ESCAPE.  On some systems
+pressing ESCAPE may require up to a full second before qodem can
+process it.  For qodem backtick (`) can be used instead of ESCAPE.
+
+.SH FILES
+.TP
+.B $HOME/.qodem/qodemrc
+Qodem options/configuration file.  Inline comments describe the options.
+
+.SH SEE ALSO
+.BR "qodem"(1), " xqodem"(1), " mm"(1), " kermit"(1), " gkermit"(1), " minicom"(1), " rlogin"(1), " ssh"(1), " telnet"(1), " xterm"(1), " vttest"(1), " console\-codes"(4)
+
+.SH BUGS
+.PP
+The screensaver might not load under all circumstances even after the
+timeout has passed.
+
+.SH HOMEPAGE
+.PP
+The qodem homepage is at <http://qodem.sourceforge.net>.  The code
+repository is hosted at <https://github.com/klamonte/qodem>.
+
+.SH COPYRIGHT NOTICE
+Copyright \(co 2015 Kevin Lamonte
+.PP
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or (at
+your option) any later version.
+\" .PP
+\" Permission is granted to make and distribute verbatim copies of
+\" this manual provided the copyright notice and this permission notice
+\" are preserved on all copies.
+\" .PP
+\" Permission is granted to process this file through troff and print the
+\" results, provided the printed document carries copying permission
+\" notice identical to this one except for the removal of this paragraph
+\" (this paragraph not being relevant to the printed manual).
+\" .PP
+\" Permission is granted to copy and distribute modified versions of this
+\" manual under the conditions for verbatim copying, provided that the entire
+\" resulting derived work is distributed under the terms of a permission
+\" notice identical to this one.
+\" .PP
+\" Permission is granted to copy and distribute translations of this manual
+\" into another language, under the above conditions for modified versions,
+\" except that this permission notice may be stated in a translation approved
+\" by the Foundation.

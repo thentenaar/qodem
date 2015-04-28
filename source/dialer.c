@@ -28,6 +28,9 @@
 
 #ifdef Q_PDCURSES_WIN32
 #include <windows.h>
+#ifndef __BORLANDC__
+#include <winsock2.h>
+#endif
 #else
 /* Use forkpty() */
 #ifdef __APPLE__
@@ -608,12 +611,6 @@ void spawn_process(char * command_line, Q_EMULATION emulation) {
 } /* ---------------------------------------------------------------------- */
 
 #ifdef Q_PDCURSES_WIN32
-
-#include <windows.h>
-
-#ifndef __BORLANDC__
-#include <winsock2.h>
-#endif
 
 /*
  * Make the socket non-blocking
