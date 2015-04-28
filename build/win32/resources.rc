@@ -1,0 +1,24 @@
+1 VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "CompanyName", "Kevin Lamonte"
+      VALUE "FileDescription", "Qodem Terminal Emulator"
+      VALUE "FileVersion", "1.0beta"
+      VALUE "InternalName", "qodem"
+      VALUE "LegalCopyright", "Copyright (C) 2015, Kevin Lamonte.  Licensed GPL version 2 or later."
+      VALUE "OriginalFilename", "qodem.exe"
+      VALUE "ProductName", "Qodem"
+      VALUE "ProductVersion", "1.0beta"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END
+RESOURCE_ICON_APP ICON DISCARDABLE "qodem.ico"

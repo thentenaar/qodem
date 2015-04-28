@@ -1,0 +1,74 @@
+Qodem Installation
+==================
+
+Qodem can be built in several ways to support different target
+platforms.  The most common build is the autoconf-based build
+described in further detail below.  Other makefiles are provided in
+the build/ subdirectory for the following compilers/platforms:
+
+```
+|------------------|--------------------|----------------------------------|
+| Makefile name    | Compiler           | Target Platform                  |
+|------------------|--------------------|----------------------------------|
+| Makefile.bcc5    | Borland C++ 5.02   | Windows 95, 98, 2000             |
+| Makefile.generic | cc                 | POSIX / Linux, text only         |
+|------------------|--------------------|----------------------------------|
+```
+
+Makefiles are run from this top-level directory.  For example, to use
+the Makefile.generic to produce a text-mode ncurses build:
+
+```
+$ make -f build/Makefile.generic clean
+$ make -f build/Makefile.generic
+```
+
+Autoconf
+--------
+
+Qodem is commonly installed using the GNU autoconf system.  It's full
+install lays down only three files: qodem, the qodem.1 man page, and
+the qodem.mo localization file.  The following is the standard
+autoconf installation:
+
+  1. Type `./configure' to configure the package for your system.
+
+     Running `configure' takes awhile.  While running, it prints some
+     messages telling which features it is checking for.
+
+  2. Type `make' to compile the package.
+
+  3. Type `make install' to install the Qodem program and
+     documentation.  By default, `make install' will install the
+     package's files in `/usr/local/bin', `/usr/local/man', etc.  You
+     can specify an installation prefix other than `/usr/local' by
+     giving `configure' the option `--prefix=PATH'
+
+  5. You can remove the Qodem binaries and object files from the
+     source code directory by typing `make clean'.  To also remove the
+     files that `configure' created (so you can compile the package
+     for a different kind of computer), type `make distclean'.
+
+
+Pre-Processor Defines
+---------------------
+
+The default build is: text-mode ncurses; use an external 'ssh' binary;
+no sound; no UPnP; serial port support enabled.
+
+Defines for different functionality are listed below:
+
+  * Q_LIBSSH2 - If set, use the libssh2 library to do ssh connections
+                rather than spawn the ssh binary through a pty.
+
+  * Q_UPNP - If set, include support for miniupmpc-1.4.
+
+  * QODEM_USE_SDL - If set, enable support for libSDL for sound (ANSI
+                    music and beep()).
+
+  * Q_PDCURSES - Use PDCurses instead of ncurses.
+                         
+  * Q_PDCURSES_WIN32 - Build the Win32 PDCurses version.
+
+  * Q_NO_SERIAL - Remove code for serial port support.  This is
+                  required for the Win32 build.

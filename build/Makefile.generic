@@ -1,0 +1,173 @@
+# qodem Makefile
+#
+# This program is licensed under the GNU General Public License
+# Version 2.  Please see the file "LICENSE" in this directory for more
+# information about the GNU General Public License Version 2.
+#
+#     Copyright (C) 2015  Kevin Lamonte
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor,
+# Boston, MA  02110-1301  USA
+
+# This Makefile produces a ncurses-based qodem binary using the
+# minimum libraries needed.  'make clean' should be run first to
+# remove config.h, as the autoconf-based build options may produce
+# conflicts with this bare-bones build.
+
+default: qodem
+
+# Available defines are listed below.  If none are set, qodem is built
+# as: text-mode ncurses; using external 'ssh' binary; no sound; no
+# UPnP; serial port support enabled.
+#
+# Q_LIBSSH2         - Use ssh library to do ssh connections rather than
+#                     spawn the ssh binary through a pty.  You will need
+#                     to add -lssh2 to LDFLAGS.  libssh2 headers are assumed
+#                     to be installed.
+#
+# Q_UPNP            - Include support for miniupmpc-1.4.  You will need to
+#                     add -Iupmp/miniupnpc-1.4 to CFLAGS, and the following
+#                     to LDLIBS:
+#                          upnp/miniupnpc-1.4/libminiupnpc.a
+#
+# QODEM_USE_SDL     - Enable support for libSDL for sound (ANSI music and
+#                     beep()).  You will need to add "-lSDL -lm" to LBLIBS.
+#                     libSDL headers are assumed to be installed.
+#
+# Q_PDCURSES        - Use PDCurses instead of ncurses.  You will need to
+#                     add -Ix11/PDCurses-3.4 to CFLAGS, and the following
+#                     to LDLIBS:
+#                          x11/PDCurses-3.4/x11/libXCurses.a
+#                          -lXaw -lXmu -lXt -lX11 -lXpm
+#                          
+# Q_PDCURSES_WIN32  - Build the Win32 PDCurses version.  It's more
+#                     complicated, look at configure.ac near
+#                     AC_ARG_ENABLE(win32, ...) to see what to add to
+#                     CFLAGS and LDFLAGS.  You will also need to change
+#                     CC to point to a i686-pc-mingw32-gcc binary.
+#
+# Q_NO_SERIAL       - Remove code for serial port support.  This is required
+#                     for the Win32 build.
+#
+
+# ----------------------------------------------------------------------------
+# C compiler and linker options
+# ----------------------------------------------------------------------------
+
+QODEM_SRC_DIR = source
+QODEM_OBJS_DIR = objs
+QODEM_BIN_DIR = bin
+QODEM_EXE = $(QODEM_BIN_DIR)/qodem
+
+CC = cc
+INC = -I$(QODEM_SRC_DIR)
+
+# Normal settings
+CFLAGS = -O2 -Wall $(INC)
+LDLIBS = -lncursesw -lutil
+
+# Debug settings which include libssh2 support
+# CFLAGS = -O0 -Wall -ggdb $(INC) -DQ_LIBSSH2
+# LDLIBS = -lncursesw -lutil -lssh2
+
+LDFLAGS = $(LDLIBS)
+
+# ----------------------------------------------------------------------------
+# What's below this line should not require modifications
+# ----------------------------------------------------------------------------
+
+.SUFFIXES: .o .c
+
+QODEM_SRC = $(QODEM_SRC_DIR)/ansi.c \
+$(QODEM_SRC_DIR)/avatar.c \
+$(QODEM_SRC_DIR)/codepage.c \
+$(QODEM_SRC_DIR)/colors.c \
+$(QODEM_SRC_DIR)/common.c \
+$(QODEM_SRC_DIR)/console.c \
+$(QODEM_SRC_DIR)/debug.c \
+$(QODEM_SRC_DIR)/dialer.c \
+$(QODEM_SRC_DIR)/emulation.c \
+$(QODEM_SRC_DIR)/field.c \
+$(QODEM_SRC_DIR)/forms.c \
+$(QODEM_SRC_DIR)/help.c \
+$(QODEM_SRC_DIR)/host.c \
+$(QODEM_SRC_DIR)/input.c \
+$(QODEM_SRC_DIR)/kermit.c \
+$(QODEM_SRC_DIR)/keyboard.c \
+$(QODEM_SRC_DIR)/linux.c \
+$(QODEM_SRC_DIR)/modem.c \
+$(QODEM_SRC_DIR)/music.c \
+$(QODEM_SRC_DIR)/netclient.c\
+$(QODEM_SRC_DIR)/options.c \
+$(QODEM_SRC_DIR)/phonebook.c \
+$(QODEM_SRC_DIR)/protocols.c \
+$(QODEM_SRC_DIR)/qodem.c \
+$(QODEM_SRC_DIR)/screen.c \
+$(QODEM_SRC_DIR)/screensaver.c \
+$(QODEM_SRC_DIR)/script.c \
+$(QODEM_SRC_DIR)/scrollback.c \
+$(QODEM_SRC_DIR)/states.c \
+$(QODEM_SRC_DIR)/translate.c \
+$(QODEM_SRC_DIR)/vt100.c \
+$(QODEM_SRC_DIR)/vt52.c \
+$(QODEM_SRC_DIR)/xmodem.c \
+$(QODEM_SRC_DIR)/zmodem.c
+
+QODEM_OBJS = $(QODEM_OBJS_DIR)/ansi.o \
+$(QODEM_OBJS_DIR)/avatar.o \
+$(QODEM_OBJS_DIR)/codepage.o \
+$(QODEM_OBJS_DIR)/colors.o \
+$(QODEM_OBJS_DIR)/common.o \
+$(QODEM_OBJS_DIR)/console.o \
+$(QODEM_OBJS_DIR)/debug.o \
+$(QODEM_OBJS_DIR)/dialer.o \
+$(QODEM_OBJS_DIR)/emulation.o \
+$(QODEM_OBJS_DIR)/field.o \
+$(QODEM_OBJS_DIR)/forms.o \
+$(QODEM_OBJS_DIR)/help.o \
+$(QODEM_OBJS_DIR)/host.o \
+$(QODEM_OBJS_DIR)/input.o \
+$(QODEM_OBJS_DIR)/kermit.o \
+$(QODEM_OBJS_DIR)/keyboard.o \
+$(QODEM_OBJS_DIR)/linux.o \
+$(QODEM_OBJS_DIR)/modem.o \
+$(QODEM_OBJS_DIR)/music.o \
+$(QODEM_OBJS_DIR)/netclient.o \
+$(QODEM_OBJS_DIR)/options.o \
+$(QODEM_OBJS_DIR)/phonebook.o \
+$(QODEM_OBJS_DIR)/protocols.o \
+$(QODEM_OBJS_DIR)/qodem.o \
+$(QODEM_OBJS_DIR)/screen.o \
+$(QODEM_OBJS_DIR)/screensaver.o \
+$(QODEM_OBJS_DIR)/script.o \
+$(QODEM_OBJS_DIR)/scrollback.o \
+$(QODEM_OBJS_DIR)/states.o \
+$(QODEM_OBJS_DIR)/translate.o \
+$(QODEM_OBJS_DIR)/vt100.o \
+$(QODEM_OBJS_DIR)/vt52.o \
+$(QODEM_OBJS_DIR)/xmodem.o \
+$(QODEM_OBJS_DIR)/zmodem.o
+
+clean:
+	-rm $(QODEM_EXE) core $(QODEM_OBJS) config.h
+
+qodem: $(QODEM_EXE)
+
+$(QODEM_EXE): $(QODEM_OBJS)
+	$(CC) $(LDFLAGS) -o $(QODEM_EXE) $(QODEM_OBJS)
+
+$(QODEM_OBJS_DIR)/%.o : $(QODEM_SRC_DIR)/%.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+

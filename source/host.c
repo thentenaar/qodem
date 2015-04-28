@@ -1,0 +1,2074 @@
+/*
+ * host.c
+ *
+ * This module is licensed under the GNU General Public License
+ * Version 2.  Please see the file "COPYING" in this directory for
+ * more information about the GNU General Public License Version 2.
+ *
+ *     Copyright (C) 2015  Kevin Lamonte
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ */
+
+/*
+ * This is a very simple host mode implementation that provides local
+ * and remote users menus for messages, file transfer, and chat.  It
+ * uses only 7-bit ASCII characters in its menus (by default -
+ * translations can change that), and assumes an 8-bit clean channel
+ * for file transfers.  The only file transfer protocols supported are
+ * plain Xmodem, Ymodem, Zmodem, and Kermit; ASCII and -G protocols
+ * are not supported.
+ */
+
+#include "common.h"
+#include <string.h>
+#include <ctype.h>
+#include <assert.h>
+#include <stdlib.h>
+#include <errno.h>
+#include "screen.h"
+#include "states.h"
+#include "qodem.h"
+#include "options.h"
+#include "netclient.h"
+#include "music.h"
+#include "protocols.h"
+#include "host.h"
+
+/* #define DEBUG_HOST 1 */
+#undef DEBUG_HOST
+#ifdef DEBUG_HOST
+#include <stdio.h>
+static FILE * DEBUG_FILE_HANDLE = NULL;
+#endif
+
+#ifdef Q_PDCURSES_WIN32
+#define EOL "\n"
+#else
+#define EOL "\r\n"
+#endif /* Q_PDCURSES_WIN32 */
+
+/* The file in ~/qodem/hosts that stores user-generated messages */
+#define MESSAGE_FILENAME "messages.txt"
+
+/* The host mode functions */
+typedef enum {
+        LISTENING,
+        LOGIN,
+        MAIN_MENU,
+        ENTER_MESSAGE,
+        ENTER_MESSAGE_FINISH,
+        READ_MESSAGES,
+        CHAT,
+        PAGE_SYSOP,
+        LOCAL_LOGIN,
+        UPLOAD_FILE,
+        UPLOAD_FILE_XMODEM,
+        UPLOAD_FILE_YMODEM,
+        UPLOAD_FILE_ZMODEM,
+        UPLOAD_FILE_KERMIT,
+        LIST_FILES,
+        DOWNLOAD_FILE,
+        DOWNLOAD_FILE_XMODEM,
+        DOWNLOAD_FILE_YMODEM,
+        DOWNLOAD_FILE_ZMODEM,
+        DOWNLOAD_FILE_KERMIT,
+        GOODBYE,
+        NONE
+} STATE;
+
+/*
+ * So many FSM's in this project, and this last feature is
+ * the first time I use a state transition table.
+ */
+struct host_state {
+        STATE state;            /* Current state */
+
+        char input;             /*
+                                 * Input character.  NUL (0) matches any
+                                 * character
+                                 */
+
+        STATE next_state;       /* Next state that character lead to */
+
+        void (*next_fn)();      /*
+                                 * If not NULL, call this function
+                                 * when transitioning to the new
+                                 * state.
+                                 */
+};
+
+/* Forward references to various menu functions */
+static void do_login();
+static void enter_message();
+static void save_message();
+static void kill_message();
+static void read_messages_menu();
+static void kill_read_message();
+static void previous_message();
+static void next_message();
+static void page_sysop();
+static void chat();
+static void list_files();
+static void download_file_menu();
+static void upload_file_menu();
+static void main_menu();
+static void goodbye();
+static void download_file_xmodem();
+static void download_file_ymodem();
+static void download_file_zmodem();
+static void download_file_kermit();
+static void upload_file_xmodem();
+static void upload_file_ymodem();
+static void upload_file_zmodem();
+static void upload_file_kermit();
+static void enter_message_finish_menu();
+
+static struct host_state states[] = {
+        {MAIN_MENU, 'e', ENTER_MESSAGE, enter_message},
+        {MAIN_MENU, 'r', READ_MESSAGES, read_messages_menu},
+        {MAIN_MENU, 'p', PAGE_SYSOP, page_sysop},
+        {MAIN_MENU, 'f', MAIN_MENU, list_files},
+        {MAIN_MENU, 'd', DOWNLOAD_FILE, download_file_menu},
+        {MAIN_MENU, 'u', UPLOAD_FILE, upload_file_menu},
+        {MAIN_MENU, 'g', GOODBYE, goodbye},
+        {MAIN_MENU, C_CR, MAIN_MENU, main_menu},
+        {DOWNLOAD_FILE, 'x', DOWNLOAD_FILE_XMODEM, download_file_xmodem},
+        {DOWNLOAD_FILE, 'y', DOWNLOAD_FILE_YMODEM, download_file_ymodem},
+        {DOWNLOAD_FILE, 'z', DOWNLOAD_FILE_ZMODEM, download_file_zmodem},
+        {DOWNLOAD_FILE, 'k', DOWNLOAD_FILE_KERMIT, download_file_kermit},
+        {DOWNLOAD_FILE, 'q', MAIN_MENU, main_menu},
+        {DOWNLOAD_FILE, C_CR, DOWNLOAD_FILE, download_file_menu},
+        {DOWNLOAD_FILE_XMODEM, 0, DOWNLOAD_FILE_XMODEM, download_file_xmodem},
+        {DOWNLOAD_FILE_YMODEM, 0, DOWNLOAD_FILE_YMODEM, download_file_ymodem},
+        {DOWNLOAD_FILE_ZMODEM, 0, DOWNLOAD_FILE_ZMODEM, download_file_zmodem},
+        {DOWNLOAD_FILE_KERMIT, 0, DOWNLOAD_FILE_KERMIT, download_file_kermit},
+        {UPLOAD_FILE, 'x', UPLOAD_FILE_XMODEM, upload_file_xmodem},
+        {UPLOAD_FILE, 'y', UPLOAD_FILE_YMODEM, upload_file_ymodem},
+        {UPLOAD_FILE, 'z', UPLOAD_FILE_ZMODEM, upload_file_zmodem},
+        {UPLOAD_FILE, 'k', UPLOAD_FILE_KERMIT, upload_file_kermit},
+        {UPLOAD_FILE, 'q', MAIN_MENU, main_menu},
+        {UPLOAD_FILE, C_CR, UPLOAD_FILE, upload_file_menu},
+        {UPLOAD_FILE_XMODEM, 0, UPLOAD_FILE_XMODEM, upload_file_xmodem},
+        {UPLOAD_FILE_YMODEM, 0, UPLOAD_FILE_YMODEM, upload_file_ymodem},
+        {UPLOAD_FILE_ZMODEM, 0, UPLOAD_FILE_ZMODEM, upload_file_zmodem},
+        {UPLOAD_FILE_KERMIT, 0, UPLOAD_FILE_KERMIT, upload_file_kermit},
+        {READ_MESSAGES, 'q', MAIN_MENU, main_menu},
+        {READ_MESSAGES, 'e', ENTER_MESSAGE, enter_message},
+        {READ_MESSAGES, 'p', READ_MESSAGES, previous_message},
+        {READ_MESSAGES, 'n', READ_MESSAGES, next_message},
+        {READ_MESSAGES, 'k', READ_MESSAGES, kill_read_message},
+        {READ_MESSAGES, C_CR, READ_MESSAGES, read_messages_menu},
+        {ENTER_MESSAGE, 0, ENTER_MESSAGE, enter_message},
+        {ENTER_MESSAGE_FINISH, 'k', MAIN_MENU, kill_message},
+        {ENTER_MESSAGE_FINISH, 's', MAIN_MENU, save_message},
+        {ENTER_MESSAGE_FINISH, C_CR, ENTER_MESSAGE_FINISH, enter_message_finish_menu},
+        {CHAT, 0, CHAT, chat},
+        {LOGIN, 0, LOGIN, do_login},
+
+        /* This must be the last entry */
+        {NONE, '-', NONE, NULL}
+};
+static STATE current_state;
+
+/* If true, we are in a call (either remote or local login) */
+static Q_BOOL host_online;
+static Q_BOOL local_login;
+static Q_BOOL sysop_chat;
+
+/* Entering a message has its own mini-state machine */
+typedef enum {
+        MSG_INIT,
+        FROM,
+        TO,
+        BODY
+} MSG_STATE;
+static MSG_STATE msg_state = MSG_INIT;
+static wchar_t * msg_from = NULL;
+static wchar_t * msg_to = NULL;
+static wchar_t ** msg_body = NULL;
+static int msg_body_n = 0;
+
+/* Read messages */
+static wchar_t *** all_messages = NULL;
+static int all_messages_n = 0;
+static int current_message = 0;
+
+/* Uploading/downloading a file has its own mini-state machine */
+typedef enum {
+        FILENAME,
+        FILENAME_WAIT,
+        FILENAME_RESUME,
+        TRANSFER
+} FILE_STATE;
+static FILE_STATE file_state = FILENAME;
+static char * transfer_filename;
+
+/* Login has its own mini-state machine */
+typedef enum {
+        LOGIN_INIT,
+        USERNAME,
+        PASSWORD
+} LOGIN_STATE;
+static LOGIN_STATE login_state = LOGIN_INIT;
+static char * login_username = NULL;
+static char * login_password = NULL;
+
+/* For line mode editing, max screen columns = 80 */
+static wchar_t line_buffer[80];
+static int line_buffer_n = 0;
+static Q_BOOL do_line_buffer;
+static uint32_t utf8_state;
+static uint32_t utf8_char;
+
+/* Listening variables */
+static int listen_fd = -1;
+
+/* When in host mode, the type of host */
+Q_HOST_TYPE q_host_type;
+
+/*
+ * Whether or not host mode is active, even through file transfers
+ */
+Q_BOOL q_host_active;
+
+/* Sysop page flag */
+static Q_BOOL page = Q_FALSE;
+
+/* Set initial state for the line buffer */
+static void reset_line_buffer() {
+        memset(line_buffer, 0, sizeof(line_buffer));
+        do_line_buffer  = Q_FALSE;
+        line_buffer_n   = 0;
+        utf8_state      = 0;
+        utf8_char       = 0;
+} /* ---------------------------------------------------------------------- */
+
+
+/* Set initial state for listening for next connection */
+static void reset_host() {
+        current_state   = LISTENING;
+        host_online     = Q_FALSE;
+        local_login     = Q_FALSE;
+        sysop_chat      = Q_FALSE;
+        msg_state       = MSG_INIT;
+        file_state      = FILENAME;
+        login_state     = LOGIN_INIT;
+        reset_line_buffer();
+} /* ---------------------------------------------------------------------- */
+
+/* Send string to both remote side and local side. */
+static void host_write(char * buffer, int count) {
+        int i;
+        if (host_online == Q_TRUE) {
+                qodem_write(q_child_tty_fd, buffer, count, Q_FALSE);
+        }
+        for (i = 0; i < count; i++) {
+                if (buffer[i] == 0x08) {
+                        /* Backspace */
+                        cursor_left(1, Q_FALSE);
+                        print_character(' ');
+                        cursor_left(1, Q_FALSE);
+                        continue;
+                }
+                if (buffer[i] == 0x0D) {
+                        cursor_carriage_return();
+                        continue;
+                }
+                if (buffer[i] == 0x0A) {
+                        cursor_linefeed(Q_FALSE);
+                        continue;
+                }
+                print_character(buffer[i]);
+        }
+        /* Refresh screen */
+        q_screen_dirty = Q_TRUE;
+} /* ---------------------------------------------------------------------- */
+
+/* Generic menu output function */
+static void do_menu(const char * menu_string) {
+        char * menu = (char *)(_(menu_string));
+        host_write(menu, strlen(menu));
+} /* ---------------------------------------------------------------------- */
+
+/*
+ * Start host mode
+ */
+void host_start(Q_HOST_TYPE type, const char * port) {
+        char notify_message[DIALOG_MESSAGE_SIZE];
+
+#ifdef DEBUG_HOST
+        if (DEBUG_FILE_HANDLE == NULL) {
+                DEBUG_FILE_HANDLE = fopen("debug_host.txt", "w");
+        }
+        fprintf(DEBUG_FILE_HANDLE, "host_start() %u\n", type);
+        fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+
+        /* Set initial state */
+        reset_host();
+
+        q_host_active = Q_TRUE;
+
+        /* Setup the listener depending on host type */
+        switch (type) {
+        case Q_HOST_TYPE_SOCKET:
+        case Q_HOST_TYPE_TELNETD:
+
+#ifdef Q_UPNP
+                if (strcmp(port, UPNP_PORT_STRING) == 0) {
+                        /* Get a port from UPnP */
+                        listen_fd = net_listen(port);
+                } else if (strcmp(port, NEXT_AVAILABLE_PORT_STRING) == 0) {
+#else
+                if (strcmp(port, NEXT_AVAILABLE_PORT_STRING) == 0) {
+#endif /* Q_UPNP */
+                        /* Bind to the next available non-privileged port */
+                        listen_fd = net_listen(port);
+                } else {
+                        /* Bind directly to passed in port */
+                        listen_fd = net_listen(port);
+                }
+                if (listen_fd == -1) {
+                        /* We failed to bind()/listen(), abort host mode */
+                        /* Return to TERMINAL mode */
+                        switch_state(Q_STATE_CONSOLE);
+                        q_host_active = Q_FALSE;
+                        return;
+                }
+#ifdef Q_UPNP
+                if (strcmp(port, UPNP_PORT_STRING) == 0) {
+                        sprintf(notify_message, _("%sHost Mode now listening at %s (remotely accessible on %s)...%s"),
+                                EOL, net_listen_string(), net_listen_external_string(), EOL);
+                } else {
+#endif /* Q_UPNP */
+                        sprintf(notify_message, _("%sHost Mode now listening at %s...%s"),
+                                EOL, net_listen_string(), EOL);
+#ifdef Q_UPNP
+                }
+#endif /* Q_UPNP */
+                host_write(notify_message, strlen(notify_message));
+                break;
+#ifndef Q_NO_SERIAL
+        case Q_HOST_TYPE_MODEM:
+                /* TODO */
+                break;
+        case Q_HOST_TYPE_SERIAL:
+#ifdef DEBUG_HOST
+                fprintf(DEBUG_FILE_HANDLE, "host_start() SERIAL PORT\n");
+                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+                if (q_status.serial_open == Q_FALSE) {
+                        if (open_serial_port() == Q_FALSE) {
+                                /* notify_form() just turned off the cursor */
+                                q_cursor_on();
+                                /* Return to TERMINAL mode */
+                                switch_state(Q_STATE_CONSOLE);
+                                return;
+                        }
+                }
+                /* Serial port is now open, */
+                break;
+#endif /* Q_NO_SERIAL */
+        }
+        /* Save our host type */
+        q_host_type = type;
+#ifdef DEBUG_HOST
+        fprintf(DEBUG_FILE_HANDLE, "host_start() q_host_type %u %u\n",
+                q_host_type, type);
+        fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+} /* ---------------------------------------------------------------------- */
+
+/*
+ * Kill host mode
+ */
+static void host_stop() {
+        /* Kill the listening socket */
+        switch (q_host_type) {
+        case Q_HOST_TYPE_SOCKET:
+        case Q_HOST_TYPE_TELNETD:
+                net_listen_close();
+                listen_fd = -1;
+                break;
+#ifndef Q_NO_SERIAL
+        case Q_HOST_TYPE_MODEM:
+        case Q_HOST_TYPE_SERIAL:
+                break;
+#endif /* Q_NO_SERIAL */
+        }
+        if (host_online == Q_TRUE) {
+                assert(q_child_tty_fd != -1);
+                assert(q_status.online == Q_TRUE);
+#ifndef Q_NO_SERIAL
+                if (q_status.serial_open == Q_FALSE) {
+                        close_connection();
+                } else {
+                        hangup_modem();
+                        close_serial_port();
+                }
+#else
+                close_connection();
+#endif /* Q_NO_SERIAL */
+        }
+        q_host_active = Q_FALSE;
+} /* ---------------------------------------------------------------------- */
+
+/*
+ * Reads one byte from the remote side, decodes UTF-8, and puts into
+ * line_buffer.  Backspace and DEL both work to delete the current
+ * character.
+ *
+ * Returns Q_TRUE if the user pressed Enter.
+ */
+static Q_BOOL line_buffer_char(const unsigned char ch) {
+        uint32_t last_utf8_state;
+        char utf8_buffer[6];
+        int rc = 0;
+
+        if ((ch == 0x08) || (ch == 0x7F)) {
+                /* Backspace */
+                if (line_buffer_n > 0) {
+                        line_buffer_n--;
+                        line_buffer[line_buffer_n] = 0;
+                        /* Emit the backspace */
+                        host_write("\x08", 1);
+                }
+                return Q_FALSE;
+        }
+        if (ch == C_CR) {
+                /* User pressed enter */
+                return Q_TRUE;
+        }
+
+        last_utf8_state = utf8_state;
+        utf8_decode(&utf8_state, &utf8_char, ch);
+        if ((last_utf8_state == utf8_state) && (utf8_state != UTF8_ACCEPT)) {
+                /* Bad character, reset UTF8 decoder state */
+                utf8_state = 0;
+
+                /* Discard character */
+                return Q_FALSE;
+        }
+        if (utf8_state != UTF8_ACCEPT) {
+                /* Not enough characters to convert yet */
+                return Q_FALSE;
+        }
+        /* We've got a UTF-8 character, keep it */
+        if (line_buffer_n < 80) {
+                line_buffer[line_buffer_n] = utf8_char;
+                line_buffer_n++;
+                print_character(utf8_char);
+                q_screen_dirty = Q_TRUE;
+                if ((current_state == LOGIN) && (login_state == PASSWORD)) {
+                        rc = utf8_encode(L'X', utf8_buffer);
+                } else {
+                        rc = utf8_encode(utf8_char, utf8_buffer);
+                }
+                utf8_buffer[rc] = 0;
+                if (host_online == Q_TRUE) {
+                        qodem_write(q_child_tty_fd, utf8_buffer, rc, Q_FALSE);
+                }
+        }
+        return Q_FALSE;
+} /* ---------------------------------------------------------------------- */
+
+/* Reset the login variables */
+static void reset_login() {
+        if (login_username != NULL) {
+                Xfree(login_username, __FILE__, __LINE__);
+                login_username = NULL;
+        }
+        if (login_password != NULL) {
+                Xfree(login_password, __FILE__, __LINE__);
+                login_password = NULL;
+        }
+        login_state = LOGIN_INIT;
+} /* ---------------------------------------------------------------------- */
+
+/* Logging into the system */
+static void do_login() {
+        int length;
+
+        if (login_state == LOGIN_INIT) {
+#ifdef DEBUG_HOST
+                fprintf(DEBUG_FILE_HANDLE, "do_login(): LOGIN_INIT\n");
+                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+
+                do_menu(
+                "login: "
+                );
+                login_state = USERNAME;
+                reset_line_buffer();
+                do_line_buffer = Q_TRUE;
+                return;
+        }
+
+        if (login_state == USERNAME) {
+                /* Line buffer has the username */
+                assert(login_username == NULL);
+
+                length = wcstombs(NULL, line_buffer, wcslen(line_buffer)) + 1;
+                login_username = (char *)Xmalloc(sizeof(char) * length, __FILE__, __LINE__);
+                memset(login_username, 0, length);
+                snprintf(login_username, length, "%ls", line_buffer);
+#ifdef DEBUG_HOST
+                fprintf(DEBUG_FILE_HANDLE, "do_login(): username = \'%s\'\n",
+                        login_username);
+                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+
+                do_menu(
+                EOL
+                "Password: "
+                );
+
+                login_state = PASSWORD;
+                reset_line_buffer();
+                do_line_buffer = Q_TRUE;
+                return;
+        }
+
+        if (login_state == PASSWORD) {
+                /* Line buffer has the password */
+                assert(login_password == NULL);
+                length = wcstombs(NULL, line_buffer, wcslen(line_buffer)) + 1;
+                login_password = (char *)Xmalloc(sizeof(char) * length, __FILE__, __LINE__);
+                memset(login_password, 0, length);
+                snprintf(login_password, length, "%ls", line_buffer);
+#ifdef DEBUG_HOST
+                fprintf(DEBUG_FILE_HANDLE, "do_login(): password = \'%s\'\n",
+                        login_password);
+                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+
+                /* Check username and password */
+                if (    (strcmp(login_username, get_option(Q_OPTION_HOST_USERNAME)) == 0) &&
+                        (strcmp(login_password, get_option(Q_OPTION_HOST_PASSWORD)) == 0)
+                ) {
+                        /* Login OK, move to main menu */
+                        reset_login();
+                        current_state = MAIN_MENU;
+                        main_menu();
+                } else {
+                        /* Login failed, back to LOGIN_INIT */
+                        do_menu(
+                        EOL
+                        "Login incorrect"
+                        EOL
+                        );
+                        reset_login();
+                        do_login();
+                }
+                return;
+        }
+
+        /* Should never get here */
+        assert(1 == 0);
+} /* ---------------------------------------------------------------------- */
+
+static void enter_message_finish_menu() {
+        do_menu(
+        EOL
+        "S)ave This Message   K)ill (Abort) This Message"
+        EOL
+        "Your choice?  "
+        );
+} /* ---------------------------------------------------------------------- */
+
+/* Entering a new message handles the From, To, and Body */
+static void enter_message() {
+        if (msg_state == MSG_INIT) {
+#ifdef DEBUG_HOST
+                fprintf(DEBUG_FILE_HANDLE, "enter_message(): MSG_INIT\n");
+                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+
+                /* Reset message state */
+                kill_message();
+
+                do_menu(
+                EOL
+                "Enter New Message" EOL
+                EOL
+                "-----------------" EOL
+                EOL
+                "From: "
+                );
+                msg_state = FROM;
+                reset_line_buffer();
+                do_line_buffer = Q_TRUE;
+                return;
+        }
+
+        if (msg_state == FROM) {
+                /* Line buffer has the from field */
+                assert(msg_from == NULL);
+                msg_from = Xwcsdup(line_buffer, __FILE__, __LINE__);
+#ifdef DEBUG_HOST
+                fprintf(DEBUG_FILE_HANDLE, "enter_message(): FROM = \'%ls\'\n", msg_from);
+                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+                do_menu(
+                EOL
+                "To: "
+                );
+
+                msg_state = TO;
+                reset_line_buffer();
+                do_line_buffer = Q_TRUE;
+                return;
+        }
+
+        if (msg_state == TO) {
+                /* Line buffer has the to field */
+                assert(msg_to == NULL);
+                msg_to = Xwcsdup(line_buffer, __FILE__, __LINE__);
+#ifdef DEBUG_HOST
+                fprintf(DEBUG_FILE_HANDLE, "enter_message(): TO = \'%ls\'\n", msg_to);
+                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+                do_menu(
+                EOL
+                "Enter a single period (.) and enter to finish this message."
+                EOL
+                );
+
+                msg_state = BODY;
+                reset_line_buffer();
+                do_line_buffer = Q_TRUE;
+                return;
+        }
+
+        if (msg_state == BODY) {
+                /* Line buffer has the next line in the body */
+                if (msg_body_n == 0) {
+                        assert(msg_body == NULL);
+                }
+
+                if (wcscmp(line_buffer, L".") == 0) {
+                        enter_message_finish_menu();
+                        current_state = ENTER_MESSAGE_FINISH;
+                        /* Reset for next message */
+                        msg_state = MSG_INIT;
+                } else {
+                        /* Append this line to body */
+                        msg_body = (wchar_t **)Xrealloc(msg_body,
+                                sizeof(wchar_t *) * (msg_body_n + 1),
+                                __FILE__, __LINE__);
+                        msg_body[msg_body_n] = Xwcsdup(line_buffer, __FILE__, __LINE__);
+#ifdef DEBUG_HOST
+                        fprintf(DEBUG_FILE_HANDLE, "enter_message(): BODY %d = \'%ls\'\n",
+                                msg_body_n, msg_body[msg_body_n]);
+                        fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+                        msg_body_n++;
+                        do_menu(EOL);
+                        msg_state = BODY;
+                        reset_line_buffer();
+                        do_line_buffer = Q_TRUE;
+                }
+                return;
+        }
+
+        /* Should never get here */
+        assert(1 == 0);
+} /* ---------------------------------------------------------------------- */
+
+/* Abandon a message without saving it */
+static void kill_message() {
+        int i;
+        if (msg_from != NULL) {
+                Xfree(msg_from, __FILE__, __LINE__);
+                msg_from = NULL;
+        }
+        if (msg_to != NULL) {
+                Xfree(msg_to, __FILE__, __LINE__);
+                msg_to = NULL;
+        }
+        if (msg_body != NULL) {
+                assert(msg_body_n > 0);
+                for (i = 0; i < msg_body_n; i++) {
+                        Xfree(msg_body[i], __FILE__, __LINE__);
+                }
+                Xfree(msg_body, __FILE__, __LINE__);
+                msg_body = NULL;
+                msg_body_n = 0;
+        }
+
+        /* Re-display the main menu */
+        main_menu();
+} /* ---------------------------------------------------------------------- */
+
+/* Save a message to the message file */
+static void save_message() {
+        FILE * file;
+        char * filename;
+        char notify_message[DIALOG_MESSAGE_SIZE];
+        int i;
+
+        filename = (char *)Xmalloc(strlen(MESSAGE_FILENAME) +
+                strlen(get_option(Q_OPTION_HOST_DIR)) + 2, __FILE__, __LINE__);
+        memset(filename, 0, strlen(MESSAGE_FILENAME) + strlen(get_option(Q_OPTION_HOST_DIR)) + 2);
+        strncpy(filename, get_option(Q_OPTION_HOST_DIR), strlen(get_option(Q_OPTION_HOST_DIR)));
+        filename[strlen(filename)] = '/';
+        strncpy(filename + strlen(filename), MESSAGE_FILENAME, strlen(MESSAGE_FILENAME));
+
+        /* Append to file */
+        file = fopen(filename, "a");
+        if (file == NULL) {
+                snprintf(notify_message, sizeof(notify_message),
+                        _("Error opening file \"%s\" for writing: %s"),
+                        filename, strerror(errno));
+                host_write(notify_message, strlen(notify_message));
+                return;
+        }
+
+        /* Emit message to file */
+        /*
+         * Single period is the message separator since it cannot
+         * be entered in the line editor.
+         */
+        fprintf(file, ".\n");
+        fprintf(file, "From: %ls\n", msg_from);
+        fprintf(file, "To:   %ls\n", msg_to);
+        fprintf(file, "----------------------------------------\n");
+        for (i = 0; i < msg_body_n; i++) {
+                fprintf(file, "%ls\n", msg_body[i]);
+        }
+        fprintf(file, "----------------------------------------\n");
+
+        /* All done */
+        fclose(file);
+
+        /* No leak */
+        Xfree(filename, __FILE__, __LINE__);
+
+        /* Reset message state */
+        kill_message();
+
+        /* Re-display the main menu */
+        main_menu();
+} /* ---------------------------------------------------------------------- */
+
+/* Clear messages from memory */
+static void clear_all_messages() {
+        int message_i;
+        int line_i;
+        wchar_t ** message;
+        wchar_t * line;
+        if (all_messages != NULL) {
+                assert(all_messages_n > 0);
+                for (message_i = 0; message_i < all_messages_n; message_i++) {
+                        message = all_messages[message_i];
+                        line_i = 0;
+                        line = message[line_i];
+                        while (line != NULL) {
+                                Xfree(line, __FILE__, __LINE__);
+                                line_i++;
+                                line = message[line_i];
+                        }
+                        Xfree(message, __FILE__, __LINE__);
+                        message_i++;
+                }
+
+                Xfree(all_messages, __FILE__, __LINE__);
+                all_messages = NULL;
+                all_messages_n = 0;
+        }
+} /* ---------------------------------------------------------------------- */
+
+/* Load all messages into memory */
+static void read_all_messages() {
+        FILE * file;
+        char * filename;
+        char notify_message[DIALOG_MESSAGE_SIZE];
+        char * begin;
+        wchar_t ** message = NULL;
+        int message_n = 0;
+        wchar_t line_wchar[Q_MAX_LINE_LENGTH];
+        char line[Q_MAX_LINE_LENGTH];
+
+        filename = (char *)Xmalloc(strlen(MESSAGE_FILENAME) +
+                strlen(get_option(Q_OPTION_HOST_DIR)) + 2, __FILE__, __LINE__);
+        memset(filename, 0, strlen(MESSAGE_FILENAME) + strlen(get_option(Q_OPTION_HOST_DIR)) + 2);
+        strncpy(filename, get_option(Q_OPTION_HOST_DIR), strlen(get_option(Q_OPTION_HOST_DIR)));
+        filename[strlen(filename)] = '/';
+        strncpy(filename + strlen(filename), MESSAGE_FILENAME, strlen(MESSAGE_FILENAME));
+
+        /* Read from file */
+        if (file_exists(filename) == Q_FALSE) {
+                /* File isn't present, bail out */
+                return;
+        }
+
+        file = fopen(filename, "r");
+        if (file == NULL) {
+                snprintf(notify_message, sizeof(notify_message),
+                        _("Error opening file \"%s\" for reading: %s"),
+                        filename, strerror(errno));
+                host_write(notify_message, strlen(notify_message));
+                return;
+        }
+
+        while (!feof(file)) {
+                if (fgets(line, sizeof(line), file) == NULL) {
+                        /* This should cause the outer while's feof() check to fail */
+                        continue;
+                }
+                begin = line;
+
+                while ((strlen(line) > 0) && isspace(line[strlen(line)-1])) {
+                        /* Trim trailing whitespace */
+                        line[strlen(line)-1] = '\0';
+                }
+                while (isspace(*begin)) {
+                        /* Trim leading whitespace */
+                        begin++;
+                }
+
+                /* Convert from UTF-8 */
+                memset(line_wchar, 0, sizeof(line_wchar));
+                mbstowcs(line_wchar, begin, strlen(begin) + 1);
+
+                /* See if this is '.' */
+                if (wcscmp(line_wchar, L".") == 0) {
+                        /* New message */
+                        all_messages = (wchar_t ***)Xrealloc(all_messages,
+                                sizeof(wchar_t **) * (all_messages_n + 1),
+                                __FILE__, __LINE__);
+                        all_messages_n++;
+
+                        if (message != NULL) {
+                                message = (wchar_t **)Xrealloc(message,
+                                        sizeof(wchar_t *) * (message_n + 1),
+                                        __FILE__, __LINE__);
+                                message[message_n] = NULL;
+                                all_messages[all_messages_n - 2] = message;
+                                message = NULL;
+                                message_n = 0;
+                        }
+                        continue;
+                }
+
+                /* Append this line to message */
+                message = (wchar_t **)Xrealloc(message, sizeof(wchar_t *) * (message_n + 1),
+                        __FILE__, __LINE__);
+                message[message_n] = Xwcsdup(line_wchar, __FILE__, __LINE__);
+                message_n++;
+        }
+
+        /* Append last message */
+        if (message != NULL) {
+                message = (wchar_t **)Xrealloc(message, sizeof(wchar_t *) * (message_n + 1),
+                        __FILE__, __LINE__);
+                message[message_n] = NULL;
+                all_messages[all_messages_n - 1] = message;
+                message = NULL;
+                message_n = 0;
+        }
+
+        /* All done */
+        fclose(file);
+
+        /* No leak */
+        Xfree(filename, __FILE__, __LINE__);
+} /* ---------------------------------------------------------------------- */
+
+/* Switch to previous message */
+static void previous_message() {
+        if (current_message > 0) {
+                current_message--;
+        }
+        /* Re-display the read message menu */
+        read_messages_menu();
+} /* ---------------------------------------------------------------------- */
+
+/* Switch to next message */
+static void next_message() {
+        if (current_message < all_messages_n - 1) {
+                current_message++;
+        }
+        /* Re-display the read message menu */
+        read_messages_menu();
+} /* ---------------------------------------------------------------------- */
+
+/* Update the entire messages file */
+static void save_all_messages() {
+        int message_i;
+        int line_i;
+        wchar_t ** message;
+        wchar_t * line;
+        FILE * file;
+        char * filename;
+        char notify_message[DIALOG_MESSAGE_SIZE];
+
+        filename = (char *)Xmalloc(strlen(MESSAGE_FILENAME) +
+                strlen(get_option(Q_OPTION_HOST_DIR)) + 2, __FILE__, __LINE__);
+        memset(filename, 0, strlen(MESSAGE_FILENAME) + strlen(get_option(Q_OPTION_HOST_DIR)) + 2);
+        strncpy(filename, get_option(Q_OPTION_HOST_DIR), strlen(get_option(Q_OPTION_HOST_DIR)));
+        filename[strlen(filename)] = '/';
+        strncpy(filename + strlen(filename), MESSAGE_FILENAME, strlen(MESSAGE_FILENAME));
+
+        /* Overwrite file */
+        file = fopen(filename, "w");
+        if (file == NULL) {
+                snprintf(notify_message, sizeof(notify_message),
+                        _("Error opening file \"%s\" for writing: %s"),
+                        filename, strerror(errno));
+                host_write(notify_message, strlen(notify_message));
+                return;
+        }
+
+        if (all_messages != NULL) {
+                assert(all_messages_n > 0);
+                for (message_i = 0; message_i < all_messages_n; message_i++) {
+                        /*
+                         * Single period is the message separator since it
+                         * cannot be entered in the line editor.
+                         */
+                        fprintf(file, ".\n");
+                        message = all_messages[message_i];
+                        line_i = 0;
+                        line = message[line_i];
+                        while (line != NULL) {
+                                fprintf(file, "%ls\n", line);
+                                line_i++;
+                                line = message[line_i];
+                        }
+                        message_i++;
+                }
+        }
+
+        /* All done */
+        fclose(file);
+
+        /* No leak */
+        Xfree(filename, __FILE__, __LINE__);
+} /* ---------------------------------------------------------------------- */
+
+/* Remove the current message */
+static void kill_read_message() {
+        wchar_t * line;
+        int line_i;
+        wchar_t ** message;
+
+        message = all_messages[current_message];
+        memmove(all_messages + current_message,
+                all_messages + current_message + 1,
+                all_messages_n - current_message - 1);
+        all_messages_n--;
+        if (current_message == all_messages_n) {
+                current_message--;
+        }
+
+        line_i = 0;
+        line = message[line_i];
+        while (line != NULL) {
+                Xfree(line, __FILE__, __LINE__);
+                line_i++;
+                line = message[line_i];
+        }
+        Xfree(message, __FILE__, __LINE__);
+
+        if (all_messages_n == 0) {
+                Xfree(all_messages, __FILE__, __LINE__);
+                all_messages = NULL;
+        }
+
+        /* Update messages file */
+        save_all_messages();
+
+        /* Re-display the read message menu */
+        read_messages_menu();
+} /* ---------------------------------------------------------------------- */
+
+/* Display one message to the console */
+static void display_message(const int n) {
+        char buffer[Q_MAX_LINE_LENGTH];
+        int line_i;
+        wchar_t ** message;
+        wchar_t * line;
+        if (all_messages_n == 0) {
+                do_menu(
+                "No messages."
+                EOL
+                );
+                return;
+        }
+
+        assert(all_messages != NULL);
+        assert(all_messages_n > 0);
+
+        message = all_messages[current_message];
+
+        /* Print message # */
+        sprintf(buffer, _("Message #%d of %d%s"), current_message + 1,
+                all_messages_n, EOL);
+        host_write(buffer, strlen(buffer));
+
+        line_i = 0;
+        line = message[line_i];
+        while (line != NULL) {
+                sprintf(buffer, "%ls%s", line, EOL);
+                host_write(buffer, strlen(buffer));
+                line_i++;
+                line = message[line_i];
+        }
+} /* ---------------------------------------------------------------------- */
+
+/* Read the saved messages */
+static void read_messages_menu() {
+        if (all_messages == NULL) {
+                read_all_messages();
+        }
+
+        if (    (current_message >= all_messages_n) &&
+                (all_messages_n > 0)
+        ) {
+                do_menu(
+                EOL
+                "A message was deleted, displaying last message."
+                EOL
+                );
+                /* Truncate to the last message */
+                current_message = all_messages_n - 1;
+        }
+
+        do_menu(EOL);
+        display_message(current_message);
+        do_menu(
+        EOL
+        " P)revious   N)ext   K)ill/Delete   E)nter New Message   Q)uit To Main Menu"
+        EOL
+        "Your choice?  "
+        );
+} /* ---------------------------------------------------------------------- */
+
+/* List files excluding '.', '..', and the messages file */
+static void list_files() {
+        DIR * directory = NULL;
+        struct dirent * dir_entry;
+        char buffer[COMMAND_LINE_SIZE];
+        struct stat fstats;
+        int total = 0;
+
+        /* Read directory */
+        directory = opendir(get_option(Q_OPTION_HOST_DIR));
+        if (directory == NULL) {
+                sprintf(buffer, _("Unable to display files in %s%s"),
+                        get_option(Q_OPTION_HOST_DIR), EOL);
+                host_write(buffer, strlen(buffer));
+                return;
+        }
+        sprintf(buffer, _("%sFiles in host directory:%s"), EOL, EOL);
+        host_write(buffer, strlen(buffer));
+
+        dir_entry = readdir(directory);
+        while (dir_entry != NULL) {
+                char * full_filename;
+
+                /*
+                 * Get the full filename
+                 */
+                full_filename = (char *)Xmalloc(strlen(dir_entry->d_name) +
+                        strlen(get_option(Q_OPTION_HOST_DIR)) + 2,
+                        __FILE__, __LINE__);
+                memset(full_filename, 0, strlen(dir_entry->d_name) +
+                        strlen(get_option(Q_OPTION_HOST_DIR)) + 2);
+                memcpy(full_filename, get_option(Q_OPTION_HOST_DIR),
+                        strlen(get_option(Q_OPTION_HOST_DIR)));
+                full_filename[strlen(get_option(Q_OPTION_HOST_DIR))] = '/';
+                memcpy(full_filename + strlen(get_option(Q_OPTION_HOST_DIR)) + 1,
+                        dir_entry->d_name, strlen(dir_entry->d_name));
+                full_filename[strlen(dir_entry->d_name) +
+                        strlen(get_option(Q_OPTION_HOST_DIR)) + 1] = '\0';
+
+                /* Skip '.', '..', and hidden files */
+                if (dir_entry->d_name[0] == '.') {
+                        dir_entry = readdir(directory);
+                        Xfree(full_filename, __FILE__, __LINE__);
+                        full_filename = NULL;
+                        continue;
+                }
+
+                /* Skip the messages file */
+                if (strcmp(dir_entry->d_name, MESSAGE_FILENAME) == 0) {
+                        dir_entry = readdir(directory);
+                        Xfree(full_filename, __FILE__, __LINE__);
+                        full_filename = NULL;
+                        continue;
+                }
+
+                total++;
+
+                /* Get the file stats */
+                if (stat(full_filename, &fstats) < 0) {
+                        sprintf(buffer, _("Can't stat %s: %s%s"),
+                                full_filename, strerror(errno), EOL);
+                        host_write(buffer, strlen(buffer));
+                }
+
+                /* Print the file information */
+
+                /* Size or <dir>*/
+                if (S_ISDIR(fstats.st_mode)) {
+                        /* Name + Directory */
+                        snprintf(buffer, sizeof(buffer), _(" %-30s        <dir>"),
+                                dir_entry->d_name);
+                } else {
+                        /* Name + File size */
+                        snprintf(buffer, sizeof(buffer), " %-30s %12lu",
+                                dir_entry->d_name,
+                                (unsigned long)fstats.st_size);
+                }
+
+                /* Time */
+                strftime(buffer + strlen(buffer), sizeof(buffer),
+                        "  %d/%b/%Y %H:%M:%S", localtime(&fstats.st_mtime));
+
+                /* Mask */
+                snprintf(buffer + strlen(buffer), sizeof(buffer), " %s",
+                        file_mode_string(fstats.st_mode));
+
+                /* EOL */
+                snprintf(buffer + strlen(buffer), sizeof(buffer), "%s", EOL);
+
+                /* Emit */
+                host_write(buffer, strlen(buffer));
+
+                /* Get next entry */
+                dir_entry = readdir(directory);
+                Xfree(full_filename, __FILE__, __LINE__);
+                full_filename = NULL;
+        }
+        assert(directory != NULL);
+        closedir(directory);
+        directory = NULL;
+
+        if (total == 0) {
+                /* No files */
+                sprintf(buffer, _("%s     No files.%s"), EOL, EOL);
+                host_write(buffer, strlen(buffer));
+        }
+
+        /* Re-display the main menu */
+        main_menu();
+} /* ---------------------------------------------------------------------- */
+
+/* Download a file */
+static void download_file_menu() {
+        do_menu(
+        EOL
+        "Download File" EOL
+        EOL
+        "-----------" EOL
+        EOL
+        " X)modem" EOL
+        " Y)modem" EOL
+        " Z)modem" EOL
+        " K)ermit" EOL
+        EOL
+        " Q)uit To Main Menu" EOL
+        "-----------" EOL
+        EOL
+        "Your choice?  "
+        );
+} /* ---------------------------------------------------------------------- */
+
+/* Upload a file */
+static void upload_file_menu() {
+        do_menu(
+        EOL
+        "Upload File" EOL
+        EOL
+        "-----------" EOL
+        EOL
+        " X)modem" EOL
+        " Y)modem" EOL
+        " Z)modem" EOL
+        " K)ermit" EOL
+        EOL
+        " Q)uit To Main Menu" EOL
+        "-----------" EOL
+        EOL
+        "Your choice?  "
+        );
+} /* ---------------------------------------------------------------------- */
+
+static void clear_filename() {
+        if (transfer_filename != NULL) {
+                Xfree(transfer_filename, __FILE__, __LINE__);
+                transfer_filename = NULL;
+        }
+} /* ---------------------------------------------------------------------- */
+
+/* Do download */
+static void download_file(Q_PROTOCOL protocol) {
+        struct file_info * upload_file_info = NULL;
+        char * filename = NULL;
+        int rc;
+        struct stat fstats;
+        int length = 0;
+
+        if (local_login == Q_TRUE) {
+                do_menu(EOL "Cannot download on local logon." EOL);
+                current_state = MAIN_MENU;
+                main_menu();
+                return;
+        }
+        assert(host_online == Q_TRUE);
+
+download_top:
+
+        if (file_state == FILENAME) {
+#ifdef DEBUG_HOST
+                fprintf(DEBUG_FILE_HANDLE, "download_file(): FILENAME\n");
+                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+
+                /* Reset download state */
+                clear_filename();
+
+                do_menu(
+                EOL
+                "Enter filename to download: "
+                );
+                file_state = FILENAME_WAIT;
+                reset_line_buffer();
+                do_line_buffer = Q_TRUE;
+                return;
+        }
+
+        if (file_state == FILENAME_WAIT) {
+#ifdef DEBUG_HOST
+                fprintf(DEBUG_FILE_HANDLE, "download_file(): FILENAME_WAIT\n");
+                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+
+                /* Line buffer has the download filename */
+                assert(transfer_filename == NULL);
+                length = wcstombs(NULL, line_buffer, wcslen(line_buffer)) + 1;
+                transfer_filename = (char *)Xmalloc(sizeof(char) * length, __FILE__, __LINE__);
+                memset(transfer_filename, 0, length);
+                snprintf(transfer_filename, length, "%ls", line_buffer);
+#ifdef DEBUG_HOST
+                fprintf(DEBUG_FILE_HANDLE, "download_file(): filename = \'%s\'\n", transfer_filename);
+                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+
+                filename = (char *)Xmalloc(strlen(transfer_filename) +
+                        strlen(get_option(Q_OPTION_HOST_DIR)) + 2,
+                        __FILE__, __LINE__);
+                memset(filename, 0, strlen(transfer_filename) + strlen(get_option(Q_OPTION_HOST_DIR)) + 2);
+                strncpy(filename, get_option(Q_OPTION_HOST_DIR),
+                        strlen(get_option(Q_OPTION_HOST_DIR)));
+                filename[strlen(filename)] = '/';
+                strncpy(filename + strlen(filename), transfer_filename,
+                        strlen(transfer_filename));
+
+                rc = stat(filename, &fstats);
+                if (rc < 0) {
+
+                        /* No leak */
+                        Xfree(filename, __FILE__, __LINE__);
+
+                        if (errno == ENOENT) {
+                                /* File does not exist */
+                                do_menu(EOL "File does not exist." EOL);
+                                clear_filename();
+                                file_state = FILENAME;
+                                current_state = DOWNLOAD_FILE;
+                                download_file_menu();
+                                return;
+                        }
+                        /* Error stat()ing file */
+                        do_menu(EOL "Host mode error checking for file." EOL);
+                        clear_filename();
+                        current_state = DOWNLOAD_FILE;
+                        download_file_menu();
+                        return;
+                }
+
+                /* Transfer can continue, switch to upload */
+                file_state = TRANSFER;
+
+                q_transfer_stats.protocol = protocol;
+                /*
+                 * This logic needs to match the behavior of
+                 * start_file_transfer(): single-file protocols get
+                 * the filename from q_download_location, batch
+                 * protocols get it from the batch entry window.
+                 */
+                switch (protocol) {
+
+                case Q_PROTOCOL_XMODEM:
+                        if (q_download_location != NULL) {
+                                Xfree(q_download_location, __FILE__, __LINE__);
+                        }
+                        q_download_location = Xstrdup(filename,
+                                __FILE__, __LINE__);
+                        switch_state(Q_STATE_UPLOAD);
+                        break;
+                case Q_PROTOCOL_KERMIT:
+                case Q_PROTOCOL_YMODEM:
+                case Q_PROTOCOL_ZMODEM:
+                        /* Insert into the batch entry window */
+                        upload_file_info = (struct file_info *)Xmalloc(2 * sizeof(struct file_info),
+                                __FILE__, __LINE__);
+                        memset(upload_file_info, 0,
+                                2 * sizeof(struct file_info));
+                        upload_file_info[0].name = Xstrdup(filename,
+                                __FILE__, __LINE__);
+                        memcpy(&upload_file_info[0].fstats, &fstats,
+                                sizeof(struct stat));
+                        set_batch_upload(upload_file_info);
+                        switch_state(Q_STATE_UPLOAD_BATCH);
+                        break;
+
+                default:
+                        /* Should never get here */
+                        assert(1 == 0);
+                }
+
+#ifdef DEBUG_HOST
+                fprintf(DEBUG_FILE_HANDLE, "START_FILE_TRANSFER\n");
+                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+                start_file_transfer();
+
+                clear_filename();
+                current_state = DOWNLOAD_FILE;
+
+                /* No leak */
+                Xfree(filename, __FILE__, __LINE__);
+                return;
+        }
+
+        if (file_state == TRANSFER) {
+#ifdef DEBUG_HOST
+                fprintf(DEBUG_FILE_HANDLE, "download_file(): TRANSFER\n");
+                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+                file_state = FILENAME;
+                goto download_top;
+                return;
+        }
+
+        /* Should never get here */
+        assert(1 == 0);
+} /* ---------------------------------------------------------------------- */
+
+/* Do download with xmodem */
+static void download_file_xmodem() {
+        download_file(Q_PROTOCOL_XMODEM);
+} /* ---------------------------------------------------------------------- */
+
+/* Do download with ymodem */
+static void download_file_ymodem() {
+        download_file(Q_PROTOCOL_YMODEM);
+} /* ---------------------------------------------------------------------- */
+
+/* Do download with zmodem */
+static void download_file_zmodem() {
+        download_file(Q_PROTOCOL_ZMODEM);
+} /* ---------------------------------------------------------------------- */
+
+/* Do download with kermit */
+static void download_file_kermit() {
+        download_file(Q_PROTOCOL_KERMIT);
+} /* ---------------------------------------------------------------------- */
+
+/* Do upload */
+static void upload_file(Q_PROTOCOL protocol) {
+        static char * filename = NULL;
+        int length;
+        int rc;
+        struct stat fstats;
+
+        if (local_login == Q_TRUE) {
+                do_menu(EOL "Cannot upload on local logon." EOL);
+                current_state = MAIN_MENU;
+                main_menu();
+                return;
+        }
+        assert(host_online == Q_TRUE);
+upload_top:
+        if (file_state == FILENAME) {
+#ifdef DEBUG_HOST
+                fprintf(DEBUG_FILE_HANDLE, "upload_file(): FILENAME\n");
+                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+
+                /* Reset upload state */
+                clear_filename();
+
+                do_menu(
+                EOL
+                "Enter filename to upload: "
+                );
+                file_state = FILENAME_WAIT;
+                reset_line_buffer();
+                do_line_buffer = Q_TRUE;
+                return;
+        }
+
+        if (file_state == FILENAME_WAIT) {
+#ifdef DEBUG_HOST
+                fprintf(DEBUG_FILE_HANDLE, "upload_file(): FILENAME_WAIT\n");
+                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+
+                /* Line buffer has the download filename */
+                assert(transfer_filename == NULL);
+                if (wcslen(line_buffer) == 0) {
+                        /* User did not enter a filename */
+                        clear_filename();
+                        file_state = FILENAME;
+                        current_state = UPLOAD_FILE;
+                        upload_file_menu();
+                        return;
+                }
+
+                length = wcstombs(NULL, line_buffer, wcslen(line_buffer)) + 1;
+                transfer_filename = (char *)Xmalloc(sizeof(char) * length, __FILE__, __LINE__);
+                memset(transfer_filename, 0, length);
+                snprintf(transfer_filename, length, "%ls", line_buffer);
+#ifdef DEBUG_HOST
+                fprintf(DEBUG_FILE_HANDLE, "upload_file(): filename = \'%s\'\n", transfer_filename);
+                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+
+
+                filename = (char *)Xmalloc(strlen(transfer_filename) +
+                        strlen(get_option(Q_OPTION_HOST_DIR)) + 2, __FILE__, __LINE__);
+                memset(filename, 0, strlen(transfer_filename) + strlen(get_option(Q_OPTION_HOST_DIR)) + 2);
+                strncpy(filename, get_option(Q_OPTION_HOST_DIR), strlen(get_option(Q_OPTION_HOST_DIR)));
+                filename[strlen(filename)] = '/';
+                strncpy(filename + strlen(filename), transfer_filename, strlen(transfer_filename));
+
+                rc = stat(filename, &fstats);
+                if (rc < 0) {
+
+                        if (errno == ENOENT) {
+                                /* File does not exist -- all is OK */
+                                if (q_download_location != NULL) {
+                                        Xfree(q_download_location,
+                                                __FILE__, __LINE__);
+                                }
+                                switch (protocol) {
+                                case Q_PROTOCOL_XMODEM:
+                                        /* Xmodem: full filename */
+                                        q_download_location = Xstrdup(filename,
+                                                __FILE__, __LINE__);
+                                        break;
+                                case Q_PROTOCOL_YMODEM:
+                                case Q_PROTOCOL_ZMODEM:
+                                case Q_PROTOCOL_KERMIT:
+                                        /* Others: q_download_location is HOST_DIR */
+                                        q_download_location = Xstrdup(get_option(Q_OPTION_HOST_DIR),
+                                                        __FILE__, __LINE__);
+                                        break;
+                                default:
+                                        /* Should never get here */
+                                        assert(1 == 0);
+                                }
+
+                                q_transfer_stats.protocol = protocol;
+                                switch_state(Q_STATE_DOWNLOAD);
+                                file_state = TRANSFER;
+                                start_file_transfer();
+
+                                clear_filename();
+                                current_state = UPLOAD_FILE;
+
+                                /* No leak */
+                                Xfree(filename, __FILE__, __LINE__);
+                                filename = NULL;
+                                return;
+                        }
+
+                        /* No leak */
+                        Xfree(filename, __FILE__, __LINE__);
+                        filename = NULL;
+
+                        /* Error stat()ing file */
+                        do_menu(EOL "Host mode error checking for file." EOL);
+                        clear_filename();
+                        current_state = UPLOAD_FILE;
+                        upload_file_menu();
+                        return;
+                }
+
+                /*
+                 * File already exists, see if this is a resumed transfer
+                 * (Zmodem and Kermit only)
+                 */
+                if ((protocol== Q_PROTOCOL_XMODEM) || (protocol== Q_PROTOCOL_YMODEM)) {
+                        do_menu(EOL "File already exists, cannot resume with this protocol." EOL);
+                        clear_filename();
+                        file_state = FILENAME;
+                        current_state = UPLOAD_FILE;
+                        upload_file_menu();
+                        /* No leak */
+                        Xfree(filename, __FILE__, __LINE__);
+                        filename = NULL;
+                        return;
+                }
+
+                do_menu(EOL "File already exists, resume? ");
+                file_state = FILENAME_RESUME;
+                reset_line_buffer();
+                do_line_buffer = Q_TRUE;
+                return;
+        }
+
+        if (file_state == FILENAME_RESUME) {
+#ifdef DEBUG_HOST
+                fprintf(DEBUG_FILE_HANDLE, "upload_file(): FILENAME_RESUME\n");
+                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+
+                assert(filename != NULL);
+
+                if (wcslen(line_buffer) > 0) {
+                        if ((line_buffer[0] == 'y') || (line_buffer[0] == 'Y')) {
+#ifdef DEBUG_HOST
+                                fprintf(DEBUG_FILE_HANDLE, "upload_file(): resume transfer\n");
+                                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+                                /* Resume transfer */
+                                q_download_location = Xstrdup(get_option(Q_OPTION_HOST_DIR),
+                                                __FILE__, __LINE__);
+
+                                q_transfer_stats.protocol = protocol;
+                                switch_state(Q_STATE_DOWNLOAD);
+                                file_state = TRANSFER;
+                                start_file_transfer();
+
+                                clear_filename();
+                                current_state = UPLOAD_FILE;
+
+                                /* No leak */
+                                Xfree(filename, __FILE__, __LINE__);
+                                filename = NULL;
+                                return;
+                        }
+                }
+
+#ifdef DEBUG_HOST
+                fprintf(DEBUG_FILE_HANDLE, "upload_file(): DON'T resume transfer\n");
+                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+
+                /* Chose not to resume */
+                clear_filename();
+                file_state = FILENAME;
+                current_state = UPLOAD_FILE;
+                upload_file_menu();
+
+                /* No leak */
+                Xfree(filename, __FILE__, __LINE__);
+                filename = NULL;
+                return;
+        }
+
+        if (file_state == TRANSFER) {
+#ifdef DEBUG_HOST
+                fprintf(DEBUG_FILE_HANDLE, "upload_file(): TRANSFER\n");
+                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+                file_state = FILENAME;
+                goto upload_top;
+                return;
+        }
+
+        /* Should never get here */
+        assert(1 == 0);
+} /* ---------------------------------------------------------------------- */
+
+/* Do upload with xmodem */
+static void upload_file_xmodem() {
+        upload_file(Q_PROTOCOL_XMODEM);
+} /* ---------------------------------------------------------------------- */
+
+/* Do upload with ymodem */
+static void upload_file_ymodem() {
+        upload_file(Q_PROTOCOL_YMODEM);
+} /* ---------------------------------------------------------------------- */
+
+/* Do upload with zmodem */
+static void upload_file_zmodem() {
+        upload_file(Q_PROTOCOL_ZMODEM);
+} /* ---------------------------------------------------------------------- */
+
+/* Do upload with kermit */
+static void upload_file_kermit() {
+        upload_file(Q_PROTOCOL_KERMIT);
+} /* ---------------------------------------------------------------------- */
+
+/* Hangup */
+static void hangup(char * msg) {
+        char * eol_msg = EOL;
+
+        /* Special case: we exit here */
+        host_write(msg, strlen(msg));
+        host_write(eol_msg, strlen(eol_msg));
+
+        if (host_online == Q_TRUE) {
+                /* Only close if we're not locally logged in */
+                assert(local_login == Q_FALSE);
+                if (q_status.online == Q_TRUE) {
+                        assert(q_child_tty_fd != -1);
+#ifndef Q_NO_SERIAL
+                        if (q_status.serial_open) {
+                                if (q_host_type != Q_HOST_TYPE_SERIAL) {
+                                        /* Modem */
+                                        close_serial_port();
+                                }
+                        } else {
+                                cleanup_connection();
+                        }
+#else
+                        cleanup_connection();
+#endif /* Q_NO_SERIAL */
+                }
+        } else {
+                assert(local_login == Q_TRUE);
+        }
+
+        reset_host();
+        do_menu(_(EOL "Waiting for next call..." EOL));
+} /* ---------------------------------------------------------------------- */
+
+/* Hangup the nice way */
+static void goodbye() {
+        hangup(_("Goodbye!"));
+} /* ---------------------------------------------------------------------- */
+
+/* Page sysop */
+static void page_sysop() {
+        static time_t page_start;
+        static time_t music_start;
+        time_t now;
+
+        if (page == Q_FALSE) {
+                /* User requested sysop page */
+                do_menu(
+                EOL
+                " ** Paging sysop... **"
+                EOL
+                );
+                /* Refresh the screen BEFORE playing the music. */
+                refresh_handler();
+
+                current_state = PAGE_SYSOP;
+                page = Q_TRUE;
+                time(&page_start);
+                time(&music_start);
+                play_sequence(Q_MUSIC_PAGE_SYSOP);
+
+                return;
+        }
+
+        /* Page continues, see if it is time to timeout */
+        time(&now);
+        if (now - page_start >= 15) {
+                /* 15 seconds, give up */
+                current_state = MAIN_MENU;
+                page = Q_FALSE;
+
+                do_menu(
+                EOL
+                " ** Sysop did not respond to page. **"
+                EOL
+                );
+
+                /* Re-display the main menu */
+                main_menu();
+                return;
+        }
+
+        /* Re-play page tone every 3 seconds */
+        if (now - music_start >= 3) {
+                do_menu(
+                " ** Paging sysop... **"
+                EOL
+                );
+                /* Refresh the screen BEFORE playing the music. */
+                refresh_handler();
+
+                time(&music_start);
+                play_sequence(Q_MUSIC_PAGE_SYSOP);
+                return;
+        }
+
+        /* Keep waiting for the sysop to show up */
+} /* ---------------------------------------------------------------------- */
+
+
+/* Chat mode: enter each line in the line editor until the sysop kills it */
+static void chat() {
+        char * eol_msg = EOL;
+        host_write(eol_msg, strlen(eol_msg));
+        reset_line_buffer();
+        do_line_buffer = Q_TRUE;
+} /* ---------------------------------------------------------------------- */
+
+/* Main menu */
+static void main_menu() {
+        do_menu(
+
+        EOL
+        "Qodem Host Main Menu" EOL
+        "--------------------" EOL
+        EOL
+        " R)ead Messages" EOL
+        " E)nter A Message" EOL
+        EOL
+        " P)age The Sysop" EOL
+        EOL
+        " F)iles Listing" EOL
+        " D)ownload A File" EOL
+        " U)pload A File" EOL
+        EOL
+        " G)oodbye (HangUp)" EOL
+        "--------------------" EOL
+        EOL
+        "Your choice?  "
+        );
+
+        /* Reset read messages state */
+        clear_all_messages();
+        current_message = 0;
+} /* ---------------------------------------------------------------------- */
+
+/* Handle menu keystrokes */
+static void state_machine_keyboard_handler(const int keystroke) {
+        struct host_state * state;
+        int i;
+        unsigned char ch;
+        char * eol_msg = EOL;
+
+        if (q_key_code_yes(keystroke)) {
+                /* Convert the ncurses keystroke to an ASCII char */
+                switch (keystroke) {
+                case Q_KEY_ENTER:
+                        ch = C_CR;
+                        break;
+                case Q_KEY_BACKSPACE:
+                        ch = 0x08;
+                        break;
+                case Q_KEY_DC:
+                        ch = 0x7F;
+                        break;
+                default:
+                        /* Throw this away */
+                        return;
+                }
+        } else {
+                ch = keystroke & 0xFF;
+        }
+
+        /* If we're in the line buffer, do that */
+        if (do_line_buffer == Q_TRUE) {
+                if (line_buffer_char(ch) == Q_FALSE) {
+                        /* User hasn't finished editing, return here */
+                        return;
+                }
+
+                /*
+                 * The user finished editing, fall into the next
+                 * state loop.
+                 */
+                do_line_buffer = Q_FALSE;
+        }
+
+        /* Loop through all states until we find the NONE state */
+        i = 0;
+        do {
+                state = &states[i];
+
+                if (    (state->state == current_state) &&
+                        (       (tolower(ch) == state->input) ||
+                                (state->input == 0))
+                ) {
+                        if (do_line_buffer == Q_FALSE) {
+                                /* User made a menu selection, echo it */
+                                if (isalpha(ch)) {
+                                        host_write((char *)&ch, 1);
+                                        host_write(eol_msg, strlen(eol_msg));
+                                }
+                        }
+                        /*
+                         * We have a match, do it.  Switch state first, because
+                         * next_fn() might switch again.
+                         */
+                        current_state = state->next_state;
+                        state->next_fn();
+                        return;
+                }
+
+                /* Loop to next state */
+                i++;
+        } while (state->state != NONE);
+
+        /* Did not match any states, NOP */
+        return;
+} /* ---------------------------------------------------------------------- */
+
+/*
+ * Process incoming data from remote side.
+ */
+void host_process_data(unsigned char * input, const int input_n, int * remaining, unsigned char * output, int * output_n, const int output_max) {
+        char notify_message[DIALOG_MESSAGE_SIZE];
+        int i;
+
+#if 0
+#ifdef DEBUG_HOST
+        fprintf(DEBUG_FILE_HANDLE, "host_process_data() : host_online %s\n",
+                (host_online == Q_TRUE ? "true" : "false")
+        );
+        fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+#endif
+
+        if ((host_online == Q_TRUE) || (local_login == Q_TRUE)) {
+                /* Special case: page the sysop */
+                if (current_state == PAGE_SYSOP) {
+                        page_sysop();
+                }
+        }
+
+#ifndef Q_NO_SERIAL
+        if (    (host_online == Q_FALSE) &&
+                (q_host_type == Q_HOST_TYPE_SERIAL) &&
+                (input_n == 0)
+        ) {
+                /*
+                 * Serial port host: stay offline until a byte comes in
+                 * from the other side.
+                 */
+                return;
+        }
+#endif /* Q_NO_SERIAL */
+
+        if (host_online == Q_TRUE) {
+#if 0
+#ifdef DEBUG_HOST
+                fprintf(DEBUG_FILE_HANDLE, "   -- %d input bytes online %s\n",
+                        input_n,
+                        (q_status.online == Q_TRUE ? "true" : "false")
+                );
+                fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+#endif
+
+                /* See if we really hungup */
+                if (q_status.online == Q_FALSE) {
+                        /* Disconnection */
+                        snprintf(notify_message, sizeof(notify_message) - 1,
+                                _("%sConnection closed.%s"), EOL, EOL);
+                        host_write(notify_message, strlen(notify_message));
+                        q_screen_dirty = Q_TRUE;
+                        hangup("");
+                } else {
+                        /* Online: pass everything in as keystrokes */
+                        for (i = 0; i < input_n; i++) {
+                                state_machine_keyboard_handler(input[i]);
+                        }
+                }
+                *remaining = 0;
+                return;
+        }
+
+        /* See if we have a TCP connection */
+        switch (q_host_type) {
+        case Q_HOST_TYPE_SOCKET:
+        case Q_HOST_TYPE_TELNETD:
+                q_child_tty_fd = net_accept();
+                if (q_child_tty_fd != -1) {
+#ifdef DEBUG_HOST
+                        fprintf(DEBUG_FILE_HANDLE, "HOST ONLINE\n");
+                        fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+
+                        /* We've got a connection! */
+                        snprintf(notify_message, sizeof(notify_message) - 1,
+                                _("Incoming connection established from %s port %s...\r\n"),
+                                net_ip_address(), net_port());
+                        host_write(notify_message, strlen(notify_message));
+
+                        host_online = Q_TRUE;
+                        q_status.online = Q_TRUE;
+                        q_screen_dirty = Q_TRUE;
+                        assert(current_state == LISTENING);
+                        current_state = LOGIN;
+                        do_login();
+                        play_sequence(Q_MUSIC_CONNECT_MODEM);
+                }
+                return;
+#ifndef Q_NO_SERIAL
+        case Q_HOST_TYPE_MODEM:
+                /* TODO */
+                return;
+        case Q_HOST_TYPE_SERIAL:
+                if ((host_online == Q_FALSE) && (local_login == Q_FALSE)) {
+#ifdef DEBUG_HOST
+                        fprintf(DEBUG_FILE_HANDLE, "HOST ONLINE\n");
+                        fflush(DEBUG_FILE_HANDLE);
+#endif /* DEBUG_HOST */
+
+                        /* We've got a connection! */
+                        snprintf(notify_message, sizeof(notify_message) - 1,
+                                _("Incoming connection on serial port...\r\n"));
+                        host_write(notify_message, strlen(notify_message));
+
+                        host_online = Q_TRUE;
+                        q_status.online = Q_TRUE;
+                        q_screen_dirty = Q_TRUE;
+                        assert(current_state == LISTENING);
+                        current_state = LOGIN;
+                        do_login();
+                        return;
+                }
+#endif /* Q_NO_SERIAL */
+        }
+} /* ---------------------------------------------------------------------- */
+
+/*
+ * Handle keyboard input at the "sysop" console.
+ */
+void host_keyboard_handler(const int keystroke, const int flags) {
+
+        /* See if online */
+        if ((local_login == Q_TRUE) || (host_online == Q_TRUE)) {
+                if ((tolower(keystroke) == 'c') && ((flags & KEY_FLAG_ALT) != 0)) {
+                        /* Break in/out chat */
+                        /* Reset sysop page flag */
+                        page = Q_FALSE;
+                        if (current_state != CHAT) {
+                                /* Breaking into chat */
+                                do_menu(
+                                EOL
+                                "------------------------" EOL
+                                " ***  Entering Chat  ***" EOL
+                                "------------------------" EOL
+                                );
+                                current_state = CHAT;
+                                chat();
+                        } else {
+                                do_menu(
+                                EOL
+                                "------------------------" EOL
+                                " ***  Leaving Chat   ***" EOL
+                                "------------------------" EOL
+                                );
+                                current_state = MAIN_MENU;
+                                do_line_buffer = Q_FALSE;
+                                main_menu();
+                        }
+                        return;
+                }
+
+                if ((tolower(keystroke) == 'h') && ((flags & KEY_FLAG_ALT) != 0)) {
+                        /* Hangup */
+                        hangup(_("Force Hangup"));
+                        return;
+                }
+
+                state_machine_keyboard_handler(keystroke);
+                return;
+        }
+
+        /* Had better be listening at this point */
+        assert(current_state == LISTENING);
+
+        switch (keystroke) {
+        case 'L':
+        case 'l':
+                /* Local login */
+                local_login = Q_TRUE;
+                current_state = MAIN_MENU;
+                main_menu();
+                break;
+
+        case '`':
+                /* Backtick works too */
+        case KEY_ESCAPE:
+                /* Stop host mode */
+                host_stop();
+
+                /* Return to TERMINAL mode */
+                switch_state(Q_STATE_CONSOLE);
+                return;
+
+        default:
+                /* Ignore keystroke */
+                break;
+        }
+} /* ---------------------------------------------------------------------- */
+
+/*
+ * Refresh screen.
+ */
+void host_refresh() {
+        char * status_string;
+        int status_left_stop;
+
+        if (q_screen_dirty == Q_FALSE) {
+                return;
+        }
+
+        /*
+         * Render the scrollback.
+         */
+        render_scrollback(0);
+
+        /* Status line */
+        if (current_state == PAGE_SYSOP) {
+                status_string = _(" *** PAGING SYSOP ***       Alt-C-Chat   Alt-H-Hangup Caller ");
+        } else if (local_login == Q_TRUE) {
+                status_string = _(" Host Mode - Local Logon    Alt-C-Chat   Alt-H-Hangup Caller ");
+        } else if ((host_online == Q_TRUE) && (sysop_chat == Q_FALSE)) {
+                status_string = _(" Host Mode - Remote Logon   Alt-C-Chat   Alt-H-Hangup Caller ");
+        } else if ((host_online == Q_TRUE) && (sysop_chat == Q_TRUE)) {
+                status_string = _(" Host Mode - Sysop Chat     Alt-C-End Chat ");
+        } else {
+                status_string = _(" Host Mode   L-Local Logon   ESC/`-Exit Host ");
+        }
+
+        /* Put up the status line */
+        screen_put_color_hline_yx(HEIGHT - 1, 0, cp437_chars[HATCH], WIDTH, Q_COLOR_STATUS);
+        status_left_stop = WIDTH - strlen(status_string);
+        if (status_left_stop <= 0) {
+                status_left_stop = 0;
+        } else {
+                status_left_stop /= 2;
+        }
+        screen_put_color_str_yx(HEIGHT - 1, status_left_stop, status_string, Q_COLOR_STATUS);
+
+        /* Drop the cursor */
+        if (q_scrollback_current->double_width == Q_TRUE) {
+                screen_move_yx(q_status.cursor_y, (2 * q_status.cursor_x));
+        } else {
+                screen_move_yx(q_status.cursor_y, q_status.cursor_x);
+        }
+
+        screen_flush();
+        q_screen_dirty = Q_FALSE;
+} /* ---------------------------------------------------------------------- */
