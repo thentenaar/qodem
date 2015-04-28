@@ -685,7 +685,7 @@ static void setup_dial_screen() {
 } /* ---------------------------------------------------------------------- */
 
 /* Fixup stats for a successful connection */
-extern void dial_success() {
+void dial_success() {
         q_dial_state = Q_DIAL_CONNECTED;
         time(&q_dialer_cycle_start_time);
         time(&q_status.connect_time);

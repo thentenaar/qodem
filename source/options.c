@@ -100,8 +100,13 @@ static struct option_struct options[] = {
 #endif /* Q_PDCURSES_WIN32 */
 "### The editor program.  The $EDITOR environment variable will be\n"
 "### substituted if specified."},
+#ifdef Q_PDCURSES_WIN32
+        {Q_OPTION_X11_TERMINAL, NULL, "x11_terminal", "cmd.exe /c start /wait $COMMAND", ""
+"### The command shell to spawn for executing OS commands.  This is used\n"
+#else
         {Q_OPTION_X11_TERMINAL, NULL, "x11_terminal", "x-terminal-emulator -e \'$COMMAND\'", ""
 "### The X11 terminal to spawn for executing OS commands.  This is used\n"
+#endif /* Q_PDCURSES_WIN32 */
 "### for the following functions: Alt-R OS Shell, Alt-M Mail Reader,\n"
 "### Alt-L Log View, Alt-N Configuration, Alt-V View File, and editing\n"
 "### attached notes and linked scripts in the phonebook.\n"

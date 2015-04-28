@@ -813,7 +813,7 @@ static struct _wsaerrtext {
     }
 };
 
-static const char * get_strerror(int err) {
+const char * get_strerror(int err) {
         /*
          * This function is taken from win32lib.c shipped by the Squid
          * Web Proxy Cache.  Squid is licensed GPL v2 or later.
@@ -854,7 +854,7 @@ static void set_errno(int x) {
         errno = x;
 } /* ---------------------------------------------------------------------- */
 
-static const char * get_strerror(int x) {
+const char * get_strerror(int x) {
         return strerror(x);
 } /* ---------------------------------------------------------------------- */
 
@@ -1083,7 +1083,7 @@ Q_BOOL net_connect_finish() {
 
 #ifdef __BORLANDC__
                 closesocket(q_child_tty_fd);
-#else                
+#else
                 close(q_child_tty_fd);
 #endif
                 q_child_tty_fd = -1;
@@ -1295,7 +1295,11 @@ int net_listen(const char * port) {
                                 if (rc != 0) {
 #ifdef DEBUG_NET
                                         fprintf(DEBUG_FILE_HANDLE, "net_listen() : getaddrinfo() error: %d %s\n",
+#ifdef __BORLANDC__
+                                                get_errno(), get_strerror(get_errno()));
+#else
                                                 get_errno(), gai_strerror(get_errno()));
+#endif
                                         fflush(DEBUG_FILE_HANDLE);
 #endif /* DEBUG_NET */
                                         /*
@@ -1630,8 +1634,12 @@ ssize_t raw_write(const int fd, void * buf, size_t count) {
                         fprintf(DEBUG_FILE_HANDLE, "raw_write() : error on write(): %s\n", get_strerror(get_errno()));
                         fflush(DEBUG_FILE_HANDLE);
 #endif /* DEBUG_NET */
-                        if (get_errno() == EPIPE) {
-                                /* Other end has closed connection, bail out */
+                        switch (get_errno()) {
+                        case EAGAIN:
+                                /* Keep trying, this is a busy spin loop */
+                                break;
+                        default:
+                                /* Unknown, bail out */
                                 return rc;
                         }
                 } else {

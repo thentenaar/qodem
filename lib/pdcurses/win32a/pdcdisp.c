@@ -251,7 +251,7 @@ void PDC_gotoyx(int row, int col)
     }
 }
 
-int PDC_font_size = 12;
+int PDC_font_size = 20;
 TCHAR PDC_font_name[80];
 
 static LOGFONT PDC_get_logical_font( const attr_t font_attrib)

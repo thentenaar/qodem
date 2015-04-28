@@ -797,7 +797,7 @@ static void process_incoming_data() {
         time_t current_time;
         int hours, minutes, seconds;
         double connect_time;
-#ifndef Q_NO_SERIAL
+#if defined(DEBUG_IO) || !defined(Q_NO_SERIAL)
         int i;
 #endif /* Q_NO_SERIAL */
         char notify_message[DIALOG_MESSAGE_SIZE];
@@ -816,7 +816,11 @@ static void process_incoming_data() {
 
 #ifdef DEBUG_IO
         fprintf(DEBUG_IO_HANDLE, "IF CHECK: %s %s %s %s\n",
+#ifdef Q_NO_SERIAL
+                "N/A",
+#else
                 (q_status.serial_open == Q_TRUE ? "true" : "false"),
+#endif
                 (q_status.online == Q_TRUE ? "true" : "false"),
                 (is_readable(q_child_tty_fd) == Q_TRUE ? "true" : "false"),
                 (wait_on_script == Q_FALSE ? "true" : "false"));
@@ -850,7 +854,7 @@ static void process_incoming_data() {
 
 #ifdef DEBUG_IO
                         fprintf(DEBUG_IO_HANDLE, "rc = %d errno=%d\n", rc,
-                                errno);
+                                get_errno());
                         fflush(DEBUG_IO_HANDLE);
 #endif
 
@@ -888,9 +892,11 @@ static void process_incoming_data() {
                                         /* "Connection reset by peer".  This is EOF. */
                                         rc = 0;
                                 } else {
-                                        snprintf(notify_message, sizeof(notify_message), _("Call to read() failed: %s"), strerror(errno));
+                                        snprintf(notify_message, sizeof(notify_message), _("Call to read() failed: %d (%s)"),
+                                                get_errno(), get_strerror(get_errno()));
                                         notify_form(notify_message, 0);
-                                        return;
+                                        /* Treat it like EOF.  This will terminate the connection. */
+                                        rc = 0;
                                 }
                         }
                         if (rc == 0) {
@@ -923,6 +929,22 @@ static void process_incoming_data() {
                                 snprintf(time_string, sizeof(time_string), "%02u:%02u:%02u", hours, minutes, seconds);
 
                                 qlog(_("CONNECTION CLOSED. Total time online: %s\n"), time_string);
+
+                                /*
+                                 * If we died before switching out of DIALING into CONNECTED,
+                                 * (e.g. at Q_DIAL_CONNECTED in phonebook_refresh()), then
+                                 * switch back to phonebook mode.
+                                 */
+                                if (q_program_state == Q_STATE_DIALER) {
+                                        switch_state(Q_STATE_PHONEBOOK);
+                                        q_screen_dirty = Q_TRUE;
+                                        /*
+                                         * We need to explicitly call refresh_hanlder() because
+                                         * phonebook_keyboard_handler() blocks.
+                                         */
+                                        refresh_handler();
+                                }
+
                                 /* Wipe out current dial entry */
                                 q_current_dial_entry = NULL;
                                 return;
@@ -1153,7 +1175,11 @@ no_data:
 
 #ifdef DEBUG_IO
         fprintf(DEBUG_IO_HANDLE, "serial_open = %s online = %s q_transfer_buffer_raw_n = %d\n",
+#ifdef Q_NO_SERIAL
+                "N/A",
+#else
                 (q_status.serial_open == Q_TRUE ? "true" : "false"),
+#endif
                 (q_status.online == Q_TRUE ? "true" : "false"),
                 q_transfer_buffer_raw_n);
 #endif
@@ -1795,7 +1821,11 @@ void spawn_terminal(const char * command) {
         for (i = 0; i < HEIGHT; i++) {
                 screen_put_color_hline_yx(i, 0, ' ', WIDTH, Q_COLOR_CONSOLE);
         }
+#ifdef Q_PDCURSES_WIN32
+        char * wait_msg = _("Waiting On Command Shell To Exit...");
+#else
         char * wait_msg = _("Waiting On X11 Terminal To Exit...");
+#endif
         screen_put_color_str_yx(HEIGHT / 2, (WIDTH - strlen(wait_msg)) / 2, wait_msg, Q_COLOR_CONSOLE);
         screen_flush();
 

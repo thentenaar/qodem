@@ -140,6 +140,9 @@ extern const char * ssh_server_key_str();
 /* Thanks to Winsock I need to check for either errno or WSAGetLastError() */
 extern int get_errno();
 
+/* Get the error message that goes with get_errno() */
+extern const char * get_strerror(int err);
+
 #ifdef Q_PDCURSES_WIN32
 extern void stop_winsock();
 #endif /* Q_PDCURSES_WIN32 */

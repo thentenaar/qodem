@@ -134,7 +134,7 @@ static void close_dial_entry() {
                         net_close();
 #ifdef __BORLANDC__
                         closesocket(q_child_tty_fd);
-#else                
+#else
                         close(q_child_tty_fd);
 #endif
                         q_child_tty_fd = -1;
@@ -3260,12 +3260,13 @@ void phonebook_refresh() {
 
                 }
 
+                assert(q_current_dial_entry != NULL);
+
                 /* Name */
                 screen_put_color_str_yx(menu_top + 1, menu_left + 2, _("Name   : "), Q_COLOR_MENU_TEXT);
                 screen_put_color_wcs(q_current_dial_entry->name, Q_COLOR_MENU_COMMAND);
 
 #ifndef Q_NO_SERIAL
-                assert(q_current_dial_entry != NULL);
                 if (q_current_dial_entry->method == Q_DIAL_METHOD_MODEM) {
                         /* Number */
                         screen_put_color_str_yx(menu_top + 2, menu_left + 2, _("Number : "), Q_COLOR_MENU_TEXT);
@@ -4392,7 +4393,11 @@ static void spawn_script_editor(const char * script_filename) {
  * Edit a phone entry.
  */
 static void edit_phone_entry_form(struct q_phone_struct * entry) {
+#ifdef Q_NO_SERIAL
+        struct field * fields[13];
+#else
         struct field * fields[14];
+#endif /* Q_NO_SERIAL */
         struct fieldset * edit_form;
         struct field * port_field;
         void * form_window;
@@ -4510,10 +4515,15 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
         fields[9] = field_malloc(32,  10, 16, Q_FALSE, color_active, color_inactive);   /* CAPTUREFILE_NAME */
         fields[10] = field_malloc(32, 11, 16, Q_FALSE, color_active, color_inactive);   /* KEYBINDINGS_NAME */
         fields[11] = field_malloc(32, 12, 16, Q_TRUE, color_active, color_inactive);    /* DOORWAY */
+#ifdef Q_NO_SERIAL
+        fields[12] = field_malloc(32, 14, 16, Q_TRUE, color_active, color_inactive);    /* TOGGLES */
+        edit_form = fieldset_malloc(fields, 13, form_window);
+#else
         fields[12] = field_malloc(32, 13, 16, Q_TRUE, color_active, color_inactive);    /* COMM_SETTINGS */
         fields[13] = field_malloc(32, 14, 16, Q_TRUE, color_active, color_inactive);    /* TOGGLES */
-
         edit_form = fieldset_malloc(fields, 14, form_window);
+#endif /* Q_NO_SERIAL */
+
         field_number = NAME;
 
         name                    = Xwcsdup(entry->name, __FILE__, __LINE__);
@@ -4605,7 +4615,9 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                                 screen_win_put_color_str_yx(form_window, 10, 2, _("Capture File"), Q_COLOR_MENU_COMMAND);
                                 screen_win_put_color_str_yx(form_window, 11, 2, _("Key File"), Q_COLOR_MENU_COMMAND);
                                 screen_win_put_color_str_yx(form_window, 12, 2, _("Doorway"), Q_COLOR_MENU_COMMAND);
+#ifndef Q_NO_SERIAL
                                 screen_win_put_color_str_yx(form_window, 13, 2, _("Port Settings"), Q_COLOR_MENU_COMMAND);
+#endif /* Q_NO_SERIAL */
                                 screen_win_put_color_str_yx(form_window, 14, 2, _("Toggles"), Q_COLOR_MENU_COMMAND);
 
                                 screen_win_put_color_str_yx(form_window, 17, 2, _("Last Call"), Q_COLOR_MENU_COMMAND);
@@ -4659,7 +4671,11 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                                         } else {
                                                 sprintf(toggles_string, "%s", toggles_to_string(toggles));
                                         }
+#ifdef Q_NO_SERIAL
+                                        field_set_char_value(fields[12], toggles_string);
+#else
                                         field_set_char_value(fields[13], toggles_string);
+#endif /* Q_NO_SERIAL */
 
                                 } /* if (dont_reload == Q_FALSE) */
 
