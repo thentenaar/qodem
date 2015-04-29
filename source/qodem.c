@@ -618,6 +618,10 @@ void close_connection() {
  */
 void cleanup_connection() {
 
+#ifndef Q_PDCURSES_WIN32
+        int status;
+#endif
+
 #ifdef DEBUG_IO
         fprintf(DEBUG_IO_HANDLE, "cleanup_connection()\n");
         fflush(DEBUG_IO_HANDLE);
@@ -686,7 +690,6 @@ void cleanup_connection() {
                 q_child_thread = NULL;
 
 #else
-                int status;
 
                 /* Close pty */
                 close(q_child_tty_fd);
@@ -701,6 +704,11 @@ void cleanup_connection() {
                 q_child_pid = -1;
 #endif /* Q_PDCURSES_WIN32 */
 
+                break;
+
+        case Q_DIAL_METHOD_MODEM:
+                /* BUG */
+                abort();
                 break;
         }
 
