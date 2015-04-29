@@ -30,6 +30,7 @@
 #ifdef Q_PDCURSES_WIN32
 #include <tchar.h>
 #include <windows.h>
+#include <io.h>         /* read(), write() */
 #else
 #include <signal.h>
 #include <sys/select.h>
@@ -39,10 +40,6 @@
 #include <errno.h>
 #include <string.h>
 #include <assert.h>
-
-#ifdef __BORLANDC__
-#include <io.h>         /* read(), write() */
-#endif
 
 #ifdef Q_LIBSSH2
 #include <sys/time.h>
@@ -399,27 +396,6 @@ static ssize_t qodem_read(const int fd, void * buf, size_t count) {
         return read(fd, buf, count);
 } /* ---------------------------------------------------------------------- */
 
-/* Close remote connection */
-void close_connection() {
-        /* How to close depends on the connection method */
-        if (net_is_connected() == Q_TRUE) {
-                /* Telnet, Rlogin, SOCKET, SSH */
-                net_close();
-                return;
-        }
-
-#ifdef Q_PDCURSES_WIN32
-        /* Win32 case */
-        /* Terminate process */
-        assert(q_child_process != NULL);
-        TerminateProcess(q_child_process, -1);
-#else
-        /* Killing -1 kills EVERYTHING.  Not good! */
-        assert(q_child_pid != -1);
-        kill(q_child_pid, SIGHUP);
-#endif /* Q_PDCURSES_WIN32 */
-} /* ---------------------------------------------------------------------- */
-
 static char * usage_string() {
         return _(""
 "'qodem' is a terminal connection manager with scrollback, capture,\n"
@@ -608,16 +584,72 @@ void qlog(const char * format, ...) {
 } /* ---------------------------------------------------------------------- */
 
 /*
- * cleanup_connection - shutdown q_child_tty_fd as needed
+ * Close remote connection, initiated from this side.  This should cause the
+ * next read() to return 0 bytes (EOF).
+ */
+void close_connection() {
+
+#ifdef DEBUG_IO
+        fprintf(DEBUG_IO_HANDLE, "close_connection()\n");
+        fflush(DEBUG_IO_HANDLE);
+#endif
+
+        /* How to close depends on the connection method */
+        if (net_is_connected() == Q_TRUE) {
+                /* Telnet, Rlogin, SOCKET, SSH */
+                net_close();
+                return;
+        }
+
+#ifdef Q_PDCURSES_WIN32
+        /* Win32 case */
+        /* Terminate process */
+        assert(q_child_process != NULL);
+        TerminateProcess(q_child_process, -1);
+#else
+        /* Killing -1 kills EVERYTHING.  Not good! */
+        assert(q_child_pid != -1);
+        kill(q_child_pid, SIGHUP);
+#endif /* Q_PDCURSES_WIN32 */
+} /* ---------------------------------------------------------------------- */
+
+/*
+ * Cleanup connection resources, called AFTER read() has returned 0.
  */
 void cleanup_connection() {
 
-        if (net_is_connected() == Q_TRUE) {
-                /* We did the connection */
-                close_connection();
+#ifdef DEBUG_IO
+        fprintf(DEBUG_IO_HANDLE, "cleanup_connection()\n");
+        fflush(DEBUG_IO_HANDLE);
+#endif
+
+#ifndef Q_NO_SERIAL
+        assert(q_status.dial_method != Q_DIAL_METHOD_MODEM);
+#endif /* Q_NO_SERIAL */
+
+        switch (q_status.dial_method) {
+        case Q_DIAL_METHOD_SOCKET:
+                /* Fall through... */
+        case Q_DIAL_METHOD_TELNET:
+                /* Fall through... */
+        case Q_DIAL_METHOD_RLOGIN:
+                /* Fall through... */
+        case Q_DIAL_METHOD_SSH:
+                /* Fall through... */
+
+#ifdef Q_PDCURSES_WIN32
+                closesocket(q_child_tty_fd);
+#else
+                close(q_child_tty_fd);
+#endif
                 q_child_tty_fd = -1;
-                qlog(_("Remote end closed connection\n"));
-        } else {
+                qlog(_("Connection closed.\n"));
+                break;
+
+        case Q_DIAL_METHOD_COMMANDLINE:
+                /* Fall through... */
+        case Q_DIAL_METHOD_SHELL:
+
 #ifdef Q_PDCURSES_WIN32
                 /* Win32 case */
                 assert(q_child_tty_fd == -1);
@@ -668,6 +700,8 @@ void cleanup_connection() {
                 }
                 q_child_pid = -1;
 #endif /* Q_PDCURSES_WIN32 */
+
+                break;
         }
 
         if (q_program_state != Q_STATE_HOST) {
@@ -744,6 +778,7 @@ static Q_BOOL is_readable(int fd) {
 
 #ifdef Q_PDCURSES_WIN32
         if (    (q_status.online == Q_TRUE) &&
+                (q_program_state != Q_STATE_HOST) &&
                 ((q_status.dial_method == Q_DIAL_METHOD_SHELL) ||
                  (q_status.dial_method == Q_DIAL_METHOD_COMMANDLINE))
         ) {
@@ -891,7 +926,17 @@ static void process_incoming_data() {
 #endif /* Q_PDCURSES_WIN32 */
                                         /* "Connection reset by peer".  This is EOF. */
                                         rc = 0;
+#ifdef Q_PDCURSES_WIN32
+                                } else if (get_errno() == 0) {
+                                        /* No idea why this is happening.  Treat it as EOF. */
+                                        rc = 0;
+#endif /* Q_PDCURSES_WIN32 */
                                 } else {
+#ifdef DEBUG_IO
+                                        fprintf(DEBUG_IO_HANDLE, "Call to read() failed: %d %s\n",
+                                                get_errno(), get_strerror(get_errno()));
+                                        fflush(DEBUG_IO_HANDLE);
+#endif
                                         snprintf(notify_message, sizeof(notify_message), _("Call to read() failed: %d (%s)"),
                                                 get_errno(), get_strerror(get_errno()));
                                         notify_form(notify_message, 0);
@@ -1217,7 +1262,21 @@ no_data:
                                  * the next round
                                  */
                                 break;
+#ifdef Q_PDCURSES_WIN32
+                        case WSAEBADF:
+                                /*
+                                 * I'm not seeing the read 0 --> EOF sometimes.
+                                 * Ignore this for now, the read() call will set
+                                 * its "error 0" to EOF.
+                                 */
+                                break;
+#endif /* Q_PDCURSES_WIN32 */
                         default:
+#ifdef DEBUG_IO
+                                fprintf(DEBUG_IO_HANDLE, "Call to write() failed: %d %s\n",
+                                        get_errno(), get_strerror(get_errno()));
+                                fflush(DEBUG_IO_HANDLE);
+#endif
                                 /* Uh-oh, error */
                                 snprintf(notify_message, sizeof(notify_message), _("Call to write() failed: %s"), strerror(errno));
                                 notify_form(notify_message, 0);
@@ -1284,12 +1343,45 @@ static void data_handler() {
                 (net_is_listening() == Q_FALSE)
         ) {
                 if (is_readable(q_child_tty_fd) == Q_TRUE) {
+                        /*
+                         * The socket was readable on the last select() call, so
+                         * make sure to check it again.  This is needed to ensure
+                         * that lower-level layers can establish their session
+                         * between net_connect_start() and net_connect_finish().
+                         */
                         have_data = Q_TRUE;
+                }
+
+                if (q_child_tty_fd != -1) {
+                        switch (q_status.dial_method) {
+                        case Q_DIAL_METHOD_SOCKET:
+                        case Q_DIAL_METHOD_TELNET:
+                        case Q_DIAL_METHOD_RLOGIN:
+                        case Q_DIAL_METHOD_SSH:
+                                /*
+                                 * Network connections: always include in select()
+                                 * call.  This is to catch the EOF after calling
+                                 * shutdown().
+                                 */
+                                check_net_data = Q_TRUE;
+                                break;
+                        case Q_DIAL_METHOD_COMMANDLINE:
+                        case Q_DIAL_METHOD_SHELL:
+#ifndef Q_NO_SERIAL
+                        case Q_DIAL_METHOD_MODEM:
+#endif /* Q_NO_SERIAL */
+                                break;
+                        }
                 }
         } else {
                 check_net_data = Q_TRUE;
         }
 
+#ifdef DEBUG_IO
+        fprintf(DEBUG_IO_HANDLE, "data_handler() have_data %s check_net_data %s\n",
+                (have_data == Q_TRUE ? "true" : "false"),
+                (check_net_data == Q_TRUE ? "true" : "false"));
+#endif
 
         if (q_program_state == Q_STATE_SCRIPT_EXECUTE) {
                 /* Check for readability on stdout */
@@ -1465,41 +1557,22 @@ static void data_handler() {
 #endif
 
         /* Set the timeout */
-        if (default_timeout >= 0) {
-                /* Non-blocking select() */
-                listen_timeout.tv_sec = default_timeout / 1000000;
-                listen_timeout.tv_usec = default_timeout % 1000000;
+        listen_timeout.tv_sec = default_timeout / 1000000;
+        listen_timeout.tv_usec = default_timeout % 1000000;
 #ifdef Q_PDCURSES_WIN32
-                if ((have_data == Q_FALSE) && (check_net_data == Q_TRUE)) {
-                        rc = select(select_fd_max, &readfds, &writefds, &exceptfds, &listen_timeout);
-                } else {
-                        /* Go straight to timeout case */
-                        if (have_data == Q_FALSE) {
-                                DWORD millis = listen_timeout.tv_sec * 1000 + listen_timeout.tv_usec / 1000;
-                                Sleep(millis);
-                        }
-                        rc = 0;
-                }
-#else
+        if ((have_data == Q_FALSE) && (check_net_data == Q_TRUE) && (select_fd_max > 1)) {
                 rc = select(select_fd_max, &readfds, &writefds, &exceptfds, &listen_timeout);
-#endif /* Q_PDCURSES_WIN32 */
         } else {
-                /* Blocking select() */
-#ifdef Q_PDCURSES_WIN32
-                if ((have_data == Q_FALSE) && (check_net_data == Q_TRUE)) {
-                        rc = select(select_fd_max, &readfds, &writefds, &exceptfds, NULL);
-                } else {
-                        /* Go straight to timeout case */
-                        if (have_data == Q_FALSE) {
-                                DWORD millis = listen_timeout.tv_sec * 1000 + listen_timeout.tv_usec / 1000;
-                                Sleep(millis);
-                        }
-                        rc = 0;
+                /* Go straight to timeout case */
+                if (have_data == Q_FALSE) {
+                        DWORD millis = listen_timeout.tv_sec * 1000 + listen_timeout.tv_usec / 1000;
+                        Sleep(millis);
                 }
-#else
-                rc = select(select_fd_max, &readfds, &writefds, &exceptfds, NULL);
-#endif /* Q_PDCURSES_WIN32 */
+                rc = 0;
         }
+#else
+        rc = select(select_fd_max, &readfds, &writefds, &exceptfds, &listen_timeout);
+#endif /* Q_PDCURSES_WIN32 */
 
         /* fprintf(DEBUG_IO_HANDLE, "q_program_state = %d select() returned %d\n", q_program_state, rc); */
         switch (rc) {
@@ -1511,7 +1584,13 @@ static void data_handler() {
                         /* Interrupted system call, say from a SIGWINCH */
                         break;
                 default:
-                        snprintf(notify_message, sizeof(notify_message), _("Call to select() failed: %s"), strerror(errno));
+#ifdef DEBUG_IO
+                        fprintf(DEBUG_IO_HANDLE, "Call to select() failed: %d %s\n",
+                                get_errno(), get_strerror(get_errno()));
+                        fflush(DEBUG_IO_HANDLE);
+#endif
+                        snprintf(notify_message, sizeof(notify_message), _("Call to select() failed: %d %s"),
+                                get_errno(), get_strerror(get_errno()));
                         notify_form(notify_message, 0);
                         exit(EXIT_ERROR_SELECT_FAILED);
                 }

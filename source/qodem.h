@@ -102,7 +102,5 @@ extern void spawn_terminal(const char * command);
 
 /* Close remote connection */
 extern void close_connection();
-/* Socket connections have to be cleanup up explicitly */
-extern void cleanup_connection();
 
 #endif /* __QODEM_H__ */

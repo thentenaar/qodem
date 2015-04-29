@@ -55,11 +55,7 @@
 static FILE * DEBUG_FILE_HANDLE = NULL;
 #endif
 
-#ifdef Q_PDCURSES_WIN32
-#define EOL "\n"
-#else
 #define EOL "\r\n"
-#endif /* Q_PDCURSES_WIN32 */
 
 /* The file in ~/qodem/hosts that stores user-generated messages */
 #define MESSAGE_FILENAME "messages.txt"
@@ -386,6 +382,7 @@ void host_start(Q_HOST_TYPE type, const char * port) {
         }
         /* Save our host type */
         q_host_type = type;
+
 #ifdef DEBUG_HOST
         fprintf(DEBUG_FILE_HANDLE, "host_start() q_host_type %u %u\n",
                 q_host_type, type);
@@ -1641,10 +1638,10 @@ static void hangup(char * msg) {
                                         close_serial_port();
                                 }
                         } else {
-                                cleanup_connection();
+                                close_connection();
                         }
 #else
-                        cleanup_connection();
+                        close_connection();
 #endif /* Q_NO_SERIAL */
                 }
         } else {

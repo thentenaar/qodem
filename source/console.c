@@ -1154,17 +1154,15 @@ void console_keyboard_handler(int keystroke, int flags) {
                                 }
                                 if ((new_keystroke == 'y') || (new_keystroke == C_CR)) {
                                         if (Q_SERIAL_OPEN) {
-                                                notify_form(_("Sending Hang-Up command"), 1.5);
+                                                notify_form(_("Sending Hang-Up Command"), 1.5);
+                                                qlog(_("Sending Hang-up Command\n"));
                                         } else {
                                                 notify_form(_("Closing Connection"), 1.5);
+                                                qlog(_("Closing Connection\n"));
                                         }
                                         q_cursor_on();
                                         if (!Q_SERIAL_OPEN) {
-                                                if (q_status.dial_method == Q_DIAL_METHOD_SOCKET) {
-                                                        cleanup_connection();
-                                                } else {
-                                                        close_connection();
-                                                }
+                                                close_connection();
                                         } else {
 #ifndef Q_NO_SERIAL
                                                 hangup_modem();

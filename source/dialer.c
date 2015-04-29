@@ -427,7 +427,8 @@ void spawn_process(char * command_line, Q_EMULATION emulation) {
         startup_info.hStdInput = q_child_stdin_2;
         startup_info.hStdOutput = q_child_stdout_2;
         startup_info.hStdError = q_child_stdout_2;
-        startup_info.dwFlags |= STARTF_USESTDHANDLES;
+        startup_info.dwFlags |= STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+        startup_info.wShowWindow = SW_HIDE;
         if (!CreateProcessA(NULL,               /* Use command line */
 
                            command_line,        /* Command line */
@@ -618,7 +619,10 @@ void spawn_process(char * command_line, Q_EMULATION emulation) {
 Q_BOOL set_nonblock(const int fd) {
         u_long non_block_mode = 1;
 
-        if (net_is_connected() == Q_FALSE) {
+        if (    (net_is_connected() == Q_FALSE) &&
+                (net_connect_pending == Q_FALSE) &&
+                (net_is_listening == Q_FALSE)
+        ) {
                 /* Assume success for a not-socket case. */
                 return Q_TRUE;
         }

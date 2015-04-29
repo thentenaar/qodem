@@ -1124,7 +1124,7 @@ void load_options() {
         substituted_filename = substitute_string("$HOME/.qodem/qodemrc", "$HOME", env_string);
 #endif /* Q_PDCURSES_WIN32 */
 
-        if (directory_exists(substituted_filename) == Q_FALSE) {
+        if (file_exists(substituted_filename) == Q_FALSE) {
                 /* UTF-8 locale */
                 lang_default = getenv("LANG");
                 if (lang_default == NULL) {

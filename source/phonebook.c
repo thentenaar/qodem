@@ -132,11 +132,6 @@ static void close_dial_entry() {
                 } else {
 #endif /* Q_NO_SERIAL */
                         net_close();
-#ifdef __BORLANDC__
-                        closesocket(q_child_tty_fd);
-#else
-                        close(q_child_tty_fd);
-#endif
                         q_child_tty_fd = -1;
 #ifndef Q_NO_SERIAL
                 }

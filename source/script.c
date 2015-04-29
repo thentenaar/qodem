@@ -854,7 +854,8 @@ void script_start(const char * script_filename) {
         startup_info.hStdInput = q_script_stdin_2;
         startup_info.hStdOutput = q_script_stdout_2;
         startup_info.hStdError = q_script_stderr_2;
-        startup_info.dwFlags |= STARTF_USESTDHANDLES;
+        startup_info.dwFlags |= STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+        startup_info.wShowWindow = SW_HIDE;
 
         /*
          * The POSIX code can run the script by prepending the scripts dir to

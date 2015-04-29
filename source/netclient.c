@@ -1024,8 +1024,12 @@ int net_connect_start(const char * host, const char * port) {
                         "%s", notify_message);
                 q_screen_dirty = Q_TRUE;
                 refresh_handler();
-                set_nonblock(fd);
                 pending = Q_TRUE;
+                /*
+                 * Make fd non-blocking.  Note do this LAST so that net_is_pending()
+                 * is true inside set_nonblock().
+                 */
+                set_nonblock(fd);
                 rc = connect(fd, p->ai_addr, p->ai_addrlen);
                 break;
 
@@ -1310,9 +1314,9 @@ int net_listen(const char * port) {
                                         goto try_next_interface;
                                 }
 
-                                freeaddrinfo(local_address);
                                 rc = bind(fd, local_address->ai_addr,
                                         local_address->ai_addrlen);
+                                freeaddrinfo(local_address);
 
                                 if (rc != 0) {
 #ifdef DEBUG_NET
@@ -1451,9 +1455,6 @@ listen_bound_ok:
                 return -1;
         }
 
-        /* Make fd non-blocking */
-        set_nonblock(fd);
-
         /* Save this string */
         sprintf(local_host_full, "[%s]:%s", local_host, local_port);
 
@@ -1464,6 +1465,13 @@ listen_bound_ok:
 
         listening = Q_TRUE;
         listen_fd = fd;
+
+        /*
+         * Make fd non-blocking.  Note do this LAST so that net_is_listening()
+         * is true inside set_nonblock().
+         */
+        set_nonblock(fd);
+
         return fd;
 } /* ---------------------------------------------------------------------- */
 
@@ -1597,20 +1605,18 @@ void net_listen_close() {
                 return;
         }
 
-#ifdef Q_PDCURSES_WIN32
-        /* Win32 case */
-
-#else
-
         /* Normal case */
         assert(listen_fd != -1);
-
 #ifdef DEBUG_NET
         fprintf(DEBUG_FILE_HANDLE, "net_listen_close() : close(listen_fd)\n");
         fflush(DEBUG_FILE_HANDLE);
 #endif /* DEBUG_NET */
-        close(listen_fd);
 
+#ifdef Q_PDCURSES_WIN32
+        /* Win32 case */
+        closesocket(listen_fd);
+#else
+        close(listen_fd);
 #endif /* Q_PDCURSES_WIN32 */
 
         listening = Q_FALSE;
