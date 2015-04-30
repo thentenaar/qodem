@@ -13,22 +13,20 @@ NEW FUNCTIONALITY
   BUG: check when phonebook calls start_quicklearn() after
        either net_connect() or for dialup
 
-  BUG: when dial connects but immediately exits, read() returns 0
-  during Q_DIALER/Q_DIAL_CONNECTED state, leading to segfault in
-  phonebook_refresh().
-
   1.0.0:
 
     Detect xterm alternate screen and clear scrollback to retain what
     was seen before.
 
+    SGR mouse reporting
+
     Theme: 1.0 release
 
 
     Win32 port:
-        Host mode listening on port
         UPnP
         Windows installer (maybe wix.sourceforge.net ? )
+        Visual C++ build
 
 
     Finish up modem support:
@@ -36,7 +34,7 @@ NEW FUNCTIONALITY
             MODEM answer:
                 send host_init_string
                 wait for RING
-                sent answer_string
+                send answer_string
                 check DCD for online
 
 
@@ -47,10 +45,6 @@ NEW FUNCTIONALITY
         App Icon
         dmg image
         Ship both X11 and command line versions
-
-
-    User Guide
-        Index
 
 
     FULL REGRESSION + NEW DOCUMENTATION ON EVERY ITEM:
