@@ -203,17 +203,17 @@ match the keyboard of a real VT220.  You can send a true backspace
 (0x08, ^H) by pressing Ctrl-H.
 
 Function keys beyond F4 in VT100/VT102 emulation may not work as
-expected.  Qodem uses a common convention that F5 is "<ESC>Ot", F6 is
-"<ESC>Ou", etc.  Some programs understand this convention.  Those that
-don't will usually understand "<ESC><number>", where <number> is a
-number from 5 to 0, to mean F5 through F10.  You can get this effect
-in Qodem by typing ESC <number>, or by switching to Doorway Mode and
-typing Alt-<number> (or Meta-<number>).
+expected.  Qodem uses a common convention that F5 is "{ESC} O t", F6
+is "{ESC} O u", etc.  Some programs understand this convention.  Those
+that don't will usually understand "{ESC} {number}", where {number} is
+a number from 5 to 0, to mean F5 through F10.  You can get this effect
+in Qodem by typing ESC {number}, or by switching to Doorway Mode and
+typing Alt-{number} (or Meta-{number}).
 
 In VT100, VT102, and LINUX emulations, some programs (like minicom and
-Midnight Commander) send the DECCOLM sequence (<ESC>[?3l) when
+Midnight Commander) send the DECCOLM sequence ({ESC} [ ? 3 l ) when
 exiting, putting the emulation into 80-column mode.  Resetting the
-emulation via Alt-G <pick emulation> <enter 'y'> will restore the
+emulation via Alt-G {pick emulation} {enter 'y'} will restore the
 default right margin.
 
 Even though the function key editor window has space for the numeric
@@ -413,7 +413,7 @@ using the same wire protocol as xterm's X10 or UTF8 encoding.  It
 supports the X10-, normal-, button-, and any-event-tracking modes.
 This is only supported for XTERM and X_UTF8 emulations.
 
-The IBM PC ALT and CTRL + <function key> combinations do not work
+The IBM PC ALT and CTRL + {function key} combinations do not work
 through the curses terminal library.  CTRL-Home, CTRL-End, CTRL-PgUp,
 CTRL-PgDn, Shift-Tab, and ALT-Up have been given new key combinations.
 
@@ -509,7 +509,7 @@ discards the RIPScript auto-detection code (CSI !) to maintain a
 cleaner display.
 
 The "Tag Multiple" command in the phone book does not support the
-"P<prefix><number><suffix>" form of tagging.  Number prefixes and
+"P{prefix}{number}{suffix}" form of tagging.  Number prefixes and
 suffixes in general are not supported.  Also, text searching in both
 "Tag Multiple" and "Find Text/Find Again" is case-insensitive.
 
