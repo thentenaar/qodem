@@ -1342,23 +1342,31 @@ void render_scrollback(const int skip_lines) {
                                 if ((line->double_width == Q_TRUE) && (line->double_height == 0)) {
                                         odd_line = Q_TRUE;
                                         screen_flush();
+                                        fflush(stdout);
                                         fprintf(stdout, "\033#6");
+                                        fflush(stdout);
                                 } else if (line->double_height == 1) {
                                         assert(line->double_width == Q_TRUE);
                                         odd_line = Q_TRUE;
                                         screen_flush();
+                                        fflush(stdout);
                                         fprintf(stdout, "\033#3");
+                                        fflush(stdout);
                                 } else if (line->double_height == 2) {
                                         assert(line->double_width == Q_TRUE);
                                         odd_line = Q_TRUE;
                                         screen_flush();
+                                        fflush(stdout);
                                         fprintf(stdout, "\033#4");
+                                        fflush(stdout);
                                 } else {
                                         assert(line->double_width == Q_FALSE);
                                         assert(line->double_height == 0);
                                         odd_line = Q_TRUE;
                                         screen_flush();
+                                        fflush(stdout);
                                         fprintf(stdout, "\033#5");
+                                        fflush(stdout);
                                 }
                         }
 
@@ -1398,6 +1406,7 @@ void render_scrollback(const int skip_lines) {
                                 }
                                 if ((xterm == Q_TRUE) && (odd_line == Q_TRUE)) {
                                         screen_flush();
+                                        fflush(stdout);
                                 }
                         } else {
                                 screen_move_yx(row, 0);

@@ -13,11 +13,19 @@ connections.
 Qodem is distributed under the GNU General Public License Version 2 or
 later - see the accompanying COPYING file for more details.
 
-Qmodem(tm) was last distributed by Mustang Software, Inc. (MSI).
-Qmodem was acquired by Quintus when it purchased MSI, and its current
-legal status is limbo.  Quintus went bankrupt shortly after the MSI
-acquisition and members of both companies' Boards of Directors are
-involved in a class-action lawsuit regarding the MSI acquisition.
+The Qodem homepage, which includes an extensive archive of Qmodem(tm)
+releases, a getting started guide, and Qodem binary downloads, is at:
+http://qodem.sourceforge.net .
+
+As for Qmodem(tm): Qmodem(tm) was last distributed by Mustang
+Software, Inc. (MSI).  Qmodem and QmodemPro were acquired by Quintus
+when it purchased MSI, and their current copyright status is
+abandonware.  Quintus went bankrupt shortly after the MSI acquisition
+and members of both companies' Boards of Directors were involved in a
+class-action lawsuit from Quintus shareholders.  The lawsuit
+(C-00-4263 VRW in the Northern District of California, US District
+Chief Judge Vaughn R Walker presiding) was settled on December 5, 2006
+for $10.1 million (with 11% to plaintiffs legal fees).
 
 INTENDED AUDIENCE
 -----------------

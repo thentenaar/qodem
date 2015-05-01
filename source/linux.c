@@ -1249,6 +1249,16 @@ static void decstbm() {
 #ifdef DEBUG_LINUX
         fprintf(LINUX_DEBUG_FILE_HANDLE, "decstbm() param0 %s param1 %s\n", state.params[0], state.params[1]);
 #endif /* DEBUG_LINUX */
+        for (i = 0; i < q_emul_buffer_n; i++) {
+                if (q_emul_buffer[i] == '?') {
+                        state.dec_private_mode_flag = Q_TRUE;
+                }
+        }
+        if (state.dec_private_mode_flag == Q_TRUE) {
+                /* This is "restore DEC private mode values" for
+                 * XTERM.  Ignore for now. */
+                return;
+        }
 
         if (state.params_n < 0) {
                 q_status.scroll_region_top = 0;
