@@ -562,7 +562,10 @@ void handle_resize() {
         int new_height, new_width;
 
 #if defined(Q_PDCURSES) || defined(Q_PDCURSES_WIN32)
-        resize_term(0,0);
+        /*
+         * Update the internal window state with the new size the user selected.
+         */
+        resize_term(0, 0);
 #endif
 
         /* Special case: KEY_RESIZE */
@@ -666,9 +669,9 @@ void handle_mouse() {
 
         /* We keep pulling off the queue until it is empty */
 #if defined(Q_PDCURSES) || defined(Q_PDCURSES_WIN32)
-        while ((rc = nc_getmouse(&mouse)) == OK) {
+        if ((rc = nc_getmouse(&mouse)) == OK) {
 #else
-        while ((rc = getmouse(&mouse)) == OK) {
+        if ((rc = getmouse(&mouse)) == OK) {
 #endif /* Q_PDCURSES */
 
 #ifdef DEBUG_INPUT
@@ -847,31 +850,31 @@ void handle_mouse() {
                          * Discard.  We only care about the mouse when
                          * connected and in the console.
                          */
-                        continue;
+                        return;
                 }
                 if ((q_status.online == Q_FALSE) && !Q_SERIAL_OPEN) {
 #ifdef DEBUG_INPUT
                         fprintf(stderr, " DISCARD not online\n");
 #endif
-                        continue;
+                        return;
                 }
 
                 switch (q_xterm_mouse_protocol) {
                 case XTERM_MOUSE_OFF:
                         /* Do nothing */
-                        continue;
+                        return;
 
                 case XTERM_MOUSE_X10:
                         /* Only report button presses */
                         if ((release == Q_TRUE) || (raw_buffer[3] == 3)) {
-                                continue;
+                                return;
                         }
                         break;
 
                 case XTERM_MOUSE_NORMAL:
                         /* Only report button presses and releases */
                         if (raw_buffer[3] == 3) {
-                                continue;
+                                return;
                         }
                         break;
 
@@ -881,7 +884,7 @@ void handle_mouse() {
                          * with button down
                          */
                         if ((raw_buffer[3] == 3) && (release == Q_FALSE)) {
-                                continue;
+                                return;
                         }
                         break;
 

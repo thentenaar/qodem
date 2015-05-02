@@ -39,65 +39,82 @@
 #include "status.h"
 #include "screen.h"
 
+/* Stored in colors.c */
+extern short q_color_bold_offset;
+
 /*
- * map_screen_color - re-map a COLOR_X + A_BOLD into the specific DOS colors
- *                    that Qmodem(tm) used.
+ * Get the to-screen color index for a logical attr that has COLOR_X
+ * and A_BOLD set.
  */
-static inline attr_t map_screen_color(const attr_t color) {
-        attr_t new_color = color;
-        if (color & A_BOLD) {
-                new_color += 128;
-                new_color &= ~(A_BOLD);
+static inline short physical_color_from_attr(const attr_t attr, const short color) {
+        short color2 = color;
+        if (color2 == 0x38) {
+                color2 = q_white_color_pair_num;
+        } else if (color2 == 0x00) {
+                color2 = 0x38;
         }
-        return new_color;
+        if (attr & Q_A_BOLD) {
+                color2 += q_color_bold_offset;
+        }
+        return color2;
 } /* ---------------------------------------------------------------------- */
 
 /*
- * Turn a Q_COLOR_* enum into a color pair index.
- * This also performs the 0x38 <--> 0x00 switch.
+ * Get the to-screen attr for a logical attr that has COLOR_X and
+ * A_BOLD set.
+ */
+static inline attr_t physical_attr_from_attr(const attr_t attr) {
+        if (q_color_bold_offset != 0) {
+                return attr & ~Q_A_BOLD;
+        } else {
+                return attr;
+        }
+} /* ---------------------------------------------------------------------- */
+
+/*
+ * Turn a Q_COLOR_* enum into a color pair index.  This is the color
+ * code path for UI elements to screen.
  */
 short screen_color(const int q_color) {
         short color = (q_text_colors[q_color].fg << 3) | q_text_colors[q_color].bg;
-        if (color == 0x38) {
-                color = q_white_color_pair_num;
-        } else if (color == 0x00) {
-                color = 0x38;
-        }
         return color;
-} /* ---------------------------------------------------------------------- */
-
-/*
- * Turn a Q_COLOR_* enum into the color part of the ncurses attr_t.
- */
-static attr_t scrollback_color(const int q_color) {
-        short color = (q_text_colors[q_color].fg << 3) | q_text_colors[q_color].bg;
-        return COLOR_PAIR(color);
 } /* ---------------------------------------------------------------------- */
 
 /*
  * Turn a Q_COLOR_* enum into the non-color part of the ncurses attr_t
  */
-static attr_t screen_attr(const int q_color) {
-        attr_t attr = A_NORMAL;
+attr_t screen_attr(const int q_color) {
+        attr_t attr = Q_A_NORMAL;
         if (q_text_colors[q_color].bold == Q_TRUE) {
-                attr |= A_BOLD;
+                attr |= Q_A_BOLD;
         }
         return attr;
 } /* ---------------------------------------------------------------------- */
 
 /*
- * Turn a Q_COLOR_* enum into a ncurses attr_t
+ * Turn a Q_COLOR_* enum into a ncurses attr_t.  This is used to
+ * specify the background (normal) terminal color for the emulations.
+ * Note that even if one specifies a terminal default like "bold
+ * yellow on blue", then the background will have the A_BOLD attribute
+ * set.
  */
 attr_t scrollback_full_attr(const int q_color) {
-        attr_t color = scrollback_color(q_color) | screen_attr(q_color);
-        return color;
+        attr_t attr = color_to_attr(screen_color(q_color)) | screen_attr(q_color);
+        return attr;
 } /* ---------------------------------------------------------------------- */
 
-attr_t color_from_attr(const attr_t color) {
-        return PAIR_NUMBER(color);
+/*
+ * Given an attr, find the color index.
+ */
+short color_from_attr(const attr_t attr) {
+        return PAIR_NUMBER(attr);
 } /* ---------------------------------------------------------------------- */
 
-attr_t color_to_attr(const attr_t color) {
+/*
+ * Given a color index, return something that can be OR'd to the
+ * attrs.
+ */
+attr_t color_to_attr(const short color) {
         return COLOR_PAIR(color);
 } /* ---------------------------------------------------------------------- */
 
@@ -132,19 +149,19 @@ attr_t vt100_check_reverse_color(const attr_t color, const Q_BOOL reverse) {
                 break;
         }
 
-        if ((reverse == Q_TRUE) && ((attrs & A_REVERSE) != 0)) {
+        if ((reverse == Q_TRUE) && ((attrs & Q_A_REVERSE) != 0)) {
                 /*
                  * Reverse character on a reverse screen.  Keep the
                  * original color, turn off A_REVERSE.
                  */
-                attrs &= ~A_REVERSE;
+                attrs &= ~Q_A_REVERSE;
                 do_flip = Q_FALSE;
-        } else if ((reverse == Q_FALSE) && ((attrs & A_REVERSE) != 0)) {
+        } else if ((reverse == Q_FALSE) && ((attrs & Q_A_REVERSE) != 0)) {
                 /*
                  * Reverse. on a normal screen.  Turn off A_REVERSE
                  * and flip foreground/background colors.
                  */
-                attrs &= ~A_REVERSE;
+                attrs &= ~Q_A_REVERSE;
                 do_flip = Q_TRUE;
         } else if (reverse == Q_TRUE) {
                 /* Normal character on a reverse screen.  Flip
@@ -154,7 +171,7 @@ attr_t vt100_check_reverse_color(const attr_t color, const Q_BOOL reverse) {
         }
 
         /* At this point, A_REVERSE should NOT be set */
-        assert((attrs & A_REVERSE) == 0);
+        assert((attrs & Q_A_REVERSE) == 0);
 
         if (do_flip == Q_TRUE) {
                 flip_color = old_color_fg;
@@ -170,71 +187,26 @@ attr_t vt100_check_reverse_color(const attr_t color, const Q_BOOL reverse) {
  * wattr_get() */
 #pragma GCC diagnostic ignored "-Waddress"
 
-/*
- * Drop a character on screen using EITHER mvaddch or mvadd_wch, depending on
- * whether or not attr has WA_ALTCHARSET set.
- */
-static void screen_win_put_ch_attr_yx(WINDOW * win, const int y, const int x, const wchar_t wch, const cchar_t * ch, const attr_t attr, const short pair) {
-        if (attr & WA_ALTCHARSET) {
-                attr_t old_attr;
-                short old_pair;
-                wattr_get(win, &old_attr, &old_pair, NULL);
-                wattr_set(win, attr, pair, NULL);
-                mvwaddch(win, y, x, wch & 0xFF);
-                wattr_set(win, old_attr, old_pair, NULL);
-        } else {
-                mvwadd_wch(win, y, x, ch);
-        }
-} /* ---------------------------------------------------------------------- */
-
-/*
- * Drop a character on screen using EITHER addch or add_wch, depending on
- * whether or not attr has WA_ALTCHARSET set.
- */
-static void screen_win_put_ch_attr(WINDOW * win, const wchar_t wch, const cchar_t * ch, const attr_t attr, const short pair) {
-        if (attr & WA_ALTCHARSET) {
-                attr_t old_attr;
-                short old_pair;
-                wattr_get(win, &old_attr, &old_pair, NULL);
-                wattr_set(win, attr, pair, NULL);
-                waddch(win, wch & 0xFF);
-                wattr_set(win, old_attr, old_pair, NULL);
-        } else {
-                wadd_wch(win, ch);
-        }
-} /* ---------------------------------------------------------------------- */
-
 void screen_put_scrollback_char_yx(const int y, const int x, const wchar_t ch, const attr_t attr) {
         static cchar_t ncurses_ch;
         static wchar_t ch_cached = -1;
-        static attr_t attr_cached = A_BLINK | A_PROTECT;        /* Something I won't use often */
+        /* Something I won't use often */
+        static attr_t attr_cached = Q_A_BLINK | Q_A_PROTECT;
         static int cache_count = 0;
-        static wchar_t wch[2];
-        static attr_t attr2 = 0;
-        static short color;
+        wchar_t wch[2];
+        short color = color_from_attr(attr);
         if ((ch == ch_cached) && (attr == attr_cached)) {
                 /* NOP */
                 cache_count++;
         } else {
-                /*
-                 * We have to strip out the character from the color attributes,
-                 * which means peeking inside the curses interface.
-                 */
-                attr2 = attr & Q_A_ATTRIBUTES;
-                color = PAIR_NUMBER(attr);
-                if (color == 0x38) {
-                        color = q_white_color_pair_num;
-                } else if (color == 0x00) {
-                        color = 0x38;
-                }
                 wch[0] = ch;
                 wch[1] = 0;
-                wch_to_acs(&wch[0], &attr2);
-                setcchar(&ncurses_ch, wch, attr2, map_screen_color(color), NULL);
+                setcchar(&ncurses_ch, wch, physical_attr_from_attr(attr),
+                        physical_color_from_attr(attr, color), NULL);
                 ch_cached = ch;
                 attr_cached = attr;
         }
-        screen_win_put_ch_attr_yx(stdscr, y, x, wch[0], &ncurses_ch, attr2, map_screen_color(color));
+        mvwadd_wch(stdscr, y, x, &ncurses_ch);
 } /* ---------------------------------------------------------------------- */
 
 /*
@@ -243,43 +215,41 @@ void screen_put_scrollback_char_yx(const int y, const int x, const wchar_t ch, c
 static void screen_win_put_char(void * win, const wchar_t ch, const attr_t attr, const short color) {
         cchar_t ncurses_ch;
         wchar_t wch[2];
-        attr_t attr2 = attr;
         wch[0] = ch;
         wch[1] = 0;
-        wch_to_acs(&wch[0], &attr2);
-        setcchar(&ncurses_ch, wch, attr, map_screen_color(color), NULL);
-        screen_win_put_ch_attr((WINDOW *)win, wch[0], &ncurses_ch, attr2, map_screen_color(color));
+        setcchar(&ncurses_ch, wch, physical_attr_from_attr(attr),
+                physical_color_from_attr(attr, color), NULL);
+        wadd_wch((WINDOW *)win, &ncurses_ch);
 } /* ---------------------------------------------------------------------- */
 
 static void screen_win_put_char_yx(void * win, const int y, const int x, const wchar_t ch, const attr_t attr, const short color) {
         cchar_t ncurses_ch;
         wchar_t wch[2];
-        attr_t attr2 = attr;
         wch[0] = ch;
         wch[1] = 0;
-        wch_to_acs(&wch[0], &attr2);
-        setcchar(&ncurses_ch, wch, attr, map_screen_color(color), NULL);
-        screen_win_put_ch_attr_yx((WINDOW *)win, y, x, wch[0], &ncurses_ch, attr2, map_screen_color(color));
+        setcchar(&ncurses_ch, wch, physical_attr_from_attr(attr),
+                physical_color_from_attr(attr, color), NULL);
+        mvwadd_wch((WINDOW *)win, y, x, &ncurses_ch);
 } /* ---------------------------------------------------------------------- */
 
 static void screen_win_put_str(void * win, const char * str, const attr_t attr, const short color) {
         int i;
         for (i = 0; i < strlen(str); i++) {
-                screen_win_put_char(win, str[i], attr, map_screen_color(color));
+                screen_win_put_char(win, str[i], attr, color);
         }
 } /* ---------------------------------------------------------------------- */
 
 static void screen_win_put_wcs(void * win, const wchar_t * wcs, const attr_t attr, const short color) {
         int i;
         for (i = 0; i < wcslen(wcs); i++) {
-                screen_win_put_char(win, wcs[i], attr, map_screen_color(color));
+                screen_win_put_char(win, wcs[i], attr, color);
         }
 } /* ---------------------------------------------------------------------- */
 
 static void screen_win_put_str_yx(void * win, const int y, const int x, const char * str, const attr_t attr, const short color) {
         int i;
         for (i = 0; i < strlen(str); i++) {
-                screen_win_put_char_yx(win, y, x + i, str[i], attr, map_screen_color(color));
+                screen_win_put_char_yx(win, y, x + i, str[i], attr, color);
         }
 } /* ---------------------------------------------------------------------- */
 
@@ -300,49 +270,28 @@ static void screen_win_put_strn_yx(void * win, const int y, const int x, const c
 static void screen_win_put_wcs_yx(void * win, const int y, const int x, const wchar_t * wcs, const attr_t attr, const short color) {
         int i;
         for (i = 0; i < wcslen(wcs); i++) {
-                screen_win_put_char_yx(win, y, x + i, wcs[i], attr, map_screen_color(color));
+                screen_win_put_char_yx(win, y, x + i, wcs[i], attr, color);
         }
 } /* ---------------------------------------------------------------------- */
 
 static void screen_win_put_hline_yx(void * win, const int y, const int x, const wchar_t ch, const int n, const attr_t attr, const short color) {
         cchar_t ncurses_ch;
         wchar_t wch[2];
-        attr_t attr2 = attr;
         wch[0] = ch;
         wch[1] = 0;
-        wch_to_acs(&wch[0], &attr2);
-        setcchar(&ncurses_ch, wch, attr, map_screen_color(color), NULL);
-        if (attr2 & WA_ALTCHARSET) {
-                attr_t old_attr;
-                short old_pair;
-                attr_get(&old_attr, &old_pair, NULL);
-                attr_set(attr2, map_screen_color(color), NULL);
-                mvwhline((WINDOW *)win, y, x, wch[0], n);
-                attr_set(old_attr, old_pair, NULL);
-        } else {
-                mvwhline_set((WINDOW *)win, y, x, &ncurses_ch, n);
-        }
+        setcchar(&ncurses_ch, wch, physical_attr_from_attr(attr),
+                physical_color_from_attr(attr, color), NULL);
+        mvwhline_set((WINDOW *)win, y, x, &ncurses_ch, n);
 } /* ---------------------------------------------------------------------- */
 
 static void screen_win_put_vline_yx(void * win, const int y, const int x, const wchar_t ch, const int n, const attr_t attr, const short color) {
         cchar_t ncurses_ch;
         wchar_t wch[2];
-        attr_t attr2 = attr;
         wch[0] = ch;
         wch[1] = 0;
-        wch_to_acs(&wch[0], &attr2);
-        setcchar(&ncurses_ch, wch, attr, map_screen_color(color), NULL);
-
-        if (attr2 & WA_ALTCHARSET) {
-                attr_t old_attr;
-                short old_pair;
-                attr_get(&old_attr, &old_pair, NULL);
-                attr_set(attr2, map_screen_color(color), NULL);
-                mvwvline((WINDOW *)win, y, x, wch[0], n);
-                attr_set(old_attr, old_pair, NULL);
-        } else {
-                mvwvline_set((WINDOW *)win, y, x, &ncurses_ch, n);
-        }
+        setcchar(&ncurses_ch, wch, physical_attr_from_attr(attr),
+                physical_color_from_attr(attr, color), NULL);
+        mvwvline_set((WINDOW *)win, y, x, &ncurses_ch, n);
 } /* ---------------------------------------------------------------------- */
 
 void screen_put_char_yx(const int y, const int x, const wchar_t ch, const attr_t attr, const short color) {
@@ -631,16 +580,26 @@ void screen_setup() {
                 0
         };
         Xinitscr(5, pdcursesOptions);
+
 #else
         /* Setup for Win32-based PDCurses */
+
+        /*
+         * Size limits: 25-250 rows, 80-250 columns.  This is only in the
+         * Win32a version.  The user can maximize the window beyond these
+         * limits.
+         */
+        ttytype[0] = 25;
+        ttytype[1] = 250;
+        ttytype[2] = 80;
+        ttytype[3] = 250;
         initscr();
-        /* Make it bigger. */
-        /* resize_term(50, 132); */
+
+        /* Set to default 80x25 size. */
         resize_term(25, 80);
 #endif /* XCURSES */
 
         /* Additional common setup for PDCurses */
-        PDC_set_blink(TRUE);
         PDC_set_title("qodem " Q_VERSION);
 
 #else
@@ -671,6 +630,13 @@ void screen_setup() {
         /* Enable the mouse.  Do not resolve double and triple clicks. */
         mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
         mouseinterval(0);
+#ifdef PDCURSES
+        /*
+         * For the win32a version, putting this last makes it work.  No idea
+         * why yet.
+         */
+        PDC_set_blink(1);
+#endif
 } /* ---------------------------------------------------------------------- */
 
 void screen_teardown() {
@@ -707,7 +673,7 @@ void screen_get_dimensions(int * height, int * width) {
 } /* ---------------------------------------------------------------------- */
 
 static void * screen_win_subwin(void * win, int height, int width, int top, int left) {
-        WINDOW * window = subwin(stdscr, height, width, top, left);
+        WINDOW * window = subwin((WINDOW *)win, height, width, top, left);
         if (window != NULL) {
                 meta(window, TRUE);
                 keypad(window, TRUE);

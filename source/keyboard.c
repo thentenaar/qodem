@@ -3032,7 +3032,7 @@ void function_key_editor_refresh() {
                 if (function_key_textboxes[i].highlighted == Q_TRUE) {
                         screen_put_printf_yx(window_top + function_key_textboxes[i].label_top,
                                 window_left + function_key_textboxes[i].label_left,
-                                Q_A_BLINK | (q_text_colors[Q_COLOR_MENU_COMMAND].bold == Q_TRUE ? Q_A_BOLD : 0),
+                                Q_A_BLINK | screen_attr(Q_COLOR_MENU_COMMAND),
                                 screen_color(Q_COLOR_MENU_COMMAND),
                                 "%s", function_key_textboxes[i].label_text);
                 } else {

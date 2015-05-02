@@ -23,8 +23,6 @@ seen before.
 
 SGR mouse reporting
 
-Re-order options to be more reasonable
-
 Q_OPTION_SCRIPTS_DIR
 
 QODEM_USE_SDL chance to Q_SOUND_SDL
@@ -39,19 +37,16 @@ New autoconf build:
 
 Code sweep:
   80 column max
+  Tab stop 4
   Eliminate Borland warnings
   Ensure return codes are actually used, or switch them to void
 
 Win32 port:
-  Fix "My Documents" for __BORLANDC__
-    Use _("My Documents") since SHGetFolderPath is missing
   zlib
   libgcrypt
   libssh2
   UPnP
-  Resizable window
   Terminus font
-  Verify SGR colors (brown, bright yellow, etc.)
   Remove Q_PDCURSES_WIN32-only #include's (no more mingw build)
   Switch __BORLANDC__ to Q_PDCURSES_WIN32
     Except for my_swprintf()'s and common.h/common.c

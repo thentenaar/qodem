@@ -368,6 +368,7 @@ static void build_options_topic() {
         int i;
         const char * begin;
         Q_OPTION option;
+        int skip_line_count = 0;
 
         topic = find_topic(HELP_CONFIGURATION_KEY);
         assert(topic != NULL);
@@ -407,7 +408,18 @@ static void build_options_topic() {
                 ch = *begin;
                 while (ch != 0) {
                         if (ch == '\n') {
-                                append_line(topic, line);
+                                if (skip_line_count > 0) {
+                                        memset(line, 0, sizeof(line));
+                                        skip_line_count--;
+                                } else if (wcsstr(line, L"--------") != NULL) {
+                                        /*
+                                         * Ignore lines with '--------', these
+                                         * are the section headers.
+                                         */
+                                        skip_line_count = 1;
+                                } else {
+                                        append_line(topic, line);
+                                }
                                 memset(line, 0, sizeof(line));
                         } else if (ch == '#') {
                                 /* Convert the hash to indentation */

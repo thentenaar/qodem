@@ -1,6 +1,18 @@
 The Qodem Project Work Log
 ==========================
 
+May 1, 2015
+
+Lots of semi-minor fixes today.  The options are now sorted in a much
+more logical fashion.  Also my colors are finally correct (I hope!),
+turns out I was mapping all these nice bold-as-bright colors but not
+actually using them, so the "brown" that I saw was entirely an xterm
+thing and not a qodem thing.  This also makes the screen API quite a
+bit simpler.  I wasted a couple hours not remembering -- and having to
+dig into the PDCurses source to see it again -- that init_pair takes a
+number between 0 and 1000.  Oh well.  A long day and I think the
+codebase is actually smaller.  Woo.
+
 April 30, 2015
 
 I found a number of small glitchy things in the Borland build to fix.

@@ -884,7 +884,7 @@ void load_phonebook(const Q_BOOL backup_version) {
                                 new_entry->notes                = NULL;
                                 new_entry->tagged               = Q_FALSE;
                                 new_entry->doorway              = Q_DOORWAY_CONFIG;
-                                new_entry->emulation            = Q_EMUL_VT102;
+                                new_entry->emulation            = Q_EMUL_XTERM_UTF8;
                                 new_entry->codepage             = default_codepage(new_entry->emulation);
 
 #ifndef Q_NO_SERIAL
@@ -5555,7 +5555,7 @@ void phonebook_keyboard_handler(const int keystroke, const int flags) {
                 entry->password                 = Xwcsdup(L"", __FILE__, __LINE__);
                 entry->method                   = Q_DIAL_METHOD_SSH;
                 entry->port                     = default_port(entry->method);
-                entry->emulation                = Q_EMUL_VT102;
+                entry->emulation                = Q_EMUL_XTERM_UTF8;
                 entry->codepage                 = default_codepage(entry->emulation);
                 entry->script_filename          = Xstrdup("", __FILE__, __LINE__);
                 entry->capture_filename         = Xstrdup("", __FILE__, __LINE__);

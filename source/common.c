@@ -23,7 +23,9 @@
  * 02110-1301 USA
  */
 
+#include "qcurses.h"
 #include "common.h"
+
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
@@ -184,7 +186,27 @@ char * get_home_directory() {
         }
 
 #ifdef __BORLANDC__
+        /*
+         * We go through some work to make %USERPROFILE%\\My Documents because
+         * swprintf() is weird when mixing char * and wchar_t * with Borland.
+         */
         env_string = getenv("USERPROFILE");
+        int i, j;
+
+        memset(myDocsPath, 0, sizeof(myDocsPath));
+        for (i = 0; i < strlen(env_string); i++) {
+                myDocsPath[i] = env_string[i];
+        }
+        myDocsPath[i] = '\\';
+        i++;
+        wchar_t * myDocumentsString = _(L"My Documents");
+        for (j = 0; j < wcslen(myDocumentsString); j++) {
+                myDocsPath[i] = myDocumentsString[j];
+                i++;
+        }
+
+        if (1) {
+
 #else
 
         /*
@@ -197,9 +219,11 @@ char * get_home_directory() {
                                 0,
                                 myDocsPath))) {
 
+#endif /* __BORLANDC__ */
+
                 if (sizeof(TCHAR) == sizeof(char)) {
                         /* Direct copy */
-                        win32_docs_path = Xstrdup(myDocsPath, __FILE__, __LINE__);
+                        win32_docs_path = Xstrdup((char *)myDocsPath, __FILE__, __LINE__);
                 } else {
                         /* TCHAR is wchar_t, copy each byte */
                         int i;
@@ -213,8 +237,6 @@ char * get_home_directory() {
         } else {
                 env_string = getenv("USERPROFILE");
         }
-
-#endif /* __BORLANDC__ */
 
 #else
         /* Everyone else in the world: $HOME */

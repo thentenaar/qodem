@@ -706,10 +706,13 @@ void cleanup_connection() {
 
                 break;
 
+#ifndef Q_NO_SERIAL
         case Q_DIAL_METHOD_MODEM:
                 /* BUG */
                 abort();
                 break;
+#endif /* Q_NO_SERIAL */
+
         }
 
         if (q_program_state != Q_STATE_HOST) {

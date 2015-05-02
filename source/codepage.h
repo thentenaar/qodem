@@ -181,7 +181,4 @@ extern wchar_t codepage_map_char(const unsigned char ch);
 extern void codepage_keyboard_handler(const int keystroke, const int flags);
 extern void codepage_refresh();
 
-/* Convert a Unicode character into a ncurses VT100-style ACS_* character */
-extern void wch_to_acs(wchar_t * ch, attr_t * attr);
-
 #endif /* __CODEPAGE_H__ */

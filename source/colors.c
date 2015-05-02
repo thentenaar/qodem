@@ -44,6 +44,11 @@
 short q_white_color_pair_num;
 
 /*
+ * The offset between normal and bolded colors.
+ */
+short q_color_bold_offset = 64;
+
+/*
  * I try to initialize 64 curses colors, representing all the
  * combinations of red, green, and blue foreground and backgrounds.
  * This will give half of the PC color set.  The A_BOLD gives the
@@ -736,71 +741,75 @@ void q_setup_colors() {
         load_colors();
 
         /* Initialize the 64 curses colors. */
-        if ((COLORS >= 16) && (COLOR_PAIRS >= (128 + 64))) {
-                /* Complete re-map both the colors and color pairs. */
+        if ((COLORS >= 16) && (COLOR_PAIRS >= 2 * q_color_bold_offset)) {
+                /*
+                 * Complete re-map both the colors and color pairs.  Note that
+                 * the max color value is 1000.
+                 */
 
                 /* Normal intensity colors */
-                float gamma = 1000.0/256.0;
-                init_color(COLOR_BLACK,   0x00*gamma, 0x00*gamma, 0x00*gamma);
-                init_color(COLOR_RED,     0xA8*gamma, 0x00*gamma, 0x00*gamma);
-                init_color(COLOR_GREEN,   0x00*gamma, 0xA8*gamma, 0x00*gamma);
-                init_color(COLOR_YELLOW,  0xA8*gamma, 0x54*gamma, 0x00*gamma);
-                init_color(COLOR_BLUE,    0x00*gamma, 0x00*gamma, 0xA8*gamma);
-                init_color(COLOR_MAGENTA, 0xA8*gamma, 0x00*gamma, 0xA8*gamma);
-                init_color(COLOR_CYAN,    0x00*gamma, 0xA8*gamma, 0xA8*gamma);
-                init_color(COLOR_WHITE,   0xA8*gamma, 0xA8*gamma, 0xA8*gamma);
+                init_color(COLOR_BLACK,   000, 000, 000);
+                init_color(COLOR_RED,     666, 000, 000);
+                init_color(COLOR_GREEN,   000, 666, 000);
+                init_color(COLOR_YELLOW,  666, 333, 000);
+                init_color(COLOR_BLUE,    000, 000, 666);
+                init_color(COLOR_MAGENTA, 666, 000, 666);
+                init_color(COLOR_CYAN,    000, 666, 666);
+                init_color(COLOR_WHITE,   666, 666, 666);
 
                 /* Bright intensity colors */
-                init_color(8+COLOR_BLACK,   0x54*gamma, 0x54*gamma, 0x54*gamma);
-                init_color(8+COLOR_RED,     0xFF*gamma, 0x54*gamma, 0x54*gamma);
-                init_color(8+COLOR_GREEN,   0x54*gamma, 0xFF*gamma, 0x54*gamma);
-                init_color(8+COLOR_YELLOW,  0xFF*gamma, 0xFF*gamma, 0x54*gamma);
-                init_color(8+COLOR_BLUE,    0x54*gamma, 0x54*gamma, 0xFF*gamma);
-                init_color(8+COLOR_MAGENTA, 0xFF*gamma, 0x54*gamma, 0xFF*gamma);
-                init_color(8+COLOR_CYAN,    0x54*gamma, 0xFF*gamma, 0xFF*gamma);
-                init_color(8+COLOR_WHITE,   0xFF*gamma, 0xFF*gamma, 0xFF*gamma);
+                init_color(8+COLOR_BLACK,   333, 333, 333);
+                init_color(8+COLOR_RED,     999, 333, 333);
+                init_color(8+COLOR_GREEN,   333, 999, 333);
+                init_color(8+COLOR_YELLOW,  999, 999, 333);
+                init_color(8+COLOR_BLUE,    333, 333, 999);
+                init_color(8+COLOR_MAGENTA, 999, 333, 999);
+                init_color(8+COLOR_CYAN,    333, 999, 999);
+                init_color(8+COLOR_WHITE,   999, 999, 999);
 
                 /* Now init the pairs */
 
                 /* Normal intensity */
-                for (i = 1; i < 64; i++) {
+                for (i = 1; i < q_color_bold_offset; i++) {
                         init_pair(i, ((i & 0x38) >> 3), (i & 0x07));
                 }
 
                 /* Bright intensity */
-                for (i = 1 + 128; i < 64 + 128; i++) {
-                        init_pair(i, (((i - 128 + 8) & 0x38) >> 3), ((i - 128) & 0x07));
+                for (i = 1 + q_color_bold_offset; i < 2 * q_color_bold_offset; i++) {
+                        init_pair(i, (((i - q_color_bold_offset) & 0x38) >> 3) + 8,
+                                ((i - q_color_bold_offset) & 0x07));
                 }
 
                 /* Special case: put black-on-black at 0x38 and 128 + 0x38 */
-                init_pair(0x38      , COLOR_BLACK    , 0x00);
-                init_pair(0x38 + 128, COLOR_BLACK + 8, 0x00);
+                init_pair(0x38                      , COLOR_BLACK    , COLOR_BLACK);
+                init_pair(0x38 + q_color_bold_offset, COLOR_BLACK + 8, COLOR_BLACK);
 
-                /* Special case: put bright white-on-black at 128 and 128 + 64 */
-                init_pair(128     , COLOR_WHITE + 8, 0x00);
-                init_pair(128 + 64, COLOR_WHITE + 8, 0x00);
+                /* Special case: put white-on-black at 64 and 128 */
+                init_pair(64                      , COLOR_WHITE    , COLOR_BLACK);
+                init_pair(64 + q_color_bold_offset, COLOR_WHITE + 8, COLOR_BLACK);
 
                 q_white_color_pair_num = 64;
 
                 /* Bail out here. */
                 return;
-        } else {
-
-                for (i=1; (i<64) && (i<COLOR_PAIRS); i++) {
-                        init_pair(i, ((i & 0x38) >> 3), (i & 0x07));
-                }
-
-                /* Special case: put black-on-black at 0x38 */
-                init_pair(0x38, 0x00, 0x00);
         }
+
+        for (i=1; (i<64) && (i<COLOR_PAIRS); i++) {
+                init_pair(i, ((i & 0x38) >> 3), (i & 0x07));
+        }
+
+        /* Special case: put black-on-black at 0x38 */
+        init_pair(0x38, 0x00, 0x00);
+
+        q_color_bold_offset = 0;
 
         if (COLOR_PAIRS > 64) {
                 /* Make my own white-on-black color */
-                init_pair(64, COLOR_WHITE, 0x00);
+                init_pair(64, COLOR_WHITE, COLOR_BLACK);
                 q_white_color_pair_num = 64;
         } else {
                 /* Assume color pair 0 is white on black */
-                assume_default_colors(COLOR_WHITE, 0x00);
+                assume_default_colors(COLOR_WHITE, COLOR_BLACK);
                 q_white_color_pair_num = 0;
         }
 } /* ---------------------------------------------------------------------- */

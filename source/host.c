@@ -220,8 +220,8 @@ typedef enum {
         PASSWORD
 } LOGIN_STATE;
 static LOGIN_STATE login_state = LOGIN_INIT;
-static char * login_username = NULL;
-static char * login_password = NULL;
+static char login_username[64];
+static char login_password[64];
 
 /* For line mode editing, max screen columns = 80 */
 static wchar_t line_buffer[80];
@@ -483,22 +483,8 @@ static Q_BOOL line_buffer_char(const unsigned char ch) {
         return Q_FALSE;
 } /* ---------------------------------------------------------------------- */
 
-/* Reset the login variables */
-static void reset_login() {
-        if (login_username != NULL) {
-                Xfree(login_username, __FILE__, __LINE__);
-                login_username = NULL;
-        }
-        if (login_password != NULL) {
-                Xfree(login_password, __FILE__, __LINE__);
-                login_password = NULL;
-        }
-        login_state = LOGIN_INIT;
-} /* ---------------------------------------------------------------------- */
-
 /* Logging into the system */
 static void do_login() {
-        int length;
 
         if (login_state == LOGIN_INIT) {
 #ifdef DEBUG_HOST
@@ -517,12 +503,8 @@ static void do_login() {
 
         if (login_state == USERNAME) {
                 /* Line buffer has the username */
-                assert(login_username == NULL);
-
-                length = wcstombs(NULL, line_buffer, wcslen(line_buffer)) + 1;
-                login_username = (char *)Xmalloc(sizeof(char) * length, __FILE__, __LINE__);
-                memset(login_username, 0, length);
-                snprintf(login_username, length, "%ls", line_buffer);
+                memset(login_username, 0, sizeof(login_username));
+                wcstombs(login_username, line_buffer, sizeof(login_username) - 1);
 #ifdef DEBUG_HOST
                 fprintf(DEBUG_FILE_HANDLE, "do_login(): username = \'%s\'\n",
                         login_username);
@@ -542,11 +524,8 @@ static void do_login() {
 
         if (login_state == PASSWORD) {
                 /* Line buffer has the password */
-                assert(login_password == NULL);
-                length = wcstombs(NULL, line_buffer, wcslen(line_buffer)) + 1;
-                login_password = (char *)Xmalloc(sizeof(char) * length, __FILE__, __LINE__);
-                memset(login_password, 0, length);
-                snprintf(login_password, length, "%ls", line_buffer);
+                memset(login_password, 0, sizeof(login_password));
+                wcstombs(login_password, line_buffer, sizeof(login_password) - 1);
 #ifdef DEBUG_HOST
                 fprintf(DEBUG_FILE_HANDLE, "do_login(): password = \'%s\'\n",
                         login_password);
@@ -558,7 +537,7 @@ static void do_login() {
                         (strcmp(login_password, get_option(Q_OPTION_HOST_PASSWORD)) == 0)
                 ) {
                         /* Login OK, move to main menu */
-                        reset_login();
+                        login_state = LOGIN_INIT;
                         current_state = MAIN_MENU;
                         main_menu();
                 } else {
@@ -568,7 +547,7 @@ static void do_login() {
                         "Login incorrect"
                         EOL
                         );
-                        reset_login();
+                        login_state = LOGIN_INIT;
                         do_login();
                 }
                 return;

@@ -30,18 +30,19 @@
 #include <stdlib.h>                     /* getenv() */
 #include <string.h>                     /* strstr(), strncpy(), memset() */
 #include <libgen.h>                     /* dirname() */
-#ifndef __BORLANDC__
-#include <unistd.h>                     /* access() */
-#endif
 #include <ctype.h>                      /* isspace(), tolower() */
 #include <sys/stat.h>                   /* S_IRUSR | S_IWUSR | S_IXUSR */
 #include <errno.h>
+
 #ifdef Q_PDCURSES_WIN32
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501
 #endif
 #include <shlobj.h>
+#else
+#include <unistd.h>                     /* access() */
 #endif /* Q_PDCURSES_WIN32 */
+
 #include "keyboard.h"
 #include "translate.h"
 #include "qodem.h"
@@ -60,13 +61,29 @@ struct option_struct {
 
 /* Options list */
 static struct option_struct options[] = {
+
+/* Host mode username/password */
+
+        {Q_OPTION_HOST_USERNAME, NULL, "host_username", "guest", ""
+"### HOST MODE OPTIONS -----------------------------------------------------\n\n"
+"### The username to require for host mode logins.  Maximum length is 64\n"
+"### bytes."},
+
+        {Q_OPTION_HOST_PASSWORD, NULL, "host_password", "let me in please", ""
+"### The password to require for host mode logins.  Maximum length is 64\n"
+"### bytes."},
+
+/* Directories */
+
 #ifdef Q_PDCURSES_WIN32
         {Q_OPTION_WORKING_DIR, NULL, "working_dir", "$HOME\\qodem", ""
 #else
         {Q_OPTION_WORKING_DIR, NULL, "working_dir", "$HOME/qodem", ""
 #endif /* Q_PDCURSES_WIN32 */
+"### DIRECTORIES -----------------------------------------------------------\n\n"
 "### The default working directory.  The $HOME environment variable will\n"
 "### be substituted if specified."},
+
 #ifdef Q_PDCURSES_WIN32
         {Q_OPTION_HOST_DIR, NULL, "host_mode_dir", "$HOME\\qodem\\host", ""
 #else
@@ -74,25 +91,42 @@ static struct option_struct options[] = {
 #endif /* Q_PDCURSES_WIN32 */
 "### The default working directory for host mode.  The $HOME environment\n"
 "### variable will be substituted if specified."},
-        {Q_OPTION_ISO8859_LANG, NULL, "iso8859_lang", "C", ""
-"### The LANG environment variable to specify for the remote\n"
-"### connection for non-Unicode emulations."},
-        {Q_OPTION_UTF8_LANG, NULL, "utf8_lang", "en_US.UTF-8", ""
-"### The LANG environment variable to specify for the remote\n"
-"### connection for LINUX UTF-8 and XTERM UTF-8 emulations."},
-        {Q_OPTION_SOUNDS_ENABLED, NULL, "sounds", "true", ""
-"### Whether or not to support sounds.  This overrides ANSI music.  Value\n"
-"### is 'true' or 'false'."},
-        {Q_OPTION_ANSI_MUSIC, NULL, "ansi_music", "true", ""
-"### Whether or not ANSI music is enabled on startup.  Value is 'true'\n"
-"### or 'false'."},
-        {Q_OPTION_ANSI_ANIMATE, NULL, "ansi_animate", "false", ""
-"### Whether or not ANSI should update the screen quickly to support\n"
-"### animation.  Value is 'true' or 'false'.\n"
-"###\n"
-"### 'true' means that ANSI emulation will update the screen much more often,\n"
-"### resulting in better animation sequences at a high performance penalty.\n"
-"### 'false' means buffer ANSI output like all other emulations."},
+
+#ifdef Q_PDCURSES_WIN32
+        {Q_OPTION_DOWNLOAD_DIR, NULL, "download_dir", "$HOME\\qodem", ""
+#else
+        {Q_OPTION_DOWNLOAD_DIR, NULL, "download_dir", "$HOME/qodem", ""
+#endif /* Q_PDCURSES_WIN32 */
+"### The default directory to store downloaded files.  The $HOME\n"
+"### environment variable will be substituted if specified."},
+
+#ifdef Q_PDCURSES_WIN32
+        {Q_OPTION_UPLOAD_DIR, NULL, "upload_dir", "$HOME\\qodem", ""
+#else
+        {Q_OPTION_UPLOAD_DIR, NULL, "upload_dir", "$HOME/qodem", ""
+#endif /* Q_PDCURSES_WIN32 */
+"### The default directory to look for files to upload.  The $HOME\n"
+"### environment variable will be substituted if specified."},
+
+#ifdef Q_PDCURSES_WIN32
+        {Q_OPTION_BATCH_ENTRY_FILE, NULL, "bew_file", "$HOME\\qodem\\batch_upload.txt", ""
+#else
+        {Q_OPTION_BATCH_ENTRY_FILE, NULL, "bew_file", "$HOME/qodem/batch_upload.txt", ""
+#endif /* Q_PDCURSES_WIN32 */
+"### Where to store the Batch Entry Window entries."},
+
+/* Spawned programs (not connection protocols) */
+
+#ifdef Q_PDCURSES_WIN32
+        /* Win32: use cmd.exe */
+        {Q_OPTION_SHELL, NULL, "shell", "cmd.exe", ""
+#else
+        /* Normal: use bash */
+        {Q_OPTION_SHELL, NULL, "shell", "/bin/bash --login", ""
+#endif /* Q_PDCURSES_WIN32 */
+"### LOCAL PROGRAMS (NOT CONNECTION PROTOCOLS) ----------------------------\n\n"
+"### The OS shell program.  Examples: /bin/bash /bin/tcsh my_shell"},
+
 #ifdef Q_PDCURSES_WIN32
         {Q_OPTION_EDITOR, NULL, "editor", "notepad.exe", ""
 #else
@@ -100,6 +134,7 @@ static struct option_struct options[] = {
 #endif /* Q_PDCURSES_WIN32 */
 "### The editor program.  The $EDITOR environment variable will be\n"
 "### substituted if specified."},
+
 #ifdef Q_PDCURSES_WIN32
         {Q_OPTION_X11_TERMINAL, NULL, "x11_terminal", "cmd.exe /c start /wait $COMMAND", ""
 "### The command shell to spawn for executing OS commands.  This is used\n"
@@ -116,6 +151,28 @@ static struct option_struct options[] = {
 "### when it shells to the OS.\n"
 "###\n"
 "### $COMMAND will be replaced with the program to execute."},
+
+        {Q_OPTION_MAIL_READER, NULL, "mail_reader", "mm", ""
+"### The QWK/SOUP/etc. mail reader program.  Default is multimail (mm)"},
+
+
+/* LANG flags */
+
+        {Q_OPTION_ISO8859_LANG, NULL, "iso8859_lang", "C", ""
+"### LANG ENVIRONMENT VARIABLE TO SEND ------------------------------------\n\n"
+"### The LANG environment variable to specify for the remote\n"
+"### connection for non-Unicode emulations."},
+        {Q_OPTION_UTF8_LANG, NULL, "utf8_lang", "en_US.UTF-8", ""
+"### The LANG environment variable to specify for the remote\n"
+"### connection for LINUX UTF-8 and XTERM UTF-8 emulations."},
+
+/* General flags */
+
+        {Q_OPTION_SOUNDS_ENABLED, NULL, "sounds", "true", ""
+"### GENERAL FLAGS --------------------------------------------------------\n\n"
+"### Whether or not to support sounds.  This overrides ANSI music.  Value\n"
+"### is 'true' or 'false'."},
+
         {Q_OPTION_XTERM_DOUBLE, NULL, "xterm_double_width", "true", ""
 "### Qodem can display true double-width / double-height characters\n"
 "### when run under an xterm that supports it.  Examples of xterms\n"
@@ -126,25 +183,89 @@ static struct option_struct options[] = {
 "### and rxvt.\n"
 "###\n"
 "### This is only used by the text (ncurses) build."},
-        {Q_OPTION_SCROLLBACK_LINES, NULL, "scrollback_max_lines", "20000", ""
-"### The maximum number of lines to save in the scrollback buffer.  0 means\n"
-"### unlimited scrollback."},
-        {Q_OPTION_80_COLUMNS, NULL, "80_columns", "true", ""
-"### Whether or not ANSI, AVATAR, and TTY emulations assume 80 columns.\n"
-"### Value is 'true' or 'false'.\n"
-"###\n"
-"### 'true' means lines will wrap properly (if line wrap is enabled) at\n"
-"### column 80.  This is often needed when connecting to text-based BBSes\n"
-"### with classic ANSI art screens."},
+
         {Q_OPTION_START_PHONEBOOK, NULL, "start_in_phonebook", "true", ""
 "### Whether to startup in the phonebook.  Value is 'true' or\n"
 "### 'false'."},
+
+        {Q_OPTION_DIAL_CONNECT_TIME, NULL, "dial_connect_time", "60", ""
+"### How many seconds to wait when dialing to receive a successful\n"
+"### connection."},
+
+        {Q_OPTION_DIAL_BETWEEN_TIME, NULL, "dial_between_time", "5", ""
+"### How many seconds to wait after a busy signal before dialing\n"
+"### the next number."},
+
         {Q_OPTION_EXIT_ON_DISCONNECT, NULL, "exit_on_disconnect", "false", ""
 "### Whether to exit Qodem when the connection closes.  Value is 'true' or\n"
 "### 'false'."},
+
+        {Q_OPTION_IDLE_TIMEOUT, NULL, "idle_timeout", "0", ""
+"### The number of idle seconds to wait before automatically closing\n"
+"### the connection.  A value of 0 means never disconnect."},
+
+/* Capture file */
+
+        {Q_OPTION_CAPTURE, NULL, "capture_enabled", "false", ""
+"### CAPTURE FILE ---------------------------------------------------------\n\n"
+"### Whether or not capture is enabled on startup.  Value is\n"
+"### 'true' or 'false'."},
+
+        {Q_OPTION_CAPTURE_FILE, NULL, "capture_file", "capture.txt", ""
+"### The default capture file name.  When enabled, all transmitted and\n"
+"### received bytes (minus color) are appended to this file.  This file\n"
+"### is stored in the working directory if a relative path is specified."},
+
+        {Q_OPTION_CAPTURE_TYPE, NULL, "capture_type", "normal", ""
+"### The default capture format.  Value is 'normal', 'raw', 'html', or\n"
+"### 'ask'."},
+
+/* Screen dump */
+
+        {Q_OPTION_SCREEN_DUMP_TYPE, NULL, "screen_dump_type", "normal", ""
+"### SCREEN DUMP ----------------------------------------------------------\n\n"
+"### The default screen dump format.  Value is 'normal', 'html', or\n"
+"### 'ask'."},
+
+/* Scrollback */
+
+        {Q_OPTION_SCROLLBACK_LINES, NULL, "scrollback_max_lines", "20000", ""
+"### SCROLLBACK BUFFER ----------------------------------------------------\n\n"
+"### The maximum number of lines to save in the scrollback buffer.  0 means\n"
+"### unlimited scrollback."},
+
+        {Q_OPTION_SCROLLBACK_SAVE_TYPE, NULL, "scrollback_save_type", "normal", ""
+"### The default capture format.  Value is 'normal', 'html', or\n"
+"### 'ask'."},
+
+/* Logfile options */
+
+        {Q_OPTION_LOG, NULL, "log_enabled", "false", ""
+"### LOG FILE -------------------------------------------------------------\n\n"
+"### Whether or not session logging is enabled on startup.  Value is\n"
+"### 'true' or 'false'."},
+
+        {Q_OPTION_LOG_FILE, NULL, "log_file", "session_log.txt", ""
+"### The default session log file name.  When enabled, an entry is appended\n"
+"### to this file for one of the following events:\n"
+"###     connect\n"
+"###     disconnect\n"
+"###     program start\n"
+"###     program exit\n"
+"###     file upload\n"
+"###     file download\n"
+"###     OS shell\n"
+"###     Scripted timestamp message\n"
+"### This file is stored in the working directory if a relative path is\n"
+"### specified."},
+
+/* Doorway flags */
+
         {Q_OPTION_CONNECT_DOORWAY, NULL, "doorway_mode_on_connect", "off", ""
+"### DOORWAY MODE ---------------------------------------------------------\n\n"
 "### Whether to automatically switch to DOORWAY or MIXED mode after\n"
 "### connecting.  Value is 'doorway', 'mixed', or 'off'."},
+
         {Q_OPTION_DOORWAY_MIXED_KEYS, NULL, "doorway_mixed_mode_commands", "D P T Y Z / PgUp PgDn", ""
 "### A space-separated list of command keys that will be honored when in\n"
 "### MIXED doorway mode.  Each key is one of the Alt-key combos on the Alt-Z\n"
@@ -161,18 +282,144 @@ static struct option_struct options[] = {
 "###     Alt-PgUp or Ctrl-PgUp Upload Files\n"
 "###     Alt-PgDn or Ctrl-PgDn Download Files"
         },
-        {Q_OPTION_HOST_USERNAME, NULL, "host_username", "guest", ""
-"### The username to require for host mode logins."},
-        {Q_OPTION_HOST_PASSWORD, NULL, "host_password", "let me in please", ""
-"### The password to require for host mode logins."},
-#ifdef Q_PDCURSES_WIN32
-        /* Win32: use cmd.exe */
-        {Q_OPTION_SHELL, NULL, "shell", "cmd.exe", ""
-#else
-        /* Normal: use bash */
-        {Q_OPTION_SHELL, NULL, "shell", "/bin/bash --login", ""
-#endif /* Q_PDCURSES_WIN32 */
-"### The OS shell program.  Examples: /bin/bash /bin/tcsh my_shell"},
+
+/* Keepalive feature */
+
+        {Q_OPTION_KEEPALIVE_TIMEOUT, NULL, "keepalive_timeout", "0", ""
+"### KEEPALIVE ------------------------------------------------------------\n\n"
+"### The number of idle seconds to wait before automatically sending\n"
+"### the keepalive bytes.  A value of 0 disables the keepalive feature."},
+
+        {Q_OPTION_KEEPALIVE_BYTES, NULL, "keepalive_bytes", "\\x00", ""
+"### The bytes to every 'keepalive_timeout' seconds.  Use C-style\n"
+"### hex notation with 2 hex digits to embed raw bytes, e.g. '\\x00' to\n"
+"### mean ASCII NUL, '\\x32' is converted to '2', etc.\n"
+"###\n"
+"### The maximum string size is 128 bytes."},
+
+/* Screensaver flags */
+
+        {Q_OPTION_SCREENSAVER_TIMEOUT, NULL, "screensaver_timeout", "0", ""
+"### SCREENSAVER ----------------------------------------------------------\n\n"
+"### The number of idle seconds to wait before automatically locking\n"
+"### the screen.  A value of 0 means never lock the screen."},
+
+        {Q_OPTION_SCREENSAVER_PASSWORD, NULL, "screensaver_password", "password", ""
+"### The password required to unlock the screen when the screen saver\n"
+"### is active."},
+
+/* Music sequences */
+
+        {Q_OPTION_MUSIC_CONNECT, NULL, "music_on_connect", "none", ""
+"### MUSIC / BEEPS AND BELLS ----------------------------------------------\n\n"
+"### If sounds are enabled, the music sequence to play after\n"
+"### successfully connected.  The string is the same format used\n"
+"### by the GWBASIC PLAY statement (ANSI Music), or 'none'."},
+
+        {Q_OPTION_MUSIC_CONNECT_MODEM, NULL, "music_on_modem_connect", "MN L16 T120 O4 AB>CAB>CAB>C", ""
+"### If sounds are enabled, the music sequence to play after\n"
+"### successfully connected via modem.  The string is the same format\n"
+"### used by the GWBASIC PLAY statement (ANSI Music), or 'none'."},
+
+        {Q_OPTION_MUSIC_UPLOAD, NULL, "music_on_upload_complete", "MS L8 T120 O5 EEEEE", ""
+"### If sounds are enabled, the music sequence to play after\n"
+"### a successful upload.  The string is the same format used\n"
+"### by the GWBASIC PLAY statement (ANSI Music), or 'none'."},
+
+        {Q_OPTION_MUSIC_DOWNLOAD, NULL, "music_on_download_complete", "MS L8 T120 O5 CCCCC", ""
+"### If sounds are enabled, the music sequence to play after\n"
+"### a successful download.  The string is the same format used\n"
+"### by the GWBASIC PLAY statement (ANSI Music), or 'none'."},
+
+        {Q_OPTION_MUSIC_PAGE_SYSOP, NULL, "music_on_download_complete", "MS T120 O4 L8 C L16 DEFGAB L8 >C L16 BAGFED L8 C", ""
+"### If sounds are enabled, the music sequence to play when\n"
+"### pagin the sysop in host mode.  The string is the same format\n"
+"### used by the GWBASIC PLAY statement (ANSI Music), or 'none'."},
+
+/* Emulation: general */
+
+        {Q_OPTION_80_COLUMNS, NULL, "80_columns", "true", ""
+"### EMULATION: GENERAL ---------------------------------------------------\n\n"
+"### Whether or not ANSI, AVATAR, and TTY emulations assume 80 columns.\n"
+"### Value is 'true' or 'false'.\n"
+"###\n"
+"### 'true' means lines will wrap properly (if line wrap is enabled) at\n"
+"### column 80.  This is often needed when connecting to text-based BBSes\n"
+"### with classic ANSI art screens."},
+
+        {Q_OPTION_ENQ_ANSWERBACK, NULL, "enq_response", "", ""
+"### The string to respond with after receiving the ASCII ENQ (0x05, ^E).\n"
+"### Value is a string.\n"
+"###\n"
+"### Many terminals can respond to a received ENQ with a user-provided\n"
+"### string.  This was typically used for logging terminal identity and\n"
+"### determining if it is still present.  Very few modern applications make\n"
+"### use of this function, so most emulators return nothing (e.g. empty\n"
+"### string)."},
+
+/* Emulation: ANSI */
+
+        {Q_OPTION_ANSI_MUSIC, NULL, "ansi_music", "true", ""
+"### EMULATION: ANSI ------------------------------------------------------\n\n"
+"### Whether or not ANSI music is enabled on startup.  Value is 'true'\n"
+"### or 'false'."},
+
+        {Q_OPTION_ANSI_ANIMATE, NULL, "ansi_animate", "false", ""
+"### Whether or not ANSI should update the screen quickly to support\n"
+"### animation.  Value is 'true' or 'false'.\n"
+"###\n"
+"### 'true' means that ANSI emulation will update the screen much more often,\n"
+"### resulting in better animation sequences at a high performance penalty.\n"
+"### 'false' means buffer ANSI output like all other emulations."},
+
+/* Emulation: AVATAR */
+
+        {Q_OPTION_AVATAR_COLOR, NULL, "avatar_ansi_color", "true", ""
+"### EMULATION: AVATAR ----------------------------------------------------\n\n"
+"### Whether or not ANSI.SYS-style color selection commands will be\n"
+"### supported with the AVATAR emulation.  Value is 'true' or 'false'.\n"
+"###\n"
+"### Avatar emulation has its own color selection command, but some\n"
+"### programs (like 'ls') send it ANSY.SYS-style color commands\n"
+"### instead.  If this value is set to true the AVATAR emulation will\n"
+"### honor the ANSI.SYS-style color selection codes.  If this value is\n"
+"### false the color selection codes will be visible in the output, as a\n"
+"### real Avatar emulator would do."},
+
+/* Emulation: VT52 */
+
+        {Q_OPTION_VT52_COLOR, NULL, "vt52_ansi_color", "true", ""
+"### EMULATION: VT52 ------------------------------------------------------\n\n"
+"### Whether or not ANSI.SYS-style color selection commands will be "
+"supported\n"
+"### with the VT52 emulation.  Value is 'true' or 'false'.\n"
+"###\n"
+"### Real VT52 applications are in black and white only.  However, some\n"
+"### host application send color selection commands despite the fact the\n"
+"### VT52 terminfo/terminfo entry lacks these codes.  ('ls' is one notable\n"
+"### example.)  If this value is set to true the VT52 emulator will honor\n"
+"### the color selection codes.  If this value is false the VT52 emulator\n"
+"### will show the broken escape codes on the screen as (presumably) a real\n"
+"### VT52 would do."},
+
+/* Emulation: VT100 */
+
+        {Q_OPTION_VT100_COLOR, NULL, "vt100_ansi_color", "true", ""
+"### EMULATION: VT100 -----------------------------------------------------\n\n"
+"### Whether or not ANSI.SYS-style color selection commands will be\n"
+"### supported with the VT100, VT102, and VT220 emulations.  Value is\n"
+"### 'true' or 'false'.\n"
+"###\n"
+"### Real VT100, VT102, and VT220 applications are in black and white\n"
+"### only.  However, some host applications send color selection commands\n"
+"### despite the fact the termcap/terminfo entry lacks these codes.\n"
+"### If this value is set to true the VT100, VT102, and VT220 emulation\n"
+"### will honor the color selection codes.  If this value is false the\n"
+"### color selection codes will be quietly consumed, as a real VT100-ish\n"
+"### terminal would do."},
+
+/* Communication protocol: SSH */
+
 #ifdef Q_PDCURSES_WIN32
         /* Win32: use internal ssh by default */
         {Q_OPTION_SSH_EXTERNAL, NULL, "use_external_ssh", "false", ""
@@ -180,12 +427,14 @@ static struct option_struct options[] = {
         /* Normal: use external ssh by default */
         {Q_OPTION_SSH_EXTERNAL, NULL, "use_external_ssh", "true", ""
 #endif /* Q_PDCURSES_WIN32 */
+"### COMMUNICATION PROTOCOL: SSH ------------------------------------------\n\n"
 "### Whether or not to use an external ssh connection program.\n"
 "### 'true' means use an external ssh command, 'false' means use our\n"
 "### own internal ssh code.  The default on Win32 is 'false' because\n"
 "### Windows does not have its own ssh client.  However, for all\n"
 "### other systems the default is 'true' because those systems\n"
 "### already provide a client that has regular security updates."},
+
         {Q_OPTION_SSH, NULL, "ssh", "ssh -e none $REMOTEHOST -p $REMOTEPORT", ""
 "### The ssh connection program.  Examples: /bin/ssh /usr/local/bin/ssh2\n"
 "###\n"
@@ -195,6 +444,7 @@ static struct option_struct options[] = {
 "###\n"
 "### $REMOTEHOST will be replaced with the phonebook address,\n"
 "### $REMOTEPORT will be replaced with the phonebook port."},
+
         {Q_OPTION_SSH_USER, NULL, "ssh", "ssh -e none -l $USERNAME -p $REMOTEPORT $REMOTEHOST", ""
 "### The ssh connection program when the phonebook username is set.\n"
 "###\n"
@@ -205,6 +455,7 @@ static struct option_struct options[] = {
 "### $USERNAME will be replaced with the phonebook username, $REMOTEHOST\n"
 "### will be replaced with the phonebook address, and $REMOTEPORT\n"
 "### will be replaced with the phonebook port."},
+
 #ifdef Q_PDCURSES_WIN32
         {Q_OPTION_SSH_KNOWNHOSTS, NULL, "knownhosts_file", "$HOME\\qodem\\prefs\\known_hosts", ""
 #else
@@ -212,33 +463,45 @@ static struct option_struct options[] = {
 #endif /* Q_PDCURSES_WIN32 */
 "### The location of the SSH known_hosts file.  The $HOME environment\n"
 "### variable will be substituted if specified."},
+
+/* Communication protocol: RLOGIN */
+
 #ifdef Q_PDCURSES_WIN32
         /* Win32: use internal rlogin by default */
         {Q_OPTION_RLOGIN_EXTERNAL, NULL, "use_external_rlogin", "false", ""
 #else
         /* Normal: use external rlogin by default */
+
         {Q_OPTION_RLOGIN_EXTERNAL, NULL, "use_external_rlogin", "true", ""
 #endif /* Q_PDCURSES_WIN32 */
+"### COMMUNICATION PROTOCOL: RLOGIN ---------------------------------------\n\n"
 "### Whether or not to use an external rlogin connection program.\n"
 "### 'true' means use an external rlogin command, 'false' means use our\n"
 "### own internal rlogin code.  The default on Win32 is 'false' because\n"
 "### Windows does not have its own rlogin client.  However, for all\n"
 "### other systems the default is 'true' because rlogin must originate\n"
 "### from a privileged port, something only a root user can do."},
+
         {Q_OPTION_RLOGIN, NULL, "rlogin", "rlogin $REMOTEHOST", ""
 "### The rlogin connection program.  Examples: /bin/rlogin\n"
 "### /usr/local/bin/rlogin\n"
 "###\n"
 "### $REMOTEHOST will be replaced with the phonebook address."},
+
         {Q_OPTION_RLOGIN_USER, NULL, "rlogin_user", "rlogin -l $USERNAME $REMOTEHOST", ""
 "### The rlogin connection program to use when the phonebook username is set.\n"
 "###\n"
 "### $USERNAME will be replaced with the phonebook username and $REMOTEHOST\n"
 "### will be replaced with the phonebook address."},
+
+/* Communication protocol: TELNET */
+
         {Q_OPTION_TELNET_EXTERNAL, NULL, "use_external_telnet", "false", ""
+"### COMMUNICATION PROTOCOL: TELNET ---------------------------------------\n\n"
 "### Whether or not to use an external telnet connection program.\n"
 "### 'true' means use an external telnet command, 'false' means use our\n"
 "### own internal telnet code."},
+
         {Q_OPTION_TELNET, NULL, "telnet", "telnet -E -8 $REMOTEHOST $REMOTEPORT", ""
 "### The external telnet connection program.  Examples:\n"
 "### /bin/telnet /usr/local/bin/telnet\n"
@@ -251,135 +514,17 @@ static struct option_struct options[] = {
 "###\n"
 "### $REMOTEHOST will be replaced with the phonebook address,\n"
 "### $REMOTEPORT will be replaced with the phonebook port."},
-        /*
-        {Q_OPTION_TN3270, NULL, "tn3270", "c3270 $REMOTEHOST", ""
-"### The tn3270 connection program.  Examples: /bin/tn3270\n"
-"### /usr/local/bin/c3270\n"
-"###\n"
-"### $USERNAME will be replaced with the phonebook username and $REMOTEHOST\n"
-"### will be replaced with the phonebook address."},
-         */
-        {Q_OPTION_CAPTURE, NULL, "capture_enabled", "false", ""
-"### Whether or not capture is enabled on startup.  Value is\n"
-"### 'true' or 'false'."},
-        {Q_OPTION_CAPTURE_FILE, NULL, "capture_file", "capture.txt", ""
-"### The default capture file name.  When enabled, all transmitted and\n"
-"### received bytes (minus color) are appended to this file.  This file\n"
-"### is stored in the working directory if a relative path is specified."},
-        {Q_OPTION_CAPTURE_TYPE, NULL, "capture_type", "normal", ""
-"### The default capture format.  Value is 'normal', 'raw', 'html', or\n"
-"### 'ask'."},
-        {Q_OPTION_SCREEN_DUMP_TYPE, NULL, "screen_dump_type", "normal", ""
-"### The default screen dump format.  Value is 'normal', 'html', or\n"
-"### 'ask'."},
-        {Q_OPTION_SCROLLBACK_SAVE_TYPE, NULL, "scrollback_save_type", "normal", ""
-"### The default capture format.  Value is 'normal', 'html', or\n"
-"### 'ask'."},
-        {Q_OPTION_LOG, NULL, "log_enabled", "false", ""
-"### Whether or not session logging is enabled on startup.  Value is\n"
-"### 'true' or 'false'."},
-        {Q_OPTION_LOG_FILE, NULL, "log_file", "session_log.txt", ""
-"### The default session log file name.  When enabled, an entry is appended\n"
-"### to this file for one of the following events:\n"
-"###     connect\n"
-"###     disconnect\n"
-"###     program start\n"
-"###     program exit\n"
-"###     file upload\n"
-"###     file download\n"
-"###     OS shell\n"
-"###     Scripted timestamp message\n"
-"### This file is stored in the working directory if a relative path is\n"
-"### specified."},
-#ifdef Q_PDCURSES_WIN32
-        {Q_OPTION_DOWNLOAD_DIR, NULL, "download_dir", "$HOME\\qodem", ""
-#else
-        {Q_OPTION_DOWNLOAD_DIR, NULL, "download_dir", "$HOME/qodem", ""
-#endif /* Q_PDCURSES_WIN32 */
-"### The default directory to store downloaded files.  The $HOME\n"
-"### environment variable will be substituted if specified."},
-#ifdef Q_PDCURSES_WIN32
-        {Q_OPTION_UPLOAD_DIR, NULL, "upload_dir", "$HOME\\qodem", ""
-#else
-        {Q_OPTION_UPLOAD_DIR, NULL, "upload_dir", "$HOME/qodem", ""
-#endif /* Q_PDCURSES_WIN32 */
-"### The default directory to look for files to upload.  The $HOME\n"
-"### environment variable will be substituted if specified."},
-#ifdef Q_PDCURSES_WIN32
-        {Q_OPTION_BATCH_ENTRY_FILE, NULL, "bew_file", "$HOME\\qodem\\batch_upload.txt", ""
-#else
-        {Q_OPTION_BATCH_ENTRY_FILE, NULL, "bew_file", "$HOME/qodem/batch_upload.txt", ""
-#endif /* Q_PDCURSES_WIN32 */
-"### Where to store the Batch Entry Window entries."},
-        {Q_OPTION_MAIL_READER, NULL, "mail_reader", "mm", ""
-"### The QWK/SOUP/etc. mail reader program.  Default is multimail (mm)"},
-        {Q_OPTION_IDLE_TIMEOUT, NULL, "idle_timeout", "0", ""
-"### The number of idle seconds to wait before automatically closing\n"
-"### the connection.  A value of 0 means never disconnect."},
-        {Q_OPTION_KEEPALIVE_TIMEOUT, NULL, "keepalive_timeout", "0", ""
-"### The number of idle seconds to wait before automatically sending\n"
-"### the keepalive bytes.  A value of 0 disables the keepalive feature."},
-        {Q_OPTION_KEEPALIVE_BYTES, NULL, "keepalive_bytes", "\\x00", ""
-"### The bytes to every 'keepalive_timeout' seconds.  Use C-style\n"
-"### hex notation with 2 hex digits to embed raw bytes, e.g. '\\x00' to\n"
-"### mean ASCII NUL, '\\x32' is converted to '2', etc.\n"
-"###\n"
-"### The maximum string size is 128 bytes."},
-        {Q_OPTION_SCREENSAVER_TIMEOUT, NULL, "screensaver_timeout", "0", ""
-"### The number of idle seconds to wait before automatically locking\n"
-"### the screen.  A value of 0 means never lock the screen."},
-        {Q_OPTION_SCREENSAVER_PASSWORD, NULL, "screensaver_password", "password", ""
-"### The password required to unlock the screen when the screen saver\n"
-"### is active."},
-        {Q_OPTION_ENQ_ANSWERBACK, NULL, "enq_response", "", ""
-"### The string to respond with after receiving the ASCII ENQ (0x05, ^E).\n"
-"### Value is a string.\n"
-"###\n"
-"### Many terminals can respond to a received ENQ with a user-provided\n"
-"### string.  This was typically used for logging terminal identity and\n"
-"### determining if it is still present.  Very few modern applications make\n"
-"### use of this function, so most emulators return nothing (e.g. empty\n"
-"### string)."},
-        {Q_OPTION_VT52_COLOR, NULL, "vt52_ansi_color", "true", ""
-"### Whether or not ANSI.SYS-style color selection commands will be "
-"supported\n"
-"### with the VT52 emulation.  Value is 'true' or 'false'.\n"
-"###\n"
-"### Real VT52 applications are in black and white only.  However, some\n"
-"### host application send color selection commands despite the fact the\n"
-"### VT52 terminfo/terminfo entry lacks these codes.  ('ls' is one notable\n"
-"### example.)  If this value is set to true the VT52 emulator will honor\n"
-"### the color selection codes.  If this value is false the VT52 emulator\n"
-"### will show the broken escape codes on the screen as (presumably) a real\n"
-"### VT52 would do."},
-        {Q_OPTION_VT100_COLOR, NULL, "vt100_ansi_color", "true", ""
-"### Whether or not ANSI.SYS-style color selection commands will be\n"
-"### supported with the VT100, VT102, and VT220 emulations.  Value is\n"
-"### 'true' or 'false'.\n"
-"###\n"
-"### Real VT100, VT102, and VT220 applications are in black and white\n"
-"### only.  However, some host applications send color selection commands\n"
-"### despite the fact the termcap/terminfo entry lacks these codes.\n"
-"### If this value is set to true the VT100, VT102, and VT220 emulation\n"
-"### will honor the color selection codes.  If this value is false the\n"
-"### color selection codes will be quietly consumed, as a real VT100-ish\n"
-"### terminal would do."},
-        {Q_OPTION_AVATAR_COLOR, NULL, "avatar_ansi_color", "true", ""
-"### Whether or not ANSI.SYS-style color selection commands will be\n"
-"### supported with the AVATAR emulation.  Value is 'true' or 'false'.\n"
-"###\n"
-"### Avatar emulation has its own color selection command, but some\n"
-"### programs (like 'ls') send it ANSY.SYS-style color commands\n"
-"### instead.  If this value is set to true the AVATAR emulation will\n"
-"### honor the ANSI.SYS-style color selection codes.  If this value is\n"
-"### false the color selection codes will be visible in the output, as a\n"
-"### real Avatar emulator would do."},
+
+/* File transfer protocol: ASCII */
+
         {Q_OPTION_ASCII_UPLOAD_USE_TRANSLATE_TABLE, NULL, "ascii_upload_use_xlate_table", "true", ""
+"### FILE TRANSFER PROTOCOL: ASCII ----------------------------------------\n\n"
 "### Whether or not the ASCII translate table function should be used\n"
 "### during ASCII file uploads.  Value is 'true' or 'false'.\n"
 "###\n"
 "### When true, outgoing bytes will first be translated according to the\n"
 "### table and then sent to the remote system."},
+
         {Q_OPTION_ASCII_UPLOAD_CR_POLICY, NULL, "ascii_upload_cr_policy", "none", ""
 "### How to handle outgoing carriage-return characters (0x0D)\n"
 "### during ASCII file uploads.  Value is 'none', 'strip', or 'add'.\n"
@@ -389,6 +534,7 @@ static struct option_struct options[] = {
 "### 'add' means add a linefeed character (0x0A) after each carriage-"
 "return\n"
 "### while sending the file."},
+
         {Q_OPTION_ASCII_UPLOAD_LF_POLICY, NULL, "ascii_upload_lf_policy", "none", ""
 "### How to handle outgoing linefeed characters (0x0A) during ASCII file\n"
 "### uploads.  Value is 'none', 'strip', or 'add'.\n"
@@ -398,12 +544,14 @@ static struct option_struct options[] = {
 "### 'add' means add a carriage-return character (0x0D) before each "
 "linefeed\n"
 "### while sending the file."},
+
         {Q_OPTION_ASCII_DOWNLOAD_USE_TRANSLATE_TABLE, NULL, "ascii_download_use_xlate_table", "true", ""
 "### Whether or not the ASCII translate table function should be used\n"
 "### during ASCII file downloads.  Value is 'true' or 'false'.\n"
 "###\n"
 "### When true, incoming bytes will be translated according to the table\n"
 "### before being saved to file."},
+
         {Q_OPTION_ASCII_DOWNLOAD_CR_POLICY, NULL, "ascii_download_cr_policy", "none", ""
 "### How to handle incoming carriage-return characters (0x0D)\n"
 "### during ASCII file downloads.  Value is 'none', 'strip', or 'add'.\n"
@@ -413,6 +561,7 @@ static struct option_struct options[] = {
 "### 'add' means add a linefeed character (0x0A) after each carriage-"
 "return\n"
 "### while saving the file."},
+
         {Q_OPTION_ASCII_DOWNLOAD_LF_POLICY, NULL, "ascii_download_lf_policy", "none", ""
 "### How to handle incoming linefeed characters (0x0A) during ASCII file\n"
 "### downloads.  Value is 'none', 'strip', or 'add'.\n"
@@ -422,12 +571,17 @@ static struct option_struct options[] = {
 "### 'add' means add a carriage-return character (0x0D) before each "
 "linefeed\n"
 "### while saving the file."},
+
+/* File transfer protocol: ZMODEM */
+
         {Q_OPTION_ZMODEM_AUTOSTART, NULL, "zmodem_autostart", "true", ""
+"### FILE TRANSFER PROTOCOL: ZMODEM ---------------------------------------\n\n"
 "### Whether or not Zmodem autostart should be used.\n"
 "### Value is 'true' or 'false'.\n"
 "###\n"
 "### 'true' means Zmodem autostart will be enabled.\n"
 "### 'false' means Zmodem autostart will not be enabled."},
+
         {Q_OPTION_ZMODEM_ZCHALLENGE, NULL, "zmodem_zchallenge", "false", ""
 "### Whether or not Zmodem will issue ZCHALLENGE at the beginning.\n"
 "### of each transfer.  ZCHALLENGE was meant to improve security\n"
@@ -437,6 +591,7 @@ static struct option_struct options[] = {
 "###\n"
 "### 'true' means Zmodem will issue a ZCHALLENGE.\n"
 "### 'false' means Zmodem will not issue a ZCHALLENGE."},
+
         {Q_OPTION_ZMODEM_ESCAPE_CTRL, NULL, "zmodem_escape_control_chars", "false", ""
 "### Whether or not Zmodem should escape control characters by default.\n"
 "### Value is 'true' or 'false'.\n"
@@ -448,12 +603,17 @@ static struct option_struct options[] = {
 "### \n"
 "### In both cases, Zmodem will honor the encoding requested at the\n"
 "### other end."},
+
+/* File transfer protocol: KERMIT */
+
         {Q_OPTION_KERMIT_AUTOSTART, NULL, "kermit_autostart", "true", ""
+"### FILE TRANSFER PROTOCOL: KERMIT ---------------------------------------\n\n"
 "### Whether or not Kermit autostart should be enabled by default.\n"
 "### Value is 'true' or 'false'.\n"
 "###\n"
 "### 'true' means Kermit autostart will be enabled on startup.\n"
 "### 'false' means Kermit autostart will not be enabled on startup."},
+
         {Q_OPTION_KERMIT_ROBUST_FILENAME, NULL, "kermit_robust_filename", "false", ""
 "### Whether or not Kermit should use common form filenames.\n"
 "### Value is 'true' or 'false'.\n"
@@ -461,6 +621,7 @@ static struct option_struct options[] = {
 "### 'true' means Kermit uploads will convert filenames to uppercase,\n"
 "### remove all but one period, and remove many punctuation characters.\n"
 "### 'false' means Kermit uplods will use the literal filename."},
+
         {Q_OPTION_KERMIT_STREAMING, NULL, "kermit_streaming", "true", ""
 "### Whether or not Kermit should use streaming (sending all file data\n"
 "### packets continuously without waiting for ACKs).\n"
@@ -469,6 +630,7 @@ static struct option_struct options[] = {
 "### 'true' means Kermit will use streaming, resulting in a significant\n"
 "### performance improvement in most cases, especially over TCP links.\n"
 "### 'false' means Kermit will not use streaming."},
+
         {Q_OPTION_KERMIT_LONG_PACKETS, NULL, "kermit_long_packets", "true", ""
 "### Whether or not Kermit should use long packets.  On very noisy channels,\n"
 "### Kermit may need to use short packets to get through.\n"
@@ -476,6 +638,7 @@ static struct option_struct options[] = {
 "###\n"
 "### 'true' means Kermit will use long packets, up to 1k.\n"
 "### 'false' means Kermit will use short packets, up to 96 bytes."},
+
         {Q_OPTION_KERMIT_UPLOADS_FORCE_BINARY, NULL, "kermit_uploads_force_binary", "true", ""
 "### Whether or not Kermit uploads will transfer files as 8-bit binary files.\n"
 "### Value is 'true' or 'false'.\n"
@@ -486,6 +649,7 @@ static struct option_struct options[] = {
 "### leave binary files as-is.  Note that Qodem's kermit checks the first\n"
 "### 1024 bytes of the file, and if it sees only ASCII characters assumes\n"
 "### the file is text; this heuristic might occasionally mis-identify files."},
+
         {Q_OPTION_KERMIT_DOWNLOADS_CONVERT_TEXT, NULL, "kermit_downloads_convert_text", "false", ""
 "### Whether or not Kermit downloads will convert text files to the local\n"
 "### end-of-line convention (e.g. CRLF -> LF).\n"
@@ -494,6 +658,7 @@ static struct option_struct options[] = {
 "### 'true' means Kermit downloads will convert CRLF to LF.\n"
 "### 'false' means Kermit will leave text files in the format sent, usually\n"
 "### CRLF."},
+
         {Q_OPTION_KERMIT_RESEND, NULL, "kermit_resend", "true", ""
 "### Whether or not Kermit uploads should RESEND by default.  The RESEND\n"
 "### option appends data to existing files.  Most of the time this results\n"
@@ -503,32 +668,8 @@ static struct option_struct options[] = {
 "###\n"
 "### 'true' means all Kermit uploads will use RESEND.\n"
 "### 'false' means Kermit uploads will use SEND."},
-        {Q_OPTION_DIAL_CONNECT_TIME, NULL, "dial_connect_time", "60", ""
-"### How many seconds to wait when dialing to receive a successful\n"
-"### connection."},
-        {Q_OPTION_DIAL_BETWEEN_TIME, NULL, "dial_between_time", "5", ""
-"### How many seconds to wait after a busy signal before dialing\n"
-"### the next number."},
-        {Q_OPTION_MUSIC_CONNECT, NULL, "music_on_connect", "none", ""
-"### If sounds are enabled, the music sequence to play after\n"
-"### successfully connected.  The string is the same format used\n"
-"### by the GWBASIC PLAY statement (ANSI Music), or 'none'."},
-        {Q_OPTION_MUSIC_CONNECT_MODEM, NULL, "music_on_modem_connect", "MN L16 T120 O4 AB>CAB>CAB>C", ""
-"### If sounds are enabled, the music sequence to play after\n"
-"### successfully connected via modem.  The string is the same format\n"
-"### used by the GWBASIC PLAY statement (ANSI Music), or 'none'."},
-        {Q_OPTION_MUSIC_UPLOAD, NULL, "music_on_upload_complete", "MS L8 T120 O5 EEEEE", ""
-"### If sounds are enabled, the music sequence to play after\n"
-"### a successful upload.  The string is the same format used\n"
-"### by the GWBASIC PLAY statement (ANSI Music), or 'none'."},
-        {Q_OPTION_MUSIC_DOWNLOAD, NULL, "music_on_download_complete", "MS L8 T120 O5 CCCCC", ""
-"### If sounds are enabled, the music sequence to play after\n"
-"### a successful download.  The string is the same format used\n"
-"### by the GWBASIC PLAY statement (ANSI Music), or 'none'."},
-        {Q_OPTION_MUSIC_PAGE_SYSOP, NULL, "music_on_download_complete", "MS T120 O4 L8 C L16 DEFGAB L8 >C L16 BAGFED L8 C", ""
-"### If sounds are enabled, the music sequence to play when\n"
-"### pagin the sysop in host mode.  The string is the same format\n"
-"### used by the GWBASIC PLAY statement (ANSI Music), or 'none'."},
+
+
         {Q_OPTION_NULL, NULL, NULL, NULL}
 };
 
@@ -1239,7 +1380,7 @@ void load_options() {
                  * assume that the file is readable.  For everyone
                  * else, explicitly check for readability.
                  */
-#ifdef __BORLANDC__
+#ifdef Q_PDCURSES_WIN32
                 if (file_exists(substituted_filename) == Q_TRUE) {
 #else
                 if (access(substituted_filename, F_OK | R_OK) == 0) {

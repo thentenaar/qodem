@@ -1326,7 +1326,7 @@ void render_scrollback(const int skip_lines) {
         for (row = 0; row < renderable_lines; row++) {
 
                 /*
-                 * ncurses-based drawing needs to refresh the whole screen
+                 * ncurses-based drawing needs to refresh the whole screen no
                  * matter what.  ncurses itself handles its own dirty state.
                  * But I want to keep the stub for doing dirty-line handling
                  * here for the case of rendering to a larger scrollback
