@@ -743,28 +743,32 @@ void q_setup_colors() {
         /* Initialize the 64 curses colors. */
         if ((COLORS >= 16) && (COLOR_PAIRS >= 2 * q_color_bold_offset)) {
                 /*
-                 * Complete re-map both the colors and color pairs.  Note that
-                 * the max color value is 1000.
+                 * Complete re-map both the colors and color pairs.
+                 * Note that the max color value is 1000.  These
+                 * values are gamma-corrected (gamma = 1.4):
+                 *    333 = 215
+                 *    666 = 568
+                 *    999 = 999
                  */
 
                 /* Normal intensity colors */
                 init_color(COLOR_BLACK,   000, 000, 000);
-                init_color(COLOR_RED,     666, 000, 000);
-                init_color(COLOR_GREEN,   000, 666, 000);
-                init_color(COLOR_YELLOW,  666, 333, 000);
-                init_color(COLOR_BLUE,    000, 000, 666);
-                init_color(COLOR_MAGENTA, 666, 000, 666);
-                init_color(COLOR_CYAN,    000, 666, 666);
-                init_color(COLOR_WHITE,   666, 666, 666);
+                init_color(COLOR_RED,     568, 000, 000);
+                init_color(COLOR_GREEN,   000, 568, 000);
+                init_color(COLOR_YELLOW,  568, 215, 000);
+                init_color(COLOR_BLUE,    000, 000, 568);
+                init_color(COLOR_MAGENTA, 568, 000, 568);
+                init_color(COLOR_CYAN,    000, 568, 568);
+                init_color(COLOR_WHITE,   568, 568, 568);
 
                 /* Bright intensity colors */
-                init_color(8+COLOR_BLACK,   333, 333, 333);
-                init_color(8+COLOR_RED,     999, 333, 333);
-                init_color(8+COLOR_GREEN,   333, 999, 333);
-                init_color(8+COLOR_YELLOW,  999, 999, 333);
-                init_color(8+COLOR_BLUE,    333, 333, 999);
-                init_color(8+COLOR_MAGENTA, 999, 333, 999);
-                init_color(8+COLOR_CYAN,    333, 999, 999);
+                init_color(8+COLOR_BLACK,   215, 215, 215);
+                init_color(8+COLOR_RED,     999, 215, 215);
+                init_color(8+COLOR_GREEN,   215, 999, 215);
+                init_color(8+COLOR_YELLOW,  999, 999, 215);
+                init_color(8+COLOR_BLUE,    215, 215, 999);
+                init_color(8+COLOR_MAGENTA, 999, 215, 999);
+                init_color(8+COLOR_CYAN,    215, 999, 999);
                 init_color(8+COLOR_WHITE,   999, 999, 999);
 
                 /* Now init the pairs */
