@@ -764,7 +764,6 @@ static Q_BOOL is_readable(int fd) {
         }
 
 #ifdef Q_LIBSSH2
-
         /* SSH special case: see if we should read again anyway */
         if ((q_status.dial_method == Q_DIAL_METHOD_SSH) && (net_is_connected() == Q_TRUE)) {
                 if (fd == q_child_tty_fd) {
@@ -1043,6 +1042,7 @@ static void process_incoming_data() {
                                 fprintf(DEBUG_IO_HANDLE, "%c ", q_buffer_raw[i] & 0xFF);
                         }
                         fprintf(DEBUG_IO_HANDLE, "\n");
+                        fflush(DEBUG_IO_HANDLE);
 #endif
 
                 } /* if (n > 0) */
@@ -1052,11 +1052,42 @@ no_data:
 
 #ifdef DEBUG_IO
         fprintf(DEBUG_IO_HANDLE, "\n");
-        fprintf(DEBUG_IO_HANDLE, "q_program_state: %d q_transfer_buffer_raw_n %d\n", q_program_state, q_transfer_buffer_raw_n);
+        fprintf(DEBUG_IO_HANDLE, "q_program_state: ");
+        switch (q_program_state) {
+        case Q_STATE_DIALER:
+                fprintf(DEBUG_IO_HANDLE, "Q_STATE_DIALER");
+                break;
+        case Q_STATE_HOST:
+                fprintf(DEBUG_IO_HANDLE, "Q_STATE_HOST");
+                break;
+        case Q_STATE_CONSOLE:
+                fprintf(DEBUG_IO_HANDLE, "Q_STATE_CONSOLE");
+                break;
+        case Q_STATE_UPLOAD:
+                fprintf(DEBUG_IO_HANDLE, "Q_STATE_UPLOAD");
+                break;
+        case Q_STATE_DOWNLOAD:
+                fprintf(DEBUG_IO_HANDLE, "Q_STATE_DOWNLOAD");
+                break;
+        case Q_STATE_UPLOAD_BATCH:
+                fprintf(DEBUG_IO_HANDLE, "Q_STATE_UPLOAD_BATCH");
+                break;
+        case Q_STATE_PHONEBOOK:
+                fprintf(DEBUG_IO_HANDLE, "Q_STATE_PHONEBOOK");
+                break;
+        case Q_STATE_SCRIPT_EXECUTE:
+                fprintf(DEBUG_IO_HANDLE, "Q_STATE_SCRIPT_EXECUTE");
+                break;
+        default:
+                fprintf(DEBUG_IO_HANDLE, "%d", q_program_state);
+                break;
+        }
+        fprintf(DEBUG_IO_HANDLE, " q_transfer_buffer_raw_n %d\n", q_program_state, q_transfer_buffer_raw_n);
         if (q_transfer_buffer_raw_n > 0) {
                 fprintf(DEBUG_IO_HANDLE, "LEFTOVER OUTPUT\n");
         }
         fprintf(DEBUG_IO_HANDLE, "\n");
+        fflush(DEBUG_IO_HANDLE);
 #endif
 
         unprocessed_n = q_buffer_raw_n;
@@ -1115,8 +1146,8 @@ no_data:
 
                 /*
                  * File transfers, scripts, and host mode: run
-                 * protocol_process_data() until old
-                 * _q_transfer_buffer_raw_n == q_transfer_buffer_raw_n .
+                 * protocol_process_data() until
+                 * old_q_transfer_buffer_raw_n == q_transfer_buffer_raw_n .
                  *
                  * Every time we come through process_incoming_data() we call
                  * protocol_process_data() at least once.
@@ -1133,6 +1164,7 @@ no_data:
 
 #ifdef DEBUG_IO
                         fprintf(DEBUG_IO_HANDLE, "2 old_q_transfer_buffer_raw_n %d q_transfer_buffer_raw_n %d unprocessed_n %d\n", old_q_transfer_buffer_raw_n, q_transfer_buffer_raw_n, unprocessed_n);
+                        fflush(DEBUG_IO_HANDLE);
 #endif
 
 
@@ -1169,6 +1201,7 @@ no_data:
 
 #ifdef DEBUG_IO
                         fprintf(DEBUG_IO_HANDLE, "3 old_q_transfer_buffer_raw_n %d q_transfer_buffer_raw_n %d unprocessed_n %d\n", old_q_transfer_buffer_raw_n, q_transfer_buffer_raw_n, unprocessed_n);
+                        fflush(DEBUG_IO_HANDLE);
 #endif
 
                         /* Hang onto whatever was unprocessed */
@@ -1179,12 +1212,14 @@ no_data:
 
 #ifdef DEBUG_IO
                         fprintf(DEBUG_IO_HANDLE, "4 old_q_transfer_buffer_raw_n %d q_transfer_buffer_raw_n %d unprocessed_n %d\n", old_q_transfer_buffer_raw_n, q_transfer_buffer_raw_n, unprocessed_n);
+                        fflush(DEBUG_IO_HANDLE);
 #endif
 
                 }
 
 #ifdef DEBUG_IO
                 fprintf(DEBUG_IO_HANDLE, "EXIT TRANSFER LOOP\n");
+                fflush(DEBUG_IO_HANDLE);
 #endif
 
         }
@@ -1217,6 +1252,7 @@ no_data:
 #ifdef DEBUG_IO
                 fprintf(DEBUG_IO_HANDLE, "console_process_incoming_data: < q_buffer_raw_n %d unprocessed_n %d\n",
                         q_buffer_raw_n, unprocessed_n);
+                fflush(DEBUG_IO_HANDLE);
 #endif
         }
 
@@ -1238,6 +1274,7 @@ no_data:
 #endif
                 (q_status.online == Q_TRUE ? "true" : "false"),
                 q_transfer_buffer_raw_n);
+                fflush(DEBUG_IO_HANDLE);
 #endif
 
         /* Write the data in the output buffer to q_child_tty_fd */
@@ -1296,6 +1333,7 @@ no_data:
                 } else {
 #ifdef DEBUG_IO
                         fprintf(DEBUG_IO_HANDLE, "%d bytes written\n", rc);
+                        fflush(DEBUG_IO_HANDLE);
 #endif
                         /* Hang onto the difference for the next round */
                         assert(rc <= q_transfer_buffer_raw_n);

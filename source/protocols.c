@@ -1377,10 +1377,10 @@ void protocol_transfer_refresh() {
         char batch_remaining_time_string[SHORT_TIME_SIZE];
         time_t current_time;
         int hours, minutes, seconds;
-        double transfer_time;
-        double remaining_time;
-        double batch_transfer_time;
-        double batch_remaining_time;
+        time_t transfer_time;
+        time_t remaining_time;
+        time_t batch_transfer_time;
+        time_t batch_remaining_time;
 #ifndef Q_NO_SERIAL
         int bits_per_byte = 8;
 #endif /* Q_NO_SERIAL */
@@ -1402,13 +1402,13 @@ void protocol_transfer_refresh() {
         time(&current_time);
         /* time_string needs to be hours/minutes/seconds TRANSFER */
         if ((q_transfer_stats.state == Q_TRANSFER_STATE_END) || (q_transfer_stats.state == Q_TRANSFER_STATE_ABORT)) {
-                transfer_time = difftime(q_transfer_stats.end_time, q_transfer_stats.file_start_time);
+                transfer_time = (time_t)difftime(q_transfer_stats.end_time, q_transfer_stats.file_start_time);
         } else {
-                transfer_time = difftime(current_time, q_transfer_stats.file_start_time);
+                transfer_time = (time_t)difftime(current_time, q_transfer_stats.file_start_time);
         }
         hours = transfer_time / 3600;
-        minutes = ((int)transfer_time % 3600) / 60;
-        seconds = (int)transfer_time % 60;
+        minutes = (transfer_time % 3600) / 60;
+        seconds = transfer_time % 60;
         snprintf(time_elapsed_string, sizeof(time_elapsed_string), "%02u:%02u:%02u", hours, minutes, seconds);
 
         /* Compute the transfer time and time remaining */
@@ -1422,23 +1422,23 @@ void protocol_transfer_refresh() {
         }
 
         hours = remaining_time / 3600;
-        minutes = ((int)remaining_time % 3600) / 60;
-        seconds = (int)remaining_time % 60;
+        minutes = (remaining_time % 3600) / 60;
+        seconds = remaining_time % 60;
         snprintf(remaining_time_string, sizeof(remaining_time_string), "%02u:%02u:%02u", hours, minutes, seconds);
 
         /* Batch timings */
         if ((q_transfer_stats.state == Q_TRANSFER_STATE_END) || (q_transfer_stats.state == Q_TRANSFER_STATE_ABORT)) {
-                batch_transfer_time = difftime(q_transfer_stats.end_time, q_transfer_stats.batch_start_time);
+                batch_transfer_time = (time_t)difftime(q_transfer_stats.end_time, q_transfer_stats.batch_start_time);
         } else {
-                batch_transfer_time = difftime(current_time, q_transfer_stats.batch_start_time);
+                batch_transfer_time = (time_t)difftime(current_time, q_transfer_stats.batch_start_time);
         }
         hours = batch_transfer_time / 3600;
-        minutes = ((int)batch_transfer_time % 3600) / 60;
-        seconds = (int)batch_transfer_time % 60;
+        minutes = (batch_transfer_time % 3600) / 60;
+        seconds = batch_transfer_time % 60;
         snprintf(batch_time_elapsed_string, sizeof(batch_time_elapsed_string), "%02u:%02u:%02u", hours, minutes, seconds);
 
         /* Compute the transfer time and time remaining */
-        if (q_transfer_stats.bytes_transfer > 0) {
+        if (q_transfer_stats.batch_bytes_transfer + q_transfer_stats.bytes_transfer > 0) {
                 batch_remaining_time = (q_transfer_stats.batch_bytes_total - q_transfer_stats.batch_bytes_transfer - q_transfer_stats.bytes_transfer) * transfer_time / (q_transfer_stats.batch_bytes_transfer + q_transfer_stats.bytes_transfer);
         } else {
                 batch_remaining_time = 0;
@@ -1451,8 +1451,8 @@ void protocol_transfer_refresh() {
         assert(batch_remaining_time >= 0);
 
         hours = batch_remaining_time / 3600;
-        minutes = ((int)batch_remaining_time % 3600) / 60;
-        seconds = (int)batch_remaining_time % 60;
+        minutes = (batch_remaining_time % 3600) / 60;
+        seconds = batch_remaining_time % 60;
         snprintf(batch_remaining_time_string, sizeof(batch_remaining_time_string), "%02u:%02u:%02u", hours, minutes, seconds);
 
         /* Filename and pathname could get quite long, let's reduce them. */
@@ -1647,7 +1647,11 @@ void protocol_transfer_refresh() {
 
         /* CPS */
         screen_put_color_str_yx(window_top + 9, window_left + 51, _("Chars/second "), Q_COLOR_MENU_TEXT);
-        cps = q_transfer_stats.bytes_transfer / transfer_time;
+        if (transfer_time > 0) {
+                cps = q_transfer_stats.bytes_transfer / transfer_time;
+        } else {
+                cps = q_transfer_stats.bytes_transfer;
+        }
         if (cps > q_transfer_stats.bytes_transfer) {
                 cps = q_transfer_stats.bytes_transfer;
         }

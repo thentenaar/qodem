@@ -881,7 +881,7 @@ int net_connect_start(const char * host, const char * port) {
         if (DEBUG_FILE_HANDLE == NULL) {
                 DEBUG_FILE_HANDLE = fopen("debug_net.txt", "w");
         }
-        fprintf(DEBUG_FILE_HANDLE, "net_connect() : %s %s\n", host, port);
+        fprintf(DEBUG_FILE_HANDLE, "net_connect_start() : %s %s\n", host, port);
         fflush(DEBUG_FILE_HANDLE);
 #endif /* DEBUG_NET */
 
@@ -914,7 +914,7 @@ int net_connect_start(const char * host, const char * port) {
         rc = getaddrinfo(host, port, &hints, &address);
 
 #ifdef DEBUG_NET
-        fprintf(DEBUG_FILE_HANDLE, "net_connect() : getaddrinfo() rc %d\n", rc);
+        fprintf(DEBUG_FILE_HANDLE, "net_connect_start() : getaddrinfo() rc %d\n", rc);
         fflush(DEBUG_FILE_HANDLE);
 #endif /* DEBUG_NET */
 
@@ -945,14 +945,14 @@ int net_connect_start(const char * host, const char * port) {
         rc = 0;
         for (p = address; p != NULL; p = p->ai_next) {
 #ifdef DEBUG_NET
-                fprintf(DEBUG_FILE_HANDLE, "net_connect() : p %p\n", p);
+                fprintf(DEBUG_FILE_HANDLE, "net_connect_start() : p %p\n", p);
                 fflush(DEBUG_FILE_HANDLE);
 #endif /* DEBUG_NET */
 
 
                 fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
 #ifdef DEBUG_NET
-                fprintf(DEBUG_FILE_HANDLE, "net_connect() : socket() fd %d\n", fd);
+                fprintf(DEBUG_FILE_HANDLE, "net_connect_start() : socket() fd %d\n", fd);
                 fflush(DEBUG_FILE_HANDLE);
 #endif /* DEBUG_NET */
 
@@ -989,7 +989,7 @@ int net_connect_start(const char * host, const char * port) {
                                         continue;
                                 } else {
 #ifdef DEBUG_NET
-                                        fprintf(DEBUG_FILE_HANDLE, "net_connect() : rlogin bound to port %d\n", i);
+                                        fprintf(DEBUG_FILE_HANDLE, "net_connect_start() : rlogin bound to port %d\n", i);
                                         fflush(DEBUG_FILE_HANDLE);
 #endif /* DEBUG_NET */
                                         /*
@@ -1108,7 +1108,7 @@ Q_BOOL net_connect_finish() {
                 NI_NUMERICHOST | NI_NUMERICSERV);
 
 #ifdef DEBUG_NET
-        fprintf(DEBUG_FILE_HANDLE, "net_connect() : connected.  Remote host is %s %s\n", remote_host, remote_port);
+        fprintf(DEBUG_FILE_HANDLE, "net_connect_finish() : connected.  Remote host is %s %s\n", remote_host, remote_port);
         fflush(DEBUG_FILE_HANDLE);
 #endif /* DEBUG_NET */
 
@@ -1158,7 +1158,7 @@ Q_BOOL net_connect_finish() {
         read_buffer_n = strlen((char *)read_buffer);
 
 #ifdef DEBUG_NET
-        fprintf(DEBUG_FILE_HANDLE, "net_connect() : CONNECTED OK\n");
+        fprintf(DEBUG_FILE_HANDLE, "net_connect_finish() : CONNECTED OK\n");
         fflush(DEBUG_FILE_HANDLE);
 #endif /* DEBUG_NET */
 
@@ -1172,6 +1172,12 @@ Q_BOOL net_connect_finish() {
                 state = SENT_LOGIN;
         }
 
+        /*
+         * Don't call me again.  Note this needs to be BEFORE the call to
+         * dial_success() so that it will switch program state to console.
+         */
+        pending = Q_FALSE;
+
         /* Wrap up the connection logic */
         dial_success();
         /*
@@ -1180,8 +1186,6 @@ Q_BOOL net_connect_finish() {
          */
         q_dialer_cycle_start_time -= 2;
 
-        /* Don't call me again */
-        pending = Q_FALSE;
         return Q_TRUE;
 } /* ---------------------------------------------------------------------- */
 
