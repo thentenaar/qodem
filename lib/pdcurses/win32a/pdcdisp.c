@@ -251,7 +251,8 @@ void PDC_gotoyx(int row, int col)
     }
 }
 
-int PDC_font_size = 20;
+// 29 gets me 22, why is that?
+int PDC_font_size = 29;
 TCHAR PDC_font_name[80];
 
 static LOGFONT PDC_get_logical_font( const attr_t font_attrib)
@@ -261,21 +262,26 @@ static LOGFONT PDC_get_logical_font( const attr_t font_attrib)
     memset(&lf, 0, sizeof(LOGFONT));        // Clear out structure.
     lf.lfHeight = -PDC_font_size;
 #ifdef PDC_WIDE
-    if( !*PDC_font_name)
-        _tcscpy( PDC_font_name, _T("Courier New"));
+    if( !*PDC_font_name) {
+        // _tcscpy( PDC_font_name, _T("Courier New"));
+        _tcscpy( PDC_font_name, _T("Classic Console"));
+    }
     _tcscpy( lf.lfFaceName, PDC_font_name );
 #else
     if( !*PDC_font_name)
         strcpy( PDC_font_name, "Courier New");
     strcpy( lf.lfFaceName, PDC_font_name);              // Request font
 #endif
-//  lf.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
-    lf.lfPitchAndFamily = FF_MODERN;
     lf.lfWeight = ((font_attrib & A_BOLD) ? FW_EXTRABOLD : FW_NORMAL);
     lf.lfItalic = ((font_attrib & A_ITALIC) ? TRUE : FALSE);
+    lf.lfPitchAndFamily = FF_MODERN;
     lf.lfCharSet = ANSI_CHARSET;
     lf.lfQuality = PROOF_QUALITY;
     lf.lfOutPrecision = OUT_RASTER_PRECIS;
+    // lf.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
+    // lf.lfCharSet = DEFAULT_CHARSET;
+    // lf.lfQuality = DEFAULT_QUALITY;
+    // lf.lfOutPrecision = OUT_DEFAULT_PRECIS;
     return( lf);
 }
 
