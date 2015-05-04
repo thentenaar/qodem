@@ -46,12 +46,11 @@ Win32 port:
   libgcrypt
   libssh2
   UPnP
-  Terminus font
   Remove Q_PDCURSES_WIN32-only #include's (no more mingw build)
   Switch __BORLANDC__ to Q_PDCURSES_WIN32
     Except for my_swprintf()'s and common.h/common.c
   InnoSetup Windows installer:
-    Install Terminus font + qodem executable
+    Install Classic Console font + qodem executable
     Custom directories:
       working dir
       host dir

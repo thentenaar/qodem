@@ -1,6 +1,24 @@
 The Qodem Project Work Log
 ==========================
 
+May 3, 2015
+
+More bug fixes, this time in net_connect_finish() calling
+dial_success() without setting pending to false, resulting in the
+program state being stuck in Q_STATE_DIALER and thus missing the
+beginning of input (in this case the login banner) until the user
+pressed a key.  Sometimes.  (I've thought about refactoring all the
+q_dial_method and telnet_read()/telnet_write()/etc calls into an OO
+struct with function pointers, the way putty does it, but until I get
+another several ways to connect it doesn't buy me anything new except
+another round of testing.)
+
+The Windows display also looks a lot better now thanks to switching to
+Classic Console font and gamma-correcting the CGA RGB values.  This
+font loses out on DEC special graphics characters though.  I'm very
+tempted to learn enough font stuff to add those glyphs from
+Glass_TTY_VT220 to round it out.
+
 May 1, 2015
 
 Lots of semi-minor fixes today.  The options are now sorted in a much
