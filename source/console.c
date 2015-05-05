@@ -843,6 +843,11 @@ void console_keyboard_handler(int keystroke, int flags) {
         case '5':
                 /* Alt-5 Host Mode */
                 if (flags & KEY_FLAG_ALT) {
+                        /* Don't allow host if already online */
+                        if ((q_status.online == Q_TRUE) || Q_SERIAL_OPEN) {
+                                break;
+                        }
+
                         if (ask_host_type(&host_type) == Q_TRUE) {
                                 /* User asked for host mode */
 
@@ -1161,6 +1166,7 @@ void console_keyboard_handler(int keystroke, int flags) {
                                                 qlog(_("Closing Connection\n"));
                                         }
                                         q_cursor_on();
+                                        q_status.hanging_up = Q_TRUE;
                                         if (!Q_SERIAL_OPEN) {
                                                 close_connection();
                                         } else {

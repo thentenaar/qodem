@@ -2327,6 +2327,8 @@ struct file_info * batch_entry_window(const char * initial_directory, const Q_BO
                                 }
                                 if (strlen(new_field_value) > 0) {
                                         file_info_list[i].name = field_get_char_value(fields[i]);
+                                } else {
+                                        file_info_list[i].name = Xstrdup("", __FILE__, __LINE__);
                                 }
                                 /* No leak */
                                 Xfree(new_field_value, __FILE__, __LINE__);

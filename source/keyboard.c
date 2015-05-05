@@ -1411,40 +1411,6 @@ static void copy_keyboard(struct emulation_keyboard * dest, const struct emulati
 } /* ---------------------------------------------------------------------- */
 
 /*
- * Create empty keybindings files in the data directory ($HOME/.qodem)
- */
-void create_keybindings_files() {
-        int i;
-        FILE * file;
-        char buffer[FILENAME_SIZE];
-        char * full_filename;
-
-        /* Emulation keyboards */
-        for (i=0; terminfo_keyboards[i].terminfo_name != NULL; i++) {
-                sprintf(buffer, "%s.key", terminfo_keyboards[i].terminfo_name);
-                file = open_datadir_file(buffer, &full_filename, "a");
-                if (file != NULL) {
-                        fclose(file);
-                } else {
-                        fprintf(stderr, _("Error creating file \"%s\": %s\n"), full_filename, strerror(errno));
-                }
-
-                /* No leak */
-                Xfree(full_filename, __FILE__, __LINE__);
-        }
-
-        /* Default keyboard */
-        sprintf(buffer, "default.key");
-        file = open_datadir_file(buffer, &full_filename, "a");
-        if (file != NULL) {
-                fclose(file);
-        } else {
-                fprintf(stderr, _("Error creating file \"%s\": %s\n"), full_filename, strerror(errno));
-        }
-        Xfree(full_filename, __FILE__, __LINE__);
-} /* ---------------------------------------------------------------------- */
-
-/*
  * Behold the power of C!
  */
 #define SAVE_KEY_TO_FILE(A, B, C) \
@@ -1749,6 +1715,42 @@ static void load_keybindings() {
 } /* ---------------------------------------------------------------------- */
 
 /*
+ * Create empty keybindings files in the data directory ($HOME/.qodem)
+ */
+void create_keybindings_files() {
+        int i;
+        FILE * file;
+        char buffer[FILENAME_SIZE];
+        char * full_filename;
+
+        /* Emulation keyboards */
+        for (i=0; terminfo_keyboards[i].terminfo_name != NULL; i++) {
+                sprintf(buffer, "%s.key", terminfo_keyboards[i].terminfo_name);
+                file = open_datadir_file(buffer, &full_filename, "a");
+                if (file != NULL) {
+                        fclose(file);
+                        save_keybindings_to_file(buffer, &terminfo_keyboards[i]);
+                } else {
+                        fprintf(stderr, _("Error creating file \"%s\": %s\n"), full_filename, strerror(errno));
+                }
+
+                /* No leak */
+                Xfree(full_filename, __FILE__, __LINE__);
+        }
+
+        /* Default keyboard */
+        sprintf(buffer, "default.key");
+        file = open_datadir_file(buffer, &full_filename, "a");
+        if (file != NULL) {
+                fclose(file);
+                save_keybindings_to_file(buffer, &default_bound_keyboard);
+        } else {
+                fprintf(stderr, _("Error creating file \"%s\": %s\n"), full_filename, strerror(errno));
+        }
+        Xfree(full_filename, __FILE__, __LINE__);
+} /* ---------------------------------------------------------------------- */
+
+/*
  * This function sets up the function key editor textboxes
  */
 static void reset_function_key_editor_textboxes() {
@@ -1923,11 +1925,13 @@ static void reset_function_key_editor_textboxes() {
  * Behold the power of C!
  */
 #define GET_TERMINFO_KEY(X, Y) \
+        if (terminfo_keyboards[i].X != NULL) { \
+                Xfree(terminfo_keyboards[i].X, __FILE__, __LINE__); \
+        } \
         if (tigetstr(Y) != NULL) { \
-                if (terminfo_keyboards[i].X != NULL) { \
-                        Xfree(terminfo_keyboards[i].X, __FILE__, __LINE__); \
-                } \
                 terminfo_keyboards[i].X = Xstring_to_wcsdup(tigetstr(Y), __FILE__, __LINE__); \
+        } else { \
+                terminfo_keyboards[i].X = Xwcsdup(L"", __FILE__, __LINE__); \
         }
 
 /*
@@ -1937,7 +1941,13 @@ static void reset_function_key_editor_textboxes() {
 void initialize_keyboard() {
         int i;
 
-#ifndef Q_PDCURSES_WIN32
+#ifdef Q_PDCURSES_WIN32
+
+        for (i=0; terminfo_keyboards[i].terminfo_name != NULL; i++) {
+                reset_keyboard(&terminfo_keyboards[i]);
+        }
+
+#else
         SCREEN * fake_screen;
         FILE * dev_null;
 

@@ -1,6 +1,13 @@
 The Qodem Project Work Log
 ==========================
 
+May 5, 2015
+
+More bug fixes.  Crashes eliminated in uploads, keyboard macros,
+hangup, and host mode.  In general it's looking better, but it does
+highlight another class of bug: calls to POSIX API's that can return
+EBADF's for the most part will crash on BC5.
+
 May 3, 2015
 
 More bug fixes, this time in net_connect_finish() calling

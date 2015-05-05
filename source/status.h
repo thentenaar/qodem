@@ -72,6 +72,9 @@ struct q_status_struct {
         Q_BOOL online;                  /* true  = online
                                            false = offline */
 
+        Q_BOOL hanging_up;              /* true  = user is requesting hangup
+                                           false = normal operation */
+
 #ifndef Q_NO_SERIAL
         Q_BOOL serial_open;             /* true  = serial port is open
                                            false = serial port is closed */

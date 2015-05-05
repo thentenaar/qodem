@@ -15,6 +15,8 @@ BUG: check when phonebook calls start_quicklearn() after either
 
 BUG: with ssh, enter username/password, press ESC, press Enter --> crash
 
+BUG: uploads are jerky to local synchronet.  Timing?
+
 1.0.0
 -----
 
