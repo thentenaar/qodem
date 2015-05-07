@@ -38,15 +38,7 @@
 #define INSTALL_DIR             "/usr/local/qodem"
 #endif
 
-#define KEY_FLAG_ALT            0x0001          /* ALT (META) key was pressed */
-#define KEY_FLAG_CTRL           0x0002          /* CTRL key was pressed */
-#define KEY_FLAG_SHIFT          0x0004          /* SHIFT key was pressed */
-#define KEY_FLAG_UNICODE        0x0008          /* Key contains a Unicode character */
-#define KEY_ESCAPE              0x1B
-
 #define Q_BUFFER_SIZE           4096
-
-#define Q_KEYBOARD_DELAY        10000
 
 /* Globals ---------------------------------------------------------------- */
 

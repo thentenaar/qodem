@@ -39,7 +39,6 @@
 #define Q_COLOR_YELLOW  COLOR_YELLOW
 #define Q_COLOR_WHITE   COLOR_WHITE
 
-
 #define Q_KEY_BREAK     KEY_BREAK
 #define Q_KEY_DOWN      KEY_DOWN
 #define Q_KEY_UP        KEY_UP
@@ -173,6 +172,15 @@
 #define Q_A_COLOR       A_COLOR
 
 #define Q_ERR           ERR
+
+#define KEY_FLAG_ALT            0x0001          /* ALT (META) key was pressed */
+#define KEY_FLAG_CTRL           0x0002          /* CTRL key was pressed */
+#define KEY_FLAG_SHIFT          0x0004          /* SHIFT key was pressed */
+#define KEY_FLAG_UNICODE        0x0008          /* Key contains a Unicode character */
+
+#define KEY_ESCAPE              0x1B
+
+#define Q_KEYBOARD_DELAY        10000
 
 /* Includes --------------------------------------------------------------- */
 

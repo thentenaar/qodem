@@ -23,34 +23,115 @@ BUG: uploads are jerky to local synchronet.  Timing?
 Detect xterm alternate screen and clear scrollback to retain what was
 seen before.
 
+CryptLib support
+  SSH server for host
+  Patch to handle terminal re-sizing
+
 SGR mouse reporting
 
 Q_OPTION_SCRIPTS_DIR
 
-QODEM_USE_SDL chance to Q_SOUND_SDL
+QODEM_USE_SDL change to Q_SOUND_SDL
+
+Encrypted phonebook
 
 New autoconf build:
   Basic working: default builds same as Makefile.generic
   make dist
   --enable-sdl - looks for system libSDL
   --enable-x11 - builds PDCurses X11
-  --enable-ssh - builds libz/gpg-error/gcrypt/ssh2
+  --enable-ssh - builds cryptlib
   --enable-upnp - builds miniupnpc
 
 Code sweep:
   80 column max
   Tab stop 4
-  Eliminate Borland warnings
+  Eliminate function tails ("} /* -----...-- */")
   Ensure return codes are actually used, or switch them to void
+  Javadoc all functions
+
+*   ansi.h
+*   avatar.h
+*   codepage.h
+    colors.h
+    common.h
+    console.h
+    debug.h
+    dialer.h
+    emulation.h
+    field.h
+    forms.h
+    help.h
+    host.h
+    input.h
+    kermit.h
+    keyboard.h
+    linux.h
+    modem.h
+    music.h
+    netclient.h
+    options.h
+    phonebook.h
+    protocols.h
+    qcurses.h
+    qodem.h
+    screen.h
+    screensaver.h
+    script.h
+    scrollback.h
+    states.h
+    status.h
+    translate.h
+    vt100.h
+    vt52.h
+    xmodem.h
+    zmodem.h
+    ansi.c
+    avatar.c
+    codepage.c
+    colors.c
+    common.c
+    console.c
+    debug.c
+    dialer.c
+    emulation.c
+    field.c
+    forms.c
+    help.c
+    host.c
+    input.c
+    kermit.c
+    keyboard.c
+    linux.c
+    modem.c
+    music.c
+    netclient.c
+    options.c
+    phonebook.c
+    protocols.c
+    qodem.c
+    screen.c
+    screensaver.c
+    script.c
+    scrollback.c
+    states.c
+    translate.c
+    vt100.c
+    vt52.c
+    xmodem.c
+    zmodem.c
+
+
+
 
 Win32 port:
-  zlib
-  libgcrypt
-  libssh2
+  cryptlib
   UPnP
   Remove Q_PDCURSES_WIN32-only #include's (no more mingw build)
   Switch __BORLANDC__ to Q_PDCURSES_WIN32
     Except for my_swprintf()'s and common.h/common.c
+  Eliminate reasonable Borland warnings
+  Fix mouse tracking to do mouse and not copy-to-clipboard
   InnoSetup Windows installer:
     Install Classic Console font + qodem executable
     Custom directories:
@@ -93,6 +174,12 @@ Debian build
   qodem-x11
 
 
+Fix all marked TODOs in code
+
+
+Doxygen docs
+
+
 Finish up modem support:
   host.c:
     MODEM answer:
@@ -100,9 +187,7 @@ Finish up modem support:
       wait for RING
       send answer_string
       check DCD for online
-
-
-Fix all marked TODOs in code
+  Will need help from someone else with a modem
 
 
 FULL REGRESSION ON EVERY ITEM:
@@ -278,6 +363,13 @@ Release:
 -----
 
 Full recognition of XTERM sequences
+  Create ecma48.c, split common functions from vt100.c and linux.c
+  Create xterm.c
+
+Direct proxy support:
+  HTTP
+    NTLM
+  SOCKS5
 
 Use puttygen'd keys for ssh
 
@@ -303,15 +395,15 @@ Automatic virus scanning / post-processing of downloaded files
   Generic post processor:
     Session log event: "Spawning file post-processor..."
 
-Direct proxy support (both HTTP and SOCKS)
-
 VT220 printer support
 
 VT52 HOLD SCREEN mode
 
 External protocols
 
-Encrypted phonebook
+"Server Cmds" command menu: telnet, kermit server, PPP
+  Be able to sever a Kermit server/PPP link
+  Send the other telnet commands (IP, GA, ...)
 
 
 
@@ -337,10 +429,6 @@ Multi-line customizable status display
 Encrypted telnet
 
 True telnet NVT ASCII console (linemode option)
-
-"Server Cmds" command menu: telnet, kermit server, PPP
-  Be able to sever a Kermit server/PPP link
-  Send the other telnet commands (IP, GA, ...)
 
 Intellisense-style completion window:
   Alt-Space?
@@ -368,7 +456,7 @@ Script library (see Intellicomm)
   Unix SOUP mail download/upload
   Wildcat BBS login, filelist
   SSH through firewall, transfer files, disconnect
-  Tradewars 2002 scripts
+  TradeWars 2002 scripts
 
 True native (not PDCurses) port to X11:
   Draw VTxxx fonts graphically (including VT52 chars not in Unicode)

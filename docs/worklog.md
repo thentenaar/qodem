@@ -1,6 +1,28 @@
 The Qodem Project Work Log
 ==========================
 
+May 7, 2015
+
+I've got a GNU indent profile that is pretty close to what I want, so
+I am starting the code sweep now.  This will take some time, but
+hopefully will be done by the end of the weekend.  After that I think
+comes a regular Borland-based build and an announcement.
+
+It would be fantastic if I could find someone out there with an actual
+modem who could help me get host-mode modem support working.
+
+May 6, 2015
+
+The libz/libgpg_error/libgcrypt/libssh2 build path on Windows really
+sucks.  I'm trying CryptLib again instead.  On the downside, this will
+make things take longer to 1.0beta, but on the upside we get the SSH
+host server back.  I remember now why I moved away from it: tty
+terminal resizes couldn't be passed through its session interface.
+Others have encountered the same, but they have also patched
+cryptlib's ssh2 to pass more reasonable values.  I can put in some
+custom peeking from cryptlib into qodem values if necessary to get
+what I need.
+
 May 5, 2015
 
 More bug fixes.  Crashes eliminated in uploads, keyboard macros,
