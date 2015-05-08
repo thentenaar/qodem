@@ -53,10 +53,13 @@ Code sweep:
 *   ansi.h
 *   avatar.h
 *   codepage.h
-    colors.h
+*   linux.h
+*   vt100.h
+*   vt52.h
+*   colors.h
     common.h
-    console.h
-    debug.h
+*   console.h
+*   debug.h
     dialer.h
     emulation.h
     field.h
@@ -66,7 +69,6 @@ Code sweep:
     input.h
     kermit.h
     keyboard.h
-    linux.h
     modem.h
     music.h
     netclient.h
@@ -82,10 +84,9 @@ Code sweep:
     states.h
     status.h
     translate.h
-    vt100.h
-    vt52.h
     xmodem.h
     zmodem.h
+
     ansi.c
     avatar.c
     codepage.c

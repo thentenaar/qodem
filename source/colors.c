@@ -1314,7 +1314,7 @@ unsigned char q_info_screen [] = {
 /* VERSION is HERE |
                    V    1.0<alpha> */
 
-    '1', 0x1F,  '.', 0x1F,  '0', 0x1F,  0xE0 /* alpha */, 0x1F,  ' ', 0x1F,  ' ', 0x1F,
+    '1', 0x1F,  '.', 0x1F,  '0', 0x1F,  0xE1 /* beta */, 0x1F,  ' ', 0x1F,  ' ', 0x1F,
 
 /*                 ^
    VERSION is here | */

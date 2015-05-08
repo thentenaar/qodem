@@ -73,7 +73,7 @@ static Q_BOOL doorway_mixed_pgdn;
 Q_BOOL q_console_flood = Q_FALSE;
 
 /*
- *Setup MIXED mode doorway
+ * Setup MIXED mode doorway
  */
 void setup_doorway_handling() {
         char * option;
@@ -2794,10 +2794,10 @@ void console_info_refresh() {
                 /* Do the animation */
                 screen_put_char_yx(info_top + 3, info_left + 54 + redeye_screen_x,
                         cp437_chars[0xF0],
-                        Q_A_BOLD, (Q_COLOR_WHITE << 3) | Q_COLOR_BLACK);
+                        Q_A_BOLD, (Q_COLOR_BLACK << 3) | Q_COLOR_BLACK);
                 screen_put_char_yx(info_top + 4, info_left + 54 + redeye_screen_x,
                         cp437_chars[0xF0],
-                        Q_A_BOLD, (Q_COLOR_WHITE << 3) | Q_COLOR_BLACK);
+                        Q_A_BOLD, (Q_COLOR_BLACK << 3) | Q_COLOR_BLACK);
 
                 if (redeye_right == Q_TRUE) {
                         redeye_screen_x++;

@@ -36,7 +36,7 @@
 /* Functions -------------------------------------------------------------- */
 
 /**
- * Push one byte through the ansi emulator.
+ * Push one byte through the ANSI emulator.
  *
  * @param from_modem one byte from the remote side.
  * @param to_screen if the return is Q_EMUL_FSM_ONE_CHAR or
