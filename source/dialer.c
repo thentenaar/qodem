@@ -318,7 +318,7 @@ HANDLE q_child_thread = NULL;
  * NOTE: ANY CHANGES TO BEHAVIOR HERE MUST BE CHECKED IN
  * script_start() ALSO!!!
  */
-void spawn_process(char * command_line, Q_EMULATION emulation) {
+static void spawn_process(char * command_line, Q_EMULATION emulation) {
 
 #ifdef Q_PDCURSES_WIN32
         /*
@@ -616,21 +616,18 @@ void spawn_process(char * command_line, Q_EMULATION emulation) {
 /*
  * Make the socket non-blocking
  */
-Q_BOOL set_nonblock(const int fd) {
+void set_nonblock(const int fd) {
         u_long non_block_mode = 1;
 
         if (    (net_is_connected() == Q_FALSE) &&
                 (net_connect_pending == Q_FALSE) &&
                 (net_is_listening == Q_FALSE)
         ) {
-                /* Assume success for a not-socket case. */
-                return Q_TRUE;
+                /* Do nothing for a not-socket case. */
+                return;
         }
 
-        if (ioctlsocket(fd, FIONBIO, &non_block_mode) == 0) {
-                return Q_TRUE;
-        }
-        return Q_FALSE;
+        ioctlsocket(fd, FIONBIO, &non_block_mode);
 } /* ---------------------------------------------------------------------- */
 
 #else
@@ -638,39 +635,33 @@ Q_BOOL set_nonblock(const int fd) {
 /*
  * Make the file/socket non-blocking
  */
-Q_BOOL set_nonblock(const int fd) {
+void set_nonblock(const int fd) {
         int flags;
 
         flags = fcntl(fd, F_GETFL);
-        if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
-                /* Error */
-                return Q_FALSE;
-        }
-
-        /* All OK */
-        return Q_TRUE;
+        fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 } /* ---------------------------------------------------------------------- */
 
 /*
  * Perform a cfmakeraw() on the TTY
  */
-Q_BOOL set_raw_termios(const int tty_fd) {
+void set_raw_termios(const int tty_fd) {
         struct termios old_termios;
         struct termios new_termios;
 
         if (tcgetattr(tty_fd, &old_termios) < 0) {
                 /* Error */
-                return Q_FALSE;
+                return;
         }
         memcpy(&new_termios, &old_termios, sizeof(struct termios));
         cfmakeraw(&new_termios);
         if (tcsetattr(tty_fd, TCSANOW, &new_termios) < 0) {
                 /* Error */
-                return Q_FALSE;
+                return;
         }
 
         /* All OK */
-        return Q_TRUE;
+        return;
 } /* ---------------------------------------------------------------------- */
 
 #endif /* Q_PDCURSES_WIN32 */
@@ -765,7 +756,7 @@ void dial_success() {
  * NOTE: ANY CHANGES TO BEHAVIOR HERE MUST BE CHECKED IN
  * script_start() ALSO!!!
  */
-int dial_out(struct q_phone_struct * target) {
+void dial_out(struct q_phone_struct * target) {
         char * command = NULL;
         Q_BOOL do_network_connect = Q_FALSE;
 
@@ -927,6 +918,4 @@ int dial_out(struct q_phone_struct * target) {
                 /* Immediate connection */
                 dial_success();
         }
-
-        return q_child_tty_fd;
 } /* ---------------------------------------------------------------------- */

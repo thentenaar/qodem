@@ -79,7 +79,7 @@ struct q_text_color_struct {
 /**
  * These are the colors used by the UI elements.
  */
-enum Q_COLORS {
+typedef enum Q_COLORS {
 
     /**
      * Console banner ("You are now in TERMINAL mode").
@@ -215,7 +215,7 @@ enum Q_COLORS {
      * Max color index, not actually used.
      */
     Q_COLOR_MAX
-};
+} Q_COLOR;
 
 /* Globals ---------------------------------------------------------------- */
 

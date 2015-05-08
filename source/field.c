@@ -216,15 +216,6 @@ void fieldset_right(struct fieldset * fieldset) {
         fieldset_render(fieldset);
 } /* ---------------------------------------------------------------------- */
 
-void fieldset_first(struct fieldset * fieldset) {
-        assert(fieldset->fields != NULL);
-        assert(fieldset->fields[0] != NULL);
-        fieldset->active_field = fieldset->fields[0];
-
-        /* Update the display */
-        fieldset_render(fieldset);
-} /* ---------------------------------------------------------------------- */
-
 void fieldset_backspace(struct fieldset * fieldset) {
         struct field * field = fieldset->active_field;
         assert(fieldset->active_field != NULL);
@@ -301,7 +292,7 @@ void fieldset_render(struct fieldset * fieldset) {
         wcursyncup((WINDOW *)fieldset->window);
 } /* ---------------------------------------------------------------------- */
 
-struct field * field_malloc(const int width, const int toprow, const int leftcol, Q_BOOL fixed, int color_active, int color_inactive) {
+struct field * field_malloc(const int width, const int toprow, const int leftcol, Q_BOOL fixed, Q_COLOR color_active, Q_COLOR color_inactive) {
         struct field * field = (struct field *)Xmalloc(sizeof(struct field), __FILE__, __LINE__);
         field->width = width;
         field->y = toprow;

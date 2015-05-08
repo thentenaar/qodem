@@ -757,7 +757,8 @@ void emulation_menu_keyboard_handler(const int keystroke, const int flags) {
                 switch_current_keyboard("");
         }
 
-        set_codepage();
+        /* Set the right codepage */
+        q_status.codepage = default_codepage(q_status.emulation);
 
         /* The OK exit point */
         switch_state(Q_STATE_CONSOLE);
@@ -788,7 +789,3 @@ Q_CODEPAGE default_codepage(Q_EMULATION emulation) {
         abort();
 } /* ---------------------------------------------------------------------- */
 
-void set_codepage() {
-        /* Set the right codepage */
-        q_status.codepage = default_codepage(q_status.emulation);
-} /* ---------------------------------------------------------------------- */
