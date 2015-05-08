@@ -27,7 +27,6 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include "status.h"
 #include "screen.h"
 #include "states.h"
 #include "qodem.h"

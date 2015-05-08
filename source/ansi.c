@@ -39,7 +39,6 @@
 #include "qodem.h"
 #include "music.h"
 #include "states.h"
-#include "status.h"
 #include "screen.h"
 #include "netclient.h"
 #include "ansi.h"

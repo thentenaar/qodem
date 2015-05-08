@@ -149,7 +149,7 @@ extern Q_EMULATION_STATUS terminal_emulator(const unsigned char from_modem,
  * @param emulation Q_EMUL_TTY etc.
  * @return "TTY" etc.
  */
-extern char * emulation_string(const Q_EMULATION emulation);
+extern const char * emulation_string(const Q_EMULATION emulation);
 
 /**
  * Given an emulation string, return a Q_EMULATION enum.
@@ -188,5 +188,21 @@ extern void emulation_menu_refresh();
  * @return the codepage
  */
 extern Q_CODEPAGE default_codepage(Q_EMULATION emulation);
+
+/**
+ * Get the appropriate TERM environment variable value for an emulation.
+ *
+ * @param emulation the emulation 
+ * @return "ansi", "xterm", etc.
+ */
+extern const char * emulation_term(Q_EMULATION emulation);
+
+/**
+ * Get the appropriate LANG environment variable value for an emulation.
+ *
+ * @param emulation the emulation 
+ * @return "en", "en_US", etc.
+ */
+extern const char * emulation_lang(Q_EMULATION emulation);
 
 #endif /* __EMULATION_H__ */

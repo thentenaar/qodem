@@ -20,6 +20,9 @@ BUG: uploads are jerky to local synchronet.  Timing?
 1.0.0
 -----
 
+Refactor:
+  int q_color --> Q_COLOR q_color in screen.c and callers
+
 Detect xterm alternate screen and clear scrollback to retain what was
 seen before.
 
@@ -49,22 +52,8 @@ Code sweep:
   Eliminate function tails ("} /* -----...-- */")
   Ensure return codes are actually used, or switch them to void
   Javadoc all functions
+  Eliminate "stored in X.c" on externs
 
-*   ansi.h
-*   avatar.h
-*   codepage.h
-*   linux.h
-*   vt100.h
-*   vt52.h
-*   colors.h
-    common.h
-*   console.h
-*   debug.h
-    dialer.h
-    emulation.h
-    field.h
-    forms.h
-    help.h
     host.h
     input.h
     kermit.h
@@ -75,7 +64,6 @@ Code sweep:
     options.h
     phonebook.h
     protocols.h
-    qcurses.h
     qodem.h
     screen.h
     screensaver.h
@@ -363,9 +351,12 @@ Release:
 1.1.0
 -----
 
-Full recognition of XTERM sequences
+Refactor:
   Create ecma48.c, split common functions from vt100.c and linux.c
   Create xterm.c
+  Move Q_STATE_DIALER from phonebook.c to dialer.c
+
+Full recognition of XTERM sequences
 
 Direct proxy support:
   HTTP

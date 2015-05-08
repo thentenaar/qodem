@@ -35,7 +35,6 @@
 #include <string.h>     /* memset() */
 #include "qodem.h"
 #include "screen.h"
-#include "status.h"
 #include "options.h"
 #include "netclient.h"
 #include "vt100.h"

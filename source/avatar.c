@@ -30,7 +30,6 @@
 #include "qodem.h"
 #include "screen.h"
 #include "scrollback.h"
-#include "status.h"
 #include "options.h"
 #include "ansi.h"
 #include "avatar.h"

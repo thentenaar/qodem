@@ -1,6 +1,25 @@
 The Qodem Project Work Log
 ==========================
 
+May 8, 2015
+
+On the code sweep, we are almost halfway through the headers.  I've
+been cleaning up as I go along.  I took out some never-called
+functions in field.c, made dialer's functions return void since no one
+cares, moved dialer_get_term/lang over to emulation, and finally nixed
+status.h is gone (it's had that for a long time coming).  Noticed a
+different kind of failed-connection bug so fixed that -- basically I
+was assuming that if DNS lookup succeeded then socket() and connect()
+would succeed, but connect() will die immediately if the network isn't
+available.  Checked both Linux and Windows builds, interestingly
+enough Linux returns EINPROGRESS for the same condition Winsock
+returns EWOULDBLOCK.
+
+This sweep will take longer than I thought.  I've also got some real
+life catching up to me again, and tomorrow need to spend a
+not-computer-day.  I'll just have to keep chipping away at it over the
+next couple weeks.
+
 May 7, 2015
 
 I've got a GNU indent profile that is pretty close to what I want, so

@@ -63,7 +63,6 @@
 #include "qodem.h"
 #include "music.h"
 #include "states.h"
-#include "status.h"
 #include "screen.h"
 #include "options.h"
 #include "script.h"
@@ -252,54 +251,7 @@ static void show_termios_info(const struct termios * term) {
         fclose(file);
 } /* ---------------------------------------------------------------------- */
 
-#endif
-
-/*
- * Returns the appropriate TERM string for this connection
- */
-const char * dialer_get_term() {
-        /* Set the TERM variable */
-        switch (q_status.emulation) {
-        case Q_EMUL_ANSI:
-                return "ansi";
-        case Q_EMUL_AVATAR:
-                return "avatar";
-        case Q_EMUL_VT52:
-                return "vt52";
-        case Q_EMUL_VT100:
-                return "vt100";
-        case Q_EMUL_VT102:
-                return "vt102";
-        case Q_EMUL_VT220:
-                return "vt220";
-        case Q_EMUL_TTY:
-                return "dumb";
-        case Q_EMUL_LINUX:
-        case Q_EMUL_LINUX_UTF8:
-                return "linux";
-        case Q_EMUL_XTERM:
-        case Q_EMUL_XTERM_UTF8:
-                return "xterm";
-        case Q_EMUL_DEBUG:
-        default:
-                /* No default terminal setting */
-                return "";
-        }
-
-} /* ---------------------------------------------------------------------- */
-
-/*
- * Returns the appropriate LANG string for this connection
- */
-const char * dialer_get_lang() {
-        switch (q_status.emulation) {
-        case Q_EMUL_XTERM_UTF8:
-        case Q_EMUL_LINUX_UTF8:
-                return get_option(Q_OPTION_UTF8_LANG);
-        default:
-                return get_option(Q_OPTION_ISO8859_LANG);
-        }
-} /* ---------------------------------------------------------------------- */
+#endif /* 0 */
 
 #ifdef Q_PDCURSES_WIN32
 /*
@@ -390,8 +342,8 @@ static void spawn_process(char * command_line, Q_EMULATION emulation) {
         }
 
         /* Set my TERM variable */
-        if (strlen(dialer_get_term()) > 0) {
-                SetEnvironmentVariableA("TERM", dialer_get_term());
+        if (strlen(emulation_term(q_status.emulation)) > 0) {
+                SetEnvironmentVariableA("TERM", emulation_term(q_status.emulation));
         }
 
         /* Set LINES and COLUMNS */
@@ -418,7 +370,7 @@ static void spawn_process(char * command_line, Q_EMULATION emulation) {
         SetEnvironmentVariableA("COLUMNS", buffer);
 
         /* Set the LANG */
-        SetEnvironmentVariableA("LANG", dialer_get_lang());
+        SetEnvironmentVariableA("LANG", emulation_lang(q_status.emulation));
 
         /* Create child process itself */
         memset(&process_info, 0, sizeof(PROCESS_INFORMATION));
@@ -530,10 +482,10 @@ static void spawn_process(char * command_line, Q_EMULATION emulation) {
                 }
 
                 /* Set my TERM variable */
-                if (strlen(dialer_get_term()) == 0) {
+                if (strlen(emulation_term(q_status.emulation)) == 0) {
                         unsetenv("TERM");
                 } else {
-                        setenv("TERM", dialer_get_term(), 1);
+                        setenv("TERM", emulation_term(q_status.emulation), 1);
                 }
 
                 /* Set LINES and COLUMNS */
@@ -586,7 +538,7 @@ static void spawn_process(char * command_line, Q_EMULATION emulation) {
 #endif /* __linux */
 
                 /* Set the LANG */
-                snprintf(buffer, sizeof(buffer), "LANG=%s", dialer_get_lang());
+                snprintf(buffer, sizeof(buffer), "LANG=%s", emulation_lang(q_status.emulation));
                 putenv(strdup(buffer));
 
                 /* Separate target into arguments */

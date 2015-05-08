@@ -817,8 +817,8 @@ void script_start(const char * script_filename) {
         }
 
         /* Set my TERM variable */
-        if (strlen(dialer_get_term()) > 0) {
-                SetEnvironmentVariableA("TERM", dialer_get_term());
+        if (strlen(emulation_term(q_status.emulation)) > 0) {
+                SetEnvironmentVariableA("TERM", emulation_term(q_status.emulation));
         }
 
         /* Set LINES and COLUMNS */
@@ -1015,10 +1015,10 @@ void script_start(const char * script_filename) {
                 }
 
                 /* Set my TERM variable */
-                if (strlen(dialer_get_term()) == 0) {
+                if (strlen(emulation_term(q_status.emulation)) == 0) {
                         unsetenv("TERM");
                 } else {
-                        setenv("TERM", dialer_get_term(), 1);
+                        setenv("TERM", emulation_term(q_status.emulation), 1);
                 }
 
                 /* Set LINES and COLUMNS */

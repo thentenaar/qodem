@@ -2556,7 +2556,9 @@ static Q_BOOL kill_redialer_number() {
  * _snwprintf() has trouble with "%s" arguments.  Replace those calls
  * with a simple appender.
  */
-static void my_swprintf(wchar_t * str, int n, wchar_t * format, char * arg1) {
+static void my_swprintf(wchar_t * str, int n, wchar_t * format,
+        const char * arg1) {
+
         int i;
         for (i = 0; (i < strlen(arg1)) && (i < n); i++) {
                 str[wcslen(str) + 1] = 0;
@@ -2567,7 +2569,9 @@ static void my_swprintf(wchar_t * str, int n, wchar_t * format, char * arg1) {
 /*
  * Borland's swprintf and Visual C++'s swprintf have different arguments.
  */
-static void my_swprintf2(wchar_t * str, int n, wchar_t * format, int arg1, wchar_t * arg2) {
+static void my_swprintf2(wchar_t * str, int n, wchar_t * format, int arg1,
+        const wchar_t * arg2) {
+
 #ifdef __BORLANDC__
         /* Borland's swprintf() doesn't take a length argument */
         swprintf(str, format, arg1, arg2);
@@ -2579,7 +2583,9 @@ static void my_swprintf2(wchar_t * str, int n, wchar_t * format, int arg1, wchar
 /*
  * Borland's swprintf and Visual C++'s swprintf have different arguments.
  */
-static void my_swprintf3(wchar_t * str, int n, wchar_t * format, wchar_t * arg1) {
+static void my_swprintf3(wchar_t * str, int n, wchar_t * format,
+        const wchar_t * arg1) {
+
 #ifdef __BORLANDC__
         /* Borland's swprintf() doesn't take a length argument */
         swprintf(str, format, arg1);

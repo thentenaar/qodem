@@ -37,7 +37,6 @@
 #endif
 #include <assert.h>
 #include "input.h"
-#include "status.h"
 #include "options.h"
 #include "qodem.h"
 #include "music.h"

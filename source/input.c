@@ -36,7 +36,6 @@
 #include <windows.h>
 #endif
 #include "qodem.h"
-#include "status.h"
 #include "screensaver.h"
 #include "scrollback.h"
 #include "netclient.h"

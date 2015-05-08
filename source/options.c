@@ -46,7 +46,6 @@
 #include "keyboard.h"
 #include "translate.h"
 #include "qodem.h"
-#include "status.h"
 #include "scrollback.h"
 #include "options.h"
 

@@ -30,7 +30,10 @@
  *
  * The API is:
  *
- *    net_connect(host, port) - provide a raw TCP connection to host:port
+ *    net_connect_start(host, port) - provide a raw TCP connection to host:port
+ *        and return the socket fd
+ *
+ *    net_connect_finish(host, port) - provide a raw TCP connection to host:port
  *        and return the socket fd
  *
  *    net_close() - close the TCP port
@@ -42,7 +45,7 @@
  *    telnet_resize_screen(lines, columns) - send the (new) screen
  *        dimensions to the remote side
  *
- * Its intended use is for the calling code to call net_connect(), and
+ * Its intended use is for the calling code to call net_connect_start(), and
  * then poll() or select() on the returned fd.
  *
  * When poll/select indicates bytes are ready for read, call
@@ -1015,6 +1018,22 @@ int net_connect_start(const char * host, const char * port) {
                         return -1;
                 }
 
+                /* Verify that the socket could be created */
+                if (fd == -1) {
+                        snprintf(notify_message, sizeof(notify_message),
+                                _("Error: %s"), get_strerror(get_errno()));
+                        snprintf(q_dialer_modem_message, sizeof(q_dialer_modem_message),
+                                "%s", notify_message);
+                        freeaddrinfo(address);
+
+                        /* We failed to connect, cycle to the next */
+                        q_dial_state = Q_DIAL_LINE_BUSY;
+                        time(&q_dialer_cycle_start_time);
+                        q_screen_dirty = Q_TRUE;
+                        refresh_handler();
+                        return -1;
+                }
+
         rlogin_bound_ok:
                 /* Attempt the connection */
                 snprintf(notify_message, sizeof(notify_message),
@@ -1031,6 +1050,26 @@ int net_connect_start(const char * host, const char * port) {
                  */
                 set_nonblock(fd);
                 rc = connect(fd, p->ai_addr, p->ai_addrlen);
+
+#ifdef Q_PDCURSES_WIN32
+                if ((rc == -1) && (get_errno() != WSAEINPROGRESS) && (get_errno() != WSAEWOULDBLOCK)) {
+#else
+                if ((rc == -1) && (get_errno() != EINPROGRESS)) {
+#endif /* Q_PDCURSES_WIN32 */
+                        snprintf(notify_message, sizeof(notify_message),
+                                _("Error: %s"), get_strerror(get_errno()));
+                        snprintf(q_dialer_modem_message, sizeof(q_dialer_modem_message),
+                                "%s", notify_message);
+                        freeaddrinfo(address);
+
+                        /* We failed to connect, cycle to the next */
+                        q_dial_state = Q_DIAL_LINE_BUSY;
+                        time(&q_dialer_cycle_start_time);
+                        q_screen_dirty = Q_TRUE;
+                        refresh_handler();
+                        pending = Q_FALSE;
+                        return -1;
+                }
                 break;
 
         try_next_interface:
@@ -1040,7 +1079,6 @@ int net_connect_start(const char * host, const char * port) {
 
         /* At this point, fd is connect()'ing or failed. */
         freeaddrinfo(address);
-
         return fd;
 } /* ---------------------------------------------------------------------- */
 
@@ -2008,8 +2046,8 @@ static void telnet_send_terminal_type(const int fd) {
         response_n++;
 
         /* TERM */
-        snprintf(response + response_n, sizeof(response) - response_n, "%s", dialer_get_term());
-        response_n += strlen(dialer_get_term());
+        snprintf(response + response_n, sizeof(response) - response_n, "%s", emulation_term(q_status.emulation));
+        response_n += strlen(emulation_term(q_status.emulation));
 
         telnet_send_subneg_response(fd, 24, (unsigned char *)response, response_n);
 } /* ---------------------------------------------------------------------- */
@@ -2035,8 +2073,8 @@ static void telnet_send_environment(const int fd) {
         response[response_n] = 1;               /* "VALUE" */
         response_n++;
         snprintf(response + response_n, sizeof(response) - response_n,
-                "%s", dialer_get_term());
-        response_n += strlen(dialer_get_term());
+                "%s", emulation_term(q_status.emulation));
+        response_n += strlen(emulation_term(q_status.emulation));
 
         /* LANG */
         response[response_n] = 3;               /* "USERVAR" */
@@ -2046,8 +2084,8 @@ static void telnet_send_environment(const int fd) {
         response[response_n] = 1;               /* "VALUE" */
         response_n++;
         snprintf(response + response_n, sizeof(response) - response_n,
-                "%s", dialer_get_lang());
-        response_n += strlen(dialer_get_lang());
+                "%s", emulation_lang(q_status.emulation));
+        response_n += strlen(emulation_lang(q_status.emulation));
 
         telnet_send_subneg_response(fd, 39, (unsigned char *)response,
                 response_n);
@@ -3221,7 +3259,7 @@ static void rlogin_send_login(const int fd) {
 
         /* terminal/speed */
         snprintf((char *)buffer, sizeof(buffer) - 1, "%s/38400",
-                dialer_get_term());
+                emulation_term(q_status.emulation));
         raw_write(fd, buffer, strlen((char *)buffer) + 1);
 } /* ---------------------------------------------------------------------- */
 
@@ -3764,7 +3802,7 @@ skip_hostkey_check:
          * Set the LANG - we do this ahead of the shell, but most hosts I'm
          * looking at seem to override it anyway.  Ugh.
          */
-        rc = libssh2_channel_setenv(q_ssh_channel, "LANG", dialer_get_lang());
+        rc = libssh2_channel_setenv(q_ssh_channel, "LANG", emulation_lang(q_status.emulation));
         if ((rc != 0) && (rc != LIBSSH2_ERROR_CHANNEL_REQUEST_DENIED)) {
                 emit_ssh_error(q_ssh_session);
                 ssh_close();
@@ -3773,11 +3811,11 @@ skip_hostkey_check:
 
 #ifdef DEBUG_NET
         fprintf(DEBUG_FILE_HANDLE, "ssh_setup_connection() LANG passed: %s\n",
-                dialer_get_lang());
+                emulation_lang(q_status.emulation));
 #endif /* DEBUG_NET */
 
-        rc = libssh2_channel_request_pty_ex(q_ssh_channel, dialer_get_term(),
-                strlen(dialer_get_term()), NULL, 0,
+        rc = libssh2_channel_request_pty_ex(q_ssh_channel, emulation_term(q_status.emulation),
+                strlen(emulation_term(q_status.emulation)), NULL, 0,
                 WIDTH, HEIGHT - STATUS_HEIGHT, 0, 0);
         if (rc != 0) {
                 emit_ssh_error(q_ssh_session);

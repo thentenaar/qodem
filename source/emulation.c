@@ -104,7 +104,7 @@ Q_EMULATION emulation_from_string(const char * string) {
 /*
  * emulation_string - return the string representing the current emulation
  */
-char * emulation_string(const Q_EMULATION emulation) {
+const char * emulation_string(const Q_EMULATION emulation) {
 
         switch (emulation) {
         case Q_EMUL_TTY:
@@ -149,6 +149,57 @@ char * emulation_string(const Q_EMULATION emulation) {
         assert(1 == 0);
         return NULL;
 } /* ---------------------------------------------------------------------- */
+
+/**
+ * Get the appropriate TERM environment variable value for an emulation.
+ *
+ * @param emulation the emulation 
+ * @return "ansi", "xterm", etc.
+ */
+const char * emulation_term(Q_EMULATION emulation) {
+        switch (emulation) {
+        case Q_EMUL_ANSI:
+                return "ansi";
+        case Q_EMUL_AVATAR:
+                return "avatar";
+        case Q_EMUL_VT52:
+                return "vt52";
+        case Q_EMUL_VT100:
+                return "vt100";
+        case Q_EMUL_VT102:
+                return "vt102";
+        case Q_EMUL_VT220:
+                return "vt220";
+        case Q_EMUL_TTY:
+                return "dumb";
+        case Q_EMUL_LINUX:
+        case Q_EMUL_LINUX_UTF8:
+                return "linux";
+        case Q_EMUL_XTERM:
+        case Q_EMUL_XTERM_UTF8:
+                return "xterm";
+        case Q_EMUL_DEBUG:
+        default:
+                /* No default terminal setting */
+                return "";
+        }
+}
+
+/**
+ * Get the appropriate LANG environment variable value for an emulation.
+ *
+ * @param emulation the emulation 
+ * @return "en", "en_US", etc.
+ */
+const char * emulation_lang(Q_EMULATION emulation) {
+        switch (emulation) {
+        case Q_EMUL_XTERM_UTF8:
+        case Q_EMUL_LINUX_UTF8:
+                return get_option(Q_OPTION_UTF8_LANG);
+        default:
+                return get_option(Q_OPTION_ISO8859_LANG);
+        }
+}
 
 /*
  * reset_emulation - reset the emulation state

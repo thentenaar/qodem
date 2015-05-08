@@ -28,7 +28,6 @@
 #include <string.h>
 #include "qodem.h"
 #include "options.h"
-#include "status.h"
 #include "screen.h"
 #include "ansi.h"
 #include "netclient.h"

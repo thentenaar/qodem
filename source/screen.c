@@ -36,7 +36,6 @@
 #include "music.h"
 #include "linux.h"
 #include "states.h"
-#include "status.h"
 #include "screen.h"
 
 /* Stored in colors.c */

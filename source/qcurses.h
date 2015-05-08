@@ -1,31 +1,31 @@
 /*
  * qcurses.h
  *
- * This module is licensed under the GNU General Public License
- * Version 2.  Please see the file "COPYING" in this directory for
- * more information about the GNU General Public License Version 2.
+ * This module is licensed under the GNU General Public License Version 2.
+ * Please see the file "COPYING" in this directory for more information about
+ * the GNU General Public License Version 2.
  *
  *     Copyright (C) 2015  Kevin Lamonte
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
  *
  * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301 USA
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc., 51
+ * Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /*
- * This loads the correct curses library (ncursesw or PDCurses
- * widechar).
+ * This loads the header for the correct curses library (ncursesw or PDCurses
+ * widechar).  It is a bit finicky because of conflicts between ncurses.h,
+ * PDCurses curses.h, and windows.h.
  */
 
 /* Support wide char ncurses */
@@ -47,18 +47,6 @@
 #    include "term.h"
 #  else
 #    if defined(__FreeBSD__) || defined(__APPLE__) || defined(__HAIKU__)
-
-/*
- * Do I still need this?
- */ 
-/* #      ifndef _XOPEN_SOURCE */
-/* #        define _XOPEN_SOURCE */
-/* #        ifndef _XOPEN_SOURCE_EXTENDED */
-/* #          define _XOPEN_SOURCE_EXTENDED */
-/* #        endif /\* _XOPEN_SOURCE_EXTENDED *\/ */
-/* #      endif /\* _XOPEN_SOURCE *\/ */
-
-
 #      include <curses.h>
 #    else
 #      define _GNU_SOURCE

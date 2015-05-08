@@ -121,18 +121,4 @@ extern void set_raw_termios(const int tty_fd);
  */
 extern void dial_success();
 
-/**
- * Get the appropriate TERM variable value for the current emulation.
- *
- * @return "ansi", "xterm", etc.
- */
-extern const char * dialer_get_term();
-
-/**
- * Get the appropriate LANG variable value for the current emulation.
- *
- * @return "en", "en_US", etc.
- */
-extern const char * dialer_get_lang();
-
 #endif /* __DIALER_H__ */

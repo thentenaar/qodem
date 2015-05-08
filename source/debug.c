@@ -26,7 +26,6 @@
 #include "common.h"
 #include <string.h>
 #include "qodem.h"
-#include "status.h"
 #include "screen.h"
 #include "debug.h"
 

@@ -41,7 +41,6 @@
 #else
 #include <sys/poll.h>
 #endif /* Q_PDCURSES_WIN32 */
-#include "status.h"
 
 /*
  * Wcsdup
