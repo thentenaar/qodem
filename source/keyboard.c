@@ -96,7 +96,7 @@
 #include "qodem.h"
 #include "screen.h"
 #include "forms.h"
-#include "screensaver.h"                /* original_state */
+#include "states.h"                     /* original_state */
 #include "console.h"
 #include "ansi.h"
 #include "vt52.h"

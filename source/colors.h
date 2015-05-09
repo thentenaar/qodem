@@ -220,34 +220,62 @@ typedef enum Q_COLORS {
 /* Globals ---------------------------------------------------------------- */
 
 /**
- * Global colormap table.  Stored in colors.c.
+ * Global colormap table.
  */
 extern struct q_text_color_struct q_text_colors[Q_COLOR_MAX];
 
 /**
- * Global Alt-I information screen.  Stored in colors.c.
+ * Global Alt-I information screen.
  */
 extern unsigned char q_info_screen[];
 
 /**
- * The color pair number that is white foreground black background.  Stored
- * in colors.c.
+ * The color pair number that is white foreground black background.
  */
 extern short q_white_color_pair_num;
 
 /* Functions -------------------------------------------------------------- */
 
+/**
+ * This must be called to initialize the colors from the config file.
+ */
 extern void q_setup_colors();
 
+/**
+ * Convert an array of 8-bit attribute/character VGA cells into scrollback
+ * lines that can be displayed through curses.
+ *
+ * @param screen the data array
+ * @param length the number of bytes in screen
+ * @param output_line a previously-allocated scrollback line to contain the
+ * first row of screen data.  Additional lines are allocated and added to the
+ * list as needed.
+ */
 extern void convert_thedraw_screen(const unsigned char * screen,
                                    const int length,
                                    struct q_scrolline_struct * output_line);
 
-extern char * color_to_html(const attr_t color);
+/**
+ * Convert a curses attr_t into an HTML &lt;font color&gt; tag.  Note that
+ * the string returned is a single static buffer, i.e. this is NOT
+ * thread-safe.
+ *
+ * @param attr the curses attribute
+ * @return the HTML string
+ */
+extern char * color_to_html(const attr_t attr);
 
-
+/**
+ * Get the full path to the colors.cfg file.
+ *
+ * @return the full path to colors.cfg (usually ~/qodem/colors.cfg or My
+ * Documents\\prefs\\colors.cfg).
+ */
 extern char * get_colors_filename();
 
+/**
+ * Load (or reload) colors from the colors.cfg file.
+ */
 extern void load_colors();
 
 #endif /* __COLORS_H__ */

@@ -34,7 +34,7 @@
 /* Globals ---------------------------------------------------------------- */
 
 /**
- * Split screen dirty flag.  Stored in console.c.
+ * Split screen dirty flag.
  */
 extern Q_BOOL q_split_screen_dirty;
 

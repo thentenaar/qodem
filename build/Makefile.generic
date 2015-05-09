@@ -122,7 +122,6 @@ $(QODEM_SRC_DIR)/phonebook.c \
 $(QODEM_SRC_DIR)/protocols.c \
 $(QODEM_SRC_DIR)/qodem.c \
 $(QODEM_SRC_DIR)/screen.c \
-$(QODEM_SRC_DIR)/screensaver.c \
 $(QODEM_SRC_DIR)/script.c \
 $(QODEM_SRC_DIR)/scrollback.c \
 $(QODEM_SRC_DIR)/states.c \
@@ -158,7 +157,6 @@ $(QODEM_OBJS_DIR)/phonebook.o \
 $(QODEM_OBJS_DIR)/protocols.o \
 $(QODEM_OBJS_DIR)/qodem.o \
 $(QODEM_OBJS_DIR)/screen.o \
-$(QODEM_OBJS_DIR)/screensaver.o \
 $(QODEM_OBJS_DIR)/script.o \
 $(QODEM_OBJS_DIR)/scrollback.o \
 $(QODEM_OBJS_DIR)/states.o \

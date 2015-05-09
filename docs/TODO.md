@@ -54,9 +54,7 @@ Code sweep:
   Javadoc all functions
   Eliminate "stored in X.c" on externs
 
-    host.h
     input.h
-    kermit.h
     keyboard.h
     modem.h
     music.h
@@ -66,14 +64,8 @@ Code sweep:
     protocols.h
     qodem.h
     screen.h
-    screensaver.h
     script.h
     scrollback.h
-    states.h
-    status.h
-    translate.h
-    xmodem.h
-    zmodem.h
 
     ansi.c
     avatar.c
@@ -100,7 +92,6 @@ Code sweep:
     protocols.c
     qodem.c
     screen.c
-    screensaver.c
     script.c
     scrollback.c
     states.c
@@ -121,6 +112,7 @@ Win32 port:
     Except for my_swprintf()'s and common.h/common.c
   Eliminate reasonable Borland warnings
   Fix mouse tracking to do mouse and not copy-to-clipboard
+  Use Beep() and support bells and music
   InnoSetup Windows installer:
     Install Classic Console font + qodem executable
     Custom directories:

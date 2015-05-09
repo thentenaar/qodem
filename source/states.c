@@ -29,14 +29,15 @@
 #include <assert.h>
 #include <sys/time.h>
 #include <stdlib.h>
+#include <string.h>
 #include "qodem.h"
 #include "console.h"
 #include "script.h"
 #include "protocols.h"
-#include "screensaver.h"
 #include "keyboard.h"
 #include "translate.h"
 #include "screen.h"
+#include "options.h"
 #include "states.h"
 
 /* Global program state */
@@ -355,4 +356,58 @@ void switch_state(const Q_PROGRAM_STATE new_state) {
         }
 
         q_program_state = new_state;
+} /* ---------------------------------------------------------------------- */
+
+/* By default password is 16 chars. */
+static char password_buffer[16];
+static int password_buffer_n = 0;
+
+/* State we were in before the screensaver was activated. */
+Q_PROGRAM_STATE original_state;
+
+/*
+ * screensaver_keyboard_handler
+ */
+void screensaver_keyboard_handler(const int keystroke, const int flags) {
+        qlog(_("SCREENSAVER ending, returning to original state %u...\n"), original_state);
+
+        if ((keystroke == Q_KEY_ENTER) || (keystroke == C_CR)) {
+                if ((password_buffer_n > 0) && (strcmp(password_buffer, get_option(Q_OPTION_SCREENSAVER_PASSWORD)) == 0)) {
+                        /* UNLOCK */
+                        switch_state(original_state);
+                }
+
+                password_buffer_n = 0;
+        } else {
+                password_buffer[password_buffer_n] = keystroke & 0xFF;
+                password_buffer_n++;
+                if (password_buffer_n == sizeof(password_buffer)) {
+                        password_buffer_n = 0;
+                }
+        }
+} /* ---------------------------------------------------------------------- */
+
+/*
+ * screensaver_refresh
+ */
+void screensaver_refresh() {
+        int i, j;
+        int width, height;
+
+        screen_get_dimensions(&height, &width);
+
+        /* Manual clear, REALLY wipe the characters */
+        for (i=0; i<height; i++) {
+                screen_move_yx(i, 0);
+                for (j=0; j<width; j++) {
+                        screen_put_color_char(' ', Q_COLOR_CONSOLE);
+                }
+        }
+        screen_put_color_str_yx(height - 1, 0, _("Enter password to unlock: "), Q_COLOR_CONSOLE);
+
+        screen_flush();
+
+        if (password_buffer_n == 0) {
+                memset(password_buffer, 0, sizeof(password_buffer));
+        }
 } /* ---------------------------------------------------------------------- */

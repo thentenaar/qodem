@@ -824,7 +824,7 @@ static char font_color[256];
 /*
  * color_to_html - Turn a bitmask'd color into an HTML <font color> string.
  */
-char * color_to_html(const attr_t color) {
+char * color_to_html(const attr_t attr) {
         char * font_weight = "normal";
         char * text_decoration = "none";
         char * fg_text;
@@ -855,28 +855,28 @@ char * color_to_html(const attr_t color) {
         short fg;
         short bg;
 
-        fg = PAIR_NUMBER(color) >> 3;
-        bg = PAIR_NUMBER(color) & 0x07;
+        fg = PAIR_NUMBER(attr) >> 3;
+        bg = PAIR_NUMBER(attr) & 0x07;
 
         memset(font_color, 0, sizeof(font_color));
 
-        if ((color & A_BLINK) && (color & A_UNDERLINE)) {
+        if ((attr & A_BLINK) && (attr & A_UNDERLINE)) {
                 text_decoration = "blink, underline";
-        } else if (color & A_UNDERLINE) {
+        } else if (attr & A_UNDERLINE) {
                 text_decoration = "underline";
-        } else if (color & A_BLINK) {
+        } else if (attr & A_BLINK) {
                 text_decoration = "blink";
         }
-        if (color & A_REVERSE) {
+        if (attr & A_REVERSE) {
                 fg_text = bitmask_to_html_map[bg];
-                if (color & A_BOLD) {
+                if (attr & A_BOLD) {
                         bg_text = bitmask_to_html_map_bright[fg];
                 } else {
                         bg_text = bitmask_to_html_map[fg];
                 }
         } else {
                 bg_text = bitmask_to_html_map[bg];
-                if (color & A_BOLD) {
+                if (attr & A_BOLD) {
                         fg_text = bitmask_to_html_map_bright[fg];
                 } else {
                         fg_text = bitmask_to_html_map[fg];

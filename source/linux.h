@@ -45,32 +45,30 @@
 /* Globals ---------------------------------------------------------------- */
 
 /**
- * Whether arrow keys send ANSI, VT100, or VT52 sequences.  Stored in
- * linux.c.
+ * Whether arrow keys send ANSI, VT100, or VT52 sequences.
  */
 extern Q_EMULATION q_linux_arrow_keys;
 
 /**
  * Whether number pad keys send VT100 or VT52, application or numeric
- * sequences.  Stored in linux.c.
+ * sequences.
  */
 extern struct q_keypad_mode q_linux_keypad_mode;
 
 /**
  * When true, VT100 new line mode is set.  Exposed for keyboard.c so that
- * ENTER generates appropriate code.  Stored in linux.c.
+ * ENTER generates appropriate code.
  */
 extern Q_BOOL q_linux_new_line_mode;
 
 /**
  * The bell frequency in Hz set by ESC [ 10 ; n ] .  Used by qodem_beep().
- * Stored in linux.c.
  */
 extern int q_linux_beep_frequency;
 
 /**
  * The bell duration in milliseconds set by ESC [ 10 ; n ] .  Used by
- * qodem_beep().  Stored in linux.c.
+ * qodem_beep().
  */
 extern int q_linux_beep_duration;
 

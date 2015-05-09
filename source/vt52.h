@@ -34,8 +34,7 @@
 /* Globals ---------------------------------------------------------------- */
 
 /**
- * True means alternate keypad mode, false means numeric keypad mode.  Stored
- * in vt52.c.
+ * True means alternate keypad mode, false means numeric keypad mode.
  */
 extern Q_BOOL q_vt52_alternate_keypad_mode;
 

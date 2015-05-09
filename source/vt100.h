@@ -34,20 +34,19 @@
 /* Globals ---------------------------------------------------------------- */
 
 /**
- * Whether arrow keys send ANSI, VT100, or VT52 sequences.  Stored in
- * vt100.c.
+ * Whether arrow keys send ANSI, VT100, or VT52 sequences.
  */
 extern Q_EMULATION q_vt100_arrow_keys;
 
 /**
  * Whether number pad keys send VT100 or VT52, application or numeric
- * sequences.  Stored in vt100.c.
+ * sequences.
  */
 extern struct q_keypad_mode q_vt100_keypad_mode;
 
 /**
  * When true, VT100 new line mode is set.  Exposed for keyboard.c so that
- * ENTER generates appropriate code.  Stored in vt100.c
+ * ENTER generates appropriate code.
  */
 extern Q_BOOL q_vt100_new_line_mode;
 

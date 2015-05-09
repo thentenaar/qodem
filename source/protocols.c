@@ -121,7 +121,7 @@
 #include "translate.h"
 #include "options.h"
 #include "help.h"
-#include "screensaver.h"
+#include "states.h"
 #include "protocols.h"
 
 /* Transfer statistics */
