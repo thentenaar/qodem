@@ -60,6 +60,8 @@
 static FILE * DEBUG_FILE_HANDLE = NULL;
 #endif
 
+#define VIEW_MODE_MAX 5
+
 typedef enum {
         DIAL_MODEM_INIT,
         DIAL_MODEM_SENT_AT,
@@ -504,18 +506,6 @@ static Q_DOORWAY doorway_from_string(const char * string) {
 char * method_string(const Q_DIAL_METHOD method) {
 
         switch (method) {
-/*
-        case Q_DIAL_METHOD_SHELL:
-                return _("LOCAL");
-        case Q_DIAL_METHOD_SSH:
-                return _("SSH");
-        case Q_DIAL_METHOD_RLOGIN:
-                return _("RLOGIN");
-        case Q_DIAL_METHOD_TELNET:
-                return _("TELNET");
-        case Q_DIAL_METHOD_TN3270:
-                return _("TN3270");
-*/
         case Q_DIAL_METHOD_SHELL:
                 return "LOCAL";
 #ifndef Q_NO_SERIAL
@@ -530,10 +520,6 @@ char * method_string(const Q_DIAL_METHOD method) {
                 return "TELNET";
         case Q_DIAL_METHOD_SOCKET:
                 return "SOCKET";
-        /*
-        case Q_DIAL_METHOD_TN3270:
-                return "TN3270";
-         */
         case Q_DIAL_METHOD_COMMANDLINE:
                 return "CMDLINE";
         }
@@ -545,20 +531,6 @@ char * method_string(const Q_DIAL_METHOD method) {
  * method_from_string - return a connection method given the string representation
  */
 static Q_DIAL_METHOD method_from_string(const char * string) {
-
-/*
-        if (strncmp(string, _("LOCAL"), strlen(_("LOCAL"))) == 0) {
-                return Q_DIAL_METHOD_SHELL;
-        } else if (strncmp(string, _("SSH"), strlen(_("SSH"))) == 0) {
-                return Q_DIAL_METHOD_SSH;
-        } else if (strncmp(string, _("RLOGIN"), strlen(_("RLOGIN"))) == 0) {
-                return Q_DIAL_METHOD_RLOGIN;
-        } else if (strncmp(string, _("TELNET"), strlen(_("TELNET"))) == 0) {
-                return Q_DIAL_METHOD_TELNET;
-        } else if (strncmp(string, _("TN3270"), strlen(_("TN3270"))) == 0) {
-                return Q_DIAL_METHOD_TN3270;
-        }
-*/
 
         if (strncmp(string, "LOCAL", strlen("LOCAL")) == 0) {
                 return Q_DIAL_METHOD_SHELL;
@@ -574,10 +546,6 @@ static Q_DIAL_METHOD method_from_string(const char * string) {
                 return Q_DIAL_METHOD_TELNET;
         } else if (strncmp(string, "SOCKET", strlen("SOCKET")) == 0) {
                 return Q_DIAL_METHOD_SOCKET;
-        /*
-        } else if (strncmp(string, "TN3270", strlen("TN3270")) == 0) {
-                return Q_DIAL_METHOD_TN3270;
-         */
         } else if (strncmp(string, "CMDLINE", strlen("CMDLINE")) == 0) {
                 return Q_DIAL_METHOD_COMMANDLINE;
         }
@@ -585,18 +553,18 @@ static Q_DIAL_METHOD method_from_string(const char * string) {
         return -1;
 } /* ---------------------------------------------------------------------- */
 
-#define TOGGLE_SESSION_LOG      0x01
-#define TOGGLE_XONXOFF          0x02
-#define TOGGLE_HARD_BACKSPACE   0x04
-#define TOGGLE_LINEWRAP         0x08
-#define TOGGLE_DISPLAY_NULL     0x10
-#define TOGGLE_STATUS_LINE_INFO 0x20
-#define TOGGLE_STRIP_8TH        0x40
-#define TOGGLE_BEEPS            0x80
-#define TOGGLE_HALF_DUPLEX      0x100
-#define TOGGLE_SCROLLBACK       0x200
-#define TOGGLE_STATUS_LINE      0x400
-#define TOGGLE_CRLF             0x800
+#define TOGGLE_SESSION_LOG      0x0001
+#define TOGGLE_XONXOFF          0x0002
+#define TOGGLE_HARD_BACKSPACE   0x0004
+#define TOGGLE_LINEWRAP         0x0008
+#define TOGGLE_DISPLAY_NULL     0x0010
+#define TOGGLE_STATUS_LINE_INFO 0x0020
+#define TOGGLE_STRIP_8TH        0x0040
+#define TOGGLE_BEEPS            0x0080
+#define TOGGLE_HALF_DUPLEX      0x0100
+#define TOGGLE_SCROLLBACK       0x0200
+#define TOGGLE_STATUS_LINE      0x0400
+#define TOGGLE_CRLF             0x0800
 #define TOGGLE_ANSI_MUSIC       0x1000
 
 static char toggles_string_buffer[32];
@@ -890,9 +858,9 @@ void load_phonebook(const Q_BOOL backup_version) {
 #ifndef Q_NO_SERIAL
                                 new_entry->use_modem_cfg        = Q_TRUE;
                                 new_entry->baud                 = Q_BAUD_115200;
-                                new_entry->data_bits            = DATA_BITS_8;
+                                new_entry->data_bits            = Q_DATA_BITS_8;
                                 new_entry->parity               = Q_PARITY_NONE;
-                                new_entry->stop_bits            = STOP_BITS_1;
+                                new_entry->stop_bits            = Q_STOP_BITS_1;
                                 new_entry->xonxoff              = Q_FALSE;
                                 new_entry->rtscts               = Q_TRUE;
                                 new_entry->lock_dte_baud        = Q_TRUE;
@@ -1053,13 +1021,13 @@ void load_phonebook(const Q_BOOL backup_version) {
 
                         } else if (strncmp(buffer, "data_bits", strlen("data_bits")) == 0) {
                                 if (strcmp(begin, "8") == 0) {
-                                        new_entry->data_bits = DATA_BITS_8;
+                                        new_entry->data_bits = Q_DATA_BITS_8;
                                 } else if (strcmp(begin, "7") == 0) {
-                                        new_entry->data_bits = DATA_BITS_7;
+                                        new_entry->data_bits = Q_DATA_BITS_7;
                                 } else if (strcmp(begin, "6") == 0) {
-                                        new_entry->data_bits = DATA_BITS_6;
+                                        new_entry->data_bits = Q_DATA_BITS_6;
                                 } else if (strcmp(begin, "5") == 0) {
-                                        new_entry->data_bits = DATA_BITS_5;
+                                        new_entry->data_bits = Q_DATA_BITS_5;
                                 }
                         } else if (strncmp(buffer, "parity", strlen("parity")) == 0) {
                                 if (strcmp(begin, "none") == 0) {
@@ -1075,9 +1043,9 @@ void load_phonebook(const Q_BOOL backup_version) {
                                 }
                         } else if (strncmp(buffer, "stop_bits", strlen("stop_bits")) == 0) {
                                 if (strcmp(begin, "1") == 0) {
-                                        new_entry->stop_bits = STOP_BITS_1;
+                                        new_entry->stop_bits = Q_STOP_BITS_1;
                                 } else if (strcmp(begin, "2") == 0) {
-                                        new_entry->stop_bits = STOP_BITS_2;
+                                        new_entry->stop_bits = Q_STOP_BITS_2;
                                 }
                         } else if (strncmp(buffer, "lock_dte_baud", strlen("lock_dte_baud")) == 0) {
                                 if (strcmp(begin, "true") == 0) {
@@ -1282,9 +1250,9 @@ void create_phonebook() {
 #ifndef Q_NO_SERIAL
         new_entry->use_modem_cfg        = Q_TRUE;
         new_entry->baud                 = Q_BAUD_115200;
-        new_entry->data_bits            = DATA_BITS_8;
+        new_entry->data_bits            = Q_DATA_BITS_8;
         new_entry->parity               = Q_PARITY_NONE;
-        new_entry->stop_bits            = STOP_BITS_1;
+        new_entry->stop_bits            = Q_STOP_BITS_1;
         new_entry->xonxoff              = Q_FALSE;
         new_entry->rtscts               = Q_TRUE;
         new_entry->lock_dte_baud        = Q_TRUE;
@@ -1323,9 +1291,9 @@ void create_phonebook() {
 #ifndef Q_NO_SERIAL
         new_entry->use_modem_cfg        = Q_TRUE;
         new_entry->baud                 = Q_BAUD_115200;
-        new_entry->data_bits            = DATA_BITS_8;
+        new_entry->data_bits            = Q_DATA_BITS_8;
         new_entry->parity               = Q_PARITY_NONE;
-        new_entry->stop_bits            = STOP_BITS_1;
+        new_entry->stop_bits            = Q_STOP_BITS_1;
         new_entry->xonxoff              = Q_FALSE;
         new_entry->rtscts               = Q_TRUE;
         new_entry->lock_dte_baud        = Q_TRUE;
@@ -1364,9 +1332,9 @@ void create_phonebook() {
         new_entry->codepage             = default_codepage(new_entry->emulation);
         new_entry->use_modem_cfg        = Q_TRUE;
         new_entry->baud                 = Q_BAUD_115200;
-        new_entry->data_bits            = DATA_BITS_8;
+        new_entry->data_bits            = Q_DATA_BITS_8;
         new_entry->parity               = Q_PARITY_NONE;
-        new_entry->stop_bits            = STOP_BITS_1;
+        new_entry->stop_bits            = Q_STOP_BITS_1;
         new_entry->xonxoff              = Q_FALSE;
         new_entry->rtscts               = Q_TRUE;
         new_entry->lock_dte_baud        = Q_TRUE;
@@ -4438,8 +4406,8 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
 
 #ifndef Q_NO_SERIAL
         Q_BAUD_RATE baud;
-        DATA_BITS data_bits;
-        STOP_BITS stop_bits;
+        Q_DATA_BITS data_bits;
+        Q_STOP_BITS stop_bits;
         Q_PARITY parity;
         Q_BOOL use_modem_cfg;
         Q_BOOL xonxoff;
@@ -5851,7 +5819,7 @@ void phonebook_keyboard_handler(const int keystroke, const int flags) {
         case 'O':
                 /* Switch view mode */
                 q_phonebook.view_mode++;
-                if (q_phonebook.view_mode == Q_PHONEBOOK_VIEW_MODE_MAX) {
+                if (q_phonebook.view_mode == VIEW_MODE_MAX) {
                         q_phonebook.view_mode = 0;
                 }
                 break;

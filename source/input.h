@@ -1,26 +1,25 @@
 /*
  * input.h
  *
- * This module is licensed under the GNU General Public License
- * Version 2.  Please see the file "COPYING" in this directory for
- * more information about the GNU General Public License Version 2.
+ * This module is licensed under the GNU General Public License Version 2.
+ * Please see the file "COPYING" in this directory for more information about
+ * the GNU General Public License Version 2.
  *
  *     Copyright (C) 2015  Kevin Lamonte
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
  *
  * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301 USA
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc., 51
+ * Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef __INPUT_H__
@@ -159,7 +158,6 @@
 #define Q_KEY_PAD_MAX   Q_KEY_C2
 #endif
 
-
 #define Q_A_NORMAL      A_NORMAL
 #define Q_A_UNDERLINE   A_UNDERLINE
 #define Q_A_REVERSE     A_REVERSE
@@ -173,10 +171,10 @@
 
 #define Q_ERR           ERR
 
-#define KEY_FLAG_ALT            0x0001          /* ALT (META) key was pressed */
-#define KEY_FLAG_CTRL           0x0002          /* CTRL key was pressed */
-#define KEY_FLAG_SHIFT          0x0004          /* SHIFT key was pressed */
-#define KEY_FLAG_UNICODE        0x0008          /* Key contains a Unicode character */
+#define KEY_FLAG_ALT            0x0001  /* ALT (META) key was pressed */
+#define KEY_FLAG_CTRL           0x0002  /* CTRL key was pressed */
+#define KEY_FLAG_SHIFT          0x0004  /* SHIFT key was pressed */
+#define KEY_FLAG_UNICODE        0x0008  /* Key contains a Unicode character */
 
 #define KEY_ESCAPE              0x1B
 
@@ -188,23 +186,80 @@
 
 /* Globals ---------------------------------------------------------------- */
 
-/* The current rendering color, stored in console.c */
+/**
+ * The current rendering color.
+ */
 extern attr_t q_current_color;
 
 /* Functions -------------------------------------------------------------- */
 
-/* Main keyboard input function */
-extern void qodem_win_getch(void * window, int * keystroke, int * flags, const unsigned int usleep_time);
+/**
+ * Obtain a keyboard input event from a window.
+ *
+ * @param window the curses WINDOW to query
+ * @param keystroke the output keystroke, or ERR if nothing came in
+ * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.
+ * @param usleep_time the number of MICROseconds to wait for input before
+ * returning ERR
+ */
+extern void qodem_win_getch(void * window, int * keystroke, int * flags,
+                            const unsigned int usleep_time);
 
-extern void qodem_getch(int * keystroke, int * flags, const unsigned int usleep_time);
+/**
+ * Obtain a keyboard input event from stdscr.  This is the main keyboard and
+ * mouse input function, called by keyboard_handler().
+ *
+ * @param keystroke the output keystroke, or ERR if nothing came in
+ * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.
+ * @param usleep_time the number of MICROseconds to wait for input before
+ * returning ERR
+ */
+extern void qodem_getch(int * keystroke, int * flags,
+                        const unsigned int usleep_time);
 
+/**
+ * Read data from the keyboard/mouse and throw it away.
+ */
 extern void discarding_getch();
+
+/**
+ * Tell curses whether or not we want calls to getch() to block.
+ *
+ * @param block if true, block on input.  If false, when no input is
+ * available then return ERR.
+ */
 extern void set_blocking_input(Q_BOOL block);
 
+/**
+ * Make the cursor invisible.
+ *
+ * @return the previous cursor state
+ */
 extern int q_cursor_off();
+
+/**
+ * Make the cursor visible.
+ *
+ * @return the previous cursor state
+ */
 extern int q_cursor_on();
+
+/**
+ * Make the cursor visible or invisible.
+ *
+ * @param cursor if 0, make the cursor invisible.  If 1, make it visible.  If
+ * 2, make it "very visible".
+ * @return the previous cursor state
+ */
 extern int q_cursor(const int cursor);
 
+/**
+ * Determine if a keystroke is a "special key" like a function key, arrow
+ * key, or number pad key, etc.
+ *
+ * @param keystroke key to check
+ * @return 1 if this is a special key, 0 otherwise
+ */
 extern int q_key_code_yes(int keystroke);
 
 #endif /* __INPUT_H__ */

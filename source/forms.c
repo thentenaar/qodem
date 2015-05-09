@@ -2412,7 +2412,7 @@ struct file_info * batch_entry_window(const char * initial_directory, const Q_BO
 #ifndef Q_NO_SERIAL
 
 /* Prompt for new communication settings */
-Q_BOOL comm_settings_form(const char * title, Q_BAUD_RATE * baud, DATA_BITS * data_bits, Q_PARITY * parity, STOP_BITS * stop_bits, Q_BOOL * xonxoff, Q_BOOL * rtscts) {
+Q_BOOL comm_settings_form(const char * title, Q_BAUD_RATE * baud, Q_DATA_BITS * data_bits, Q_PARITY * parity, Q_STOP_BITS * stop_bits, Q_BOOL * xonxoff, Q_BOOL * rtscts) {
         void * form_window;
         int status_left_stop;
         char * status_string;
@@ -2426,9 +2426,9 @@ Q_BOOL comm_settings_form(const char * title, Q_BAUD_RATE * baud, DATA_BITS * da
 
         /* The new version */
         Q_BAUD_RATE new_baud = *baud;
-        DATA_BITS new_data_bits = *data_bits;
+        Q_DATA_BITS new_data_bits = *data_bits;
         Q_PARITY new_parity = *parity;
-        STOP_BITS new_stop_bits = *stop_bits;
+        Q_STOP_BITS new_stop_bits = *stop_bits;
         Q_BOOL new_xonxoff = *xonxoff;
         Q_BOOL new_rtscts = *rtscts;
 
@@ -2628,37 +2628,37 @@ Q_BOOL comm_settings_form(const char * title, Q_BAUD_RATE * baud, DATA_BITS * da
                         case 'K':
                         case 'k':
                                 if ((new_parity != Q_PARITY_MARK) && (new_parity != Q_PARITY_SPACE)) {
-                                        new_data_bits = DATA_BITS_8;
+                                        new_data_bits = Q_DATA_BITS_8;
                                 }
                                 break;
 
                         case 'L':
                         case 'l':
-                                new_data_bits = DATA_BITS_7;
+                                new_data_bits = Q_DATA_BITS_7;
                                 break;
 
                         case 'M':
                         case 'm':
                                 if ((new_parity != Q_PARITY_MARK) && (new_parity != Q_PARITY_SPACE)) {
-                                        new_data_bits = DATA_BITS_6;
+                                        new_data_bits = Q_DATA_BITS_6;
                                 }
                                 break;
 
                         case 'N':
                         case 'n':
                                 if ((new_parity != Q_PARITY_MARK) && (new_parity != Q_PARITY_SPACE)) {
-                                        new_data_bits = DATA_BITS_5;
+                                        new_data_bits = Q_DATA_BITS_5;
                                 }
                                 break;
 
                         case 'O':
                         case 'o':
-                                new_stop_bits = STOP_BITS_1;
+                                new_stop_bits = Q_STOP_BITS_1;
                                 break;
 
                         case 'P':
                         case 'p':
-                                new_stop_bits = STOP_BITS_2;
+                                new_stop_bits = Q_STOP_BITS_2;
                                 break;
 
                         case 'Q':
@@ -2679,13 +2679,13 @@ Q_BOOL comm_settings_form(const char * title, Q_BAUD_RATE * baud, DATA_BITS * da
                         case 'T':
                         case 't':
                                 new_parity = Q_PARITY_MARK;
-                                new_data_bits = DATA_BITS_7;
+                                new_data_bits = Q_DATA_BITS_7;
                                 break;
 
                         case 'U':
                         case 'u':
                                 new_parity = Q_PARITY_SPACE;
-                                new_data_bits = DATA_BITS_7;
+                                new_data_bits = Q_DATA_BITS_7;
                                 break;
 
                         case 'V':

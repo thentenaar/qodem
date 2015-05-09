@@ -42,6 +42,9 @@
 #include "linux.h"
 #include "input.h"
 
+/* The current rendering color, _in scrollback form_. */
+attr_t q_current_color;
+
 /* How long it's been since user input came in */
 static time_t screensaver_time;
 

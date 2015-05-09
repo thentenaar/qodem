@@ -42,9 +42,6 @@
 #include "netclient.h"
 #include "help.h"
 
-/* The current rendering color, _in scrollback form_. */
-attr_t q_current_color;
-
 /* Whether we need to render the entire console, or just update the
  * status line. */
 Q_BOOL q_screen_dirty = Q_TRUE;

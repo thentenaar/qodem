@@ -1662,24 +1662,24 @@ void protocol_transfer_refresh() {
 #ifndef Q_NO_SERIAL
         if (q_status.serial_open == Q_TRUE) {
                 switch (q_serial_port.data_bits) {
-                case DATA_BITS_8:
+                case Q_DATA_BITS_8:
                         bits_per_byte = 8;
                         break;
-                case DATA_BITS_7:
+                case Q_DATA_BITS_7:
                         bits_per_byte = 7;
                         break;
-                case DATA_BITS_6:
+                case Q_DATA_BITS_6:
                         bits_per_byte = 6;
                         break;
-                case DATA_BITS_5:
+                case Q_DATA_BITS_5:
                         bits_per_byte = 5;
                         break;
                 }
                 switch (q_serial_port.stop_bits) {
-                case STOP_BITS_1:
+                case Q_STOP_BITS_1:
                         bits_per_byte += 1;
                         break;
-                case STOP_BITS_2:
+                case Q_STOP_BITS_2:
                         bits_per_byte += 2;
                         break;
                 }

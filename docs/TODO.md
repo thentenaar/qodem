@@ -54,18 +54,11 @@ Code sweep:
   Javadoc all functions
   Eliminate "stored in X.c" on externs
 
-    input.h
-    keyboard.h
-    modem.h
-    music.h
-    netclient.h
-    options.h
-    phonebook.h
-    protocols.h
-    qodem.h
     screen.h
     script.h
     scrollback.h
+    qodem.h
+    netclient.h
 
     ansi.c
     avatar.c

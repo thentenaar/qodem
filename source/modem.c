@@ -140,9 +140,9 @@ void load_modem_config() {
                 q_modem_config.rtscts           = Q_TRUE;
                 q_modem_config.lock_dte_baud    = Q_TRUE;
                 q_modem_config.default_baud             = Q_BAUD_115200;
-                q_modem_config.default_data_bits        = DATA_BITS_8;
+                q_modem_config.default_data_bits        = Q_DATA_BITS_8;
                 q_modem_config.default_parity           = Q_PARITY_NONE;
-                q_modem_config.default_stop_bits        = STOP_BITS_1;
+                q_modem_config.default_stop_bits        = Q_STOP_BITS_1;
 
                 q_serial_port.xonxoff   = q_modem_config.xonxoff;
                 q_serial_port.rtscts    = q_modem_config.rtscts;
@@ -241,13 +241,13 @@ void load_modem_config() {
 
                 } else if (strncmp(key, "data_bits", strlen("data_bits")) == 0) {
                         if (strcmp(value, "8") == 0) {
-                                q_modem_config.default_data_bits = DATA_BITS_8;
+                                q_modem_config.default_data_bits = Q_DATA_BITS_8;
                         } else if (strcmp(value, "7") == 0) {
-                                q_modem_config.default_data_bits = DATA_BITS_7;
+                                q_modem_config.default_data_bits = Q_DATA_BITS_7;
                         } else if (strcmp(value, "6") == 0) {
-                                q_modem_config.default_data_bits = DATA_BITS_6;
+                                q_modem_config.default_data_bits = Q_DATA_BITS_6;
                         } else if (strcmp(value, "5") == 0) {
-                                q_modem_config.default_data_bits = DATA_BITS_5;
+                                q_modem_config.default_data_bits = Q_DATA_BITS_5;
                         }
                 } else if (strncmp(key, "parity", strlen("parity")) == 0) {
                         if (strcmp(value, "none") == 0) {
@@ -259,17 +259,17 @@ void load_modem_config() {
                         } else if (strcmp(value, "mark") == 0) {
                                 /* Mark and space parity are only supported for 7-bit bytes */
                                 q_modem_config.default_parity = Q_PARITY_MARK;
-                                q_modem_config.default_data_bits = DATA_BITS_7;
+                                q_modem_config.default_data_bits = Q_DATA_BITS_7;
                         } else if (strcmp(value, "space") == 0) {
                                 /* Mark and space parity are only supported for 7-bit bytes */
                                 q_modem_config.default_parity = Q_PARITY_SPACE;
-                                q_modem_config.default_data_bits = DATA_BITS_7;
+                                q_modem_config.default_data_bits = Q_DATA_BITS_7;
                         }
                 } else if (strncmp(key, "stop_bits", strlen("stop_bits")) == 0) {
                         if (strcmp(value, "1") == 0) {
-                                q_modem_config.default_stop_bits = STOP_BITS_1;
+                                q_modem_config.default_stop_bits = Q_STOP_BITS_1;
                         } else if (strcmp(value, "2") == 0) {
-                                q_modem_config.default_stop_bits = STOP_BITS_2;
+                                q_modem_config.default_stop_bits = Q_STOP_BITS_2;
                         }
                 } else if (strncmp(key, "xonxoff", strlen("xonxoff")) == 0) {
                         if (strcmp(value, "true") == 0) {
@@ -381,19 +381,19 @@ char * baud_string(const Q_BAUD_RATE baud) {
 /*
  * data_bits_string
  */
-char * data_bits_string(const DATA_BITS bits) {
+char * data_bits_string(const Q_DATA_BITS bits) {
 
         switch (bits) {
-        case DATA_BITS_8:
+        case Q_DATA_BITS_8:
                 return "8";
 
-        case DATA_BITS_7:
+        case Q_DATA_BITS_7:
                 return "7";
 
-        case DATA_BITS_6:
+        case Q_DATA_BITS_6:
                 return "6";
 
-        case DATA_BITS_5:
+        case Q_DATA_BITS_5:
                 return "5";
 
         default:
@@ -435,13 +435,13 @@ char * parity_string(const Q_PARITY parity, const Q_BOOL short_form) {
 /*
  * stop_bits_string
  */
-char * stop_bits_string(const STOP_BITS bits) {
+char * stop_bits_string(const Q_STOP_BITS bits) {
 
         switch (bits) {
-        case STOP_BITS_1:
+        case Q_STOP_BITS_1:
                 return "1";
 
-        case STOP_BITS_2:
+        case Q_STOP_BITS_2:
                 return "2";
 
         default:
@@ -525,9 +525,9 @@ void create_modem_config_file() {
         q_modem_config.rtscts           = Q_TRUE;
         q_modem_config.lock_dte_baud    = Q_TRUE;
         q_modem_config.default_baud             = Q_BAUD_115200;
-        q_modem_config.default_data_bits        = DATA_BITS_8;
+        q_modem_config.default_data_bits        = Q_DATA_BITS_8;
         q_modem_config.default_parity           = Q_PARITY_NONE;
-        q_modem_config.default_stop_bits        = STOP_BITS_1;
+        q_modem_config.default_stop_bits        = Q_STOP_BITS_1;
 
         q_serial_port.xonxoff   = q_modem_config.xonxoff;
         q_serial_port.rtscts    = q_modem_config.rtscts;
@@ -1670,11 +1670,11 @@ Q_BOOL configure_serial_port() {
 
         /* Check bits */
         switch (q_serial_port.data_bits) {
-        case DATA_BITS_8:
+        case Q_DATA_BITS_8:
                 /* NOP */
                 break;
 
-        case DATA_BITS_7:
+        case Q_DATA_BITS_7:
                 if ((q_serial_port.parity != Q_PARITY_MARK) && (q_serial_port.parity != Q_PARITY_SPACE)) {
                         /* MARK and SPACE parity actually use 8 bits, but we expose it as seven bits to the user */
                         q_serial_port.qodem_termios.c_cflag &= ~CSIZE;
@@ -1682,23 +1682,23 @@ Q_BOOL configure_serial_port() {
                 }
                 break;
 
-        case DATA_BITS_6:
+        case Q_DATA_BITS_6:
                 q_serial_port.qodem_termios.c_cflag &= ~CSIZE;
                 q_serial_port.qodem_termios.c_cflag |= CS6;
                 break;
 
-        case DATA_BITS_5:
+        case Q_DATA_BITS_5:
                 q_serial_port.qodem_termios.c_cflag &= ~CSIZE;
                 q_serial_port.qodem_termios.c_cflag |= CS5;
                 break;
         }
 
         switch (q_serial_port.stop_bits) {
-        case STOP_BITS_1:
+        case Q_STOP_BITS_1:
                 q_serial_port.qodem_termios.c_cflag &= ~CSTOPB;
                 break;
 
-        case STOP_BITS_2:
+        case Q_STOP_BITS_2:
                 q_serial_port.qodem_termios.c_cflag |= CSTOPB;
                 break;
         }

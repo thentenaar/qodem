@@ -6287,7 +6287,7 @@ Q_BOOL kermit_start(struct file_info * file_list, const char * pathname,
 #ifndef Q_NO_SERIAL
         /* Check for 7bit line */
         if ((q_status.serial_open == Q_TRUE) &&
-                (q_serial_port.data_bits != DATA_BITS_8)) {
+                (q_serial_port.data_bits != Q_DATA_BITS_8)) {
                 status.seven_bit_only = Q_TRUE;
         }
 #endif /* Q_NO_SERIAL */

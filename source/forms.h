@@ -183,8 +183,8 @@ extern char * file_mode_string(mode_t mode);
  * @return if true, the user made a change to some value
  */
 extern Q_BOOL comm_settings_form(const char * title, Q_BAUD_RATE * baud,
-                                 DATA_BITS * data_bits, Q_PARITY * parity,
-                                 STOP_BITS * stop_bits, Q_BOOL * xonxoff,
+                                 Q_DATA_BITS * data_bits, Q_PARITY * parity,
+                                 Q_STOP_BITS * stop_bits, Q_BOOL * xonxoff,
                                  Q_BOOL * rtscts);
 
 #endif /* Q_NO_SERIAL */
