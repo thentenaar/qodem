@@ -1664,8 +1664,15 @@ void net_listen_close() {
         listening = Q_FALSE;
 } /* ---------------------------------------------------------------------- */
 
-/*
- * Send raw bytes to the other side.
+/**
+ * Write data from a buffer to the remote system.  This performs a busy wait
+ * loop until all of the bytes are written!  It is only used for telnet
+ * negotiation to get an 8-bit clean channel.
+ *
+ * @param fd the socket descriptor
+ * @param buf the buffer to read from
+ * @param count the number of bytes to write to the remote side
+ * @return the number of bytes written
  */
 ssize_t raw_write(const int fd, void * buf, size_t count) {
         int count_original = count;
@@ -1685,7 +1692,7 @@ ssize_t raw_write(const int fd, void * buf, size_t count) {
                         switch (get_errno()) {
                         case EAGAIN:
                                 /* Keep trying, this is a busy spin loop */
-                                break;
+                                continue;
                         default:
                                 /* Unknown, bail out */
                                 return rc;
@@ -1713,8 +1720,14 @@ ssize_t raw_write(const int fd, void * buf, size_t count) {
         return count_original;
 } /* ---------------------------------------------------------------------- */
 
-/*
- * Get raw bytes from the other side.
+/**
+ * Read data from remote system to a buffer.  This also handles some edge
+ * cases with the telnet layer.
+ *
+ * @param fd the socket descriptor
+ * @param buf the buffer to write to
+ * @param count the number of bytes requested
+ * @return the number of bytes read into buf
  */
 ssize_t raw_read(const int fd, void * buf, size_t count) {
         int rc;

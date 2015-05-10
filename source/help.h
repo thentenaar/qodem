@@ -38,7 +38,7 @@ typedef enum {
 #ifndef Q_NO_SERIAL
     Q_HELP_MODEM_CONFIG,                /* Modem configuration screen */
     Q_HELP_COMM_PARMS,                  /* Serial port parameters screen */
-#endif /* Q_NO_SERIAL */
+#endif
 
     Q_HELP_PHONEBOOK,                   /* Dialing directory */
     Q_HELP_PHONEBOOK_REVISE_ENTRY,      /* Dialing directory */

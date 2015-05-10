@@ -21,7 +21,9 @@ BUG: uploads are jerky to local synchronet.  Timing?
 -----
 
 Refactor:
-  int q_color --> Q_COLOR q_color in screen.c and callers
+  qodem_write_blocking() for the emulations to do a busy loop rather than
+  assume qodem_write() always works
+
 
 Detect xterm alternate screen and clear scrollback to retain what was
 seen before.
@@ -54,11 +56,7 @@ Code sweep:
   Javadoc all functions
   Eliminate "stored in X.c" on externs
 
-    screen.h
-    script.h
-    scrollback.h
     qodem.h
-    netclient.h
 
     ansi.c
     avatar.c

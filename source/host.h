@@ -46,7 +46,7 @@ typedef enum {
      */
     Q_HOST_TYPE_SERIAL,
 
-#endif /* Q_NO_SERIAL */
+#endif
 
     /**
      * Listen on a socket.

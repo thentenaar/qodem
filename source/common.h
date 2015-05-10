@@ -27,6 +27,7 @@
 
 /* Hans-Boehm garbage collector integration ------------------------------- */
 #if defined(QODEM_USE_GC) && defined(HAVE_LIBGC)
+
 #include <gc.h>
 
 #ifdef DEBUG
@@ -39,13 +40,16 @@
 #define Xcalloc(W, X, Y, Z)             GC_calloc(W, X)
 #define Xrealloc(W, X, Y, Z)            GC_realloc(W, X)
 #define Xfree(X, Y, Z)                  GC_free(X)
-#endif /* DEBUG */
+#endif
+
 #else
+
 #define Xmalloc(X, Y, Z)                malloc(X)
 #define Xcalloc(W, X, Y, Z)             calloc(W, X)
 #define Xrealloc(W, X, Y, Z)            realloc(W, X)
 #define Xfree(X, Y, Z)                  free(X)
-#endif /* QODEM_USE_GC */
+
+#endif /* defined(QODEM_USE_GC) && defined(HAVE_LIBGC) */
 
 /* Includes --------------------------------------------------------------- */
 
@@ -67,7 +71,7 @@
 #define Q_VERSION_BRANCH        "Production"
 #else
 #define Q_VERSION_BRANCH        "Development"
-#endif /* RELEASE */
+#endif
 
 /* Exit codes */
 #define EXIT_ERROR_SETLOCALE            12

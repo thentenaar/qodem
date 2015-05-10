@@ -187,7 +187,7 @@ extern Q_BOOL comm_settings_form(const char * title, Q_BAUD_RATE * baud,
                                  Q_STOP_BITS * stop_bits, Q_BOOL * xonxoff,
                                  Q_BOOL * rtscts);
 
-#endif /* Q_NO_SERIAL */
+#endif
 
 /**
  * Display the compose key dialog.

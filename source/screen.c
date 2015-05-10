@@ -74,7 +74,7 @@ static inline attr_t physical_attr_from_attr(const attr_t attr) {
  * Turn a Q_COLOR_* enum into a color pair index.  This is the color
  * code path for UI elements to screen.
  */
-short screen_color(const int q_color) {
+short screen_color(const Q_COLOR q_color) {
         short color = (q_text_colors[q_color].fg << 3) | q_text_colors[q_color].bg;
         return color;
 } /* ---------------------------------------------------------------------- */
@@ -82,7 +82,7 @@ short screen_color(const int q_color) {
 /*
  * Turn a Q_COLOR_* enum into the non-color part of the ncurses attr_t
  */
-attr_t screen_attr(const int q_color) {
+attr_t screen_attr(const Q_COLOR q_color) {
         attr_t attr = Q_A_NORMAL;
         if (q_text_colors[q_color].bold == Q_TRUE) {
                 attr |= Q_A_BOLD;
@@ -97,7 +97,7 @@ attr_t screen_attr(const int q_color) {
  * yellow on blue", then the background will have the A_BOLD attribute
  * set.
  */
-attr_t scrollback_full_attr(const int q_color) {
+attr_t scrollback_full_attr(const Q_COLOR q_color) {
         attr_t attr = color_to_attr(screen_color(q_color)) | screen_attr(q_color);
         return attr;
 } /* ---------------------------------------------------------------------- */
@@ -331,47 +331,47 @@ void screen_put_printf_yx(const int y, const int x, const attr_t attr, const sho
         screen_win_put_strn_yx(stdscr, y, x, outbuf, strlen(outbuf), attr, color);
 } /* ---------------------------------------------------------------------- */
 
-void screen_win_put_color_char(void * win, const wchar_t ch, const int q_color) {
+void screen_win_put_color_char(void * win, const wchar_t ch, const Q_COLOR q_color) {
         screen_win_put_char((WINDOW *)win, ch, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_win_put_color_char_yx(void * win, const int y, const int x, const wchar_t ch, const int q_color) {
+void screen_win_put_color_char_yx(void * win, const int y, const int x, const wchar_t ch, const Q_COLOR q_color) {
         screen_win_put_char_yx((WINDOW *)win, y, x, ch, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_win_put_color_str(void * win, const char * str, const int q_color) {
+void screen_win_put_color_str(void * win, const char * str, const Q_COLOR q_color) {
         screen_win_put_str((WINDOW *)win, str, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_win_put_color_wcs(void * win, const wchar_t * wcs, const int q_color) {
+void screen_win_put_color_wcs(void * win, const wchar_t * wcs, const Q_COLOR q_color) {
         screen_win_put_wcs((WINDOW *)win, wcs, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_win_put_color_str_yx(void * win, const int y, const int x, const char * str, const int q_color) {
+void screen_win_put_color_str_yx(void * win, const int y, const int x, const char * str, const Q_COLOR q_color) {
         screen_win_put_str_yx((WINDOW *)win, y, x, str, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_win_put_color_wcs_yx(void * win, const int y, const int x, const wchar_t * wcs, const int q_color) {
+void screen_win_put_color_wcs_yx(void * win, const int y, const int x, const wchar_t * wcs, const Q_COLOR q_color) {
         screen_win_put_wcs_yx((WINDOW *)win, y, x, wcs, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_win_put_color_strn(void * win, const char * str, const int n, const int q_color) {
+void screen_win_put_color_strn(void * win, const char * str, const int n, const Q_COLOR q_color) {
         screen_win_put_strn((WINDOW *)win, str, n, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_win_put_color_strn_yx(void * win, const int y, const int x, const char * str, const int n, const int q_color) {
+void screen_win_put_color_strn_yx(void * win, const int y, const int x, const char * str, const int n, const Q_COLOR q_color) {
         screen_win_put_strn_yx((WINDOW *)win, y, x, str, n, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_win_put_color_hline_yx(void * win, const int y, const int x, const wchar_t ch, const int n, const int q_color) {
+void screen_win_put_color_hline_yx(void * win, const int y, const int x, const wchar_t ch, const int n, const Q_COLOR q_color) {
         screen_win_put_hline_yx((WINDOW *)win, y, x, ch, n, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_win_put_color_vline_yx(void * win, const int y, const int x, const wchar_t ch, const int n, const int q_color) {
+void screen_win_put_color_vline_yx(void * win, const int y, const int x, const wchar_t ch, const int n, const Q_COLOR q_color) {
         screen_win_put_vline_yx((WINDOW *)win, y, x, ch, n, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_win_put_color_printf(void * win, const int q_color, const char * format, ...) {
+void screen_win_put_color_printf(void * win, const Q_COLOR q_color, const char * format, ...) {
         va_list arglist;
         char outbuf[DIALOG_MESSAGE_SIZE];
         assert(strlen(format) < DIALOG_MESSAGE_SIZE);
@@ -387,7 +387,7 @@ void screen_win_put_color_printf(void * win, const int q_color, const char * for
         screen_win_put_strn((WINDOW *)win, outbuf, strlen(outbuf), screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_win_put_color_printf_yx(void * win, const int y, const int x, const int q_color, const char * format, ...) {
+void screen_win_put_color_printf_yx(void * win, const int y, const int x, const Q_COLOR q_color, const char * format, ...) {
         va_list arglist;
         char outbuf[DIALOG_MESSAGE_SIZE];
         assert(strlen(format) < DIALOG_MESSAGE_SIZE);
@@ -403,47 +403,47 @@ void screen_win_put_color_printf_yx(void * win, const int y, const int x, const 
         screen_win_put_strn_yx((WINDOW *)win, y, x, outbuf, strlen(outbuf), screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_put_color_char(const wchar_t ch, const int q_color) {
+void screen_put_color_char(const wchar_t ch, const Q_COLOR q_color) {
         screen_win_put_char(stdscr, ch, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_put_color_char_yx(const int y, const int x, const wchar_t ch, const int q_color) {
+void screen_put_color_char_yx(const int y, const int x, const wchar_t ch, const Q_COLOR q_color) {
         screen_win_put_char_yx(stdscr, y, x, ch, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_put_color_str(const char * str, const int q_color) {
+void screen_put_color_str(const char * str, const Q_COLOR q_color) {
         screen_win_put_str(stdscr, str, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_put_color_wcs(const wchar_t * wcs, const int q_color) {
+void screen_put_color_wcs(const wchar_t * wcs, const Q_COLOR q_color) {
         screen_win_put_wcs(stdscr, wcs, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_put_color_str_yx(const int y, const int x, const char * str, const int q_color) {
+void screen_put_color_str_yx(const int y, const int x, const char * str, const Q_COLOR q_color) {
         screen_win_put_str_yx(stdscr, y, x, str, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_put_color_wcs_yx(const int y, const int x, const wchar_t * wcs, const int q_color) {
+void screen_put_color_wcs_yx(const int y, const int x, const wchar_t * wcs, const Q_COLOR q_color) {
         screen_win_put_wcs_yx(stdscr, y, x, wcs, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_put_color_strn(const char * str, const int n, const int q_color) {
+void screen_put_color_strn(const char * str, const int n, const Q_COLOR q_color) {
         screen_win_put_strn(stdscr, str, n, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_put_color_strn_yx(const int y, const int x, const char * str, const int n, const int q_color) {
+void screen_put_color_strn_yx(const int y, const int x, const char * str, const int n, const Q_COLOR q_color) {
         screen_win_put_strn_yx(stdscr, y, x, str, n, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_put_color_hline_yx(const int y, const int x, const wchar_t ch, const int n, const int q_color) {
+void screen_put_color_hline_yx(const int y, const int x, const wchar_t ch, const int n, const Q_COLOR q_color) {
         screen_win_put_hline_yx(stdscr, y, x, ch, n, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_put_color_vline_yx(const int y, const int x, const wchar_t ch, const int n, const int q_color) {
+void screen_put_color_vline_yx(const int y, const int x, const wchar_t ch, const int n, const Q_COLOR q_color) {
         screen_win_put_vline_yx(stdscr, y, x, ch, n, screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_put_color_printf(const int q_color, const char * format, ...) {
+void screen_put_color_printf(const Q_COLOR q_color, const char * format, ...) {
         va_list arglist;
         char outbuf[DIALOG_MESSAGE_SIZE];
         assert(strlen(format) < DIALOG_MESSAGE_SIZE);
@@ -459,7 +459,7 @@ void screen_put_color_printf(const int q_color, const char * format, ...) {
         screen_win_put_strn(stdscr, outbuf, strlen(outbuf), screen_attr(q_color), screen_color(q_color));
 } /* ---------------------------------------------------------------------- */
 
-void screen_put_color_printf_yx(const int y, const int x, const int q_color, const char * format, ...) {
+void screen_put_color_printf_yx(const int y, const int x, const Q_COLOR q_color, const char * format, ...) {
         va_list arglist;
         char outbuf[DIALOG_MESSAGE_SIZE];
         assert(strlen(format) < DIALOG_MESSAGE_SIZE);
@@ -706,7 +706,7 @@ void screen_win_draw_box(void * window, const int left, const int top, const int
 /*
  * Draw a standard-looking box
  */
-void screen_win_draw_box_color(void * window, const int left, const int top, const int right, const int bottom, const int border, const int background) {
+void screen_win_draw_box_color(void * window, const int left, const int top, const int right, const int bottom, const Q_COLOR border, const Q_COLOR background) {
         int i;
         int window_height;
         int window_length;

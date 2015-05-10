@@ -126,7 +126,7 @@ struct q_serial_port_struct {
 #ifndef Q_PDCURSES_WIN32
     struct termios original_termios;    /* What was left on the port */
     struct termios qodem_termios;       /* What the user requests */
-#endif /* Q_PDCURSES_WIN32 */
+#endif
 
     /**
      * The state of the RS-232 pins.

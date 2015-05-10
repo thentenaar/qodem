@@ -43,7 +43,7 @@ typedef enum Q_PROGRAM_STATES {
 
 #ifndef Q_NO_SERIAL
     Q_STATE_MODEM_CONFIG,       /* Modem configuration screen */
-#endif /* Q_NO_SERIAL */
+#endif
 
     /**
      * Phonebook.  See phonebook.c.

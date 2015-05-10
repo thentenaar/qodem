@@ -241,7 +241,7 @@ int qodem_write(const int fd, char * data, const int data_n, Q_BOOL sync) {
                         (q_host_type == Q_HOST_TYPE_SOCKET))
         ) {
                 /* Socket */
-                rc = raw_write(fd, data, data_n);
+                rc = write(fd, data, data_n);
 #ifdef Q_LIBSSH2
         } else if (     (q_status.dial_method == Q_DIAL_METHOD_SSH) &&
                         (net_is_connected() == Q_TRUE)
@@ -332,7 +332,7 @@ static ssize_t qodem_read(const int fd, void * buf, size_t count) {
                         (q_host_type == Q_HOST_TYPE_SOCKET))
         ) {
                 /* Socket */
-                return raw_read(fd, buf, count);
+                return read(fd, buf, count);
         }
 #ifdef Q_LIBSSH2
         if (    (q_status.dial_method == Q_DIAL_METHOD_SSH) &&
