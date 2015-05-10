@@ -43,6 +43,8 @@ Q_OPTION_SCRIPTS_DIR
 
 QODEM_USE_SDL change to Q_SOUND_SDL
 
+QODEM_USE_GC change to Q_GC_BOEHM
+
 Encrypted phonebook
 
 New autoconf build:
@@ -60,40 +62,38 @@ Code sweep:
   Ensure return codes are actually used, or switch them to void
   Javadoc all functions
   Eliminate "stored in X.c" on externs
-
-    ansi.c
-    avatar.c
-    codepage.c
-    colors.c
-    common.c
-    console.c
-    debug.c
-    dialer.c
-    emulation.c
+  Sorted smallest-to-biggest:
     field.c
-    forms.c
-    help.c
-    host.c
-    input.c
-    kermit.c
-    keyboard.c
-    linux.c
-    modem.c
-    music.c
-    netclient.c
-    options.c
-    phonebook.c
-    protocols.c
-    qodem.c
-    screen.c
-    script.c
-    scrollback.c
     states.c
+    screen.c
     translate.c
-    vt100.c
     vt52.c
+    avatar.c
+    emulation.c
+    dialer.c
+    music.c
+    input.c
+    script.c
+    colors.c
+    options.c
+    ansi.c
+    protocols.c
+    modem.c
+    codepage.c
+    host.c
+    scrollback.c
+    qodem.c
+    help.c
     xmodem.c
+    console.c
+    keyboard.c
+    forms.c
+    netclient.c
     zmodem.c
+    linux.c
+    vt100.c
+    kermit.c
+    phonebook.c
 
 
 
@@ -341,6 +341,7 @@ Refactor:
   Create ecma48.c, split common functions from vt100.c and linux.c
   Create xterm.c
   Move Q_STATE_DIALER from phonebook.c to dialer.c
+  Rationalize use of globals vs q_status
 
 Full recognition of XTERM sequences
 

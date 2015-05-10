@@ -165,10 +165,14 @@ extern wchar_t * Xwcsdup(const wchar_t * ptr, const char * file,
 extern wchar_t * Xstring_to_wcsdup(const char * ptr, const char * file,
                                    const int line);
 
+#ifndef Q_PDCURSES_WIN32
+
 /**
  * Function to clean out any characters waiting in stdin.
  */
 extern void purge_stdin();
+
+#endif
 
 /**
  * Returns the home directory where ~/.qodem (My Documents\\qodem\\prefs) and

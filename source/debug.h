@@ -59,6 +59,8 @@ extern void debug_finish();
 
 /**
  * Echo local transmitted bytes to the hex display in a distinct color.
+ *
+ * @param ch the byte that was sent to the remote side
  */
 extern void debug_local_echo(const unsigned char ch);
 

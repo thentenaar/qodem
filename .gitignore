@@ -27,6 +27,7 @@
 *.i*86
 *.x86_64
 *.hex
+bin/qodem
 
 # Debug files
 *.dSYM/
@@ -34,3 +35,4 @@
 # Editor backup files
 *.c~
 *.h~
+*.md~
