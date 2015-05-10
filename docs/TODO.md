@@ -21,9 +21,14 @@ BUG: uploads are jerky to local synchronet.  Timing?
 -----
 
 Refactor:
-  qodem_write_blocking() for the emulations to do a busy loop rather than
-  assume qodem_write() always works
+  qodem_write() - honor sync for the emulations to do a busy loop rather
+    than assume qodem_write() always works
 
+  q_status.serial_open --> Q_SERIAL_OPEN
+
+  avatar: make ansi fallback an option instead of #DEFINE
+
+  Remove #if 0 / #if 1
 
 Detect xterm alternate screen and clear scrollback to retain what was
 seen before.
@@ -55,8 +60,6 @@ Code sweep:
   Ensure return codes are actually used, or switch them to void
   Javadoc all functions
   Eliminate "stored in X.c" on externs
-
-    qodem.h
 
     ansi.c
     avatar.c

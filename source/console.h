@@ -44,6 +44,11 @@ extern Q_BOOL q_split_screen_dirty;
  */
 extern Q_BOOL q_console_flood;
 
+/**
+ * When true, the console needs a repaint.
+ */
+extern Q_BOOL q_screen_dirty;
+
 /* Functions -------------------------------------------------------------- */
 
 /**

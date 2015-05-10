@@ -1347,7 +1347,7 @@ no_data:
                 /* Write the data to q_child_tty_fd */
                 rc = qodem_write(q_child_tty_fd,
                         (char *)q_transfer_buffer_raw,
-                        q_transfer_buffer_raw_n, Q_TRUE);
+                        q_transfer_buffer_raw_n, Q_FALSE);
                 if (rc < 0) {
 
                         switch (get_errno()) {
@@ -2141,11 +2141,12 @@ int qodem_main(int argc, char * const argv[]) {
         q_status.vt52_color             = Q_TRUE;
 
         /*
-         * Due to Avatar's ANSI fallback, in practice this flag does nothing
-         * now.  Before ANSI fallback, it used to really control whether or
-         * not Avatar would handle SGR.
+         * Due to Avatar's ANSI fallback, in practice this flag is just an
+         * imperceptible performance enhancement.  Before ANSI fallback, it
+         * used to really control whether or not Avatar would handle SGR.
          */
         q_status.avatar_color           = Q_TRUE;
+        q_status.avatar_ansi_fallback   = Q_TRUE;
 
 #ifndef Q_NO_SERIAL
         q_status.serial_open            = Q_FALSE;

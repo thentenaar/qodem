@@ -31,6 +31,11 @@
 
 /* Defines ---------------------------------------------------------------- */
 
+/* One of the locations to look for in load_options() */
+#ifndef INSTALL_DIR
+#define INSTALL_DIR "/usr/local/qodem"
+#endif
+
 /**
  * The option types.  See option.c for detailed descriptions.
  */
@@ -171,7 +176,7 @@ extern wchar_t * substitute_wcs(const wchar_t * original,
  * Get the full path to the options config file.
  *
  * @return the full path to qodemrc (usually ~/.qodem/qodemrc or My
- * Documents\\prefs\\qodemrc.txt).
+ * Documents\\qodem\\prefs\\qodemrc.txt).
  */
 extern char * get_options_filename();
 

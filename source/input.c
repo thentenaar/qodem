@@ -36,6 +36,7 @@
 #include <windows.h>
 #endif
 #include "qodem.h"
+#include "console.h"
 #include "states.h"
 #include "scrollback.h"
 #include "netclient.h"
@@ -938,7 +939,7 @@ void handle_mouse() {
                 }
                 fprintf(stderr, "\n\n");
 #endif
-                qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer), Q_FALSE);
+                qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer), Q_TRUE);
         }
 
         /* All done */

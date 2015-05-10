@@ -64,7 +64,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <utime.h>
-#include "qodem.h"
+#include "console.h"
 #include "protocols.h"
 #include "music.h"
 #include "zmodem.h"

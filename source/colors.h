@@ -269,7 +269,7 @@ extern char * color_to_html(const attr_t attr);
  * Get the full path to the colors.cfg file.
  *
  * @return the full path to colors.cfg (usually ~/qodem/colors.cfg or My
- * Documents\\prefs\\colors.cfg).
+ * Documents\\qodem\\prefs\\colors.cfg).
  */
 extern char * get_colors_filename();
 

@@ -976,7 +976,7 @@ void post_keystroke(const int keystroke, const int flags) {
                 if (flags & KEY_FLAG_ALT) {
                         /* Send the ALT ESCAPE character first */
                         encode_utf8_char(KEY_ESCAPE);
-                        qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer), Q_FALSE);
+                        qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer), Q_TRUE);
                 }
 
                 /* Special case: ^@ */
@@ -1206,7 +1206,7 @@ void post_keystroke(const int keystroke, const int flags) {
                                         utf8_buffer[0] = term_string[i] & 0xFF;
                                         utf8_buffer[1] = 0;
                                 }
-                                qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer), Q_FALSE);
+                                qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer), Q_TRUE);
                         }
                         if ((q_status.emulation == Q_EMUL_XTERM_UTF8) || (q_status.emulation == Q_EMUL_LINUX_UTF8)) {
 

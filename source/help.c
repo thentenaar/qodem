@@ -30,6 +30,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include "qodem.h"
+#include "console.h"
 #include "screen.h"
 #include "forms.h"
 #include "options.h"

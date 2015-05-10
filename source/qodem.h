@@ -1,26 +1,25 @@
 /*
  * qodem.h
  *
- * This module is licensed under the GNU General Public License
- * Version 2.  Please see the file "COPYING" in this directory for
- * more information about the GNU General Public License Version 2.
+ * This module is licensed under the GNU General Public License Version 2.
+ * Please see the file "COPYING" in this directory for more information about
+ * the GNU General Public License Version 2.
  *
  *     Copyright (C) 2015  Kevin Lamonte
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
  *
  * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301 USA
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc., 51
+ * Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef __QODEM_H__
@@ -28,300 +27,647 @@
 
 /* Includes --------------------------------------------------------------- */
 
-#include <time.h>                       /* time_t */
-#include <stdio.h>                      /* FILE */
+#include <time.h>               /* time_t */
+#include <stdio.h>              /* FILE */
 #include <sys/types.h>
-#include "emulation.h"                  /* Q_EMULATION */
-#include "codepage.h"                   /* Q_CODEPAGE */
-#include "phonebook.h"                  /* Q_DIAL_METHOD */
+#include "emulation.h"          /* Q_EMULATION */
+#include "codepage.h"           /* Q_CODEPAGE */
+#include "phonebook.h"          /* Q_DIAL_METHOD */
 #include "common.h"
 #include "common.h"
 
 /* Defines ---------------------------------------------------------------- */
 
-#ifndef INSTALL_DIR
-#define INSTALL_DIR             "/usr/local/qodem"
-#endif
+/* The network buffer size. */
+#define Q_BUFFER_SIZE 4096
 
-#define Q_BUFFER_SIZE           4096
-
-/*
+/**
  * Available capture types.
  */
 typedef enum Q_CAPTURE_TYPES {
-        Q_CAPTURE_TYPE_NORMAL,          /* normal */
-        Q_CAPTURE_TYPE_RAW,             /* raw */
-        Q_CAPTURE_TYPE_HTML,            /* html */
-        Q_CAPTURE_TYPE_ASK              /* ask - prompt every time */
+    Q_CAPTURE_TYPE_NORMAL,      /* normal */
+    Q_CAPTURE_TYPE_RAW,         /* raw */
+    Q_CAPTURE_TYPE_HTML,        /* html */
+    Q_CAPTURE_TYPE_ASK          /* ask - prompt every time */
 } Q_CAPTURE_TYPE;
 
-/*
+/**
  * Available doorway modes
  */
 typedef enum Q_DOORWAY_MODE {
-        Q_DOORWAY_MODE_OFF,             /* No doorway */
-        Q_DOORWAY_MODE_MIXED,           /* Mixed mode */
-        Q_DOORWAY_MODE_FULL             /* Full doorway */
+    Q_DOORWAY_MODE_OFF,         /* No doorway */
+    Q_DOORWAY_MODE_MIXED,       /* Mixed mode */
+    Q_DOORWAY_MODE_FULL         /* Full doorway */
 } Q_DOORWAY_MODE;
 
 #ifndef Q_NO_SERIAL
 #define Q_SERIAL_OPEN (q_status.serial_open == Q_TRUE)
 #else
 #define Q_SERIAL_OPEN (Q_FALSE)
-#endif /* Q_NO_SERIAL */
+#endif
 
+/**
+ * There is lots of global state in qodem, needed to control features and
+ * feed various UI elements.  The stuff that is used by more than two modules
+ * we try to keep here.
+ */
 struct q_status_struct {
-        Q_EMULATION emulation;          /* Current emulation mode */
 
-        Q_CODEPAGE codepage;            /* Current codepage */
+    /**
+     * Current emulation mode.
+     */
+    Q_EMULATION emulation;
 
-        Q_DOORWAY_MODE doorway_mode;    /* Doorway mode */
+    /**
+     * Current codepage.
+     */
+    Q_CODEPAGE codepage;
 
-        Q_BOOL online;                  /* true  = online
-                                           false = offline */
+    /**
+     * Doorway mode.
+     */
+    Q_DOORWAY_MODE doorway_mode;
 
-        Q_BOOL hanging_up;              /* true  = user is requesting hangup
-                                           false = normal operation */
+    /**
+     * When true, we are "online".
+     */
+    Q_BOOL online;
+
+    /**
+     * When true, the user has requested a hangup with Alt-H.  For network
+     * connections it may take a cycle or two through data_handler() before
+     * the EOF is detected.
+     */
+    Q_BOOL hanging_up;
 
 #ifndef Q_NO_SERIAL
-        Q_BOOL serial_open;             /* true  = serial port is open
-                                           false = serial port is closed */
-#endif /* Q_NO_SERIAL */
+    /**
+     * When true, the serial port is open.
+     */
+    Q_BOOL serial_open;
+#endif
 
-        Q_BOOL split_screen;            /* true  = split screen mode
-                                           false = normal screen mode */
+    /**
+     * When true, the console is in split screen mode.
+     */
+    Q_BOOL split_screen;
 
-        time_t connect_time;            /* the moment online became true */
+    /**
+     * The moment that q_status.online became true.
+     */
+    time_t connect_time;
 
-        Q_BOOL beeps;                   /* true  = beeps on
-                                           false = beeps off */
+    /**
+     * When true, sound is enabled.  Beeps and bells and ANSI music can be
+     * enabled separately.
+     */
+    Q_BOOL sound;
 
-        Q_BOOL sound;                   /* true  = sound on
-                                           false = sound off */
+    /**
+     * When true, beeps and bells are enabled.
+     */
+    Q_BOOL beeps;
 
-        Q_BOOL ansi_music;              /* true  = ANSI music on
-                                           false = ANSI music off */
+    /**
+     * When true, ANSI music is enabled.
+     */
+    Q_BOOL ansi_music;
 
-        Q_BOOL capture;                 /* true  = capture on
-                                           false = capture off */
-        FILE * capture_file;            /* Capture file */
+    /**
+     * When true, the session capture is enabled.  Bytes or characters are
+     * being written to the capture file handle.
+     */
+    Q_BOOL capture;
 
-        Q_CAPTURE_TYPE capture_type;    /* Capture type (normal/raw/html/ask) */
+    /**
+     * The capture file handle.
+     */
+    FILE * capture_file;
 
-        Q_CAPTURE_TYPE screen_dump_type;        /* Screen dump type (normal/html/ask) */
+    /**
+     * The capture type (normal/raw/html/ask).
+     */
+    Q_CAPTURE_TYPE capture_type;
 
-        Q_CAPTURE_TYPE scrollback_save_type;    /* Scrollback save type (normal/html/ask) */
+    /**
+     * The screen dump type (normal/html/ask).
+     */
+    Q_CAPTURE_TYPE screen_dump_type;
 
-        time_t capture_flush_time;      /* When we last fflush()'d the capture file */
+    /**
+     * The scrollback save type (normal/html/ask).
+     */
+    Q_CAPTURE_TYPE scrollback_save_type;
 
-        int capture_x;                  /* The current column number for the capture file */
+    /**
+     * The time that fflush() was last called on the capture file handle.
+     * This is used to allow buffered writes but also flush at least once a
+     * second.
+     */
+    time_t capture_flush_time;
 
-        Q_BOOL logging;                 /* true  = log enabled
-                                           false = log disabled */
-        FILE * logging_file;            /* Logging file */
+    /**
+     * The current column number for the capture file.  This can differ from
+     * the screen cursor_x due to cursor position commands in the emulation.
+     */
+    int capture_x;
 
-        unsigned int scrollback_lines;  /* # of lines in scrollback buffer */
+    /**
+     * When true, the session log is enabled.  Major events are being written
+     * to the logging file handle.
+     */
+    Q_BOOL logging;
 
-        int cursor_x, cursor_y;         /* Current cursor position */
+    /**
+     * The logging file handle.
+     */
+    FILE * logging_file;
 
-        Q_BOOL strip_8th_bit;           /* true  = strip high bit
-                                           false = no strip */
+    /**
+     * The number of lines in scrollback buffer.
+     */
+    unsigned int scrollback_lines;
 
-        Q_BOOL full_duplex;             /* true  = full duplex
-                                           false = half duplex (local echo) */
+    /**
+     * The current screen cursor position X.
+     */
+    int cursor_x;
 
-        Q_BOOL line_feed_on_cr;         /* true  = add a linefeed for every CR
-                                           false = no extra linefeeds */
+    /**
+     * The current screen cursor position Y.
+     */
+    int cursor_y;
 
-        Q_BOOL guard_hangup;            /* true  = prompt before permitting Alt-H hangup
-                                           false = no prompt, immediately hangup */
+    /**
+     * When true, strip the high bit.  Note that this happens on the raw byte
+     * stream sent to the console, before emulation; UTF-8 emulations will
+     * see garbage.  This does not affect file transfers.
+     */
+    Q_BOOL strip_8th_bit;
 
-        Q_BOOL scrollback_enabled;      /* true  = lines recorded to scrollback
-                                           false = no new lines in scrollback */
+    /**
+     * When true, use full duplex.  When false, perform a local echo of
+     * keystrokes sent to the remote side.
+     */
+    Q_BOOL full_duplex;
 
-        Q_BOOL status_visible;          /* true  = status line(s) is visible
-                                           false = status line(s) is not visible */
+    /**
+     * When true, add a linefeed for every carriage return (CR) received.
+     */
+    Q_BOOL line_feed_on_cr;
 
-        Q_BOOL status_line_info;        /* true  = alternate info line (address, current time)
-                                           false = regular info line (online, flags, connect time) */
+    /**
+     * When true, prompt the user for confirmation on Alt-H hangup.
+     */
+    Q_BOOL guard_hangup;
 
-        Q_BOOL hard_backspace;          /* true  = Backspace is ^H
-                                           false = Backspace is DEL */
+    /**
+     * When true, lines that would scroll off screen are instead recorded to
+     * the scrollback buffer.
+     */
+    Q_BOOL scrollback_enabled;
 
-        Q_BOOL line_wrap;               /* true  = Wrap lines at right-most column
-                                           false = Do not wrap */
+    /**
+     * When true, the status line is visible.
+     */
+    Q_BOOL status_visible;
 
-        Q_BOOL display_null;            /* true  = Display NULL as ' '
-                                           false = Strip NULL from input */
+    /**
+     * When true, the status line has the "alternate" info (address, current
+     * time).  When false, it has the "regular" info (online, flags, connect
+     * time).
+     */
+    Q_BOOL status_line_info;
 
-        Q_BOOL zmodem_autostart;        /* true  = Autostart Zmodem when ZRQINIT is seen
-                                           false = Do nothing when ZRQINIT is seen */
+    /**
+     * When true, backspace sends the C0 backspace control character ^H
+     * (0x08).  When false, backspace sends the DEL character (0x7F).  VT220
+     * emulation does not honor this flag, because backspace is defined by
+     * its standard as DEL.
+     */
+    Q_BOOL hard_backspace;
 
-        Q_BOOL zmodem_escape_ctrl;      /* true  = Escape control characters in Zmodem
-                                           false = Do not escape control characters in Zmodem */
+    /**
+     * When true, wrap lines at the right-most column.
+     */
+    Q_BOOL line_wrap;
 
-        Q_BOOL zmodem_zchallenge;       /* true  = Issue ZCHALLENGE
-                                           false = Do not issue ZCHALLENGE */
+    /**
+     * When true, display the NUL (0x00) as a space ' '.  When false, strip
+     * NUL from the input.
+     */
+    Q_BOOL display_null;
 
-        Q_BOOL kermit_autostart;        /* true  = Autostart Kermit when SEND-INIT is seen
-                                           false = Do nothing when SEND-INIT is seen */
+    /**
+     * The amount of time to wait before disconnecting.
+     */
+    int idle_timeout;
 
-        Q_BOOL kermit_robust_filename;  /* true  = squish filenames to "common form"
-                                           false = keep literal filenames */
+    /**
+     * When true, exit qodem on the next disconnect.
+     */
+    Q_BOOL exit_on_disconnect;
 
-        Q_BOOL kermit_streaming;        /* true  = use streaming (don't send NAKs)
-                                           false = don't use streaming */
+    /**
+     * When true, the terminal in is quicklearn mode.
+     */
+    Q_BOOL quicklearn;
 
-        Q_BOOL kermit_uploads_force_binary;     /* true  = force binary uploads
-                                                   false = text uploads on text files */
+    /**
+     * When true, do a trick to show actual double-width characters.  This is
+     * only tried when TERM contains "xterm".
+     */
+    Q_BOOL xterm_double;
 
-        Q_BOOL kermit_downloads_convert_text;   /* true  = convert CRLF -> LF on text files
-                                                   false = treat text files like binary */
+    /* Session variables */
 
-        Q_BOOL kermit_resend;           /* true  = Kermit always uses RESEND on uploads
-                                           false = Kermit uses SEND on uploads */
+    /**
+     * The method used to obtain the current connection.
+     */
+    Q_DIAL_METHOD dial_method;
 
-        Q_BOOL kermit_long_packets;     /* true  = use long packets
-                                           false = use short packets only */
+    /**
+     * The username for the current connection.
+     */
+    wchar_t * current_username;
 
-        Q_BOOL external_telnet;         /* true  = use external telnet
-                                           false = use netclient.c code */
+    /**
+     * The password for the current connection.
+     */
+    wchar_t * current_password;
 
-        Q_BOOL external_rlogin;         /* true  = use external rlogin
-                                           false = use netclient.c code */
+    /**
+     * The remote IP address for the current connection.
+     */
+    char * remote_address;
 
-        Q_BOOL external_ssh;            /* true  = use external ssh
-                                           false = use netclient.c code */
+    /**
+     * The remote IP port for the current connection.
+     */
+    char * remote_port;
 
-        Q_BOOL xterm_double;            /* true  = use double-width chars under xterm
-                                           false = use spaces */
+    /**
+     * The phonebook entry name for the current connection.
+     */
+    wchar_t * remote_phonebook_name;
 
-        Q_BOOL vt100_color;             /* true  = support color ANSI codes
-                                           false = bare-bones VT10x */
+    /* Zmodem */
 
-        Q_BOOL vt52_color;              /* true  = support color ANSI codes
-                                           false = bare-bones VT52 */
+    /**
+     * When true, autostart a Zmodem download when ZRQINIT is seen.
+     */
+    Q_BOOL zmodem_autostart;
 
-        Q_BOOL avatar_color;            /* true  = support color ANSI codes
-                                           false = bare-bones Avatar */
+    /**
+     * When true, escape control characters in Zmodem transfers.
+     */
+    Q_BOOL zmodem_escape_ctrl;
 
+    /**
+     * When true, issue a ZCHALLENGE in Zmodem transfers.
+     */
+    Q_BOOL zmodem_zchallenge;
 
-        /* VT100 modes */
-        Q_BOOL origin_mode;             /* true  = cursor position is relative to
-                                                   scrolling region
-                                           false = cursor position is relative to
-                                                   entire screen */
+    /* Kermit */
 
-        Q_BOOL insert_mode;             /* true  = New printed characters shift row to right
-                                           false = New printed characters overwrite row */
+    /**
+     * When true, autostart a Kermit download when SEND-INIT is seen.
+     */
+    Q_BOOL kermit_autostart;
 
-        int scroll_region_top;          /* Top margin of the scrolling region */
+    /**
+     * When true, squish filenames to the Kermit "common form" definition.
+     */
+    Q_BOOL kermit_robust_filename;
 
-        int scroll_region_bottom;       /* Bottom margin of the scrolling region */
+    /**
+     * When true, use streaming mode (don't send NAKs) for Kermit transfers.
+     * This is generally the right thing to do for every kind of connection
+     * except serial port and modem connections.
+     */
+    Q_BOOL kermit_streaming;
 
-        Q_BOOL reverse_video;           /* true  = Video attributes are reversed
-                                         false = Video attributes are normal */
+    /**
+     * When true, force binary uploads on all file types (binary or text).
+     * When false, try to detect if files are text only and if so use a text
+     * upload (the other side will convert the text to its local equivalent,
+     * i.e. do LF/CRLF conversion).
+     */
+    Q_BOOL kermit_uploads_force_binary;
 
-        /* DECLL leds */
-        Q_BOOL led_1;
-        Q_BOOL led_2;
-        Q_BOOL led_3;
-        Q_BOOL led_4;
+    /**
+     * When true, convert CRLF to LF on text file downloads.  When false,
+     * treat text files like binary.
+     */
+    Q_BOOL kermit_downloads_convert_text;
 
-        /* LINUX/VT220 modes */
-        Q_BOOL visible_cursor;          /* true  = Cursor is visible in terminal mode
-                                           false = Cursor is invisible in terminal mode */
+    /**
+     * When true, use the RESEND feature to attempt to resume Kermit uploads.
+     When false, use SEND instead which will re-upload the entire file.
+     */
+    Q_BOOL kermit_resend;
 
-        /* VT52 modes */
-        Q_BOOL hold_screen_mode;        /* true  = perform hold-screen logic on the bottom line
-                                           false = normal */
+    /**
+     * When true, use long packets in Kermit transfers.  This is nearly
+     * always the right thing to do.
+     */
+    Q_BOOL kermit_long_packets;
 
-        /* ANSI modes */
-        Q_BOOL ansi_animate;            /* true  = flush screen to show ANSI animation ASAP
-                                           false = buffer as normal, even if ANSI animates oddly */
+    /* Network connections */
 
-        /* ANSI, Avatar, TTY */
-        Q_BOOL assume_80_columns;       /* true  = wrap at column 80
-                                           false = wrap at the right margin */
+    /**
+     * When true, spawn an external program for outbound telnet connections.
+     * When false, use the telnet support in netclient.c.
+     */
+    Q_BOOL external_telnet;
 
-        /* The amount of time to wait before disconnecting. */
-        int idle_timeout;
+    /**
+     * When true, spawn an external program for outbound rlogin connections.
+     * When false, use the rlogin support in netclient.c.
+     */
+    Q_BOOL external_rlogin;
 
-        /* Session variables */
-        wchar_t * current_username;
-        wchar_t * current_password;
-        char * remote_address;
-        char * remote_port;
-        wchar_t * remote_phonebook_name;
-        Q_DIAL_METHOD dial_method;
+    /**
+     * When true, spawn an external program for outbound ssh connections.
+     * When false, use the ssh support in netclient.c.
+     */
+    Q_BOOL external_ssh;
 
-        /* Miscellaneous flags */
-        Q_BOOL exit_on_disconnect;      /* true  = exit on next disconnect
-                                           false = normal */
+    /* Avatar features */
 
+    /**
+     * When true, support color ANSI codes for Avatar which doesn't
+     * officially support that.  Do this even when avatar_ansi_fallback is
+     * false.
+     */
+    Q_BOOL avatar_color;
 
-        /* Quicklearn */
-        Q_BOOL quicklearn;              /* true  = in quicklearn mode
-                                           false = normal */
+    /**
+     * When true, send anything Avatar doesn't understand through the ANSI
+     * emulator.
+     */
+    Q_BOOL avatar_ansi_fallback;
+
+    /* VT100 features */
+
+    /**
+     * When true, support color ANSI codes even for VT100 which doesn't
+     * officially support that.
+     */
+    Q_BOOL vt100_color;
+
+    /**
+     * When true, cursor position is relative to the scrolling region.
+     */
+    Q_BOOL origin_mode;
+
+    /**
+     * When true, new printed characters shift the row to right.
+     */
+    Q_BOOL insert_mode;
+
+    /**
+     * Top margin of the scrolling region.
+     */
+    int scroll_region_top;
+
+    /**
+     * Bottom margin of the scrolling region.
+     */
+    int scroll_region_bottom;
+
+    /**
+     * When true, foreground and background colors are reversed for the
+     * entire screen.
+     */
+    Q_BOOL reverse_video;
+
+    /**
+     * DECLL led 1.
+     */
+    Q_BOOL led_1;
+
+    /**
+     * DECLL led 2.
+     */
+    Q_BOOL led_2;
+
+    /**
+     * DECLL led 3.
+     */
+    Q_BOOL led_3;
+
+    /**
+     * DECLL led 4.
+     */
+    Q_BOOL led_4;
+
+    /* VT220 features */
+
+    /**
+     * When true, the cursor is visible in terminal mode.
+     */
+    Q_BOOL visible_cursor;
+
+    /* VT52 features */
+
+    /**
+     * When true, support color ANSI codes even for VT52 which doesn't
+     * officially support that.
+     */
+    Q_BOOL vt52_color;
+
+    /**
+     * When true, HOLD SCREEN mode has been requested.  We do not yet
+     * actually do it though.
+     */
+    Q_BOOL hold_screen_mode;
+
+    /* ANSI features */
+
+    /**
+     * When true, flush screen to show ANSI animation ASAP.  When false,
+     * buffer as normal, even if ANSI animates oddly.
+     */
+    Q_BOOL ansi_animate;
+
+    /* ANSI, Avatar, and TTY features */
+
+    /**
+     * When true, wrap at column 80.  When false, wrap at the screen right
+     * margin.
+     */
+    Q_BOOL assume_80_columns;
 
 };
 
 /* Globals ---------------------------------------------------------------- */
 
-/* Global status struct, stored in qodem.c */
+/**
+ * Global status struct.
+ */
 extern struct q_status_struct q_status;
 
-/* Global child TTY name, stored in qodem.c */
+/**
+ * The TTY name of the child TTY.
+ */
 extern char * q_child_ttyname;
 
-/* Global child TTY descriptor, stored in qodem.c */
+/**
+ * The child TTY descriptor.  For POSIX, this is the same descriptor for
+ * command line programs, network connections, and serial port.  For Windows,
+ * this is only for network connections.
+ */
 extern int q_child_tty_fd;
 
-/* Global child process ID, stored in qodem.c */
+/**
+ * The child process ID.
+ */
 extern pid_t q_child_pid;
 
-/* Global width value, stored in qodem.c */
+/**
+ * The physical screen width.
+ */
 extern int WIDTH;
 
-/* Global height value, stored in qodem.c */
+/**
+ * The physical screen height.
+ */
 extern int HEIGHT;
 
-/* Global status height value, stored in qodem.c */
+/**
+ * The height of the status bar.  Currently this is either 0 or 1, but in the
+ * future it could become several lines.
+ */
 extern int STATUS_HEIGHT;
 
-/* Global base directory, stored in qodem.c */
+/**
+ * The base working directory where qodem stores its config files and
+ * phonebook.  For POSIX this is usually ~/.qodem, for Windows it is My
+ * Documents\\qodem.
+ */
 extern char * q_home_directory;
 
-/* Whether the console needs a repaint, stored in console.c */
-extern Q_BOOL q_screen_dirty;
-
-/* Global screensaver timeout, stored in qodem.c */
+/**
+ * The screensaver timeout in seconds.
+ */
 extern int q_screensaver_timeout;
 
-/* Global keepalive timeout, stored in qodem.c */
+/**
+ * The keepalive timeout in seconds.
+ */
 extern int q_keepalive_timeout;
+
+/**
+ * The bytes to send to the remote side when the keepalive timeout is
+ * reached.
+ */
 extern char q_keepalive_bytes[128];
+
+/**
+ * The number of bytes in the q_keepalive_bytes buffer.
+ */
 extern unsigned int q_keepalive_bytes_n;
 
-/* The last time we sent data, stored in qodem.c */
+/**
+ * The last time we sent data, used by the keepalive feature.
+ */
 extern time_t q_data_sent_time;
 
 /* Functions -------------------------------------------------------------- */
 
+/**
+ * Emit a message to the log file.
+ *
+ * @param format a printf-style format string
+ */
 extern void qlog(const char * format, ...);
-extern FILE * open_workingdir_file(const char * filename, char ** new_filename);
-extern char * get_datadir_filename(const char * filename);
-extern char * get_workingdir_filename(const char * filename);
-extern char * get_scriptdir_filename(const char * filename);
-extern FILE * open_datadir_file(const char * filename, char ** new_filename, const char * mode);
 
-/* All outgoing data goes through here */
+/**
+ * Open a file in the working directory.  It will be opened in "a" mode
+ * (opened for appending, created if it does not exist).  This is used for
+ * capture file, log file, screen/scrollback dump, and phonebook save files.
+ *
+ * @param filename the filename to open.  It can be a relative or absolute
+ * path.  If absolute, then new_filename will point to a strdup()d copy of
+ * filename.
+ * @param new_filename this will point to a newly-allocated string containing
+ * the full pathname of the opened file, usually
+ * /home/username/.qodem/filename.
+ * @return the opened file handle
+ */
+extern FILE * open_workingdir_file(const char * filename, char ** new_filename);
+
+/**
+ * Get the full path to a filename in the data directory.  Note that the
+ * string returned is a single static buffer, i.e. this is NOT thread-safe.
+ *
+ * @param filename a relative filename
+ * @return the full path to the filename (usually ~/qodem/filename or My
+ * Documents\\qodem\\filename).
+ */
+extern char * get_datadir_filename(const char * filename);
+
+/**
+ * Get the full path to a filename in the wirking directory.  Note that the
+ * string returned is a single static buffer, i.e. this is NOT thread-safe.
+ *
+ * @param filename a relative filename
+ * @return the full path to the filename (usually ~/.qodem/filename or My
+ * Documents\\qodem\\prefs\\filename).
+ */
+extern char * get_workingdir_filename(const char * filename);
+
+/**
+ * Get the full path to a filename in the scripts directory.  Note that the
+ * string returned is a single static buffer, i.e. this is NOT thread-safe.
+ *
+ * @param filename a relative filename
+ * @return the full path to the filename (usually ~/.qodem/scripts/filename
+ * or My Documents\\qodem\\scripts\\filename).
+ */
+extern char * get_scriptdir_filename(const char * filename);
+
+/**
+ * Open a file in the data directory.
+ *
+ * @param filename the filename to open.  It can be a relative or absolute
+ * path.  If absolute, then new_filename will point to a strdup()d copy of
+ * filename.
+ * @param new_filename this will point to a newly-allocated string containing
+ * the full pathname of the opened file, usually
+ * /home/username/qodem/filename.
+ * @param mode the fopen mode to use
+ * @return the opened file handle
+ */
+extern FILE * open_datadir_file(const char * filename, char ** new_filename,
+                                const char * mode);
+
+/**
+ * Write data from a buffer to the remote system, dispatching to the
+ * appropriate connection-specific write function.
+ *
+ * @param fd the socket descriptor
+ * @param data the buffer to read from
+ * @param data_n the number of bytes to write to the remote side
+ * @param sync if true, do not return until all of the bytes have been
+ * written, performing a busy wait and retry.
+ * @return the number of bytes written
+ */
 extern int qodem_write(const int fd, char * data, const int data_n, Q_BOOL sync);
 
-/* Spawn external terminal */
+/**
+ * Spawn a command in an external terminal.  This is used for the mail reader
+ * and external file editors.
+ *
+ * @param command the command line to execute
+ */
 extern void spawn_terminal(const char * command);
 
-/* Close remote connection */
+/**
+ * Close remote connection, dispatching to the appropriate
+ * connection-specific close function.
+ */
 extern void close_connection();
 
 #endif /* __QODEM_H__ */

@@ -58,6 +58,7 @@
 #include <ctype.h>
 #include <utime.h>
 #include "qodem.h"
+#include "console.h"
 #include "kermit.h"
 
 /*

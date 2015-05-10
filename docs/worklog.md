@@ -1,6 +1,12 @@
 The Qodem Project Work Log
 ==========================
 
+May 10, 2015
+
+The headers code sweep is finished.  I found several loose ends for
+later, they are now in the TODO.  I'll commit this now, but I'm sure I
+broke the Borland build in qodem_write().  We'll check that later on.
+
 May 8, 2015
 
 On the code sweep, we are almost halfway through the headers.  I've

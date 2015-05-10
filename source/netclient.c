@@ -189,6 +189,7 @@
 
 #include "dialer.h"
 #include "qodem.h"
+#include "console.h"
 #include "forms.h"
 #include "states.h"
 

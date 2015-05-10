@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "qodem.h"
+#include "console.h"
 #include "music.h"
 #include "states.h"
 #include "screen.h"

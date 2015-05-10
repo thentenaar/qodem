@@ -42,6 +42,7 @@
 #include "screen.h"
 #include "states.h"
 #include "qodem.h"
+#include "console.h"
 #include "options.h"
 #include "netclient.h"
 #include "music.h"
@@ -270,7 +271,7 @@ static void reset_host() {
 static void host_write(char * buffer, int count) {
         int i;
         if (host_online == Q_TRUE) {
-                qodem_write(q_child_tty_fd, buffer, count, Q_FALSE);
+                qodem_write(q_child_tty_fd, buffer, count, Q_TRUE);
         }
         for (i = 0; i < count; i++) {
                 if (buffer[i] == 0x08) {
@@ -477,7 +478,7 @@ static Q_BOOL line_buffer_char(const unsigned char ch) {
                 }
                 utf8_buffer[rc] = 0;
                 if (host_online == Q_TRUE) {
-                        qodem_write(q_child_tty_fd, utf8_buffer, rc, Q_FALSE);
+                        qodem_write(q_child_tty_fd, utf8_buffer, rc, Q_TRUE);
                 }
         }
         return Q_FALSE;
