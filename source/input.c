@@ -47,7 +47,7 @@
 attr_t q_current_color;
 
 /* How long it's been since user input came in */
-static time_t screensaver_time;
+time_t screensaver_time;
 
 #if defined(Q_PDCURSES) || defined(Q_PDCURSES_WIN32)
 
@@ -966,7 +966,15 @@ void qodem_win_getch(void * window, int * keystroke, int * flags, const unsigned
         int res;
 
         /* Check for screensaver */
-        if (q_screensaver_timeout > 0) {
+        if ((q_screensaver_timeout > 0) &&
+            (q_program_state != Q_STATE_SCREENSAVER) &&
+            (q_program_state != Q_STATE_DOWNLOAD) &&
+            (q_program_state != Q_STATE_UPLOAD) &&
+            (q_program_state != Q_STATE_UPLOAD_BATCH) &&
+            (q_program_state != Q_STATE_SCRIPT_EXECUTE) &&
+            (q_program_state != Q_STATE_DIALER)
+        ) {
+
                 time(&current_time);
                 if (difftime(current_time, screensaver_time) > q_screensaver_timeout) {
                         if (original_state == Q_STATE_HOST) {
@@ -978,6 +986,9 @@ void qodem_win_getch(void * window, int * keystroke, int * flags, const unsigned
                         } else {
                                 qlog(_("SCREENSAVER activating...\n"));
                                 switch_state(Q_STATE_SCREENSAVER);
+                                *flags = 0;
+                                *keystroke = ERR;
+                                return;
                         }
                 }
         }

@@ -123,6 +123,9 @@ char * q_home_directory = NULL;
 /* Global screensaver timeout */
 int q_screensaver_timeout;
 
+/* How long it's been since user input came in, stored in input.c */
+extern time_t screensaver_time;
+
 /* Global keepalive timeout */
 int q_keepalive_timeout;
 char q_keepalive_bytes[128];
@@ -2211,6 +2214,12 @@ int qodem_main(int argc, char * const argv[]) {
         q_keepalive_timeout             = 0;
         q_current_dial_entry            = NULL;
         q_status.exit_on_disconnect     = Q_FALSE;
+
+        /*
+         * Reset the screensaver clock, otherwise the very first keystroke
+         * will activate it.
+         */
+        time(&screensaver_time);
 
         /* Initialize the music "engine" :-) */
         music_init();

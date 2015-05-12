@@ -64,8 +64,6 @@ Code sweep:
   Eliminate "stored in X.c" on externs
   Replace #ifdef DEBUG with DLOG/DLOG2
   Sorted smallest-to-biggest:
-    field.c
-    states.c
     screen.c
     translate.c
     avatar.c

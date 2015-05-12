@@ -305,7 +305,7 @@ static struct option_struct options[] = {
 
         {Q_OPTION_SCREENSAVER_PASSWORD, NULL, "screensaver_password", "password", ""
 "### The password required to unlock the screen when the screen saver\n"
-"### is active."},
+"### is active.  The maximum length is 64 bytes."},
 
 /* Music sequences */
 
