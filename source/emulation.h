@@ -109,6 +109,9 @@ extern int q_emul_repeat_state_count;
 
 /* Functions -------------------------------------------------------------- */
 
+/**
+ * Reset the emulation state.
+ */
 extern void reset_emulation();
 
 /**
@@ -192,7 +195,7 @@ extern Q_CODEPAGE default_codepage(Q_EMULATION emulation);
 /**
  * Get the appropriate TERM environment variable value for an emulation.
  *
- * @param emulation the emulation 
+ * @param emulation the emulation
  * @return "ansi", "xterm", etc.
  */
 extern const char * emulation_term(Q_EMULATION emulation);
@@ -200,9 +203,17 @@ extern const char * emulation_term(Q_EMULATION emulation);
 /**
  * Get the appropriate LANG environment variable value for an emulation.
  *
- * @param emulation the emulation 
+ * @param emulation the emulation
  * @return "en", "en_US", etc.
  */
 extern const char * emulation_lang(Q_EMULATION emulation);
+
+/**
+ * Echo local transmitted bytes to DEBUG emulation the hex display in a
+ * distinct color.
+ *
+ * @param ch the byte that was sent to the remote side
+ */
+extern void debug_local_echo(const unsigned char ch);
 
 #endif /* __EMULATION_H__ */

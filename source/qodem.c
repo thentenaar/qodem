@@ -241,7 +241,11 @@ int qodem_write(const int fd, char * data, const int data_n, Q_BOOL sync) {
                         (q_host_type == Q_HOST_TYPE_SOCKET))
         ) {
                 /* Socket */
+#ifdef Q_PDCURSES_WIN32
+                rc = send(fd, data, data_n, 0);
+#else
                 rc = write(fd, data, data_n);
+#endif
 #ifdef Q_LIBSSH2
         } else if (     (q_status.dial_method == Q_DIAL_METHOD_SSH) &&
                         (net_is_connected() == Q_TRUE)
@@ -332,7 +336,11 @@ static ssize_t qodem_read(const int fd, void * buf, size_t count) {
                         (q_host_type == Q_HOST_TYPE_SOCKET))
         ) {
                 /* Socket */
+#ifdef Q_PDCURSES_WIN32
+                return recv(fd, (char *)buf, count, 0);
+#else
                 return read(fd, buf, count);
+#endif
         }
 #ifdef Q_LIBSSH2
         if (    (q_status.dial_method == Q_DIAL_METHOD_SSH) &&
@@ -2119,6 +2127,7 @@ int qodem_main(int argc, char * const argv[]) {
 
         /* Initial program state */
         q_program_state = Q_STATE_INITIALIZATION;
+
         /* Default to VT102 as the most common denominator */
         q_status.emulation              = Q_EMUL_VT102;
         q_status.codepage               = default_codepage(q_status.emulation);

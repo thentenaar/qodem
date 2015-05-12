@@ -128,9 +128,56 @@
 #define Q_FALSE 0
 #define Q_TRUE 1
 
+/*
+ * Debug logger function.  DLOGNAME is a const char * defined in each source
+ * file that uses DLOG().  So all a source has to do is define DLOGNAME to
+ * non-NULL and logging will be active for that translation unit.
+ */
+#define DLOG(A)                 \
+do {                            \
+if (DLOGNAME != NULL) {         \
+    dlogtimestamp = Q_TRUE;     \
+    dlogname = DLOGNAME;        \
+    dlogprintf A;               \
+} else {                        \
+    /* Do nothing */            \
+}}  while (false);
+
+/*
+ * Continue a previous DLOG message, i.e. do not emit the timestamp.
+ */
+#define DLOG2(A))               \
+do {                            \
+if (DLOGNAME != NULL) {         \
+    dlogtimestamp = Q_FALSE;    \
+    dlogname = DLOGNAME;        \
+    dlogprintf A;               \
+} else {                        \
+    /* Do nothing */            \
+}}  while (false);
+
 /* Globals ---------------------------------------------------------------- */
 
+/**
+ * The name to pair with the next dlogprintf() call.  It needs to be exposed
+ * so that DLOG/DLOG2 can set it.
+ */
+extern const char * dlogname;
+
+/**
+ * When true, emit the timestamp on the next dlogprintf() call.  It needs to
+ * be exposed so that DLOG/DLOG2 can set it.
+ */
+extern Q_BOOL dlogtimestamp;
+
 /* Functions -------------------------------------------------------------- */
+
+/**
+ * Emit a timestamped message to the debug log.
+ *
+ * @param format the format string
+ */
+extern void dlogprintf(const char * format, ...);
 
 /**
  * strdup() equivalent that plugs into the Hans-Boehm GC if it is enabled, if

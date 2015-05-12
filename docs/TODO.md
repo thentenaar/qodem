@@ -62,14 +62,13 @@ Code sweep:
   Ensure return codes are actually used, or switch them to void
   Javadoc all functions
   Eliminate "stored in X.c" on externs
+  Replace #ifdef DEBUG with DLOG/DLOG2
   Sorted smallest-to-biggest:
     field.c
     states.c
     screen.c
     translate.c
-    vt52.c
     avatar.c
-    emulation.c
     dialer.c
     music.c
     input.c

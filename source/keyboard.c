@@ -104,7 +104,6 @@
 #include "linux.h"
 #include "options.h"
 #include "field.h"
-#include "debug.h"
 #include "help.h"
 #include "netclient.h"
 #include "keyboard.h"

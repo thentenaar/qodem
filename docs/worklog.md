@@ -1,6 +1,16 @@
 The Qodem Project Work Log
 ==========================
 
+May 12, 2015
+
+Code sweep continues.  Debug emulation is now refactored into
+emulation.c since it is so small.  This has been bothering me for some
+time, I guess it was seeing that debug.c that had nothing to do with
+debugging.  Which prompted me to also decide on eliminating all of the
+DEBUG_X #ifdefs in favor a simpler dlogprintf() type macro.  This will
+reduce line count, de-clutter a lot of source, adds a timestamp, and
+unifies all the different sources into one output log.
+
 May 10, 2015
 
 The headers code sweep is finished.  I found several loose ends for

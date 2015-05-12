@@ -103,7 +103,6 @@ $(QODEM_SRC_DIR)/codepage.c \
 $(QODEM_SRC_DIR)/colors.c \
 $(QODEM_SRC_DIR)/common.c \
 $(QODEM_SRC_DIR)/console.c \
-$(QODEM_SRC_DIR)/debug.c \
 $(QODEM_SRC_DIR)/dialer.c \
 $(QODEM_SRC_DIR)/emulation.c \
 $(QODEM_SRC_DIR)/field.c \
@@ -138,7 +137,6 @@ $(QODEM_OBJS_DIR)/codepage.o \
 $(QODEM_OBJS_DIR)/colors.o \
 $(QODEM_OBJS_DIR)/common.o \
 $(QODEM_OBJS_DIR)/console.o \
-$(QODEM_OBJS_DIR)/debug.o \
 $(QODEM_OBJS_DIR)/dialer.o \
 $(QODEM_OBJS_DIR)/emulation.o \
 $(QODEM_OBJS_DIR)/field.o \

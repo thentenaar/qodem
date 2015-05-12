@@ -29,7 +29,10 @@
 #include <assert.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/time.h>
+#include <time.h>
 #include <errno.h>
+#include <stdarg.h>
 #ifdef Q_PDCURSES_WIN32
 #include <tchar.h>
 #include <windows.h>
@@ -38,6 +41,56 @@
 #include <sys/poll.h>
 #include <unistd.h>
 #endif /* Q_PDCURSES_WIN32 */
+
+/**
+ * The name to pair with the next dlogprintf() call.
+ */
+const char * dlogname = NULL;
+
+/**
+ * When true, emit the timestamp on the next dlogprintf() call.
+ */
+Q_BOOL dlogtimestamp = Q_TRUE;
+
+/**
+ * The debug log file handle.
+ */
+FILE * dlogfile = NULL;
+
+/**
+ * Emit a timestamped message to the debug log.
+ *
+ * @param format the format string
+ */
+void dlogprintf(const char * format, ...) {
+    char timestring[80];
+    struct tm * timestamp;
+    struct timeval now;
+    va_list arglist;
+
+    if (dlogfile == NULL) {
+        dlogfile = fopen("debug-qodem.txt", "wt");
+        if (dlogfile == NULL) {
+            /* Some error opening it, bail out. */
+            return;
+        }
+    }
+
+    if (dlogtimestamp == Q_TRUE) {
+        gettimeofday(&now, NULL);
+        timestamp = localtime(&now.tv_sec);
+        strftime(timestring, sizeof(timestring), "[%Y-%m-%d %H:%M:%S.%%03d] ",
+                 timestamp);
+        fprintf(dlogfile, timestring, (now.tv_usec / 1000));
+    }
+
+    va_start(arglist, format);
+    vfprintf(dlogfile, format, arglist);
+    va_end(arglist);
+
+    fflush(dlogfile);
+
+}
 
 /**
  * wcsdup() equivalent that plugs into the Hans-Boehm GC if it is enabled, if
