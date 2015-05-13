@@ -2205,7 +2205,42 @@ void console_refresh(Q_BOOL status_line) {
                 }
         }
 
-        screen_flush();
+        switch (q_program_state) {
+        case Q_STATE_CONSOLE:
+            screen_flush();
+            break;
+        case Q_STATE_SCRIPT_EXECUTE:
+        case Q_STATE_HOST:
+        case Q_STATE_CONSOLE_MENU:
+        case Q_STATE_INFO:
+        case Q_STATE_SCROLLBACK:
+        case Q_STATE_DOWNLOAD_MENU:
+        case Q_STATE_UPLOAD_MENU:
+        case Q_STATE_DOWNLOAD_PATHDIALOG:
+        case Q_STATE_UPLOAD_PATHDIALOG:
+        case Q_STATE_UPLOAD_BATCH_DIALOG:
+        case Q_STATE_UPLOAD:
+        case Q_STATE_UPLOAD_BATCH:
+        case Q_STATE_DOWNLOAD:
+        case Q_STATE_EMULATION_MENU:
+        case Q_STATE_TRANSLATE_MENU:
+        case Q_STATE_TRANSLATE_EDITOR:
+        case Q_STATE_PHONEBOOK:
+        case Q_STATE_DIALER:
+        case Q_STATE_SCREENSAVER:
+        case Q_STATE_FUNCTION_KEY_EDITOR:
+#ifndef Q_NO_SERIAL
+        case Q_STATE_MODEM_CONFIG:
+#endif
+        case Q_STATE_CODEPAGE:
+        case Q_STATE_INITIALIZATION:
+        case Q_STATE_EXIT:
+            /*
+             * Don't flush.
+             */
+            break;
+        }
+
 } /* ---------------------------------------------------------------------- */
 
 /*

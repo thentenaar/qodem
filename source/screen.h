@@ -68,6 +68,7 @@ extern void screen_clear_remaining_line(Q_BOOL double_width);
  * of colors the UI can support.
  *
  * @param q_color the color enum
+ * @return a curses attr
  */
 extern attr_t scrollback_full_attr(const Q_COLOR q_color);
 
@@ -549,8 +550,7 @@ extern void screen_win_draw_box(void * window, const int left, const int top,
 
 /**
  * Draw a box inside a curses WINDOW.  It will have box-drawing characters on
- * the border and use the Q_COLOR_WINDOW and Q_COLOR_WINDOW_BACKGROUND
- * colors.
+ * the border.
  *
  * @param win the curses WINDOW
  * @param left column position for the top-left corner of the box.  The

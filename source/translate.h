@@ -60,7 +60,7 @@ extern struct q_translate_table_struct q_translate_table_output;
 /* Functions -------------------------------------------------------------- */
 
 /**
- * Keyboard handler for the Alt-J translation table selection dialog.
+ * Keyboard handler for the Alt-A translation table selection dialog.
  *
  * @param keystroke the keystroke from the user.
  * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.  See input.h.
@@ -69,12 +69,12 @@ extern void translate_table_menu_keyboard_handler(const int keystroke,
                                                   const int flags);
 
 /**
- * Draw screen for the Alt-J translation table selection dialog.
+ * Draw screen for the Alt-A translation table selection dialog.
  */
 extern void translate_table_menu_refresh();
 
 /**
- * Keyboard handler for the Alt-J translation table editor screen.
+ * Keyboard handler for the Alt-A translation table editor screen.
  *
  * @param keystroke the keystroke from the user.
  * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.  See input.h.
@@ -83,7 +83,7 @@ extern void translate_table_editor_keyboard_handler(const int keystroke,
                                                     const int flags);
 
 /**
- * Draw screen for the Alt-J translation table editor screen.
+ * Draw screen for the Alt-A translation table editor screen.
  */
 extern void translate_table_editor_refresh();
 
