@@ -32,7 +32,9 @@
 #include "netclient.h"
 #include "vt52.h"
 
-/* Scan states. */
+/**
+ * Scan states for the parser state machine.
+ */
 typedef enum SCAN_STATES {
     SCAN_NONE,
     SCAN_ESC,
@@ -204,11 +206,7 @@ Q_EMULATION_STATUS vt52(const unsigned char from_modem, wchar_t * to_screen) {
     DLOG(("STATE: %d CHAR: 0x%02x '%c'\n", scan_state, from_modem2,
           from_modem2));
 
-    /* For extreme debugging, uncomment the following line: */
-    /* render_screen_to_debug_file(VT52_DEBUG_FILE_HANDLE); */
-
-
- vt52_start:
+vt52_start:
 
     switch (scan_state) {
 

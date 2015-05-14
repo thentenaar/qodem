@@ -64,7 +64,6 @@ Code sweep:
   Eliminate "stored in X.c" on externs
   Replace #ifdef DEBUG with DLOG/DLOG2
   Sorted smallest-to-biggest:
-    avatar.c
     dialer.c
     music.c
     input.c
