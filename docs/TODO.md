@@ -30,6 +30,8 @@ Refactor:
 
   Remove #if 0 / #if 1
 
+  Re-combine linux.c into vt100.c.
+
 Detect xterm alternate screen and clear scrollback to retain what was
 seen before.
 
@@ -64,7 +66,6 @@ Code sweep:
   Eliminate "stored in X.c" on externs
   Replace #ifdef DEBUG with DLOG/DLOG2
   Sorted smallest-to-biggest:
-    dialer.c
     music.c
     input.c
     script.c
@@ -84,10 +85,10 @@ Code sweep:
     forms.c
     netclient.c
     zmodem.c
-    linux.c
-    vt100.c
     kermit.c
     phonebook.c
+    vt100.c
+    linux.c
 
 
 
@@ -332,8 +333,6 @@ Release:
 -----
 
 Refactor:
-  Create ecma48.c, split common functions from vt100.c and linux.c
-  Create xterm.c
   Move Q_STATE_DIALER from phonebook.c to dialer.c
   Rationalize use of globals vs q_status
 

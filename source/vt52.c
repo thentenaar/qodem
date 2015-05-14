@@ -226,7 +226,7 @@ vt52_start:
          */
         if (from_modem2 == 0x05) {
 
-            DLOG(("VT52: Enquire\n"));
+            DLOG(("Enquire\n"));
 
             /*
              * ENQ - transmit the answerback message.
@@ -239,7 +239,7 @@ vt52_start:
 
         if (from_modem2 == 0x08) {
 
-            DLOG(("VT52: Backspace\n"));
+            DLOG(("Backspace\n"));
 
             /*
              * Backspace.
@@ -251,7 +251,7 @@ vt52_start:
 
         if (from_modem2 == 0x09) {
 
-            DLOG(("VT52: Tab\n"));
+            DLOG(("Tab\n"));
 
             /*
              * Tab.
@@ -269,7 +269,7 @@ vt52_start:
 
         if (from_modem2 == 0x7F) {
 
-            DLOG(("VT52: Del\n"));
+            DLOG(("Del\n"));
 
             /*
              * Del - consume but do nothing.
@@ -314,7 +314,7 @@ vt52_start:
             new_col = 0;
         }
 
-        DLOG(("VT52: Cursor position: %d %d\n", new_row, new_col));
+        DLOG(("Cursor position: %d %d\n", new_row, new_col));
 
         cursor_position(new_row, new_col);
         clear_state(to_screen);
@@ -324,7 +324,7 @@ vt52_start:
 
         if (from_modem2 == 'A') {
 
-            DLOG(("VT52: Cursor up\n"));
+            DLOG(("Cursor up\n"));
 
             cursor_up(1, Q_FALSE);
             clear_state(to_screen);
@@ -333,7 +333,7 @@ vt52_start:
 
         if (from_modem2 == 'B') {
 
-            DLOG(("VT52: Cursor down\n"));
+            DLOG(("Cursor down\n"));
 
             cursor_down(1, Q_FALSE);
             clear_state(to_screen);
@@ -342,7 +342,7 @@ vt52_start:
 
         if (from_modem2 == 'C') {
 
-            DLOG(("VT52: Cursor right\n"));
+            DLOG(("Cursor right\n"));
 
             cursor_right(1, Q_FALSE);
             clear_state(to_screen);
@@ -351,7 +351,7 @@ vt52_start:
 
         if (from_modem2 == 'D') {
 
-            DLOG(("VT52: Cursor left\n"));
+            DLOG(("Cursor left\n"));
 
             cursor_left(1, Q_FALSE);
             clear_state(to_screen);
@@ -360,7 +360,7 @@ vt52_start:
 
         if (from_modem2 == 'E') {
 
-            DLOG(("VT52: Erase entire screen\n"));
+            DLOG(("Erase entire screen\n"));
 
             /*
              * Cursor position to (0,0) and erase entire screen.
@@ -372,7 +372,7 @@ vt52_start:
 
         if (from_modem2 == 'F') {
 
-            DLOG(("VT52: Graphics mode ON\n"));
+            DLOG(("Graphics mode ON\n"));
 
             graphics_mode = Q_TRUE;
             clear_state(to_screen);
@@ -381,7 +381,7 @@ vt52_start:
 
         if (from_modem2 == 'G') {
 
-            DLOG(("VT52: Graphics mode OFF\n"));
+            DLOG(("Graphics mode OFF\n"));
 
             graphics_mode = Q_FALSE;
             clear_state(to_screen);
@@ -390,7 +390,7 @@ vt52_start:
 
         if (from_modem2 == 'H') {
 
-            DLOG(("VT52: Cursor home\n"));
+            DLOG(("Cursor home\n"));
 
             cursor_position(0, 0);
             clear_state(to_screen);
@@ -399,7 +399,7 @@ vt52_start:
 
         if (from_modem2 == 'I') {
 
-            DLOG(("VT52: Reverse linefeed\n"));
+            DLOG(("Reverse linefeed\n"));
 
             /*
              * Move up one column, inserting a line if already at the top.
@@ -416,7 +416,7 @@ vt52_start:
 
         if (from_modem2 == 'J') {
 
-            DLOG(("VT52: Erase to end of screen\n"));
+            DLOG(("Erase to end of screen\n"));
 
             /*
              * Erase from here to end of screen.
@@ -430,7 +430,7 @@ vt52_start:
 
         if (from_modem2 == 'K') {
 
-            DLOG(("VT52: Erase to end of line\n"));
+            DLOG(("Erase to end of line\n"));
 
             /*
              * Erase from here to end of line.
@@ -453,7 +453,7 @@ vt52_start:
 
         if (from_modem2 == 'Z') {
 
-            DLOG(("VT52: DECID\n"));
+            DLOG(("DECID\n"));
 
             /*
              * Identify
@@ -473,7 +473,7 @@ vt52_start:
 
         if (from_modem2 == '=') {
 
-            DLOG(("VT52: Alternate keypad ON\n"));
+            DLOG(("Alternate keypad ON\n"));
 
             q_vt52_alternate_keypad_mode = Q_TRUE;
             clear_state(to_screen);
@@ -482,7 +482,7 @@ vt52_start:
 
         if (from_modem2 == '>') {
 
-            DLOG(("VT52: Alternate keypad OFF\n"));
+            DLOG(("Alternate keypad OFF\n"));
 
             q_vt52_alternate_keypad_mode = Q_FALSE;
             clear_state(to_screen);
@@ -499,7 +499,7 @@ vt52_start:
                 return Q_EMUL_FSM_NO_CHAR_YET;
             }
 
-            DLOG(("VT52: Hold screen mode ON\n"));
+            DLOG(("Hold screen mode ON\n"));
 
             q_status.hold_screen_mode = Q_TRUE;
             clear_state(to_screen);
@@ -508,7 +508,7 @@ vt52_start:
 
         if (from_modem2 == '\\') {
 
-            DLOG(("VT52: Hold screen mode OFF\n"));
+            DLOG(("Hold screen mode OFF\n"));
 
             q_status.hold_screen_mode = Q_FALSE;
             clear_state(to_screen);
@@ -537,7 +537,7 @@ vt52_start:
              * ESC [ m mean ESC [ 0 m, all attributes off.
              */
 
-            DLOG(("VT52: ANSI SGR: reset\n"));
+            DLOG(("ANSI SGR: reset\n"));
 
             q_current_color =
                 Q_A_NORMAL | scrollback_full_attr(Q_COLOR_CONSOLE_TEXT);
@@ -550,7 +550,7 @@ vt52_start:
          * This means we entered HOLD SCREEN mode.
          */
 
-        DLOG(("VT52: Hold screen mode ON\n"));
+        DLOG(("Hold screen mode ON\n"));
 
         q_status.hold_screen_mode = Q_TRUE;
 
@@ -574,7 +574,7 @@ vt52_start:
 
         if (from_modem2 == 'm') {
 
-            DLOG(("VT52: ANSI SGR: change text attributes\n"));
+            DLOG(("ANSI SGR: change text attributes\n"));
 
             /*
              * Text attributes.

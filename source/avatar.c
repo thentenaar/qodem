@@ -35,7 +35,7 @@
 #include "avatar.h"
 
 /* Set this to a not-NULL value to enable debug log. */
-/* static const char *DLOGNAME = "vt52"; */
+/* static const char *DLOGNAME = "avatar"; */
 static const char * DLOGNAME = NULL;
 
 /**
@@ -204,7 +204,7 @@ static void avatar_set_color(const unsigned char from_modem) {
     }
     q_current_color = attr | color_to_attr((fg << 3) | bg);
 
-    DLOG(("AVATAR: new color: %04x\n", (unsigned int) q_current_color));
+    DLOG(("new color: %04x\n", (unsigned int) q_current_color));
 }
 
 /**
@@ -241,7 +241,7 @@ avatar_start:
         ansi_buffer[ansi_buffer_n] = from_modem;
         ansi_buffer_n++;
 
-        DLOG(("AVATAR: ANSI FALLBACK ansi()\n"));
+        DLOG(("ANSI FALLBACK ansi()\n"));
 
         rc = Q_EMUL_FSM_NO_CHAR_YET;
         while (rc == Q_EMUL_FSM_NO_CHAR_YET) {
@@ -251,7 +251,7 @@ avatar_start:
                 /*
                  * We can be ourselves again now.
                  */
-                DLOG(("AVATAR: ANSI FALLBACK END\n"));
+                DLOG(("ANSI FALLBACK END\n"));
                 scan_state = SCAN_NONE;
             }
 
@@ -292,7 +292,7 @@ avatar_start:
          */
         if (from_modem == 0x0C) {
 
-            DLOG(("AVATAR: clear screen, home cursor\n"));
+            DLOG(("clear screen, home cursor\n"));
 
             /*
              * Cursor position to (0,0) and erase entire screen.
@@ -353,7 +353,7 @@ avatar_start:
          * Cursor position
          */
 
-        DLOG(("AVATAR: cursor_position() %d %d\n", q_emul_buffer[2] - 1,
+        DLOG(("cursor_position() %d %d\n", q_emul_buffer[2] - 1,
              from_modem - 1));
 
         old_y = q_emul_buffer[2] - 1;
@@ -378,7 +378,7 @@ avatar_start:
     case SCAN_Y_2:
         y_count = from_modem;
 
-        DLOG(("AVATAR: RLE char '%c' count=%d\n", y_char, y_count));
+        DLOG(("RLE char '%c' count=%d\n", y_char, y_count));
 
         scan_state = SCAN_Y_EMIT;
         /*
@@ -450,7 +450,7 @@ repeat_loop:
         /*
          * Scroll a rectangular region.
          */
-        DLOG(("AVATAR: scroll_rectangle() %s %d %d %d %d %d\n",
+        DLOG(("scroll_rectangle() %s %d %d %d %d %d\n",
              (v_jk_scrollup == Q_TRUE ? "true" : "false"), v_jk_numlines,
              v_jk_upper, v_jk_left, v_jk_lower, v_jk_right));
 
@@ -508,7 +508,7 @@ repeat_loop:
         y_count = from_modem;
         v_y_chars_i = 0;
 
-        DLOG(("AVATAR: RLE pattern '%s' count=%d\n", v_y_chars, y_count));
+        DLOG(("RLE pattern '%s' count=%d\n", v_y_chars, y_count));
         scan_state = SCAN_V_Y_EMIT;
 
         /*
@@ -569,7 +569,7 @@ repeat_loop:
          * cols
          */
         assert(q_emul_buffer_n >= 5);
-        DLOG(("AVATAR: clear area char='%c' attr=%02x lines=%d cols=%d\n",
+        DLOG(("clear area char='%c' attr=%02x lines=%d cols=%d\n",
              q_emul_buffer[2], q_emul_buffer[3], q_emul_buffer[4],
              from_modem));
 
@@ -806,7 +806,7 @@ repeat_loop:
 
         if (from_modem == 'm') {
 
-            DLOG(("AVATAR: ANSI SGR: change text attributes\n"));
+            DLOG(("ANSI SGR: change text attributes\n"));
 
             /*
              * Text attributes
@@ -834,7 +834,7 @@ repeat_loop:
      * will "fallback" to ANSI for sequences they don't understand.
      */
     scan_state = SCAN_ANSI_FALLBACK;
-    DLOG(("AVATAR: ANSI FALLBACK BEGIN\n"));
+    DLOG(("ANSI FALLBACK BEGIN\n"));
 
     /*
      * From here on out we pass through ANSI until we don't get
@@ -846,7 +846,7 @@ repeat_loop:
     q_emul_buffer_i = 0;
     q_emul_buffer_n = 0;
 
-    DLOG(("AVATAR: ANSI FALLBACK ansi()\n"));
+    DLOG(("ANSI FALLBACK ansi()\n"));
 
     /*
      * Run through the emulator again
@@ -858,7 +858,7 @@ repeat_loop:
     /*
      * DEBUG:  crap out on the unknown sequence
      */
-    DLOG(("AVATAR: NO IDEA WHAT TO DO!\n"));
+    DLOG(("NO IDEA WHAT TO DO!\n"));
 
     clear_state(to_screen);
     return Q_EMUL_FSM_NO_CHAR_YET;

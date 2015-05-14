@@ -1,6 +1,11 @@
 The Qodem Project Work Log
 ==========================
 
+May 14, 2015
+
+Code sweep continues.  23 files to go...ugh.  But on the bright side
+it is causing my eyes to bleed a lot less when browsing the code.
+
 May 12, 2015
 
 Code sweep continues.  Debug emulation is now refactored into

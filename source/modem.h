@@ -176,7 +176,7 @@ extern struct q_serial_port_struct q_serial_port;
 /* Functions -------------------------------------------------------------- */
 
 /**
- * Keyboard handler for the Alt-O modem settigns dialog.
+ * Keyboard handler for the Alt-O modem settings dialog.
  *
  * @param keystroke the keystroke from the user.
  * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.  See input.h.
@@ -184,7 +184,7 @@ extern struct q_serial_port_struct q_serial_port;
 extern void modem_config_keyboard_handler(const int keystroke, const int flags);
 
 /**
- * Draw screen for the Alt-O modem settigns dialog.
+ * Draw screen for the Alt-O modem settings dialog.
  */
 extern void modem_config_refresh();
 
