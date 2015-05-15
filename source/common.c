@@ -103,14 +103,14 @@ void dlogprintf(const char * format, ...) {
 wchar_t * Xwcsdup(const wchar_t * ptr, const char * file, const int line) {
 
     wchar_t * local_ptr = NULL;
-#if defined(QODEM_USE_GC) && defined(HAVE_LIBGC)
+#if defined(Q_GC_BOEHM) && defined(HAVE_LIBGC)
     int length;
     int i;
 #endif
 
     assert(ptr != NULL);
 
-#if defined(QODEM_USE_GC) && defined(HAVE_LIBGC)
+#if defined(Q_GC_BOEHM) && defined(HAVE_LIBGC)
     length = wcslen(ptr) + 1;
 #ifdef DEBUG
     local_ptr =
@@ -173,7 +173,7 @@ wchar_t * Xstring_to_wcsdup(const char * ptr, const char * file,
     wchar_t * local_ptr = NULL;
     int length;
 
-#if defined(QODEM_USE_GC) && defined(HAVE_LIBGC)
+#if defined(Q_GC_BOEHM) && defined(HAVE_LIBGC)
     int i;
 #endif
 
@@ -181,7 +181,7 @@ wchar_t * Xstring_to_wcsdup(const char * ptr, const char * file,
 
     length = mbstowcs(NULL, ptr, strlen(ptr)) + 1;
 
-#if defined(QODEM_USE_GC) && defined(HAVE_LIBGC)
+#if defined(Q_GC_BOEHM) && defined(HAVE_LIBGC)
 #ifdef DEBUG
     local_ptr =
         (wchar_t *) GC_debug_malloc((sizeof(wchar_t)) * length, file, line);
@@ -226,14 +226,14 @@ wchar_t * Xstring_to_wcsdup(const char * ptr, const char * file,
 char * Xstrdup(const char * ptr, const char * file, const int line) {
 
     char * local_ptr = NULL;
-#if defined(QODEM_USE_GC) && defined(HAVE_LIBGC)
+#if defined(Q_GC_BOEHM) && defined(HAVE_LIBGC)
     int length;
     int i;
 #endif
 
     assert(ptr != NULL);
 
-#if defined(QODEM_USE_GC) && defined(HAVE_LIBGC)
+#if defined(Q_GC_BOEHM) && defined(HAVE_LIBGC)
     length = strlen(ptr) + 1;
 #ifdef DEBUG
     local_ptr = (char *) GC_debug_malloc(length, file, line);

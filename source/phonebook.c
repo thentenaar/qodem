@@ -6596,7 +6596,6 @@ void dialer_process_data(unsigned char * input, const int input_n, int * remaini
                  * window.
                  */
                 break;
-        /* case Q_DIAL_METHOD_TN3270: */
         case Q_DIAL_METHOD_SHELL:
         case Q_DIAL_METHOD_COMMANDLINE:
                 /* BUG - these go straight to CONSOLE */

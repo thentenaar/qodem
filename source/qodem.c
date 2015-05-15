@@ -561,10 +561,6 @@ static void process_command_line_option(const char * option, const char * value)
                 } else if (strncmp(value, "socket", strlen("socket")) == 0) {
                         initial_call.method = Q_DIAL_METHOD_SOCKET;
                         initial_call.port = "23";
-                /*
-                } else if (strncmp(value, "tn3270", strlen("tn3270")) == 0) {
-                        initial_call.method = Q_DIAL_METHOD_TN3270;
-                 */
                 }
         }
 
@@ -2241,13 +2237,6 @@ int qodem_main(int argc, char * const argv[]) {
 
         /* Load the options */
         load_options();
-
-#ifndef QODEM_USE_SDL
-#ifndef __linux
-        /* Sound is not supported except on Linux console */
-        q_status.sound = Q_FALSE;
-#endif
-#endif
 
         /* Setup MIXED mode doorway */
         setup_doorway_handling();

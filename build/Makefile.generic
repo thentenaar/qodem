@@ -42,7 +42,7 @@ default: qodem
 #                     to LDLIBS:
 #                          upnp/miniupnpc-1.4/libminiupnpc.a
 #
-# QODEM_USE_SDL     - Enable support for libSDL for sound (ANSI music and
+# Q_SOUND_SDL       - Enable support for libSDL for sound (ANSI music and
 #                     beep()).  You will need to add "-lSDL -lm" to LBLIBS.
 #                     libSDL headers are assumed to be installed.
 #
@@ -52,11 +52,9 @@ default: qodem
 #                          x11/PDCurses-3.4/x11/libXCurses.a
 #                          -lXaw -lXmu -lXt -lX11 -lXpm
 #                          
-# Q_PDCURSES_WIN32  - Build the Win32 PDCurses version.  It's more
-#                     complicated, look at configure.ac near
-#                     AC_ARG_ENABLE(win32, ...) to see what to add to
-#                     CFLAGS and LDFLAGS.  You will also need to change
-#                     CC to point to a i686-pc-mingw32-gcc binary.
+# Q_PDCURSES_WIN32  - Build for the Win32 PDCurses version.
+#
+# Q_GC_BOEHM        - Build for use with the Hans-Boehm garbage collector.
 #
 # Q_NO_SERIAL       - Remove code for serial port support.  This is required
 #                     for the Win32 build.

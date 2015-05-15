@@ -3,6 +3,7 @@ qodem (1.0beta-1) unstable; urgency=low
   * Switch code repository to github: https://github.com/klamonte/qodem
   * Support for Borland C++ 5.02 compiler
   * Non-blocking connect() for network connection methods
+  * Mouse event tracking support for XTERM and LINUX
 
  -- Kevin Lamonte <lamonte@users.sourceforge.net>  Wed,  1 Jul 2015 18:50:00 -0500
 

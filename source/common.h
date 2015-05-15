@@ -26,7 +26,7 @@
 #define __COMMON_H__
 
 /* Hans-Boehm garbage collector integration ------------------------------- */
-#if defined(QODEM_USE_GC) && defined(HAVE_LIBGC)
+#if defined(Q_GC_BOEHM) && defined(HAVE_LIBGC)
 
 #include <gc.h>
 
@@ -49,7 +49,7 @@
 #define Xrealloc(W, X, Y, Z)            realloc(W, X)
 #define Xfree(X, Y, Z)                  free(X)
 
-#endif /* defined(QODEM_USE_GC) && defined(HAVE_LIBGC) */
+#endif /* defined(Q_GC_BOEHM) && defined(HAVE_LIBGC) */
 
 /* Includes --------------------------------------------------------------- */
 

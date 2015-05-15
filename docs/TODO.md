@@ -43,10 +43,6 @@ SGR mouse reporting
 
 Q_OPTION_SCRIPTS_DIR
 
-QODEM_USE_SDL change to Q_SOUND_SDL
-
-QODEM_USE_GC change to Q_GC_BOEHM
-
 Encrypted phonebook
 
 New autoconf build:
@@ -65,30 +61,26 @@ Code sweep:
   Javadoc all functions
   Eliminate "stored in X.c" on externs
   Replace #ifdef DEBUG with DLOG/DLOG2
-  Sorted smallest-to-biggest:
-    music.c
+
+    ansi.c
+    codepage.c
     input.c
     script.c
-    colors.c
     options.c
-    ansi.c
     protocols.c
-    modem.c
-    codepage.c
-    host.c
+    netclient.c
     scrollback.c
-    qodem.c
     help.c
     xmodem.c
     console.c
     keyboard.c
     forms.c
-    netclient.c
     zmodem.c
     kermit.c
-    phonebook.c
     vt100.c
     linux.c
+    qodem.c
+    phonebook.c
 
 
 
