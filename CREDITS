@@ -19,6 +19,11 @@ following people:
 
   Mark Martinec - snprintf
 
+Some libraries have very minor changes (primary #ifdef guards) to
+enable compilation.  I, Kevin Lamonte, do hereby declare that any
+changes and contributions I have made to those libraries are in the
+public domain and available to all.
+
 -----
 
 The X11 build of Qodem is linked to the PDCurses-3.4 library, which is

@@ -146,7 +146,7 @@ if (DLOGNAME != NULL) {         \
 /*
  * Continue a previous DLOG message, i.e. do not emit the timestamp.
  */
-#define DLOG2(A))               \
+#define DLOG2(A)                \
 do {                            \
 if (DLOGNAME != NULL) {         \
     dlogtimestamp = Q_FALSE;    \

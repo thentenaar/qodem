@@ -1,6 +1,45 @@
 The Qodem Project Work Log
 ==========================
 
+May 15, 2015
+
+Code .... sweeep .... continues.  Ugh, this is taking forever.
+
+In other news, I am contemplating a rather large departure for qodem:
+licensing the 1.0beta as MIT or BSD license.  Let's get honest: I
+don't have anywhere near as much time as I used to for this project
+(or ANY coding project).  Knowing now the scope of it, I will likely
+never have a period in my life like the 2003-2006 time span in which I
+could do this again.  Nor will I have another job involving RS-232
+where qodem becomes absolutely indispensable.  Someday I will need to
+be completely off of it, and I feel like GPLv2+ would be just another
+barrier to someone out there wanting to poke at qodem in the future.
+Given how few people are interested in this kind of stuff, more
+barriers just means Qmodem's concepts die that much faster.
+
+GPLv2+ was a decision made back when I was all gung-ho on "Free
+Software is totally different than Open Source" and "GPL is why Linux
+took off and the BSDs languished".  I don't believe much of that
+anymore.  Apache and nginx are examples of commercially valuable
+platforms that are BSD-ish yet still going strong in the community
+edition.  clang/llvm are doing fine too.  It wasn't GPL that made
+Linux work, it was the leadership and community and being at the right
+place at the right time.
+
+It looks like my libraries remain OK with BSD licensing, so long as a)
+the changes I made to compile my libc bits for Borland are deemed
+public domain (I just added text to that effect in the CREDITS file),
+and b) the source to 1.0beta is made available.  This looks good to
+me.
+
+I'm not going to pull the trigger quite yet, I need to let it sit in
+my mind for a couple weeks.  If I do it there's no going back: this
+would be giving the entire world -- including the sleaziest
+"entrepreneurs" I kept running into in Boston -- my largest single
+piece of work.  But I also know that programming is not my long-term
+professional future anymore.  Things are different, and I think it's
+time to take this last apron string off this baby.
+
 May 14, 2015
 
 Code sweep continues.  23 files to go...ugh.  But on the bright side

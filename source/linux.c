@@ -83,7 +83,7 @@ Q_BOOL q_linux_new_line_mode;
 int q_linux_beep_frequency      = DEFAULT_BEEP_FREQUENCY;
 int q_linux_beep_duration       = DEFAULT_BEEP_DURATION;
 
-/* Use by handle_mouse() */
+/* Used by handle_mouse() */
 XTERM_MOUSE_PROTOCOL q_xterm_mouse_protocol = XTERM_MOUSE_OFF;
 XTERM_MOUSE_ENCODING q_xterm_mouse_encoding = XTERM_MOUSE_ENCODING_X10;
 
