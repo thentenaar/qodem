@@ -48,7 +48,7 @@
 #include "host.h"
 
 /* Set this to a not-NULL value to enable debug log. */
-/* static const char *DLOGNAME = "host"; */
+/* static const char * DLOGNAME = "host"; */
 static const char * DLOGNAME = NULL;
 
 #define EOL "\r\n"

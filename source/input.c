@@ -40,7 +40,7 @@
 #include "input.h"
 
 /* Set this to a not-NULL value to enable debug log. */
-/* static const char *DLOGNAME = "input"; */
+/* static const char * DLOGNAME = "input"; */
 static const char * DLOGNAME = NULL;
 
 /**

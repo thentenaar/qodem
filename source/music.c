@@ -47,7 +47,7 @@
 #endif /* Q_SOUND_SDL */
 
 /* Set this to a not-NULL value to enable debug log. */
-/* static const char *DLOGNAME = "music"; */
+/* static const char * DLOGNAME = "music"; */
 static const char * DLOGNAME = NULL;
 
 /*

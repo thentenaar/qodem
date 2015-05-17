@@ -56,7 +56,7 @@ static Q_BOOL graphics_mode;
 Q_BOOL q_vt52_alternate_keypad_mode;
 
 /* Set this to a not-NULL value to enable debug log. */
-/* static const char *DLOGNAME = "vt52"; */
+/* static const char * DLOGNAME = "vt52"; */
 static const char * DLOGNAME = NULL;
 
 /**

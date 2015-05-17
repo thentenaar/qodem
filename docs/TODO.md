@@ -62,22 +62,20 @@ Code sweep:
   Eliminate "stored in X.c" on externs
   Replace #ifdef DEBUG with DLOG/DLOG2
 
-    script.c
+    keyboard.c
     options.c
     protocols.c
     netclient.c
     scrollback.c
-    help.c
-    xmodem.c
     console.c
-    keyboard.c
     forms.c
+    qodem.c
+    phonebook.c
+    xmodem.c
     zmodem.c
     kermit.c
     vt100.c
     linux.c
-    qodem.c
-    phonebook.c
 
 
 

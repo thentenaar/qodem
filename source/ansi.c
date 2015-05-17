@@ -44,7 +44,7 @@
 #include "ansi.h"
 
 /* Set this to a not-NULL value to enable debug log. */
-/* static const char *DLOGNAME = "ansi"; */
+/* static const char * DLOGNAME = "ansi"; */
 static const char * DLOGNAME = NULL;
 
 #define ANSI_RESPONSE_LENGTH    16

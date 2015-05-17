@@ -1,26 +1,25 @@
 /*
  * help.c
  *
- * This module is licensed under the GNU General Public License
- * Version 2.  Please see the file "COPYING" in this directory for
- * more information about the GNU General Public License Version 2.
+ * This module is licensed under the GNU General Public License Version 2.
+ * Please see the file "COPYING" in this directory for more information about
+ * the GNU General Public License Version 2.
  *
  *     Copyright (C) 2015  Kevin Lamonte
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
  *
  * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301 USA
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc., 51
+ * Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include "common.h"
@@ -36,33 +35,30 @@
 #include "options.h"
 #include "help.h"
 
-/* #define DEBUG_HELP 1 */
-#undef DEBUG_HELP
-#ifdef DEBUG_HELP
-#include <stdio.h>
-static FILE * DEBUG_FILE_HANDLE = NULL;
-#endif
+/* Set this to a not-NULL value to enable debug log. */
+/* static const char * DLOGNAME = "help"; */
+static const char * DLOGNAME = NULL;
 
 /* Forward declaration for raw help text.  It is located at the bottom. */
 extern char * raw_help_text;
 
 /* Entry point topic keys */
-static char * HELP_NOP_KEY                      = "HELP_NOP";
-static char * HELP_INDEX_KEY                    = "HELP_INDEX";
-static char * HELP_PHONEBOOK_KEY                = "PHONEBOOK";
-static char * HELP_PHONEBOOK_REVISE_ENTRY_KEY   = "PHONEBOOK_REVISE_ENTRY";
-static char * HELP_CONSOLE__ALT6_BEW_KEY        = "CONSOLE__ALT6_BEW";
+static char * HELP_NOP_KEY = "HELP_NOP";
+static char * HELP_INDEX_KEY = "HELP_INDEX";
+static char * HELP_PHONEBOOK_KEY = "PHONEBOOK";
+static char * HELP_PHONEBOOK_REVISE_ENTRY_KEY = "PHONEBOOK_REVISE_ENTRY";
+static char * HELP_CONSOLE__ALT6_BEW_KEY = "CONSOLE__ALT6_BEW";
 #ifndef Q_NO_SERIAL
-static char * HELP_CONSOLE__ALTO_MODEM_CFG_KEY  = "CONSOLE__ALTO_MODEM_CFG";
+static char * HELP_CONSOLE__ALTO_MODEM_CFG_KEY = "CONSOLE__ALTO_MODEM_CFG";
 static char * HELP_CONSOLE__ALTY_COMM_PARMS_KEY = "CONSOLE__ALTY_COMM_PARMS";
-#endif /* Q_NO_SERIAL */
-static char * HELP_CONSOLE_MENU_KEY             = "CONSOLE_MENU";
-static char * HELP_FILE_PROTOCOLS_KEY           = "FILE_PROTOCOLS";
-static char * HELP_EMULATION_KEY                = "EMULATION";
-static char * HELP_CONSOLE__ALTA_TRANSLATE_KEY  = "CONSOLE__ALTA_TRANSLATE";
-static char * HELP_CODEPAGE_KEY                 = "CODEPAGE";
-static char * HELP_CONFIGURATION_KEY            = "CONFIGURATION";
-static char * HELP_FUNCTION_KEYS_KEY            = "FUNCTION_KEYS";
+#endif
+static char * HELP_CONSOLE_MENU_KEY = "CONSOLE_MENU";
+static char * HELP_FILE_PROTOCOLS_KEY = "FILE_PROTOCOLS";
+static char * HELP_EMULATION_KEY = "EMULATION";
+static char * HELP_CONSOLE__ALTA_TRANSLATE_KEY = "CONSOLE__ALTA_TRANSLATE";
+static char * HELP_CODEPAGE_KEY = "CODEPAGE";
+static char * HELP_CONFIGURATION_KEY = "CONFIGURATION";
+static char * HELP_FUNCTION_KEYS_KEY = "FUNCTION_KEYS";
 
 /*
  * We use the Private Use Area Plane of Unicode to flag bold text.
@@ -73,1400 +69,1468 @@ static char * HELP_FUNCTION_KEYS_KEY            = "FUNCTION_KEYS";
  * A hyperlink to another help topic.
  */
 struct help_link {
-        wchar_t * label;
-        char * topic_key;
-        int line_number;
-        int x;
+    wchar_t * label;
+    char * topic_key;
+    int line_number;
+    int x;
 };
 
 /*
  * A help topic.
  */
 struct help_topic {
-        char * key;
-        wchar_t * title;
-        wchar_t ** lines;
-        int lines_n;
-        struct help_link ** links;
-        int links_n;
-        struct help_topic * next;
+    char * key;
+    wchar_t * title;
+    wchar_t ** lines;
+    int lines_n;
+    struct help_link ** links;
+    int links_n;
+    struct help_topic * next;
 };
 
 /* The global list of help topics. */
 static struct help_topic * TOPICS = NULL;
 
-/*
+/**
  * Find a topic in the list.
+ *
+ * @param key the topic key
+ * @return the help_topic entry
  */
 static struct help_topic * find_topic(const char * key) {
-#ifdef DEBUG_HELP
-        fprintf(DEBUG_FILE_HANDLE, "find_topic: %s\n", key);
-        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-
-        struct help_topic * topic = TOPICS;
-        while (topic != NULL) {
-                if (strcmp(topic->key, key) == 0) {
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "find_topic: %ls\n", topic->title);
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-                        return topic;
-                }
-                topic = topic->next;
+    DLOG(("find_topic: look for %s\n", key));
+    struct help_topic *topic = TOPICS;
+    while (topic != NULL) {
+        if (strcmp(topic->key, key) == 0) {
+            DLOG(("find_topic: found %ls\n", topic->title));
+            return topic;
         }
+        topic = topic->next;
+    }
 
-#ifdef DEBUG_HELP
-        fprintf(DEBUG_FILE_HANDLE, "find_topic: NOT FOUND\n");
-        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
+    DLOG(("find_topic: NOT FOUND\n"));
+    return NULL;
+}
 
-        /* Not found */
-        return NULL;
-} /* ---------------------------------------------------------------------- */
+/**
+ * Allocate a new help_link.
+ *
+ * @return the new help_link
+ */
+static struct help_link * new_link() {
+    DLOG(("new_link() : "));
+    struct help_link * link;
+    link =
+        (struct help_link *) Xmalloc(sizeof(struct help_link), __FILE__,
+                                     __LINE__);
+    memset(link, 0, sizeof(struct help_link));
+    DLOG2(("%p\n", link));
+    return link;
+}
 
-struct help_link * new_link() {
-#ifdef DEBUG_HELP
-        fprintf(DEBUG_FILE_HANDLE, "new_link() : ");
-        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-
-        struct help_link * link;
-        link = (struct help_link *)Xmalloc(sizeof(struct help_link), __FILE__, __LINE__);
-        memset(link, 0, sizeof(struct help_link));
-
-#ifdef DEBUG_HELP
-        fprintf(DEBUG_FILE_HANDLE, "%p\n", link);
-        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-
-        return link;
-} /* ---------------------------------------------------------------------- */
-
-/*
+/**
  * Allocate a new topic and add it to the list of topics.
+ *
+ * @return the new help_topic
  */
 struct help_topic * new_topic() {
-#ifdef DEBUG_HELP
-        fprintf(DEBUG_FILE_HANDLE, "new_topic() : ");
-        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
+    DLOG(("new_topic() : "));
 
-        struct help_topic * topic;
-        topic = (struct help_topic *)Xmalloc(sizeof(struct help_topic), __FILE__, __LINE__);
-        memset(topic, 0, sizeof(struct help_topic));
+    struct help_topic * topic;
+    topic =
+        (struct help_topic *) Xmalloc(sizeof(struct help_topic), __FILE__,
+                                      __LINE__);
+    memset(topic, 0, sizeof(struct help_topic));
 
-        /* Prepend to list of topics */
-        if (TOPICS == NULL) {
-                TOPICS = topic;
-        } else {
-                topic->next = TOPICS;
-                TOPICS = topic;
-        }
+    /*
+     * Prepend to list of topics.
+     */
+    if (TOPICS == NULL) {
+        TOPICS = topic;
+    } else {
+        topic->next = TOPICS;
+        TOPICS = topic;
+    }
 
-#ifdef DEBUG_HELP
-        fprintf(DEBUG_FILE_HANDLE, "%p\n", topic);
-        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-        return topic;
-} /* ---------------------------------------------------------------------- */
+    DLOG2(("%p\n", topic));
+    return topic;
+}
 
-/*
+/**
  * Add one line to a topic.
+ *
+ * @param topic the topic to add to
+ * @param line the new line of help text
  */
 static void append_line(struct help_topic * topic, wchar_t * line) {
-#ifdef DEBUG_HELP
-        if (topic == NULL) {
-                fprintf(DEBUG_FILE_HANDLE, "append_line() topic = NULL, line = \'%ls\'\n",
-                        line);
-        } else {
-                fprintf(DEBUG_FILE_HANDLE, "append_line() topic = %s, line = \'%ls\'\n",
-                        topic->key, line);
-        }
-        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
 
-        if (topic == NULL) {
-                /* No topics yet, throw this away */
-                return;
-        }
-        assert(wcslen(line) <= 76);
-        if (wcslen(line) > 76) {
-                line[76] = 0;
-                line[77] = 0;
-                line[78] = 0;
-                line[79] = 0;
-        }
-        topic->lines = (wchar_t **)Xrealloc(topic->lines,
-                sizeof(wchar_t *) * (topic->lines_n + 1),
-                __FILE__, __LINE__);
-        topic->lines[topic->lines_n] = Xwcsdup(line, __FILE__, __LINE__);
-        topic->lines_n++;
-} /* ---------------------------------------------------------------------- */
+    if (topic == NULL) {
+        DLOG(("append_line() topic = NULL, line = \'%ls\'\n", line));
+    } else {
+        DLOG(("append_line() topic = %s, line = \'%ls\'\n",
+             topic->key, line));
+    }
 
-/*
+    if (topic == NULL) {
+        /*
+         * No topics yet, throw this away
+         */
+        return;
+    }
+    assert(wcslen(line) <= 76);
+    if (wcslen(line) > 76) {
+        line[76] = 0;
+        line[77] = 0;
+        line[78] = 0;
+        line[79] = 0;
+    }
+    topic->lines = (wchar_t **) Xrealloc(topic->lines,
+                                         sizeof(wchar_t *) * (topic->lines_n +
+                                                              1), __FILE__,
+                                         __LINE__);
+    topic->lines[topic->lines_n] = Xwcsdup(line, __FILE__, __LINE__);
+    topic->lines_n++;
+}
+
+/**
  * Add one link to a topic.
+ *
+ * @param topic the topic to add to
+ * @param link the new link to another topic
  */
 static void append_link(struct help_topic * topic, struct help_link * link) {
-#ifdef DEBUG_HELP
-        if (topic == NULL) {
-                fprintf(DEBUG_FILE_HANDLE, "append_link() topic = NULL\n");
-        } else {
-                fprintf(DEBUG_FILE_HANDLE, "append_link() topic = %s\n",
-                        topic->key);
-        }
-        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
 
-        if (topic == NULL) {
-                /* No topics yet, throw this away */
-                return;
-        }
-        assert(wcslen(link->label) <= 76);
-        topic->links = (struct help_link **)Xrealloc(topic->links,
-                sizeof(struct help_link *) * (topic->links_n + 1),
-                __FILE__, __LINE__);
-        topic->links[topic->links_n] = link;
-        topic->links_n++;
-} /* ---------------------------------------------------------------------- */
+    if (topic == NULL) {
+        DLOG(("append_link() topic = NULL\n"));
+    } else {
+        DLOG(("append_link() topic = %s\n", topic->key));
+    }
 
-/*
- * Handle the &#XXXX; conversion in a string of text
+
+    if (topic == NULL) {
+        /*
+         * No topics yet, throw this away
+         */
+        return;
+    }
+    assert(wcslen(link->label) <= 76);
+    topic->links = (struct help_link **) Xrealloc(topic->links,
+                                                  sizeof(struct help_link *) *
+                                                  (topic->links_n + 1),
+                                                  __FILE__, __LINE__);
+    topic->links[topic->links_n] = link;
+    topic->links_n++;
+}
+
+/**
+ * Convert a line of help text from raw ASCII to wide char, using the &#XXXX;
+ * notation for Unicode.
+ *
+ * @param input the ASCII text
+ * @param output the wide char line to write to
  */
 static void convert_unicode(char * input, wchar_t * output) {
-        enum STATES {
-                NORMAL,
-                U_1,
-                U_2,
-                U_DIGITS,
-                U_HEX
-        } state;
-        int input_i;
-        int input_n;
-        int output_i;
-        char ch;
-        wchar_t x = 0;
+    enum STATES {
+        NORMAL,
+        U_1,
+        U_2,
+        U_DIGITS,
+        U_HEX
+    } state;
+    int input_i;
+    int input_n;
+    int output_i;
+    char ch;
+    wchar_t x = 0;
 
-        state = NORMAL;
-        input_i = 0;
-        output_i = 0;
-        input_n = strlen(input);
+    state = NORMAL;
+    input_i = 0;
+    output_i = 0;
+    input_n = strlen(input);
 
-        while (input_i < input_n) {
-                ch = input[input_i];
-                input_i++;
-                switch (state) {
-                case NORMAL:
-                        /* Looking for any char or '&' */
-                        if (ch == '&') {
-                                state = U_1;
-                        } else {
-                                output[output_i] = ch;
-                                output_i++;
-                        }
-                        break;
-                case U_1:
-                        /* Looking for '#' */
-                        if (ch == '#') {
-                                state = U_2;
-                                x = 0;
-                        } else {
-                                output[output_i] = '&';
-                                output_i++;
-                                output[output_i] = ch;
-                                output_i++;
-                                state = NORMAL;
-                        }
-                        break;
-                case U_2:
-                        /* Looking for 'x' or digits */
-                        if (tolower(ch) == 'x') {
-                                state = U_HEX;
-                        } else if (isdigit(ch)) {
-                                state = U_DIGITS;
-                                x = ch - '0';
-                        } else {
-                                output[output_i] = '&';
-                                output_i++;
-                                output[output_i] = '#';
-                                output_i++;
-                                output[output_i] = ch;
-                                output_i++;
-                                state = NORMAL;
-                        }
-                        break;
-                case U_DIGITS:
-                        /* Looking for digits or ';' */
-                        if (isdigit(ch)) {
-                                x *= 10;
-                                x += (ch - '0');
-                        } else if (ch == ';') {
-                                output[output_i] = x;
-                                output_i++;
-                                state = NORMAL;
-                        } else {
-                                /* This is a bug. Bail out. */
-                                assert(1 == 0);
-                        }
-                        break;
-                case U_HEX:
-                        /* Looking for digits, [a-f] or ';' */
-                        if (isdigit(ch)) {
-                                x *= 16;
-                                x += (ch - '0');
-                        } else if ((tolower(ch) >= 'a') && (tolower(ch) <= 'f')) {
-                                x *= 16;
-                                x += (tolower(ch) - 'a') + 10;
-                        } else if (ch == ';') {
-                                output[output_i] = x;
-                                output_i++;
-                                state = NORMAL;
-                        } else {
-                                /* This is a bug. Bail out. */
-                                assert(1 == 0);
-                        }
-                        break;
-                }
+    while (input_i < input_n) {
+        ch = input[input_i];
+        input_i++;
+        switch (state) {
+        case NORMAL:
+            /*
+             * Looking for any char or '&'
+             */
+            if (ch == '&') {
+                state = U_1;
+            } else {
+                output[output_i] = ch;
+                output_i++;
+            }
+            break;
+        case U_1:
+            /*
+             * Looking for '#'
+             */
+            if (ch == '#') {
+                state = U_2;
+                x = 0;
+            } else {
+                output[output_i] = '&';
+                output_i++;
+                output[output_i] = ch;
+                output_i++;
+                state = NORMAL;
+            }
+            break;
+        case U_2:
+            /*
+             * Looking for 'x' or digits
+             */
+            if (tolower(ch) == 'x') {
+                state = U_HEX;
+            } else if (isdigit(ch)) {
+                state = U_DIGITS;
+                x = ch - '0';
+            } else {
+                output[output_i] = '&';
+                output_i++;
+                output[output_i] = '#';
+                output_i++;
+                output[output_i] = ch;
+                output_i++;
+                state = NORMAL;
+            }
+            break;
+        case U_DIGITS:
+            /*
+             * Looking for digits or ';'
+             */
+            if (isdigit(ch)) {
+                x *= 10;
+                x += (ch - '0');
+            } else if (ch == ';') {
+                output[output_i] = x;
+                output_i++;
+                state = NORMAL;
+            } else {
+                /*
+                 * This is a bug. Bail out.
+                 */
+                assert(1 == 0);
+            }
+            break;
+        case U_HEX:
+            /*
+             * Looking for digits, [a-f] or ';'
+             */
+            if (isdigit(ch)) {
+                x *= 16;
+                x += (ch - '0');
+            } else if ((tolower(ch) >= 'a') && (tolower(ch) <= 'f')) {
+                x *= 16;
+                x += (tolower(ch) - 'a') + 10;
+            } else if (ch == ';') {
+                output[output_i] = x;
+                output_i++;
+                state = NORMAL;
+            } else {
+                /*
+                 * This is a bug. Bail out.
+                 */
+                assert(1 == 0);
+            }
+            break;
         }
-} /* ---------------------------------------------------------------------- */
+    }
+}
 
-/*
- * Display a topic to the debug_help file
+/**
+ * Emit a topic to the debug file.
+ *
+ * @param topic the topid
  */
 static void debug_topic(struct help_topic * topic) {
-#ifdef DEBUG_HELP
-        int i;
-        struct help_link * link;
 
-        fprintf(DEBUG_FILE_HANDLE, "---- HELP TOPIC DEBUG ----\n");
-        fprintf(DEBUG_FILE_HANDLE, " KEY: %s\n", topic->key);
-        fprintf(DEBUG_FILE_HANDLE, " TITLE: %ls\n", topic->title);
-        fprintf(DEBUG_FILE_HANDLE, " TEXT:\n");
-        for (i = 0; i < topic->lines_n; i++) {
-                fprintf(DEBUG_FILE_HANDLE, " %02d | %ls |\n", i, topic->lines[i]);
-        }
+    int i;
+    struct help_link * link;
 
-        fprintf(DEBUG_FILE_HANDLE, " LINKS:\n");
-        for (i = 0; i < topic->links_n; i++) {
-                link = topic->links[i];
-                fprintf(DEBUG_FILE_HANDLE, " (%02d,%d)  \'%ls\' --> %s\n",
-                        link->line_number, link->x, link->label, link->topic_key);
-        }
+    DLOG(("---- HELP TOPIC DEBUG ----\n"));
+    DLOG((" KEY: %s\n", topic->key));
+    DLOG((" TITLE: %ls\n", topic->title));
+    DLOG((" TEXT:\n"));
+    for (i = 0; i < topic->lines_n; i++) {
+        DLOG((" %02d | %ls |\n", i, topic->lines[i]));
+    }
 
-        fprintf(DEBUG_FILE_HANDLE, "---- HELP TOPIC DEBUG ----\n");
-        fflush(DEBUG_FILE_HANDLE);
+    DLOG((" LINKS:\n"));
+    for (i = 0; i < topic->links_n; i++) {
+        link = topic->links[i];
+        DLOG((" (%02d,%d)  \'%ls\' --> %s\n",
+                link->line_number, link->x, link->label, link->topic_key));
+    }
 
-#endif /* DEBUG_HELP */
-} /* ---------------------------------------------------------------------- */
+    DLOG(("---- HELP TOPIC DEBUG ----\n"));
 
-/*
- * This generates a help topic for the options configuratio file.
+
+}
+
+/**
+ * Generate a help topic that has the text from the options configuratio
+ * file.
  */
 static void build_options_topic() {
-        struct help_topic * topic;
-        wchar_t line[80];
-        char ch;
-        int i;
-        const char * begin;
-        Q_OPTION option;
-        int skip_line_count = 0;
+    struct help_topic * topic;
+    wchar_t line[80];
+    char ch;
+    int i;
+    const char * begin;
+    Q_OPTION option;
+    int skip_line_count = 0;
 
-        topic = find_topic(HELP_CONFIGURATION_KEY);
-        assert(topic != NULL);
-        for (option = Q_OPTION_NULL; option < Q_OPTION_MAX; option++) {
-                begin = get_option_key(option);
-                if (begin == NULL) {
-                        continue;
-                }
-
-                /* Newline */
-                memset(line, 0, sizeof(line));
-                append_line(topic, line);
-
-                /* Put in option key, bolded */
-                for (i = 0; i < strlen(begin); i++) {
-                        line[i] = begin[i] | HELP_BOLD;
-                }
-                append_line(topic, line);
-
-                /* Pull default value */
-                memset(line, 0, sizeof(line));
-                begin = get_option_default(option);
-                convert_unicode(_("    Default value: "), line);
-                while (*begin != 0) {
-                        line[wcslen(line)] = *begin | HELP_BOLD;
-                        begin++;
-                }
-                append_line(topic, line);
-
-                /* Newline */
-                memset(line, 0, sizeof(line));
-                append_line(topic, line);
-
-                /* Pull description */
-                memset(line, 0, sizeof(line));
-                begin = get_option_description(option);
-                ch = *begin;
-                while (ch != 0) {
-                        if (ch == '\n') {
-                                if (skip_line_count > 0) {
-                                        memset(line, 0, sizeof(line));
-                                        skip_line_count--;
-                                } else if (wcsstr(line, L"--------") != NULL) {
-                                        /*
-                                         * Ignore lines with '--------', these
-                                         * are the section headers.
-                                         */
-                                        skip_line_count = 1;
-                                } else {
-                                        append_line(topic, line);
-                                }
-                                memset(line, 0, sizeof(line));
-                        } else if (ch == '#') {
-                                /* Convert the hash to indentation */
-                                line[wcslen(line)] = ' ';
-                        } else {
-                                /* Hang onto this character */
-                                line[wcslen(line)] = ch;
-                        }
-
-                        /* Grab next character */
-                        begin++;
-                        ch = *begin;
-                }
-                /* Last line */
-                append_line(topic, line);
+    topic = find_topic(HELP_CONFIGURATION_KEY);
+    assert(topic != NULL);
+    for (option = Q_OPTION_NULL; option < Q_OPTION_MAX; option++) {
+        begin = get_option_key(option);
+        if (begin == NULL) {
+            continue;
         }
 
-} /* ---------------------------------------------------------------------- */
+        /*
+         * Newline
+         */
+        memset(line, 0, sizeof(line));
+        append_line(topic, line);
 
-/*
- * This generates a help index based on the existing topics and links.
+        /*
+         * Put in option key, bolded
+         */
+        for (i = 0; i < strlen(begin); i++) {
+            line[i] = begin[i] | HELP_BOLD;
+        }
+        append_line(topic, line);
+
+        /*
+         * Pull default value
+         */
+        memset(line, 0, sizeof(line));
+        begin = get_option_default(option);
+        convert_unicode(_("    Default value: "), line);
+        while (*begin != 0) {
+            line[wcslen(line)] = *begin | HELP_BOLD;
+            begin++;
+        }
+        append_line(topic, line);
+
+        /*
+         * Newline
+         */
+        memset(line, 0, sizeof(line));
+        append_line(topic, line);
+
+        /*
+         * Pull description
+         */
+        memset(line, 0, sizeof(line));
+        begin = get_option_description(option);
+        ch = *begin;
+        while (ch != 0) {
+            if (ch == '\n') {
+                if (skip_line_count > 0) {
+                    memset(line, 0, sizeof(line));
+                    skip_line_count--;
+                } else if (wcsstr(line, L"--------") != NULL) {
+                    /*
+                     * Ignore lines with '--------', these are the section
+                     * headers.
+                     */
+                    skip_line_count = 1;
+                } else {
+                    append_line(topic, line);
+                }
+                memset(line, 0, sizeof(line));
+            } else if (ch == '#') {
+                /*
+                 * Convert the hash to indentation
+                 */
+                line[wcslen(line)] = ' ';
+            } else {
+                /*
+                 * Hang onto this character
+                 */
+                line[wcslen(line)] = ch;
+            }
+
+            /*
+             * Grab next character
+             */
+            begin++;
+            ch = *begin;
+        }
+        /*
+         * Last line
+         */
+        append_line(topic, line);
+    }
+
+}
+
+/**
+ * Generate a help index based on the existing topics and links.
  */
 static void build_help_index() {
-        struct help_topic * topic;
-        struct help_topic * topic_index;
-        struct help_link * link;
-        struct help_link * link2;
-        struct help_link ** index_links = NULL;
-        int index_links_n = 0;
-        int i, j;
-        int line_number;
+    struct help_topic * topic;
+    struct help_topic * topic_index;
+    struct help_link * link;
+    struct help_link * link2;
+    struct help_link ** index_links = NULL;
+    int index_links_n = 0;
+    int i, j;
+    int line_number;
 
-        /* Make sure I didn't create one by hand */
-        topic = find_topic(HELP_INDEX_KEY);
-        assert(topic == NULL);
+    /*
+     * Make sure I don't accidentally create one by hand in the future.
+     */
+    topic = find_topic(HELP_INDEX_KEY);
+    assert(topic == NULL);
 
-        /* Now begin... */
-        topic = TOPICS;
-        while (topic != NULL) {
-                for (i = 0; i < topic->links_n; i++) {
-                        link = topic->links[i];
-                        link2 = new_link();
-                        link2->topic_key = link->topic_key;
-                        link2->label = NULL;
-                        link2->x = 0;
+    /*
+     * Now begin...
+     */
+    topic = TOPICS;
+    while (topic != NULL) {
+        for (i = 0; i < topic->links_n; i++) {
+            link = topic->links[i];
+            link2 = new_link();
+            link2->topic_key = link->topic_key;
+            link2->label = NULL;
+            link2->x = 0;
 
-                        /* Add to index_links array */
-                        index_links = (struct help_link **)Xrealloc(index_links,
-                                sizeof(struct help_link *)*(index_links_n + 1),
-                                __FILE__, __LINE__);
-                        index_links[index_links_n] = link2;
-                        index_links_n++;
-                }
-                /* Add the topic itself */
-                link2 = new_link();
-                link2->topic_key = topic->key;
-                link2->label = NULL;
-                link2->x = 0;
+            /*
+             * Add to index_links array
+             */
+            index_links = (struct help_link **) Xrealloc(index_links,
+                                                         sizeof(struct help_link
+                                                                *) *
+                                                         (index_links_n + 1),
+                                                         __FILE__, __LINE__);
+            index_links[index_links_n] = link2;
+            index_links_n++;
+        }
+        /*
+         * Add the topic itself
+         */
+        link2 = new_link();
+        link2->topic_key = topic->key;
+        link2->label = NULL;
+        link2->x = 0;
 
-                /* Add to index_links array */
-                index_links = (struct help_link **)Xrealloc(index_links,
-                        sizeof(struct help_link *) * (index_links_n + 1),
-                        __FILE__, __LINE__);
-                index_links[index_links_n] = link2;
-                index_links_n++;
+        /*
+         * Add to index_links array
+         */
+        index_links = (struct help_link **) Xrealloc(index_links,
+                                                     sizeof(struct help_link *)
+                                                     * (index_links_n + 1),
+                                                     __FILE__, __LINE__);
+        index_links[index_links_n] = link2;
+        index_links_n++;
 
-                /* Next topic */
-                topic = topic->next;
+        /*
+         * Next topic
+         */
+        topic = topic->next;
+    }
+
+
+    DLOG(("HELP INDEX:\n"));
+    for (i = 0; i < index_links_n; i++) {
+        link = index_links[i];
+        DLOG(("   %s\n", link->topic_key));
+    }
+
+    /*
+     * Now I have an array of link pointers.  Sort and uniq it.
+     */
+
+    /*
+     * In-place bubble sort
+     */
+    for (i = 0; i < index_links_n; i++) {
+        for (j = i; j < index_links_n; j++) {
+            link = index_links[i];
+            link2 = index_links[j];
+            if (strcmp(link->topic_key, link2->topic_key) > 0) {
+                /*
+                 * Swap
+                 */
+                index_links[i] = link2;
+                index_links[j] = link;
+            }
+        }
+    }
+
+    DLOG(("HELP INDEX SORTED:\n"));
+    for (i = 0; i < index_links_n; i++) {
+        link = index_links[i];
+        DLOG(("   %s\n", link->topic_key));
+    }
+
+
+    /*
+     * In-place uniq
+     */
+    for (i = 0; i < index_links_n - 1; i++) {
+        link = index_links[i];
+        link2 = index_links[i + 1];
+        if (strcmp(link->topic_key, link2->topic_key) == 0) {
+            /*
+             * Toss link2
+             */
+            memmove(&index_links[i], &index_links[i + 1],
+                    sizeof(struct help_link *) * (index_links_n - i - 1));
+            index_links_n--;
+            if (i >= 0) {
+                i--;
+            }
+        }
+    }
+
+    DLOG(("HELP INDEX UNIQ:\n"));
+    for (i = 0; i < index_links_n; i++) {
+        link = index_links[i];
+        DLOG(("   %s\n", link->topic_key));
+    }
+
+    /*
+     * Finally, build the index topic itself.
+     */
+    topic_index = new_topic();
+    topic_index->key = HELP_INDEX_KEY;
+    topic_index->title = L"Index";
+    line_number = 0;
+
+    for (i = 0; i < index_links_n; i++) {
+        /*
+         * Skip the NOP topic
+         */
+        if (strcmp(index_links[i]->topic_key, HELP_NOP_KEY) == 0) {
+            continue;
         }
 
-#ifdef DEBUG_HELP
-        fprintf(DEBUG_FILE_HANDLE, "HELP INDEX:\n");
-        fflush(DEBUG_FILE_HANDLE);
-        for (i = 0; i < index_links_n; i++) {
-                link = index_links[i];
-                fprintf(DEBUG_FILE_HANDLE, "   %s\n", link->topic_key);
-                fflush(DEBUG_FILE_HANDLE);
+        topic = find_topic(index_links[i]->topic_key);
+        if (topic != NULL) {
+            link = new_link();
+            link->topic_key = index_links[i]->topic_key;
+            link->label = topic->title;
+            link->line_number = line_number;
+            line_number++;
+            link->x = 5;
+            append_line(topic_index, L"");
+            append_link(topic_index, link);
         }
-#endif /* DEBUG_HELP */
+    }
+    debug_topic(topic_index);
+}
 
-        /* Now I have an array of link pointers.  Sort and uniq it */
-
-        /* In-place bubble sort */
-        for (i = 0; i < index_links_n; i++) {
-                for (j = i; j < index_links_n; j++) {
-                        link = index_links[i];
-                        link2 = index_links[j];
-                        if (strcmp(link->topic_key, link2->topic_key) > 0) {
-                                /* Swap */
-                                index_links[i] = link2;
-                                index_links[j] = link;
-                        }
-                }
-        }
-#ifdef DEBUG_HELP
-        fprintf(DEBUG_FILE_HANDLE, "HELP INDEX SORTED:\n");
-        fflush(DEBUG_FILE_HANDLE);
-        for (i = 0; i < index_links_n; i++) {
-                link = index_links[i];
-                fprintf(DEBUG_FILE_HANDLE, "   %s\n", link->topic_key);
-                fflush(DEBUG_FILE_HANDLE);
-        }
-#endif /* DEBUG_HELP */
-
-        /* In-place uniq */
-        for (i = 0; i < index_links_n - 1; i++) {
-                link = index_links[i];
-                link2 = index_links[i + 1];
-                if (strcmp(link->topic_key, link2->topic_key) == 0) {
-                        /* Toss link2 */
-                        memmove(&index_links[i], &index_links[i+1],
-                                sizeof(struct help_link *) * (index_links_n - i - 1));
-                        index_links_n--;
-                        if (i >= 0) {
-                                i--;
-                        }
-                }
-        }
-#ifdef DEBUG_HELP
-        fprintf(DEBUG_FILE_HANDLE, "HELP INDEX UNIQ:\n");
-        fflush(DEBUG_FILE_HANDLE);
-        for (i = 0; i < index_links_n; i++) {
-                link = index_links[i];
-                fprintf(DEBUG_FILE_HANDLE, "   %s\n", link->topic_key);
-                fflush(DEBUG_FILE_HANDLE);
-        }
-#endif /* DEBUG_HELP */
-
-        /* Finally, build the index */
-        topic_index = new_topic();
-        topic_index->key = HELP_INDEX_KEY;
-        topic_index->title = L"Index";
-        line_number = 0;
-
-        for (i = 0; i < index_links_n; i++) {
-                /* Skip the NOP topic */
-                if (strcmp(index_links[i]->topic_key, HELP_NOP_KEY) == 0) {
-                        continue;
-                }
-
-                topic = find_topic(index_links[i]->topic_key);
-                if (topic != NULL) {
-                        link = new_link();
-                        link->topic_key = index_links[i]->topic_key;
-                        link->label = topic->title;
-                        link->line_number = line_number;
-                        line_number++;
-                        link->x = 5;
-                        append_line(topic_index, L"");
-                        append_link(topic_index, link);
-                }
-        }
-        debug_topic(topic_index);
-} /* ---------------------------------------------------------------------- */
-
-/*
+/**
  * Parse raw_help_text into data structures to feed help_handler().
  */
 void setup_help() {
-#ifdef DEBUG_HELP
-        if (DEBUG_FILE_HANDLE == NULL) {
-                DEBUG_FILE_HANDLE = fopen("debug_help.txt", "w");
-        }
-        fprintf(DEBUG_FILE_HANDLE, "HELP: setup_help()\n");
-        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
 
-        enum STATES {
-                NORMAL,
-                TAG,
-                UNICODEPOINT
-        } state;
+    DLOG(("HELP: setup_help()\n"));
 
-        char * input;
-        int input_n;
-        int input_i;
-        int line_number;
-        struct help_topic * topic = NULL;
-        struct help_link * link = NULL;
-        wchar_t line[80];
-        int line_i;
-        char ch;
-        char key[32];
-        char label[74];
-        char title[7 * 74];
-        wchar_t title_wcs[74];
-        char text[7 * 74];
-        wchar_t text_wcs[74];
-        char x[4];
-        int rc;
-        int i;
+    enum STATES {
+        NORMAL,
+        TAG,
+        UNICODEPOINT
+    } state;
 
-        /* Translate everything at once */
-        input = _(raw_help_text);
+    char * input;
+    int input_n;
+    int input_i;
+    int line_number;
+    struct help_topic * topic = NULL;
+    struct help_link * link = NULL;
+    wchar_t line[80];
+    int line_i;
+    char ch;
+    char key[32];
+    char label[74];
+    char title[7 * 74];
+    wchar_t title_wcs[74];
+    char text[7 * 74];
+    wchar_t text_wcs[74];
+    char x[4];
+    int rc;
+    int i;
 
-#ifdef DEBUG_HELP
-        fprintf(DEBUG_FILE_HANDLE, "HELP TEXT: %d bytes\n----\n%s\n----\n",
-                (int)strlen(input), input);
-        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
+    /*
+     * Translate everything at once
+     */
+    input = _(raw_help_text);
 
-        /* Initial state */
-        input_n = strlen(input);
-        input_i = 0;
-        memset(line, 0, sizeof(line));
-        line_i = 0;
-        state = NORMAL;
-        line_number = 0;
+    DLOG(("HELP TEXT: %d bytes\n----\n%s\n----\n", (int) strlen(input), input));
 
-        /* Build each help line */
-        while (input_i < input_n) {
-                ch = input[input_i];
+    /*
+     * Initial state
+     */
+    input_n = strlen(input);
+    input_i = 0;
+    memset(line, 0, sizeof(line));
+    line_i = 0;
+    state = NORMAL;
+    line_number = 0;
 
-#ifdef DEBUG_HELP
-#if 0
-                fprintf(DEBUG_FILE_HANDLE, " STATE %d --> ch: \'%c\'\n", state, ch);
-                fflush(DEBUG_FILE_HANDLE);
-#endif
-#endif /* DEBUG_HELP */
+    /*
+     * Build each help line
+     */
+    while (input_i < input_n) {
+        ch = input[input_i];
 
-                switch (state) {
+        /* DLOG((" STATE %d --> ch: \'%c\'\n", state, ch)); */
 
-                case NORMAL:
-                        if (ch == '\n') {
-                                append_line(topic, line);
-                                memset(line, 0, sizeof(line));
-                                line_i = 0;
-                                line_number++;
-                        } else if (ch == '@') {
-                                state = TAG;
-                        } else if (ch == '&') {
-                                state = UNICODEPOINT;
-                        } else {
-                                line[line_i] = ch;
-                                line_i++;
-                        }
-                        break;
+        switch (state) {
 
-                case UNICODEPOINT:
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "setup_help() Looking for Unicode...\n");
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-                        if (ch != '#') {
-                                /* False alarm */
-                                line[line_i] = '&';
-                                line_i++;
-                                line[line_i] = ch;
-                                line_i++;
-                                state = NORMAL;
-                                break;
-                        }
+        case NORMAL:
+            if (ch == '\n') {
+                append_line(topic, line);
+                memset(line, 0, sizeof(line));
+                line_i = 0;
+                line_number++;
+            } else if (ch == '@') {
+                state = TAG;
+            } else if (ch == '&') {
+                state = UNICODEPOINT;
+            } else {
+                line[line_i] = ch;
+                line_i++;
+            }
+            break;
 
-                        rc = sscanf(input + input_i - 1, "%[^;]%*s", &text[0]);
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "%d Unicode: \'%s\'\n", rc, text);
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-                        assert(rc == 1);
+        case UNICODEPOINT:
 
-                        /* Append the ; */
-                        text[strlen(text) + 1] = 0;
-                        text[strlen(text)] = ';';
-                        input_i = strchr(input + input_i, ';') - input;
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "  Unicode next ch: \'%c\' input_i %d\n", input[input_i], input_i);
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
+            DLOG(("setup_help() Looking for Unicode...\n"));
 
-                        memset(text_wcs, 0, sizeof(text_wcs));
-                        convert_unicode(text, text_wcs);
-                        for (i = 0; i < wcslen(text_wcs); i++) {
-                                line[line_i] = text_wcs[i];
-                                line_i++;
-                        }
-                        state = NORMAL;
-                        break;
+            if (ch != '#') {
+                /*
+                 * False alarm
+                 */
+                line[line_i] = '&';
+                line_i++;
+                line[line_i] = ch;
+                line_i++;
+                state = NORMAL;
+                break;
+            }
 
-                case TAG:
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "setup_help() Looking for TAG...\n");
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-                        if (strncasecmp(input + input_i, "topic{", 6) == 0) {
-#ifdef DEBUG_HELP
-                                fprintf(DEBUG_FILE_HANDLE, "setup_help() TOPIC: ");
-                                fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-                                rc = sscanf(input + input_i + 6, "%[^,],%[^}]%*s", key, title);
-#ifdef DEBUG_HELP
-                                fprintf(DEBUG_FILE_HANDLE, "%d key: \'%s\' Title: \'%s\'\n", rc, key, title);
-                                fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-                                assert(rc == 2);
-                                input_i = strchr(input + input_i, '}') - input;
+            rc = sscanf(input + input_i - 1, "%[^;]%*s", &text[0]);
 
-                                memset(title_wcs, 0, sizeof(title_wcs));
-                                convert_unicode(title, title_wcs);
-                                topic = new_topic();
-                                topic->key = Xstrdup(key, __FILE__, __LINE__);
-                                topic->title = Xwcsdup(title_wcs, __FILE__, __LINE__);
+            DLOG(("%d Unicode: \'%s\'\n", rc, text));
 
-#ifdef DEBUG_HELP
-                                fprintf(DEBUG_FILE_HANDLE, "Added topic key: \'%s\' Title: \'%ls\'\n", topic->key, topic->title);
-                                fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-                                /* Automatic new line */
-                                memset(line, 0, sizeof(line));
-                                line_i = 0;
-                                line_number = 0;
-                                while (input[input_i] != '\n') {
-                                        input_i++;
-                                }
+            assert(rc == 1);
 
-                                state = NORMAL;
-                        } else if (strncasecmp(input + input_i, "link{", 5) == 0) {
-#ifdef DEBUG_HELP
-                                fprintf(DEBUG_FILE_HANDLE, "setup_help() LINK: \n");
-                                fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
+            /*
+             * Append the ;
+             */
+            text[strlen(text) + 1] = 0;
+            text[strlen(text)] = ';';
+            input_i = strchr(input + input_i, ';') - input;
 
-                                rc = sscanf(input + input_i + 5, "%[^,],%[^,],%[^}]%*s", key, label, x);
-#ifdef DEBUG_HELP
-                                fprintf(DEBUG_FILE_HANDLE, "%d LINK: key \'%s\' label \'%s\' x \'%s\'\n", rc, key, label, x);
-                                fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-                                assert(rc == 3);
-                                input_i = strchr(input + input_i, '}') - input;
-#ifdef DEBUG_HELP
-                                fprintf(DEBUG_FILE_HANDLE, "  LINK next ch: \'%c\' input_i %d\n", input[input_i], input_i);
-                                fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
+            DLOG(("  Unicode next ch: \'%c\' input_i %d\n",
+                    input[input_i], input_i));
 
-                                memset(text_wcs, 0, sizeof(text_wcs));
-                                convert_unicode(label, text_wcs);
 
-                                link = new_link();
-                                link->topic_key = Xstrdup(key, __FILE__, __LINE__);
-                                link->label = Xwcsdup(text_wcs, __FILE__, __LINE__);
-                                link->line_number = line_number;
-                                link->x = atoi(x);
+            memset(text_wcs, 0, sizeof(text_wcs));
+            convert_unicode(text, text_wcs);
+            for (i = 0; i < wcslen(text_wcs); i++) {
+                line[line_i] = text_wcs[i];
+                line_i++;
+            }
+            state = NORMAL;
+            break;
 
-#ifdef DEBUG_HELP
-                                fprintf(DEBUG_FILE_HANDLE, " -->  LINK: line_number %d key \'%s\' label \'%ls\' x %d\n",
-                                        link->line_number, link->topic_key,
-                                        link->label, link->x);
-                                fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-                                append_link(topic, link);
-                                state = NORMAL;
-                        } else if (strncasecmp(input + input_i, "bold{", 5) == 0) {
-#ifdef DEBUG_HELP
-                                fprintf(DEBUG_FILE_HANDLE, "setup_help() BOLD: ");
-                                fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-                                rc = sscanf(input + input_i + 5, "%[^}]%*s", text);
-#ifdef DEBUG_HELP
-                                fprintf(DEBUG_FILE_HANDLE, "%d bolded text: \'%s\'\n", rc, text);
-                                fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-                                assert(rc == 1);
-                                input_i = strchr(input + input_i, '}') - input;
-#ifdef DEBUG_HELP
-                                fprintf(DEBUG_FILE_HANDLE, "  BOLD next ch: \'%c\' input_i %d\n", input[input_i], input_i);
-                                fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
+        case TAG:
 
-                                memset(text_wcs, 0, sizeof(text_wcs));
-                                convert_unicode(text, text_wcs);
-                                for (i = 0; i < wcslen(text_wcs); i++) {
-                                        line[line_i] = text_wcs[i] | HELP_BOLD;
-                                        line_i++;
-                                }
-                                state = NORMAL;
-                        } else {
-#ifdef DEBUG_HELP
-                                fprintf(DEBUG_FILE_HANDLE, "setup_help() no tag, back to NORMAL\n");
-                                fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-                                state = NORMAL;
-                                line[line_i] = '@';
-                                line_i++;
-                                line[line_i] = ch;
-                                line_i++;
-                        }
+            DLOG(("setup_help() Looking for TAG...\n"));
 
-                        break;
+            if (strncasecmp(input + input_i, "topic{", 6) == 0) {
+
+                DLOG(("setup_help() TOPIC: "));
+
+                rc = sscanf(input + input_i + 6, "%[^,],%[^}]%*s", key, title);
+
+                DLOG(("%d key: \'%s\' Title: \'%s\'\n", rc, key, title));
+
+                assert(rc == 2);
+                input_i = strchr(input + input_i, '}') - input;
+
+                memset(title_wcs, 0, sizeof(title_wcs));
+                convert_unicode(title, title_wcs);
+                topic = new_topic();
+                topic->key = Xstrdup(key, __FILE__, __LINE__);
+                topic->title = Xwcsdup(title_wcs, __FILE__, __LINE__);
+
+
+                DLOG(("Added topic key: \'%s\' Title: \'%ls\'\n", topic->key,
+                        topic->title));
+
+                /*
+                 * Automatic new line
+                 */
+                memset(line, 0, sizeof(line));
+                line_i = 0;
+                line_number = 0;
+                while (input[input_i] != '\n') {
+                    input_i++;
                 }
 
-                input_i++;
+                state = NORMAL;
+            } else if (strncasecmp(input + input_i, "link{", 5) == 0) {
+
+                DLOG(("setup_help() LINK: \n"));
+
+
+                rc = sscanf(input + input_i + 5, "%[^,],%[^,],%[^}]%*s", key,
+                            label, x);
+
+                DLOG(("%d LINK: key \'%s\' label \'%s\' x \'%s\'\n", rc, key,
+                        label, x));
+
+                assert(rc == 3);
+                input_i = strchr(input + input_i, '}') - input;
+
+                DLOG(("  LINK next ch: \'%c\' input_i %d\n", input[input_i],
+                        input_i));
+
+                memset(text_wcs, 0, sizeof(text_wcs));
+                convert_unicode(label, text_wcs);
+
+                link = new_link();
+                link->topic_key = Xstrdup(key, __FILE__, __LINE__);
+                link->label = Xwcsdup(text_wcs, __FILE__, __LINE__);
+                link->line_number = line_number;
+                link->x = atoi(x);
+
+                DLOG((" -->  LINK: line_number %d key \'%s\' label \'%ls\' x %d\n",
+                        link->line_number, link->topic_key, link->label,
+                        link->x));
+
+                append_link(topic, link);
+                state = NORMAL;
+            } else if (strncasecmp(input + input_i, "bold{", 5) == 0) {
+
+                DLOG(("setup_help() BOLD: "));
+
+                rc = sscanf(input + input_i + 5, "%[^}]%*s", text);
+
+                DLOG2(("%d bolded text: \'%s\'\n", rc, text));
+
+                assert(rc == 1);
+                input_i = strchr(input + input_i, '}') - input;
+
+                DLOG(("  BOLD next ch: \'%c\' input_i %d\n", input[input_i],
+                        input_i));
+
+
+                memset(text_wcs, 0, sizeof(text_wcs));
+                convert_unicode(text, text_wcs);
+                for (i = 0; i < wcslen(text_wcs); i++) {
+                    line[line_i] = text_wcs[i] | HELP_BOLD;
+                    line_i++;
+                }
+                state = NORMAL;
+            } else {
+                DLOG(("setup_help() no tag, back to NORMAL\n"));
+                state = NORMAL;
+                line[line_i] = '@';
+                line_i++;
+                line[line_i] = ch;
+                line_i++;
+            }
+
+            break;
         }
 
+        input_i++;
+    }
 
-#ifdef DEBUG_HELP
-        fprintf(DEBUG_FILE_HANDLE, "HELP Topics provided:\n");
-        fflush(DEBUG_FILE_HANDLE);
-        topic = TOPICS;
-        while (topic != NULL) {
-                fprintf(DEBUG_FILE_HANDLE, "   %s \'%ls\' links: %d\n", topic->key, topic->title, topic->links_n);
-                fflush(DEBUG_FILE_HANDLE);
-                topic = topic->next;
-        }
-#endif /* DEBUG_HELP */
 
-        /* The configuration file topic is auto-generated */
-        build_options_topic();
+    DLOG(("HELP Topics provided:\n"));
+    topic = TOPICS;
+    while (topic != NULL) {
+        DLOG(("   %s \'%ls\' links: %d\n", topic->key, topic->title,
+                topic->links_n));
+        topic = topic->next;
+    }
 
-        /* The index is auto-generated */
-        build_help_index();
-} /* ---------------------------------------------------------------------- */
+    /*
+     * The configuration file topic is auto-generated
+     */
+    build_options_topic();
 
-/*
+    /*
+     * The index is auto-generated
+     */
+    build_help_index();
+}
+
+/**
  * This provides the UI to the help text.
+ *
+ * @param topic_key the topic to start on
  */
 static void help_handler(char * topic_key) {
-        int message_left;
-        int window_left;
-        int window_top;
-        int window_height = HEIGHT - STATUS_HEIGHT;
-        int window_length = WIDTH;
-        int keystroke;
-        int status_left_stop;
-        Q_BOOL dirty = Q_TRUE;
-        Q_BOOL done = Q_FALSE;
-        int old_cursor;
-        struct help_topic * topic;
-        struct help_link * link;
-        int selected_link = -1;
-        int selected_link_x = -1;
-        int current_line = 0;
-        int i, j;
-        wchar_t * line = NULL;
-        int original_width, original_height;
+    int message_left;
+    int window_left;
+    int window_top;
+    int window_height = HEIGHT - STATUS_HEIGHT;
+    int window_length = WIDTH;
+    int keystroke;
+    int status_left_stop;
+    Q_BOOL dirty = Q_TRUE;
+    Q_BOOL done = Q_FALSE;
+    int old_cursor;
+    struct help_topic * topic;
+    struct help_link * link;
+    int selected_link = -1;
+    int selected_link_x = -1;
+    int current_line = 0;
+    int i, j;
+    wchar_t * line = NULL;
+    int original_width, original_height;
 
-        char ** topic_stack = NULL;
-        int topic_stack_n = 0;
-        Q_BOOL popped = Q_FALSE;
-        char * status_prompt = NULL;
-        wchar_t * title = NULL;
+    char ** topic_stack = NULL;
+    int topic_stack_n = 0;
+    Q_BOOL popped = Q_FALSE;
+    char * status_prompt = NULL;
+    wchar_t * title = NULL;
 
-        /* Save the cursor */
-        old_cursor = q_cursor_off();
+    /*
+     * Save the cursor
+     */
+    old_cursor = q_cursor_off();
 
-        /* We do window resizing */
-        original_width = WIDTH;
-        original_height = HEIGHT;
+    /*
+     * We do window resizing
+     */
+    original_width = WIDTH;
+    original_height = HEIGHT;
 
 reload:
 
-#ifdef DEBUG_HELP
-        fprintf(DEBUG_FILE_HANDLE, "HELP UI: RELOAD:\n");
-        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
+    DLOG(("HELP UI: RELOAD:\n"));
 
-        /* Reload when a user presses Enter or the screen is resized. */
-        window_height = HEIGHT - STATUS_HEIGHT;
-        window_length = WIDTH;
-        dirty = Q_TRUE;
-        done = Q_FALSE;
-        selected_link = -1;
-        selected_link_x = -1;
-        current_line = 0;
-        line = NULL;
+    /*
+     * Reload when a user presses Enter or the screen is resized.
+     */
+    window_height = HEIGHT - STATUS_HEIGHT;
+    window_length = WIDTH;
+    dirty = Q_TRUE;
+    done = Q_FALSE;
+    selected_link = -1;
+    selected_link_x = -1;
+    current_line = 0;
+    line = NULL;
 
-        if ((topic_key == NULL) && (topic_stack_n > 1)) {
-                /* Pop from topic stack */
-                assert(topic_stack != NULL);
-                topic_stack = (char **)Xrealloc(topic_stack, sizeof(char *) * (topic_stack_n - 1), __FILE__, __LINE__);
-                topic_stack_n--;
-                topic_key = topic_stack[topic_stack_n - 1];
-#ifdef DEBUG_HELP
-                fprintf(DEBUG_FILE_HANDLE, "HELP UI: POP NEW TOPIC: %s\n", topic_key);
-                fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-                popped = Q_TRUE;
-        } else if ((topic_key == NULL) && (topic_stack_n == 1)) {
-                topic_key = topic_stack[0];
-                popped = Q_TRUE;
+    if ((topic_key == NULL) && (topic_stack_n > 1)) {
+        /*
+         * Pop from topic stack
+         */
+        assert(topic_stack != NULL);
+        topic_stack =
+            (char **) Xrealloc(topic_stack,
+                               sizeof(char *) * (topic_stack_n - 1), __FILE__,
+                               __LINE__);
+        topic_stack_n--;
+        topic_key = topic_stack[topic_stack_n - 1];
+
+        DLOG(("HELP UI: POP NEW TOPIC: %s\n", topic_key));
+
+        popped = Q_TRUE;
+    } else if ((topic_key == NULL) && (topic_stack_n == 1)) {
+        topic_key = topic_stack[0];
+        popped = Q_TRUE;
+    } else {
+        popped = Q_FALSE;
+    }
+
+    topic = find_topic(topic_key);
+    if (topic == NULL) {
+        topic = find_topic(HELP_NOP_KEY);
+    }
+    assert(topic != NULL);
+
+    if (popped == Q_FALSE) {
+        if (topic_stack_n == 0) {
+
+            DLOG(("HELP UI: START TOPIC STACK: %s\n", topic_key));
+
+            /*
+             * Start the topic stack
+             */
+            topic_stack = (char **) Xmalloc(sizeof(char *), __FILE__, __LINE__);
+            topic_stack[0] = topic_key;
+            topic_stack_n = 1;
         } else {
-                popped = Q_FALSE;
+
+            DLOG(("HELP UI: PUSH TOPIC STACK: %s\n", topic_key));
+
+            /*
+             * Push on topic stack
+             */
+            assert(topic_stack != NULL);
+            topic_stack =
+                (char **) Xrealloc(topic_stack,
+                                   sizeof(char *) * (topic_stack_n + 1),
+                                   __FILE__, __LINE__);
+            topic_stack[topic_stack_n] = topic_key;
+            topic_stack_n++;
+        }
+    }
+
+
+    DLOG(("HELP UI: topic_key = %s topic_stack_n = %d\n", topic_key,
+            topic_stack_n));
+
+    /*
+     * Default: select the first link
+     */
+    if (topic->links_n > 0) {
+        selected_link = 0;
+    }
+
+    status_prompt =
+        _(" ^V-Select Link   Enter-Next Topic   B-Prior Topic   F1-Help Index   ESC/`-Exit ");
+    title = topic->title;
+
+    /*
+     * Window will be centered on the screen
+     */
+    window_left = WIDTH - 1 - window_length;
+    if (window_left < 0) {
+        window_left = 0;
+    } else {
+        window_left /= 2;
+    }
+    window_top = HEIGHT - 1 - window_height;
+    if (window_top < 0) {
+        window_top = 0;
+    } else {
+        window_top /= 2;
+    }
+
+    while (done == Q_FALSE) {
+        assert(selected_link < topic->links_n);
+
+        if (dirty) {
+
+            /*
+             * Draw box
+             */
+            screen_win_draw_box_color(stdscr, 0, 0, window_length,
+                                      window_height, Q_COLOR_HELP_BORDER,
+                                      Q_COLOR_HELP_BACKGROUND);
+
+            /*
+             * Place title
+             */
+            message_left =
+                window_length - (wcslen(title) + 2) - strlen(_("Help -"));
+            if (message_left < 0) {
+                message_left = 0;
+            } else {
+                message_left /= 2;
+            }
+            screen_put_color_printf_yx(0, message_left, Q_COLOR_HELP_BORDER,
+                                       " %s %ls ", _("Help -"), title);
+
+            /*
+             * Put up the status line
+             */
+            screen_put_color_hline_yx(HEIGHT - 1, 0, cp437_chars[HATCH], WIDTH,
+                                      Q_COLOR_STATUS);
+            status_left_stop = WIDTH - strlen(status_prompt);
+            if (status_left_stop <= 0) {
+                status_left_stop = 0;
+            } else {
+                status_left_stop /= 2;
+            }
+            screen_put_color_str_yx(HEIGHT - 1, status_left_stop, status_prompt,
+                                    Q_COLOR_STATUS);
+            screen_put_color_char_yx(HEIGHT - 1, status_left_stop + 1,
+                                     cp437_chars[UPARROW], Q_COLOR_STATUS);
+            screen_put_color_char_yx(HEIGHT - 1, status_left_stop + 2,
+                                     cp437_chars[DOWNARROW], Q_COLOR_STATUS);
+
+            /*
+             * Display the current text
+             */
+            for (i = 0; i < HEIGHT - 4; i++) {
+                if (i + current_line >= topic->lines_n) {
+                    /*
+                     * No more lines to display, bail out
+                     */
+                    break;
+                }
+                screen_move_yx(i + 2, 2 + ((WIDTH - 80) / 2));
+                line = topic->lines[current_line + i];
+                for (j = 0; j < 78; j++) {
+                    if (j == wcslen(line)) {
+                        /*
+                         * No more characters
+                         */
+                        break;
+                    }
+                    if (line[j] & HELP_BOLD) {
+                        screen_put_color_char(line[j] & ~HELP_BOLD,
+                                              Q_COLOR_HELP_BOLD);
+                    } else {
+                        screen_put_color_char(line[j] & ~HELP_BOLD,
+                                              Q_COLOR_HELP_BACKGROUND);
+                    }
+                }
+                /*
+                 * Now put up the links for this line
+                 */
+                for (j = 0; j < topic->links_n; j++) {
+                    link = topic->links[j];
+                    if (link->line_number == (i + current_line)) {
+                        /*
+                         * This link is visible on this line.  Put up a nice
+                         * 1-char border, then the link.
+                         */
+                        screen_put_color_hline_yx(i + 2,
+                                                  link->x + 2 +
+                                                  ((WIDTH - 80) / 2), ' ',
+                                                  wcslen(link->label) + 2,
+                                                  Q_COLOR_HELP_LINK);
+                        if (j == selected_link) {
+                            screen_put_color_wcs_yx(i + 2,
+                                                    link->x + 3 +
+                                                    ((WIDTH - 80) / 2),
+                                                    link->label,
+                                                    Q_COLOR_HELP_LINK_SELECTED);
+                        } else {
+                            screen_put_color_wcs_yx(i + 2,
+                                                    link->x + 3 +
+                                                    ((WIDTH - 80) / 2),
+                                                    link->label,
+                                                    Q_COLOR_HELP_LINK);
+                        }
+                    }
+                }
+            }
+
+            if ((i + current_line < topic->lines_n) && (current_line == 0)) {
+                /*
+                 * At the top and there is more below, show only "PgDn"
+                 */
+                screen_put_color_hline_yx(window_top + window_height - 1,
+                                          window_left + window_length - 15,
+                                          cp437_chars[Q_WINDOW_TOP], 5,
+                                          Q_COLOR_HELP_BORDER);
+                screen_put_color_str_yx(window_top + window_height - 1,
+                                        window_left + window_length - 10,
+                                        _(" PgDn "), Q_COLOR_HELP_BORDER);
+            } else if (i + current_line < topic->lines_n) {
+                /*
+                 * There is more below and above
+                 */
+                screen_put_color_str_yx(window_top + window_height - 1,
+                                        window_left + window_length - 15,
+                                        _(" PgUp/PgDn "), Q_COLOR_HELP_BORDER);
+            } else if (current_line > 0) {
+                /*
+                 * At the bottom, show "PgUp"
+                 */
+                screen_put_color_str_yx(window_top + window_height - 1,
+                                        window_left + window_length - 15,
+                                        _(" PgUp "), Q_COLOR_HELP_BORDER);
+                screen_put_color_hline_yx(window_top + window_height - 1,
+                                          window_left + window_length - 9,
+                                          cp437_chars[Q_WINDOW_TOP], 5,
+                                          Q_COLOR_HELP_BORDER);
+            }
+
+            dirty = Q_FALSE;
+            screen_flush();
         }
 
-        topic = find_topic(topic_key);
-        if (topic == NULL) {
-                topic = find_topic(HELP_NOP_KEY);
-        }
-        assert(topic != NULL);
+        /*
+         * Handle keystroke
+         */
+        qodem_win_getch(stdscr, &keystroke, NULL, Q_KEYBOARD_DELAY);
 
-        if (popped == Q_FALSE) {
-                if (topic_stack_n == 0) {
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "HELP UI: START TOPIC STACK: %s\n", topic_key);
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-                        /* Start the topic stack */
-                        topic_stack = (char **)Xmalloc(sizeof(char *), __FILE__, __LINE__);
-                        topic_stack[0] = topic_key;
-                        topic_stack_n = 1;
+        switch (keystroke) {
+        case 'B':
+        case 'b':
+            DLOG(("KEY B\n"));
+            /*
+             * Go back one topic
+             */
+            topic_key = NULL;
+            goto reload;
+
+        case Q_KEY_F(1):
+            DLOG(("Q_KEY_F1\n"));
+            /*
+             * Go to Help Index
+             */
+            if (strcmp(topic_key, HELP_INDEX_KEY) != 0) {
+                topic_key = HELP_INDEX_KEY;
+                goto reload;
+            }
+            break;
+
+        case ERR:
+            /*
+             * This was either a timeout or a resize.  Pull fresh dimensions.
+             */
+            if ((WIDTH != original_width) || (HEIGHT != original_height)) {
+
+                /*
+                 * Redraw/recompute everything
+                 */
+                window_height = HEIGHT - STATUS_HEIGHT;
+                window_length = WIDTH;
+                window_left = WIDTH - 1 - window_length;
+                if (window_left < 0) {
+                    window_left = 0;
                 } else {
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "HELP UI: PUSH TOPIC STACK: %s\n", topic_key);
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-                        /* Push on topic stack */
-                        assert(topic_stack != NULL);
-                        topic_stack = (char **)Xrealloc(topic_stack, sizeof(char *) * (topic_stack_n + 1), __FILE__, __LINE__);
-                        topic_stack[topic_stack_n] = topic_key;
-                        topic_stack_n++;
+                    window_left /= 2;
                 }
-        }
-
-
-#ifdef DEBUG_HELP
-        fprintf(DEBUG_FILE_HANDLE, "HELP UI: topic_key = %s topic_stack_n = %d\n", topic_key, topic_stack_n);
-        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-
-        /* Default: select the first link */
-        if (topic->links_n > 0) {
-                selected_link = 0;
-        }
-
-        status_prompt = _(" ^V-Select Link   Enter-Next Topic   B-Prior Topic   F1-Help Index   ESC/`-Exit ");
-        title = topic->title;
-
-        /* Window will be centered on the screen */
-        window_left = WIDTH - 1 - window_length;
-        if (window_left < 0) {
-                window_left = 0;
-        } else {
-                window_left /= 2;
-        }
-        window_top = HEIGHT - 1 - window_height;
-        if (window_top < 0) {
-                window_top = 0;
-        } else {
-                window_top /= 2;
-        }
-
-        while (done == Q_FALSE) {
-                assert(selected_link < topic->links_n);
-
-                if (dirty) {
-
-                        /* Draw box */
-                        screen_win_draw_box_color(stdscr, 0, 0, window_length, window_height, Q_COLOR_HELP_BORDER, Q_COLOR_HELP_BACKGROUND);
-
-                        /* Place title */
-                        message_left = window_length - (wcslen(title) + 2) - strlen(_("Help -"));
-                        if (message_left < 0) {
-                                message_left = 0;
-                        } else {
-                                message_left /= 2;
-                        }
-                        screen_put_color_printf_yx(0, message_left, Q_COLOR_HELP_BORDER, " %s %ls ", _("Help -"), title);
-
-                        /* Put up the status line */
-                        screen_put_color_hline_yx(HEIGHT - 1, 0, cp437_chars[HATCH], WIDTH, Q_COLOR_STATUS);
-                        status_left_stop = WIDTH - strlen(status_prompt);
-                        if (status_left_stop <= 0) {
-                                status_left_stop = 0;
-                        } else {
-                                status_left_stop /= 2;
-                        }
-                        screen_put_color_str_yx(HEIGHT - 1, status_left_stop, status_prompt, Q_COLOR_STATUS);
-                        screen_put_color_char_yx(HEIGHT - 1, status_left_stop + 1, cp437_chars[UPARROW], Q_COLOR_STATUS);
-                        screen_put_color_char_yx(HEIGHT - 1, status_left_stop + 2, cp437_chars[DOWNARROW], Q_COLOR_STATUS);
-
-                        /* Display the current text */
-                        for (i = 0; i < HEIGHT - 4; i++) {
-                                if (i + current_line >= topic->lines_n) {
-                                        /* No more lines to display, bail out */
-                                        break;
-                                }
-                                screen_move_yx(i + 2, 2 + ((WIDTH - 80) / 2));
-                                line = topic->lines[current_line + i];
-                                for (j = 0; j < 78; j++) {
-                                        if (j == wcslen(line)) {
-                                                /* No more characters */
-                                                break;
-                                        }
-                                        if (line[j] & HELP_BOLD) {
-                                                screen_put_color_char(line[j] & ~HELP_BOLD, Q_COLOR_HELP_BOLD);
-                                        } else {
-                                                screen_put_color_char(line[j] & ~HELP_BOLD, Q_COLOR_HELP_BACKGROUND);
-                                        }
-                                }
-                                /* Now put up the links for this line */
-                                for (j = 0; j < topic->links_n; j++) {
-                                        link = topic->links[j];
-                                        if (link->line_number == (i + current_line)) {
-                                                /* This link is visible on this line.  Put up a nice 1-char border, then the link. */
-                                                screen_put_color_hline_yx(i + 2, link->x + 2 + ((WIDTH - 80) / 2), ' ', wcslen(link->label) + 2, Q_COLOR_HELP_LINK);
-                                                if (j == selected_link) {
-                                                        screen_put_color_wcs_yx(i + 2, link->x + 3 + ((WIDTH - 80) / 2), link->label, Q_COLOR_HELP_LINK_SELECTED);
-                                                } else {
-                                                        screen_put_color_wcs_yx(i + 2, link->x + 3 + ((WIDTH - 80) / 2), link->label, Q_COLOR_HELP_LINK);
-                                                }
-                                        }
-                                }
-                        }
-
-                        if ((i + current_line < topic->lines_n) && (current_line == 0)) {
-                                /* At the top and there is more below, show only "PgDn" */
-                                screen_put_color_hline_yx(window_top + window_height - 1,
-                                        window_left + window_length - 15, cp437_chars[Q_WINDOW_TOP], 5, Q_COLOR_HELP_BORDER);
-                                screen_put_color_str_yx(window_top + window_height - 1,
-                                        window_left + window_length - 10, _(" PgDn "), Q_COLOR_HELP_BORDER);
-                        } else if (i + current_line < topic->lines_n) {
-                                /* There is more below and above */
-                                screen_put_color_str_yx(window_top + window_height - 1,
-                                        window_left + window_length - 15, _(" PgUp/PgDn "), Q_COLOR_HELP_BORDER);
-                        } else if (current_line > 0) {
-                                /* At the bottom, show "PgUp" */
-                                screen_put_color_str_yx(window_top + window_height - 1,
-                                        window_left + window_length - 15, _(" PgUp "), Q_COLOR_HELP_BORDER);
-                                screen_put_color_hline_yx(window_top + window_height - 1,
-                                        window_left + window_length - 9, cp437_chars[Q_WINDOW_TOP], 5, Q_COLOR_HELP_BORDER);
-                        }
-
-                        dirty = Q_FALSE;
-                        screen_flush();
+                window_top = HEIGHT - 1 - window_height;
+                if (window_top < 0) {
+                    window_top = 0;
+                } else {
+                    window_top /= 2;
                 }
 
-                /* Handle keystroke */
-                qodem_win_getch(stdscr, &keystroke, NULL, Q_KEYBOARD_DELAY);
+                original_width = WIDTH;
+                original_height = HEIGHT;
 
-                switch (keystroke) {
-                case 'B':
-                case 'b':
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "KEY B\n");
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
+                /*
+                 * Back to the top
+                 */
+                current_line = 0;
+                dirty = Q_TRUE;
+            }
+            break;
 
-                        /* Go back one topic */
-                        topic_key = NULL;
-                        /* Redraw/recompute everything */
-                        goto reload;
+        case C_CR:
+        case KEY_ENTER:
+            DLOG(("Q_KEY_ENTER\n"));
+            if (selected_link != -1) {
+                /*
+                 * Goto another topic
+                 */
+                topic_key = topic->links[selected_link]->topic_key;
+                goto reload;
+            }
+            break;
 
-                case Q_KEY_F(1):
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "Q_KEY_F1\n");
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-
-                        /* Go to Help Index */
-                        if (strcmp(topic_key, HELP_INDEX_KEY) != 0) {
-                                topic_key = HELP_INDEX_KEY;
-                                /* Redraw/recompute everything */
-                                goto reload;
+        case Q_KEY_NPAGE:
+            DLOG(("Q_KEY_NPAGE\n"));
+            if (topic->lines_n - current_line > HEIGHT - 4) {
+                current_line += HEIGHT - 4;
+                if (topic->links_n > 0) {
+                    selected_link = 0;
+                    for (i = selected_link; i < topic->links_n; i++) {
+                        if ((topic->links[i]->line_number >= current_line) &&
+                            (topic->links[i]->line_number <=
+                             current_line + HEIGHT - 4)
+                            ) {
+                            selected_link = i;
+                            break;
                         }
-                        break;
-
-                case ERR:
-                        /* This was either a timeout or a resize.  Pull fresh dimensions. */
-                        if ((WIDTH != original_width) || (HEIGHT != original_height)) {
-
-                                /* Redraw/recompute everything */
-                                window_height = HEIGHT - STATUS_HEIGHT;
-                                window_length = WIDTH;
-
-                                /* Window will be centered on the screen */
-                                window_left = WIDTH - 1 - window_length;
-                                if (window_left < 0) {
-                                        window_left = 0;
-                                } else {
-                                        window_left /= 2;
-                                }
-                                window_top = HEIGHT - 1 - window_height;
-                                if (window_top < 0) {
-                                        window_top = 0;
-                                } else {
-                                        window_top /= 2;
-                                }
-
-                                original_width = WIDTH;
-                                original_height = HEIGHT;
-
-                                /* Back to the top */
-                                current_line = 0;
-                                dirty = Q_TRUE;
-                        }
-                        break;
-
-                case C_CR:
-                case KEY_ENTER:
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "Q_KEY_ENTER\n");
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-
-                        if (selected_link != -1) {
-                                /* Goto another topic */
-                                topic_key = topic->links[selected_link]->topic_key;
-                                /* Redraw/recompute everything */
-                                goto reload;
-                        }
-                        break;
-
-                case Q_KEY_NPAGE:
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "Q_KEY_NPAGE\n");
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-
-                        /* PgDn */
-                        if (topic->lines_n - current_line > HEIGHT - 4) {
-                                current_line += HEIGHT - 4;
-                                if (topic->links_n > 0) {
-                                        selected_link = 0;
-                                        for (i = selected_link; i < topic->links_n; i++) {
-                                                if (    (topic->links[i]->line_number >= current_line) &&
-                                                        (topic->links[i]->line_number <= current_line + HEIGHT - 4)
-                                                ) {
-                                                        selected_link = i;
-                                                        break;
-                                                }
-                                        }
-                                }
-                                dirty = Q_TRUE;
-                        }
-                        break;
-
-                case Q_KEY_END:
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "Q_KEY_END\n");
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-
-                        /* End */
-                        while (topic->lines_n - current_line > HEIGHT - 4) {
-                                current_line += HEIGHT - 4;
-                                dirty = Q_TRUE;
-                        }
-                        break;
-
-                case Q_KEY_PPAGE:
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "Q_KEY_PPAGE\n");
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-
-                        /* PgUp */
-                        if (current_line > 0) {
-                                current_line -= HEIGHT - 4;
-                                if (topic->links_n > 0) {
-                                        selected_link = 0;
-                                        for (i = selected_link; i < topic->links_n; i++) {
-                                                if (    (topic->links[i]->line_number >= current_line) &&
-                                                        (topic->links[i]->line_number <= current_line + HEIGHT - 4)
-                                                ) {
-                                                        selected_link = i;
-                                                        break;
-                                                }
-                                        }
-                                }
-                                dirty = Q_TRUE;
-                        }
-                        break;
-
-                case Q_KEY_HOME:
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "Q_KEY_HOME\n");
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-
-                        /* Home */
-                        while (current_line > 0) {
-                                current_line -= HEIGHT - 4;
-                                dirty = Q_TRUE;
-                        }
-                        break;
-
-                case Q_KEY_LEFT:
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "Q_KEY_LEFT\n");
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-
-                        if (topic->links_n == 0) {
-                                /* No link movement */
-                                break;
-                        }
-                        if (selected_link == 0) {
-                                /* Can't go further left */
-                                break;
-                        }
-                        selected_link--;
-                        dirty = Q_TRUE;
-                        break;
-
-                case Q_KEY_RIGHT:
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "Q_KEY_RIGHT\n");
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-
-                        if (topic->links_n == 0) {
-                                /* No link movement */
-                                break;
-                        }
-
-                        if (selected_link == (topic->links_n - 1)) {
-                                /* Can't go further right */
-                                break;
-                        }
-                        selected_link++;
-                        dirty = Q_TRUE;
-                        break;
-
-                case Q_KEY_DOWN:
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "Q_KEY_DOWN\n");
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-
-                        if (topic->links_n == 0) {
-                                /* No link movement */
-                                break;
-                        }
-                        if (selected_link == (topic->links_n - 1)) {
-                                /* Can't go further down */
-                                break;
-                        }
-                        selected_link_x = topic->links[selected_link]->x;
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "0 Q_KEY_DOWN selected_link_x %d\n", selected_link_x);
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-                        /*
-                         * Look for the next link that has x within 10 of this one.
-                         * If one can't be found, just go to the next link.
-                         */
-                        for (i = selected_link + 1; i < topic->links_n; i++) {
-#ifdef DEBUG_HELP
-                                fprintf(DEBUG_FILE_HANDLE, "1 Q_KEY_DOWN %d topic->links[i]->x %d selected_link_x %d\n",
-                                        i, topic->links[i]->x, selected_link_x);
-                                fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-                                if (abs(topic->links[i]->x - selected_link_x) <= 10) {
-                                        break;
-                                }
-                        }
-#ifdef DEBUG_HELP
-                        if (i < topic->links_n) {
-                                fprintf(DEBUG_FILE_HANDLE, "2a Q_KEY_DOWN %d topic->links[i]->x %d selected_link_x %d\n",
-                                        i, topic->links[i]->x, selected_link_x);
-                                fflush(DEBUG_FILE_HANDLE);
-                        } else {
-                                fprintf(DEBUG_FILE_HANDLE, "2b Q_KEY_DOWN %d selected_link_x %d\n",
-                                        i, selected_link_x);
-                                fflush(DEBUG_FILE_HANDLE);
-                        }
-#endif /* DEBUG_HELP */
-
-                        if (i < topic->links_n) {
-                                selected_link = i;
-                        } else {
-                                /* I don't feel like this is obvious behavior, so skip it */
-                                /* selected_link++; */
-                        }
-#ifdef DEBUG_HELP
-                        if (i < topic->links_n) {
-                                fprintf(DEBUG_FILE_HANDLE, "3a Q_KEY_DOWN %d topic->links[i]->x %d selected_link_x %d\n",
-                                        i, topic->links[i]->x, selected_link_x);
-                                fflush(DEBUG_FILE_HANDLE);
-                        } else {
-                                fprintf(DEBUG_FILE_HANDLE, "3b Q_KEY_DOWN %d selected_link_x %d\n",
-                                        i, selected_link_x);
-                                fflush(DEBUG_FILE_HANDLE);
-                        }
-#endif /* DEBUG_HELP */
-                        dirty = Q_TRUE;
-                        break;
-
-                case Q_KEY_UP:
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "Q_KEY_UP\n");
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-
-                        if (topic->links_n == 0) {
-                                /* No link movement */
-                                break;
-                        }
-                        if (selected_link == 0) {
-                                /* Can't go further up */
-                                break;
-                        }
-                        selected_link_x = topic->links[selected_link]->x;
-#ifdef DEBUG_HELP
-                        fprintf(DEBUG_FILE_HANDLE, "0 Q_KEY_UP selected_link_x %d\n", selected_link_x);
-                        fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-                        /*
-                         * Look for the previous link that has x within 10 of this one.
-                         * If one can't be found, just go to the previous link.
-                         */
-                        for (i = selected_link - 1; i >= 0; i--) {
-#ifdef DEBUG_HELP
-                                fprintf(DEBUG_FILE_HANDLE, "1 Q_KEY_UP %d topic->links[i]->x %d selected_link_x %d\n",
-                                        i, topic->links[i]->x, selected_link_x);
-                                fflush(DEBUG_FILE_HANDLE);
-#endif /* DEBUG_HELP */
-                                if (abs(topic->links[i]->x - selected_link_x) <= 10) {
-                                        break;
-                                }
-                        }
-#ifdef DEBUG_HELP
-                        if (i >= 0) {
-                                fprintf(DEBUG_FILE_HANDLE, "2a Q_KEY_UP %d topic->links[i]->x %d selected_link_x %d\n",
-                                        i, topic->links[i]->x, selected_link_x);
-                                fflush(DEBUG_FILE_HANDLE);
-                        } else {
-                                fprintf(DEBUG_FILE_HANDLE, "2b Q_KEY_UP %d selected_link_x %d\n",
-                                        i, selected_link_x);
-                                fflush(DEBUG_FILE_HANDLE);
-                        }
-#endif /* DEBUG_HELP */
-
-                        if (i >= 0) {
-                                selected_link = i;
-                        } else {
-                                /* I don't feel like this is obvious behavior, so skip it */
-                                /* selected_link--; */
-                        }
-#ifdef DEBUG_HELP
-                        if (i >= 0) {
-                                fprintf(DEBUG_FILE_HANDLE, "3a Q_KEY_UP %d topic->links[i]->x %d selected_link_x %d\n",
-                                        i, topic->links[i]->x, selected_link_x);
-                                fflush(DEBUG_FILE_HANDLE);
-                        } else {
-                                fprintf(DEBUG_FILE_HANDLE, "3b Q_KEY_UP %d selected_link_x %d\n",
-                                        i, selected_link_x);
-                                fflush(DEBUG_FILE_HANDLE);
-                        }
-#endif /* DEBUG_HELP */
-                        dirty = Q_TRUE;
-                        break;
-
-
-
-
-
-                case '`':
-                        /* Backtick works too */
-                case KEY_ESCAPE:
-                        done = Q_TRUE;
-                        break;
-
-                default:
-                        /* Ignore keystroke */
-                        break;
-
+                    }
                 }
+                dirty = Q_TRUE;
+            }
+            break;
 
-        } /* while (done == Q_FALSE) */
+        case Q_KEY_END:
+            DLOG(("Q_KEY_END\n"));
+            while (topic->lines_n - current_line > HEIGHT - 4) {
+                current_line += HEIGHT - 4;
+                dirty = Q_TRUE;
+            }
+            break;
 
-        /* The OK exit point */
+        case Q_KEY_PPAGE:
+            DLOG(("Q_KEY_PPAGE\n"));
+            if (current_line > 0) {
+                current_line -= HEIGHT - 4;
+                if (topic->links_n > 0) {
+                    selected_link = 0;
+                    for (i = selected_link; i < topic->links_n; i++) {
+                        if ((topic->links[i]->line_number >= current_line) &&
+                            (topic->links[i]->line_number <=
+                             current_line + HEIGHT - 4)
+                            ) {
+                            selected_link = i;
+                            break;
+                        }
+                    }
+                }
+                dirty = Q_TRUE;
+            }
+            break;
 
-        /* Restore the cursor */
-        q_cursor(old_cursor);
+        case Q_KEY_HOME:
+            DLOG(("Q_KEY_HOME\n"));
+            while (current_line > 0) {
+                current_line -= HEIGHT - 4;
+                dirty = Q_TRUE;
+            }
+            break;
 
-        /* Force a repaint */
-        q_screen_dirty = Q_TRUE;
-} /* ---------------------------------------------------------------------- */
+        case Q_KEY_LEFT:
+            DLOG(("Q_KEY_LEFT\n"));
+            if (topic->links_n == 0) {
+                /*
+                 * No link movement
+                 */
+                break;
+            }
+            if (selected_link == 0) {
+                /*
+                 * Can't go further left
+                 */
+                break;
+            }
+            selected_link--;
+            dirty = Q_TRUE;
+            break;
 
-/*
- * Launch help system
+        case Q_KEY_RIGHT:
+            DLOG(("Q_KEY_RIGHT\n"));
+            if (topic->links_n == 0) {
+                /*
+                 * No link movement
+                 */
+                break;
+            }
+            if (selected_link == (topic->links_n - 1)) {
+                /*
+                 * Can't go further right
+                 */
+                break;
+            }
+            selected_link++;
+            dirty = Q_TRUE;
+            break;
+
+        case Q_KEY_DOWN:
+            DLOG(("Q_KEY_DOWN\n"));
+            if (topic->links_n == 0) {
+                /*
+                 * No link movement
+                 */
+                break;
+            }
+            if (selected_link == (topic->links_n - 1)) {
+                /*
+                 * Can't go further down
+                 */
+                break;
+            }
+            selected_link_x = topic->links[selected_link]->x;
+
+            DLOG(("0 Q_KEY_DOWN selected_link_x %d\n", selected_link_x));
+
+            /*
+             * Look for the next link that has x within 10 of this one.  If
+             * one can't be found, just go to the next link.
+             */
+            for (i = selected_link + 1; i < topic->links_n; i++) {
+
+                DLOG(("1 Q_KEY_DOWN %d topic->links[i]->x %d selected_link_x %d\n",
+                        i, topic->links[i]->x, selected_link_x));
+
+                if (abs(topic->links[i]->x - selected_link_x) <= 10) {
+                    break;
+                }
+            }
+
+            if (i < topic->links_n) {
+                DLOG(("2a Q_KEY_DOWN %d topic->links[i]->x %d selected_link_x %d\n",
+                        i, topic->links[i]->x, selected_link_x));
+            } else {
+                DLOG(("2b Q_KEY_DOWN %d selected_link_x %d\n", i,
+                    selected_link_x));
+            }
+
+            if (i < topic->links_n) {
+                selected_link = i;
+                DLOG(("3a Q_KEY_DOWN %d topic->links[i]->x %d selected_link_x %d\n",
+                        i, topic->links[i]->x, selected_link_x));
+            } else {
+                DLOG(("3b Q_KEY_DOWN %d selected_link_x %d\n", i,
+                        selected_link_x));
+            }
+
+            dirty = Q_TRUE;
+            break;
+
+        case Q_KEY_UP:
+            DLOG(("Q_KEY_UP\n"));
+            if (topic->links_n == 0) {
+                /*
+                 * No link movement
+                 */
+                break;
+            }
+            if (selected_link == 0) {
+                /*
+                 * Can't go further up
+                 */
+                break;
+            }
+            selected_link_x = topic->links[selected_link]->x;
+
+            DLOG(("0 Q_KEY_UP selected_link_x %d\n", selected_link_x));
+
+            /*
+             * Look for the previous link that has x within 10 of this one.
+             * If one can't be found, just go to the previous link.
+             */
+            for (i = selected_link - 1; i >= 0; i--) {
+
+                DLOG(("1 Q_KEY_UP %d topic->links[i]->x %d selected_link_x %d\n",
+                        i, topic->links[i]->x, selected_link_x));
+                if (abs(topic->links[i]->x - selected_link_x) <= 10) {
+                    break;
+                }
+            }
+
+            if (i >= 0) {
+                DLOG(("2a Q_KEY_UP %d topic->links[i]->x %d selected_link_x %d\n",
+                        i, topic->links[i]->x, selected_link_x));
+            } else {
+                DLOG(("2b Q_KEY_UP %d selected_link_x %d\n", i,
+                        selected_link_x));
+            }
+
+            if (i >= 0) {
+                selected_link = i;
+                DLOG(("3a Q_KEY_UP %d topic->links[i]->x %d selected_link_x %d\n",
+                        i, topic->links[i]->x, selected_link_x));
+            } else {
+                DLOG(("3b Q_KEY_UP %d selected_link_x %d\n", i,
+                        selected_link_x));
+            }
+
+            dirty = Q_TRUE;
+            break;
+
+        case '`':
+            /*
+             * Backtick works too
+             */
+        case KEY_ESCAPE:
+            done = Q_TRUE;
+            break;
+
+        default:
+            /*
+             * Ignore keystroke
+             */
+            break;
+
+        }
+
+    } /* while (done == Q_FALSE) */
+
+    /*
+     * The OK exit point
+     */
+
+    /*
+     * Restore the cursor
+     */
+    q_cursor(old_cursor);
+
+    /*
+     * Force a repaint
+     */
+    q_screen_dirty = Q_TRUE;
+}
+
+/**
+ * Enter the online help system.
+ *
+ * @param help_screen the screen to start with
  */
 void launch_help(Q_HELP_SCREEN help_screen) {
-        switch (help_screen) {
-        case Q_HELP_PHONEBOOK:
-                help_handler(HELP_PHONEBOOK_KEY);
-                return;
-        case Q_HELP_PHONEBOOK_REVISE_ENTRY:
-                help_handler(HELP_PHONEBOOK_REVISE_ENTRY_KEY);
-                return;
-        case Q_HELP_BATCH_ENTRY_WINDOW:
-                help_handler(HELP_CONSOLE__ALT6_BEW_KEY);
-                return;
+    switch (help_screen) {
+    case Q_HELP_PHONEBOOK:
+        help_handler(HELP_PHONEBOOK_KEY);
+        return;
+    case Q_HELP_PHONEBOOK_REVISE_ENTRY:
+        help_handler(HELP_PHONEBOOK_REVISE_ENTRY_KEY);
+        return;
+    case Q_HELP_BATCH_ENTRY_WINDOW:
+        help_handler(HELP_CONSOLE__ALT6_BEW_KEY);
+        return;
 #ifndef Q_NO_SERIAL
-        case Q_HELP_MODEM_CONFIG:
-                help_handler(HELP_CONSOLE__ALTO_MODEM_CFG_KEY);
-                return;
-        case Q_HELP_COMM_PARMS:
-                help_handler(HELP_CONSOLE__ALTY_COMM_PARMS_KEY);
-                return;
-#endif /* Q_NO_SERIAL */
-        case Q_HELP_CONSOLE_MENU:
-                help_handler(HELP_CONSOLE_MENU_KEY);
-                return;
-        case Q_HELP_PROTOCOLS:
-                help_handler(HELP_FILE_PROTOCOLS_KEY);
-                return;
-        case Q_HELP_EMULATION_MENU:
-                help_handler(HELP_EMULATION_KEY);
-                return;
-        case Q_HELP_TRANSLATE_EDITOR:
-                help_handler(HELP_CONSOLE__ALTA_TRANSLATE_KEY);
-                return;
-        case Q_HELP_CODEPAGE:
-                help_handler(HELP_CODEPAGE_KEY);
-                return;
-        case Q_HELP_FUNCTION_KEYS:
-                help_handler(HELP_FUNCTION_KEYS_KEY);
-                return;
-        default:
-                help_handler(HELP_NOP_KEY);
-                return;
-        }
-} /* ---------------------------------------------------------------------- */
+    case Q_HELP_MODEM_CONFIG:
+        help_handler(HELP_CONSOLE__ALTO_MODEM_CFG_KEY);
+        return;
+    case Q_HELP_COMM_PARMS:
+        help_handler(HELP_CONSOLE__ALTY_COMM_PARMS_KEY);
+        return;
+#endif
+    case Q_HELP_CONSOLE_MENU:
+        help_handler(HELP_CONSOLE_MENU_KEY);
+        return;
+    case Q_HELP_PROTOCOLS:
+        help_handler(HELP_FILE_PROTOCOLS_KEY);
+        return;
+    case Q_HELP_EMULATION_MENU:
+        help_handler(HELP_EMULATION_KEY);
+        return;
+    case Q_HELP_TRANSLATE_EDITOR:
+        help_handler(HELP_CONSOLE__ALTA_TRANSLATE_KEY);
+        return;
+    case Q_HELP_CODEPAGE:
+        help_handler(HELP_CODEPAGE_KEY);
+        return;
+    case Q_HELP_FUNCTION_KEYS:
+        help_handler(HELP_FUNCTION_KEYS_KEY);
+        return;
+    default:
+        help_handler(HELP_NOP_KEY);
+        return;
+    }
+}
 
 /*
  * This defines the help text:
  *
  *   * It is ASCII-encoded.
  *
- *   * Each line is 76 columns at most - all text beyond 76 is truncated
- *     and fires an assertion.
+ *   * Each line is 76 columns at most - all text beyond 76 is truncated and
+ *     fires an assertion.
  *
  *   * Newline (\n) starts a new line.  The last line needs a newline.
  *
  *   * Four special tokens are supported:
  *
- *     1. @TOPIC{key,title} - starts a new topic titled "title" that can
- *        be found by calling find_topic(key).  The rest of the line is
+ *     1. @TOPIC{key,title} - starts a new topic titled "title" that can be
+ *        found by calling find_topic(key).  The rest of the line is
  *        discarded.
  *
- *     2. @LINK{key,label,x} - embeds a hyperref link to the topic
- *        with key "key", displayed at column x on the line, with the
- *        label "label".  X starts at 0.
+ *     2. @LINK{key,label,x} - embeds a hyperref link to the topic with key
+ *        "key", displayed at column x on the line, with the label "label".
+ *        X starts at 0.
  *
  *     3. @BOLD{text} - makes the text bold.
  *
- *     4. &#YYYY; or $#xYYYY- inserts the Unicode character YYYY in the
- *        text.  Decimal and hex OK.  This special form may be also used
- *        in the title field of @TOPIC, the label field of @LINK,
- *        and the text field of @BOLD.
+ *     4. &#YYYY; or $#xYYYY- inserts the Unicode character YYYY in the text.
+ *        Decimal and hex OK.  This special form may be also used in the
+ *        title field of @TOPIC, the label field of @LINK, and the text field
+ *        of @BOLD.
  */
 char * raw_help_text = \
 "@TOPIC{HELP_NOP,TODO}\n"
 "This topic is not yet written\n"
 "\n"
-
 "@TOPIC{CONSOLE_MENU,TERMINAL Mode Command Menu}\n"
 "@BOLD{TERMINAL Mode} is the main communications screen.  In this mode most keys\n"
 "typed will be passed to the remote side, with the exception of the special\n"
@@ -1708,7 +1772,6 @@ char * raw_help_text = \
 "\n"
 "          @LINK{REFERENCE_99_QMODEM,Differences From Qmodem,12}\n"
 "\n"
-
 "@TOPIC{CONSOLE__ALT6_BEW,Batch Entry Window}\n"
 "The Batch Entry Window is used to select the files to upload for file\n"
 "transfers that use the Ymodem, Zmodem, or Kermit protocols.\n"
@@ -1727,7 +1790,6 @@ char * raw_help_text = \
 "\n"
 "          @LINK{REFERENCE_99_QMODEM,Differences From Qmodem,12}\n"
 "\n"
-
 "@TOPIC{CONSOLE__ALTA_TRANSLATE,Translate Table}\n"
 "The Translate Table can be used to automatically change bytes received and\n"
 "and sent to the remote system.  This can be useful when communicating with\n"
@@ -1757,7 +1819,6 @@ char * raw_help_text = \
 "\n"
 "          @LINK{EMULATION,Terminal Emulations    ,12}\n"
 "\n"
-
 "@TOPIC{CONSOLE__ALTY_COMM_PARMS,Serial Port Settings}\n"
 "The Serial Port Settings screen is used to configure the serial port\n"
 "properties. To change a property, press a letter from @BOLD{A} to @BOLD{W}. Press @BOLD{Enter}\n"
@@ -1774,7 +1835,6 @@ char * raw_help_text = \
 "\n"
 "          @LINK{REFERENCE_99_QMODEM,Differences From Qmodem,12}\n"
 "\n"
-
 "@TOPIC{CONSOLE__ALTO_MODEM_CFG,Modem Config}\n"
 "The Modem Configuration screen is used to configure the serial port\n"
 "properties and Hayes AT-compatible strings sent to the modem.  To change a\n"
@@ -1793,7 +1853,6 @@ char * raw_help_text = \
 "\n"
 "          @LINK{REFERENCE_99_QMODEM,Differences From Qmodem,12}\n"
 "\n"
-
 "@TOPIC{PHONEBOOK,Phone Book}\n"
 "Connection information and other details for local and remote systems are\n"
 "stored in the @BOLD{Phone Book}.  A phone book may have an unlimited number of\n"
@@ -1942,7 +2001,6 @@ char * raw_help_text = \
 "\n"
 "@LINK{CONSOLE_MENU,TERMINAL Mode Commands , 12}\n"
 "\n"
-
 "@TOPIC{PHONEBOOK_REVISE_ENTRY,Phone Book - Revise Entry}\n"
 "Phone book entries are changed in the revise entry screen.  The up and down\n"
 "arrow keys (@BOLD{&#x2191;} and @BOLD{&#x2193;}) select between fields.  Fields are changed by either\n"
@@ -2038,7 +2096,6 @@ char * raw_help_text = \
 "\n"
 "          @LINK{REFERENCE_99_QMODEM,Differences From Qmodem,12}\n"
 "\n"
-
 "@TOPIC{REFERENCE_97_COPYRIGHT,Reference - Copyright}\n"
 "@BOLD{Qodem Terminal Emulator}\n"
 "Copyright(c) 2012 Kevin Lamonte\n"
@@ -2080,7 +2137,6 @@ char * raw_help_text = \
 "\n"
 "    Jason Scott for creating @BOLD{BBS: The Documentary}.\n"
 "\n"
-
 "@TOPIC{REFERENCE_98_VERSIONS,Reference - Differences Between Text, X11, and Win32 Versions}\n"
 "@BOLD{Qodem} comes in three flavors:\n"
 "\n"
@@ -2149,7 +2205,6 @@ char * raw_help_text = \
 " Qodem manages its own known_hosts file for SSH connections.  This\n"
 " file is stored in the Documents\\qodem\\prefs directory.\n"
 "\n"
-
 "@TOPIC{REFERENCE_03_SCRIPT,Reference - Script Support}\n"
 "Qodem does not have its own scripting language.  Instead, any\n"
 "program that reads and writes to the standard input and output can\n"
@@ -2216,7 +2271,6 @@ char * raw_help_text = \
 "my_script.pl and with its first command-line argument ($ARGV[0] in\n"
 "Perl) set to \"arg1\".\n"
 "\n"
-
 "@TOPIC{REFERENCE_99_QMODEM,Reference - Differences From Qmodem}\n"
 "Qodem strives to be as faithful as possible to Qmodem, however\n"
 "sometimes it must deviate due to modern system constraints or in\n"
@@ -2251,7 +2305,7 @@ char * raw_help_text = \
 "qodemrc.txt .  They are hand-edited by the user rather than\n"
 #else
 "$HOME/.qodem/qodemrc.  They are hand-edited by the user rather than\n"
-#endif /* Q_PDCURSES_WIN32 */
+#endif
 "another executable ala QINSTALL.EXE.  The @BOLD{Alt-N} Configuration\n"
 "command loads the file into an editor for convenience.\n"
 "\n"
@@ -2403,7 +2457,6 @@ char * raw_help_text = \
 "\n"
 "          @LINK{CONSOLE_MENU,TERMINAL Mode Menu     ,12}\n"
 "\n"
-
 "@TOPIC{EMULATION,Terminal Emulations}\n"
 "Qodem supports several common BBS-era and contemporary terminal emulations.\n"
 "The details of each emulation is provided below.\n"
@@ -2486,7 +2539,6 @@ char * raw_help_text = \
 "\n"
 "@LINK{REFERENCE_99_QMODEM,Differences From Qmodem,12}\n"
 "\n"
-
 "@TOPIC{CODEPAGE,Codepages}\n"
 "A @BOLD{codepage} refers to the graphics that the user is supposed to see when\n"
 "the remote system uses 8-bit bytes.  Before Unicode, most DOS, Unix, and\n"
@@ -2520,8 +2572,6 @@ char * raw_help_text = \
 "\n"
 "@LINK{REFERENCE_99_QMODEM,Differences From Qmodem,12}\n"
 "\n"
-
-
 "@TOPIC{FILE_PROTOCOLS,File Transfer Protocols}\n"
 "Qodem supports several common file transfer protocols.  The details of\n"
 "each protocol is provided below.\n"
@@ -2545,7 +2595,6 @@ char * raw_help_text = \
 "\n"
 "See Also: @LINK{REFERENCE_99_QMODEM,Differences From Qmodem,12}\n"
 "\n"
-
 "@TOPIC{FUNCTION_KEYS,Function Keys}\n"
 "Qodem can send a custom sequence of characters instead of the normal\n"
 "keystroke when certain keys are pressed.  This is known generally as a\n"
@@ -2592,7 +2641,6 @@ char * raw_help_text = \
 "\n"
 "@LINK{REFERENCE_99_QMODEM,Differences From Qmodem,12}\n"
 "\n"
-
 "@TOPIC{REFERENCE_10_OPTIONS,Reference - Command Line Options}\n"
 "Qodem supports several command-line options:\n"
 "\n"
@@ -2635,32 +2683,29 @@ char * raw_help_text = \
 "@BOLD{--help}, @BOLD{-h}, @BOLD{-?}\n"
 "    Display usage screen.\n"
 "\n"
-
 "@TOPIC{CONFIGURATION,Qodem Configuration File}\n"
 #ifdef Q_PDCURSES_WIN32
 "Qodem stores its configuration options in @BOLD{qodemrc.txt}.  In TERMINAL\n"
 #else
 "Qodem stores its configuration options in @BOLD{~/.qodem/qodemrc}.  In TERMINAL\n"
-#endif /* Q_PDCURSES_WIN32 */
+#endif
 "Mode, @BOLD{Alt-N} will bring up the configuration file in an editor.  Each option\n"
 "is described below:\n"
 "\n"
 "@BOLD{       *       *       *       *       *       *       *       *}\n"
-
 "@TOPIC{HOST_MODE,Host Mode}\n"
 "Qodem can act as a host system in which it becomes a miniature BBS system\n"
 "for other users.  This can be extremely useful as a quick-and-dirty file and\n"
 "message server.  @BOLD{Host Mode} is entered by pressing @BOLD{Alt-5} from the TERMINAL\n"
 "mode screen and selecting the server listening option.  Qodem supports the\n"
-"following listening options:\n"
-"\n"
+"following listening options:\n" "\n"
 #ifndef Q_NO_SERIAL
 "    @BOLD{Modem}       - Qodem will attempt to answer the modem when it RINGs.\n"
 "                  This is directly equivalent to the Qmodem(tm) Host Mode.\n"
 "\n"
 "    @BOLD{Serial Port} - Qodem will listen for users on the serial port.\n"
 "\n"
-#endif /* Q_NO_SERIAL */
+#endif
 "    @BOLD{Socket}      - Qodem accepts a raw TCP connection.  The @BOLD{TCP listen Port}.\n"
 "                  dialog will appear to select the port.\n"
 "\n"
@@ -2678,7 +2723,7 @@ char * raw_help_text = \
 "screen.\n"
 #else
 "\n"
-#endif /* Q_UPNP */
+#endif
 "\n"
 "While waiting for a connection, pressing @BOLD{L} starts a local logon.  In local\n"
 "logon mode, you can read and enter messages, but not do file transfers.\n"
@@ -2691,7 +2736,4 @@ char * raw_help_text = \
 "See Also: @LINK{CONSOLE_MENU,TERMINAL Mode Commands , 12}\n"
 "\n"
 "@LINK{REFERENCE_99_QMODEM,Differences From Qmodem,12}\n"
-"\n"
-
-
-;
+"\n";
