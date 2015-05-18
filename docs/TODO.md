@@ -17,6 +17,8 @@ BUG: with ssh, enter username/password, press ESC, press Enter --> crash
 
 BUG: uploads are jerky to local synchronet.  Timing?
 
+BUG: no bold text in help system on Borland
+
 1.0.0
 -----
 
@@ -336,7 +338,6 @@ Kermit:
   Locking shift
 
 Win32 port:
-  SDL sound
   Serial port support via TAPI
     tcsendbreak - console.c
     open_serial_port
@@ -428,10 +429,8 @@ SPINOFFS
 
 Drop-in replacement for lrzsz that does better error checking
 
-Re-license XYZmodem + Kermit implementation as BSD for inclusion in
-other projects: PuTTY
-
 Linux/ncurses port of HS/Link 1.21
 
 QUESTIONS TO ASK OUT THERE
 --------------------------
+
