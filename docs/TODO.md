@@ -64,8 +64,6 @@ Code sweep:
   Eliminate "stored in X.c" on externs
   Replace #ifdef DEBUG with DLOG/DLOG2
 
-    keyboard.c
-    options.c
     protocols.c
     netclient.c
     scrollback.c

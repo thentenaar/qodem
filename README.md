@@ -475,6 +475,7 @@ Some functions are different in TERMINAL mode:
     Alt-,    ANSI Music             -
     Alt-\    Compose Key            -
     Alt-;    Codepage               -
+    Alt-:    Colors                 -
 ```
 
 The phone book stores an arbitrary number of entries, not the

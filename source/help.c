@@ -2341,6 +2341,7 @@ char * raw_help_text = \
 "    @BOLD{Alt-,}    ANSI Music             -\n"
 "    @BOLD{Alt-\\}    Compose Key            -\n"
 "    @BOLD{Alt-;}    Codepage               -\n"
+"    @BOLD{Alt-:}    Colors                 -\n"
 "\n"
 "The Phone Book stores an arbitrary number of entries, not the\n"
 "hard-coded 200 of Qmodem.\n"
