@@ -19,6 +19,10 @@ BUG: uploads are jerky to local synchronet.  Timing?
 
 BUG: no bold text in help system on Borland
 
+BUG: vttest DSR ignores origin mode
+
+BUG: free kbytes on download menu broken on Borland
+
 1.0.0
 -----
 
@@ -64,7 +68,6 @@ Code sweep:
   Eliminate "stored in X.c" on externs
   Replace #ifdef DEBUG with DLOG/DLOG2
 
-    protocols.c
     netclient.c
     scrollback.c
     console.c

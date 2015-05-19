@@ -123,6 +123,54 @@ struct q_transfer_stats_struct {
     time_t end_time;
 };
 
+/*
+ * Zmodem auto-start code:
+ *
+ * 2A2A             ZPAD
+ * 18               ZDLE
+ * ^^----- but I saw 01 from lrzsz
+ * 42               Format type
+ * 3030             ZRQINIT (Zmodem hex 1 byte)
+ * 3030303030303030 Flags   (Zmodem hex 4 bytes)
+ * ????????         CRC check bytes (Zmodem hex 2 bytes)
+ * <CR><LF><XON>    End of packet
+ *
+ * In ASCII this looks like:
+ * "**<CAN>B0000000000????<CR><LF><XON>"
+ */
+#define ZRQINIT_STRING "\x2A\x2A?\x42\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30"
+
+/*
+ * Kermit auto-start code:
+ *
+ * 01               MARK
+ * ??               LEN
+ * 20               SEQ
+ * 'S'              TYPE
+ * ??               MAXL
+ * ??               TIME
+ * ??               NPAD
+ * 00               PADC
+ * 0d               EOL
+ * 23               QCTL
+ * ??               QBIN
+ */
+#define KERMIT_AUTOSTART_STRING "\x01?\x20\x53???\x40\x2d\x23"
+
+/* Globals ---------------------------------------------------------------- */
+
+/**
+ * Download location file or directory.
+ */
+extern char * q_download_location;
+
+/**
+ * Transfer statistics.  Lots of places need to peek into this structure.
+ */
+extern struct q_transfer_stats_struct q_transfer_stats;
+
+/* Functions -------------------------------------------------------------- */
+
 /**
  * Set the exposed protocol name.  Allocates a copy of the string which is
  * freed when the program state is switched to Q_STATE_CONSOLE.
@@ -154,54 +202,6 @@ extern void set_transfer_stats_pathname(const char * new_string);
  * @param new_string the new message
  */
 extern void set_transfer_stats_last_message(const char * format, ...);
-
-/*
- * Zmodem auto-start code:
- *
- * 2A2A             ZPAD
- * 18               ZDLE
- * ^^----- but I saw 01 from lrzsz
- * 42               Format type
- * 3030             ZRQINIT (Zmodem hex 1 byte)
- * 3030303030303030 Flags   (Zmodem hex 4 bytes)
- * ????????         CRC check bytes (Zmodem hex 2 bytes)
- * <CR><LF><XON>    End of packet
- *
- * In ASCII this looks like:
- * "**<CAN>B0000000000????<CR><LF><XON>"
- */
-#define ZRQINIT_STRING          "\x2A\x2A?\x42\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30"
-
-/*
- * Kermit auto-start code:
- *
- * 01               MARK
- * ??               LEN
- * 20               SEQ
- * 'S'              TYPE
- * ??               MAXL
- * ??               TIME
- * ??               NPAD
- * 00               PADC
- * 0d               EOL
- * 23               QCTL
- * ??               QBIN
- */
-#define KERMIT_AUTOSTART_STRING         "\x01?\x20\x53???\x40\x2d\x23"
-
-/* Globals ---------------------------------------------------------------- */
-
-/**
- * Download location file or directory.
- */
-extern char * q_download_location;
-
-/**
- * Transfer statistics.  Lots of places need to peek into this structure.
- */
-extern struct q_transfer_stats_struct q_transfer_stats;
-
-/* Functions -------------------------------------------------------------- */
 
 /**
  * End the file transfer.
