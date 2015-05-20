@@ -69,8 +69,6 @@ Code sweep:
   Replace #ifdef DEBUG with DLOG/DLOG2
 
     netclient.c
-    scrollback.c
-    console.c
     forms.c
     qodem.c
     phonebook.c

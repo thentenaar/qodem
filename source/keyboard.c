@@ -3354,7 +3354,8 @@ void function_key_editor_keyboard_handler(const int keystroke,
 void function_key_editor_refresh() {
     char * status_string;
     int status_left_stop;
-    int window_left, window_top;
+    int window_left;
+    int window_top;
     int i, j;
     char filename[FILENAME_SIZE];
 

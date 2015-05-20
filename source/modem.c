@@ -652,7 +652,8 @@ void create_modem_config_file() {
  * where qodem created a really new feature, re-defining Alt-O from "Change
  * Directory" to "Modem Config".
  */
-static int window_left, window_top;
+static int window_left;
+static int window_top;
 static int window_length = 70;
 static int window_height = 15;
 

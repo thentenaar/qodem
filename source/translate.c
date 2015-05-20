@@ -442,7 +442,8 @@ static struct fieldset * edit_table_entry_form;
 static struct field * edit_table_entry_field;
 static Q_BOOL editing_entry = Q_FALSE;
 static Q_BOOL editing_high_128 = Q_FALSE;
-static int window_left, window_top;
+static int window_left;
+static int window_top;
 static int window_length = 80;
 static int window_height = 22;
 
