@@ -654,7 +654,8 @@ extern FILE * open_datadir_file(const char * filename, char ** new_filename,
  * written, performing a busy wait and retry.
  * @return the number of bytes written
  */
-extern int qodem_write(const int fd, char * data, const int data_n, Q_BOOL sync);
+extern int qodem_write(const int fd, char * data, const int data_n,
+                       Q_BOOL sync);
 
 /**
  * Spawn a command in an external terminal.  This is used for the mail reader

@@ -1446,9 +1446,6 @@ reload:
      */
     q_cursor(old_cursor);
 
-    /*
-     * Force a repaint
-     */
     q_screen_dirty = Q_TRUE;
 }
 
@@ -2098,7 +2095,7 @@ char * raw_help_text = \
 "\n"
 "@TOPIC{REFERENCE_97_COPYRIGHT,Reference - Copyright}\n"
 "@BOLD{Qodem Terminal Emulator}\n"
-"Copyright(c) 2012 Kevin Lamonte\n"
+"Copyright(c) 2015 Kevin Lamonte\n"
 "\n"
 "This program is free software; you can redistribute it and/or modify\n"
 "it under the terms of the GNU General Public License as published by\n"

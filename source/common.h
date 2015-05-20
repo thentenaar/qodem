@@ -246,6 +246,15 @@ extern Q_BOOL file_exists(const char * filename);
  */
 extern Q_BOOL directory_exists(const char * path);
 
+/**
+ * Truncate a string longer than length to "blah...".
+ *
+ * @param string the string to potentially truncate.  String is destructively
+ * modified.
+ * @param the maximum length of string
+ */
+extern void shorten_string(char * string, const int length);
+
 /* Borland C 5.02 support ------------------------------------------------- */
 
 #ifdef __BORLANDC__

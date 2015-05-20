@@ -1621,29 +1621,6 @@ void protocol_pathdialog_keyboard_handler(const int keystroke, const int flags) 
 }
 
 /**
- * Truncate a string longer than length to "blah...".
- *
- * @param string the string to potentially truncate.  String is destructively
- * modified.
- * @param the maximum length of string
- */
-static void shorten_string(char * string, const int length) {
-    if (string == NULL) {
-        return;
-    }
-
-    if (strlen(string) < length - 4) {
-        return;
-    }
-
-    string[length] = '\0';
-    string[length - 1] = '.';
-    string[length - 2] = '.';
-    string[length - 3] = '.';
-
-}
-
-/**
  * Keyboard handler for the transferring file screen.
  *
  * @param keystroke the keystroke from the user.

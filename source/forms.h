@@ -149,13 +149,13 @@ extern struct file_info * view_directory(const char * initial_directory,
  * Display the batch entry window dialog.
  *
  * @param initial_directory the starting point for navigation
- * @param zmodem if true, use the text for a file upload box.  If false, just
+ * @param upload if true, use the text for a file upload box.  If false, just
  * save the entries to disk.
  * @return an array of the name+stats for the files selected, or NULL if the
  * user canceled.
  */
 extern struct file_info * batch_entry_window(const char * initial_directory,
-                                             const Q_BOOL zmodem);
+                                             const Q_BOOL upload);
 
 /**
  * Convert a mode value into a displayable string similar to the first column

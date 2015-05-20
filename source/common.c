@@ -442,6 +442,29 @@ Q_BOOL directory_exists(const char * path) {
     return Q_FALSE;
 }
 
+/**
+ * Truncate a string longer than length to "blah...".
+ *
+ * @param string the string to potentially truncate.  String is destructively
+ * modified.
+ * @param the maximum length of string
+ */
+void shorten_string(char * string, const int length) {
+    if (string == NULL) {
+        return;
+    }
+
+    if (strlen(string) < length - 4) {
+        return;
+    }
+
+    string[length] = '\0';
+    string[length - 1] = '.';
+    string[length - 2] = '.';
+    string[length - 3] = '.';
+
+}
+
 #ifdef __BORLANDC__
 
 /**

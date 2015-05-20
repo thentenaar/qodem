@@ -3324,9 +3324,6 @@ void function_key_editor_keyboard_handler(const int keystroke,
             editing_key = Q_FALSE;
             editing_textbox->highlighted = Q_FALSE;
             q_cursor_off();
-            /*
-             * Force a repaint
-             */
             q_screen_dirty = Q_TRUE;
             return;
         }
