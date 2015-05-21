@@ -69,7 +69,6 @@ Code sweep:
   Replace #ifdef DEBUG with DLOG/DLOG2
 
     netclient.c
-    phonebook.c
     xmodem.c
     zmodem.c
     kermit.c

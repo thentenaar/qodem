@@ -64,7 +64,7 @@ static char file_mode_string_buffer[11];
  * number, or UPnP.
  *
  * @param port a pointer to a string to record the user's selection
- * @return true if the user made a choice, false if they canceled.
+ * @return true if the user made a choice, false if they cancelled.
  */
 Q_BOOL prompt_listen_port(char ** port) {
     int i;
@@ -333,7 +333,7 @@ Q_BOOL prompt_listen_port(char ** port) {
  *
  * @param utf8 if true, ask for a 16-bit value as four hex digits, otherwise
  * ask for an 8-bit value as a base-10 decimal number (0-255).
- * @return the value the user entered, or -1 if they canceled
+ * @return the value the user entered, or -1 if they cancelled
  */
 int compose_key(Q_BOOL utf8) {
     int message_left;
@@ -534,7 +534,7 @@ int compose_key(Q_BOOL utf8) {
 /**
  * Display the "Find" or "Find Again" entry dialog.
  *
- * @return the string the user selected, or NULL if they canceled.
+ * @return the string the user selected, or NULL if they cancelled.
  */
 wchar_t * pick_find_string() {
     void * pick_window = NULL;
@@ -1530,7 +1530,7 @@ static Q_BOOL match_by_filename(const char * filename, struct stat * fstats,
  * @param initial_directory the starting point for navigation
  * @param filter a wildcard filter that files must match
  * @return the name and stats for the selected directory, or NULL if the user
- * canceled.
+ * cancelled.
  */
 struct file_info * view_directory(const char * initial_directory,
                                  const char * filter) {
@@ -2350,7 +2350,7 @@ exit_view_directory:
  * @param upload if true, use the text for a file upload box.  If false, just
  * save the entries to disk.
  * @return an array of the name+stats for the files selected, or NULL if the
- * user canceled.
+ * user cancelled.
  */
 struct file_info * batch_entry_window(const char * initial_directory,
                                       const Q_BOOL upload) {
@@ -3419,7 +3419,7 @@ Q_BOOL comm_settings_form(const char * title, Q_BAUD_RATE * baud,
 /**
  * Ask the user for their preferred capture type.
  *
- * @return the user's selection, or Q_CAPTURE_TYPE_ASK if they canceled.
+ * @return the user's selection, or Q_CAPTURE_TYPE_ASK if they cancelled.
  */
 Q_CAPTURE_TYPE ask_capture_type() {
     int message_left;
@@ -3581,7 +3581,7 @@ Q_CAPTURE_TYPE ask_capture_type() {
  * Ask the user for their preferred save type for scrollback and screen
  * dumps.
  *
- * @return the user's selection, or Q_SAVE_TYPE_ASK if they canceled.
+ * @return the user's selection, or Q_SAVE_TYPE_ASK if they cancelled.
  */
 Q_CAPTURE_TYPE ask_save_type() {
     int message_left;
@@ -3738,7 +3738,7 @@ Q_CAPTURE_TYPE ask_save_type() {
  * Ask the user for the type of host to start: socket, telnetd, etc.
  *
  * @param type the user's selection
- * @return true if the user made a choice, false if they canceled.
+ * @return true if the user made a choice, false if they cancelled.
  */
 Q_BOOL ask_host_type(Q_HOST_TYPE * type) {
     int message_left;

@@ -168,7 +168,7 @@ extern void create_phonebook();
 /**
  * Return a string for a Q_DIAL_METHOD enum.
  *
- * @param baud Q_DIAL_METHOD_TELNET etc.
+ * @param method Q_DIAL_METHOD_TELNET etc.
  * @return "TELNET" etc.
  */
 extern char * method_string(const Q_DIAL_METHOD method);
