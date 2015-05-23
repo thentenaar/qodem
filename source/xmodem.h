@@ -56,6 +56,7 @@ typedef enum {
  * name of the file to upload.
  * @param send if true, this is an upload
  * @param in_flavor the type of Xmodem transfer to perform
+ * @return true if successful
  */
 extern Q_BOOL xmodem_start(const char * in_filename, const Q_BOOL send,
                            const XMODEM_FLAVOR in_flavor);

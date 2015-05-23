@@ -59,6 +59,7 @@ extern void kermit(unsigned char * input, int input_n, unsigned char * output,
  * @param send if true, this is an upload: file_list must be valid and
  * pathname is ignored.  If false, this is a download: file_list must be NULL
  * and pathname will be used.
+ * @return true if successful
  */
 extern Q_BOOL kermit_start(struct file_info * file_list, const char * pathname,
                            const Q_BOOL send);

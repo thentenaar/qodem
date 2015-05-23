@@ -2051,7 +2051,7 @@ static void tag_multiple(const char * tag_string) {
                     }
                 }
             }
-        } /* for (i=0; search_tokens[i] != NULL; i++) */
+        } /* for (i = 0; search_tokens[i] != NULL; i++) */
 
     } /* for (...) */
 

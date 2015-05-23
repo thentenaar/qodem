@@ -1194,12 +1194,12 @@ static void process_incoming_data() {
 
             if (DLOGNAME != NULL) {
                 DLOG(("INPUT bytes: "));
-                for (i=0; i<q_buffer_raw_n; i++) {
+                for (i = 0; i < q_buffer_raw_n; i++) {
                     DLOG2(("%02x ", q_buffer_raw[i] & 0xFF));
                 }
                 DLOG2(("\n"));
                 DLOG(("INPUT bytes (ASCII): "));
-                for (i=0; i<q_buffer_raw_n; i++) {
+                for (i = 0; i < q_buffer_raw_n; i++) {
                     DLOG2(("%c ", q_buffer_raw[i] & 0xFF));
                 }
             }

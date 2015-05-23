@@ -70,7 +70,6 @@ Code sweep:
 
     netclient.c
     zmodem.c
-    kermit.c
     vt100.c
     linux.c
 

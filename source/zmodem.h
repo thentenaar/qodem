@@ -69,6 +69,7 @@ extern void zmodem(unsigned char * input, const int input_n,
  * pathname is ignored.  If false, this is a download: file_list must be NULL
  * and pathname will be used.
  * @param in_flavor the type of Zmodem transfer to perform
+ * @return true if successful
  */
 extern Q_BOOL zmodem_start(struct file_info * file_list, const char * pathname,
                            const Q_BOOL send, const ZMODEM_FLAVOR in_flavor);
