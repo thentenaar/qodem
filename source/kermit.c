@@ -63,7 +63,7 @@
 #include "kermit.h"
 
 /* Set this to a not-NULL value to enable debug log. */
-/* static const char * DLOGNAME = "xymodem"; */
+/* static const char * DLOGNAME = "kermit"; */
 static const char * DLOGNAME = NULL;
 
 /* Define this for _REALLY_ versbose logging (every byte) */
@@ -759,7 +759,7 @@ static void stats_new_file(const char * filename, const int filesize) {
     }
 }
 
-/*
+/**
  * Statistics: increment the block count.
  */
 static void stats_increment_blocks() {
@@ -969,7 +969,7 @@ static Q_BOOL setup_for_next_file() {
     return Q_TRUE;
 }
 
-/*
+/**
  * Reset the timeout counter.
  */
 static void reset_timer() {
@@ -977,8 +977,7 @@ static void reset_timer() {
 }
 
 /**
- * Check for a timeout.  Pass the output buffer because we
- * might send a CAN if timeout_max is exceeded.
+ * Check for a timeout.
  *
  * @return true if a timeout has occurred
  */
@@ -1180,7 +1179,7 @@ static Q_BOOL open_receive_file() {
          */
         file_exists = Q_FALSE;
 
-        for (i = 0;; i++) {
+        for (i = 0; ; i++) {
             /*
              * Change the filename
              */

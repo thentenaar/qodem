@@ -1,6 +1,19 @@
 The Qodem Project Work Log
 ==========================
 
+May 23, 2015
+
+We are ALMOST DONE with the code sweep.  All that remains is zmodem,
+netclient, and combining up linux and vt100.  Of course these bits are
+still about 20% of the total codebase, but who is counting?  Oh right,
+I am: with the style change to 80 columns, the raw line count is past
+91 kloc, even though the true code lines count (via ohcount) is 56
+kloc and essentially the same as before the code sweep, which makes
+sense.  On to zmodem now...
+
+...whew!  Zmodem is so huge!  Kermit was quite big too.  OK, let's
+breathe now, goodnight!
+
 May 15, 2015
 
 Code .... sweeep .... continues.  Ugh, this is taking forever.

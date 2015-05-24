@@ -459,7 +459,7 @@ static void stats_increment_errors(const char * format, ...) {
     }
 }
 
-/*
+/**
  * Statistics: a file is complete.
  */
 static void stats_file_complete_ok() {

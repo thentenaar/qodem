@@ -435,7 +435,7 @@ static wchar_t * tty_keystroke(const int keystroke) {
  */
 static wchar_t * terminfo_keystroke(const int keystroke) {
     int i;
-    for (i = 0;; i++) {
+    for (i = 0; ; i++) {
         if (terminfo_keyboards[i].emulation == q_status.emulation) {
             break;
         }
@@ -1248,7 +1248,7 @@ void post_keystroke(const int keystroke, const int flags) {
             /*
              * Switch to current emulation keyboard
              */
-            for (i = 0;; i++) {
+            for (i = 0; ; i++) {
                 if (emulation_bound_keyboards[i].emulation == q_status.emulation) {
                     break;
                 }
