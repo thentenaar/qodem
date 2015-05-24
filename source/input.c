@@ -859,11 +859,11 @@ static void handle_resize() {
         if (q_status.dial_method == Q_DIAL_METHOD_RLOGIN) {
             rlogin_resize_screen(HEIGHT - STATUS_HEIGHT, WIDTH);
         }
-#ifdef Q_LIBSSH2
+#ifdef Q_SSH_CRYPTLIB
         if (q_status.dial_method == Q_DIAL_METHOD_SSH) {
             ssh_resize_screen(HEIGHT - STATUS_HEIGHT, WIDTH);
         }
-#endif /* Q_LIBSSH2 */
+#endif
     }
 
     q_screen_dirty = Q_TRUE;

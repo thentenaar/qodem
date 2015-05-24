@@ -205,6 +205,7 @@ extern Q_BOOL telnet_is_ascii();
  * @param fd the socket descriptor
  * @param buf the buffer to write to
  * @param count the number of bytes requested
+ * @param oob if true, read out-of-band data
  * @return the number of bytes read into buf
  */
 extern ssize_t rlogin_read(const int fd, void * buf, size_t count, Q_BOOL oob);
@@ -228,7 +229,7 @@ extern ssize_t rlogin_write(const int fd, void * buf, size_t count);
  */
 extern void rlogin_resize_screen(const int lines, const int columns);
 
-#ifdef Q_LIBSSH2
+#ifdef Q_SSH_CRYPTLIB
 
 /**
  * Read data from remote system to a buffer, via an 8-bit clean channel
@@ -278,7 +279,7 @@ extern Q_BOOL ssh_maybe_readable();
  */
 extern const char * ssh_server_key_str();
 
-#endif /* Q_LIBSSH2 */
+#endif /* Q_SSH_CRYPTLIB */
 
 /**
  * Thanks to Winsock I need to check for either errno or WSAGetLastError().

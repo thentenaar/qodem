@@ -41,10 +41,9 @@
 #include <string.h>
 #include <assert.h>
 
-#ifdef Q_LIBSSH2
+#ifdef Q_SSH_CRYPTLIB
 #include <sys/time.h>
-#include <libssh2.h>
-#endif /* Q_LIBSSH */
+#endif
 
 #include "qodem.h"
 #include "screen.h"
@@ -305,7 +304,7 @@ int qodem_write(const int fd, char * data, const int data_n, Q_BOOL sync) {
     ) {
         /* Socket */
         rc = send(fd, data, data_n, 0);
-#ifdef Q_LIBSSH2
+#ifdef Q_SSH_CRYPTLIB
     } else if ((q_status.dial_method == Q_DIAL_METHOD_SSH) &&
         (net_is_connected() == Q_TRUE)
     ) {
@@ -409,14 +408,14 @@ static ssize_t qodem_read(const int fd, void * buf, size_t count) {
         /* Socket */
         return recv(fd, (char *)buf, count, 0);
     }
-#ifdef Q_LIBSSH2
+#ifdef Q_SSH_CRYPTLIB
     if ((q_status.dial_method == Q_DIAL_METHOD_SSH) &&
         (net_is_connected() == Q_TRUE)
     ) {
         /* SSH */
         return ssh_read(fd, buf, count);
     }
-#endif /* Q_LIBSSH2 */
+#endif
 
 #ifdef Q_PDCURSES_WIN32
 
@@ -870,21 +869,6 @@ static void cleanup_connection() {
     }
 }
 
-#ifdef Q_LIBSSH2
-
-/*
- * libssh requires an extra read() that is invisible to select() in order for
- * its channel_read_nonblocking() to return EOF.
- */
-#ifdef Q_PDCURSES_WIN32
-static long ssh_last_time = 1000000;
-#else
-static suseconds_t ssh_last_time = 1000000;
-#endif
-static struct timeval ssh_tv;
-
-#endif /* Q_LIBSSH2 */
-
 /**
  * See if the fd is readable.
  *
@@ -908,7 +892,7 @@ static Q_BOOL is_readable(int fd) {
         }
     }
 
-#ifdef Q_LIBSSH2
+#ifdef Q_SSH_CRYPTLIB
     /* SSH special case: see if we should read again anyway */
     if ((q_status.dial_method == Q_DIAL_METHOD_SSH) &&
         (net_is_connected() == Q_TRUE)
@@ -1020,7 +1004,7 @@ static void process_incoming_data() {
         (wait_on_script == Q_FALSE)
     ) {
 
-#ifdef Q_LIBSSH2
+#ifdef Q_SSH_CRYPTLIB
         ssh_last_time = ssh_tv.tv_usec;
 #endif
 
@@ -1054,7 +1038,7 @@ static void process_incoming_data() {
                             (net_is_connected() == Q_TRUE)) ||
                         ((q_status.dial_method == Q_DIAL_METHOD_RLOGIN) &&
                             (net_is_connected() == Q_TRUE)) ||
-#ifdef Q_LIBSSH2
+#ifdef Q_SSH_CRYPTLIB
                         ((q_status.dial_method == Q_DIAL_METHOD_SSH) &&
                             (net_is_connected() == Q_TRUE)) ||
 #endif
@@ -1866,7 +1850,7 @@ static void data_handler() {
             (q_program_state == Q_STATE_DIALER) ||
             (q_program_state == Q_STATE_SCRIPT_EXECUTE) ||
             (q_program_state == Q_STATE_HOST)
-#ifdef Q_LIBSSH2
+#ifdef Q_SSH_CRYPTLIB
             || ((q_status.dial_method == Q_DIAL_METHOD_SSH) &&
                 (net_is_connected() == Q_TRUE) &&
                 (is_readable(q_child_tty_fd)))
@@ -2605,10 +2589,10 @@ int qodem_main(int argc, char * const argv[]) {
             switch_state(Q_STATE_CONSOLE);
         }
 
-#ifdef Q_LIBSSH2
-        if (libssh2_init(0) < 0) {
+#ifdef Q_SSH_CRYPTLIB
+        if (cryptInit() != CRYPT_OK) {
             screen_put_color_printf_yx(0, 0, Q_COLOR_CONSOLE_TEXT,
-                _("Error initializing libssh2\n"));
+                _("Error initializing cryptlib\n"));
             screen_put_color_printf_yx(3, 0, Q_COLOR_CONSOLE_TEXT,
                 _("Press any key to continue...\n"));
             screen_flush();
@@ -2655,8 +2639,8 @@ int qodem_main(int argc, char * const argv[]) {
     /* Shutdown the music "engine" :-) */
     music_teardown();
 
-#ifdef Q_LIBSSH2
-    libssh2_exit();
+#ifdef Q_SSH_CRYPTLIB
+    cryptExit();
 #endif
 
 #ifdef Q_PDCURSES_WIN32

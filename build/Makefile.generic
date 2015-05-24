@@ -32,10 +32,9 @@ default: qodem
 # as: text-mode ncurses; using external 'ssh' binary; no sound; no
 # UPnP; serial port support enabled.
 #
-# Q_LIBSSH2         - Use ssh library to do ssh connections rather than
-#                     spawn the ssh binary through a pty.  You will need
-#                     to add -lssh2 to LDFLAGS.  libssh2 headers are assumed
-#                     to be installed.
+# Q_SSH_CRYPTLIB    - Use the cryptlib library to do ssh connections
+#                     rather than spawn the ssh binary through a pty.
+#                     You will need to add cryptlib.a to LDFLAGS.
 #
 # Q_UPNP            - Include support for miniupmpc-1.4.  You will need to
 #                     add -Iupmp/miniupnpc-1.4 to CFLAGS, and the following

@@ -49,7 +49,6 @@ SGR mouse reporting
 
 Q_OPTION_SCRIPTS_DIR
 
-Encrypted phonebook
 
 New autoconf build:
   Basic working: default builds same as Makefile.generic
@@ -67,20 +66,19 @@ Code sweep:
   Javadoc all functions
   Eliminate "stored in X.c" on externs
   Replace #ifdef DEBUG with DLOG/DLOG2
-
-    netclient.c
     vt100.c
     linux.c
 
 
-
-
 Win32 port:
+  Serial port support:
+    Remove Q_NO_SERIAL
+    tcsendbreak
+    open_serial_port
+    configure_serial_port
+    close_serial_port
   cryptlib
   UPnP
-  Remove Q_PDCURSES_WIN32-only #include's (no more mingw build)
-  Switch __BORLANDC__ to Q_PDCURSES_WIN32
-    Except for my_swprintf()'s and common.h/common.c
   Eliminate reasonable Borland warnings
   Fix mouse tracking to do mouse and not copy-to-clipboard
   Use Beep() and support bells and music
@@ -314,6 +312,8 @@ Release:
 1.1.0
 -----
 
+Encrypted phonebook
+
 Refactor:
   Move Q_STATE_DIALER from phonebook.c to dialer.c
   Rationalize use of globals vs q_status
@@ -329,14 +329,6 @@ Use puttygen'd keys for ssh
 
 Kermit:
   Locking shift
-
-Win32 port:
-  Serial port support via TAPI
-    tcsendbreak - console.c
-    open_serial_port
-    configure_serial_port
-    close_serial_port
-    Make serial port field in modem_config pull up a list from TAPI
 
 Send Wake-On-LAN packet to phonebook entry
 
@@ -426,4 +418,3 @@ Linux/ncurses port of HS/Link 1.21
 
 QUESTIONS TO ASK OUT THERE
 --------------------------
-

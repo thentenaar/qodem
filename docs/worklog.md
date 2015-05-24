@@ -1,6 +1,16 @@
 The Qodem Project Work Log
 ==========================
 
+May 24, 2015
+
+There goes netclient.  So the last thing is combining LINUX and XTERM
+into vt100, and then the code sweep is finished.
+
+In other news, I figured out that serial port support on Windows is a
+lot easier than TAPI.  It's getting rolled into this release, and
+Q_NO_SERIAL is getting removed.  This means that Qodem 1.0 will be
+feature-complete against Qmodem 5.0.
+
 May 23, 2015
 
 We are ALMOST DONE with the code sweep.  All that remains is zmodem,
