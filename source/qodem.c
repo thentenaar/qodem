@@ -989,15 +989,19 @@ static void process_incoming_data() {
         }
     }
 
-    DLOG(("IF CHECK: %s %s %s %s\n",
 #ifdef Q_NO_SERIAL
+    DLOG(("IF CHECK: %s %s %s %s\n",
             "N/A",
-#else
-            (q_status.serial_open == Q_TRUE ? "true" : "false"),
-#endif
             (q_status.online == Q_TRUE ? "true" : "false"),
             (is_readable(q_child_tty_fd) == Q_TRUE ? "true" : "false"),
             (wait_on_script == Q_FALSE ? "true" : "false")));
+#else
+    DLOG(("IF CHECK: %s %s %s %s\n",
+            (q_status.serial_open == Q_TRUE ? "true" : "false"),
+            (q_status.online == Q_TRUE ? "true" : "false"),
+            (is_readable(q_child_tty_fd) == Q_TRUE ? "true" : "false"),
+            (wait_on_script == Q_FALSE ? "true" : "false")));
+#endif
 
     if ((Q_SERIAL_OPEN || (q_status.online == Q_TRUE)) &&
         (is_readable(q_child_tty_fd) == Q_TRUE) &&
@@ -1387,14 +1391,17 @@ no_data:
     }
     q_buffer_raw_n = unprocessed_n;
 
-    DLOG(("serial_open = %s online = %s q_transfer_buffer_raw_n = %d\n",
 #ifdef Q_NO_SERIAL
+    DLOG(("serial_open = %s online = %s q_transfer_buffer_raw_n = %d\n",
             "N/A",
-#else
-            (q_status.serial_open == Q_TRUE ? "true" : "false"),
-#endif
             (q_status.online == Q_TRUE ? "true" : "false"),
             q_transfer_buffer_raw_n));
+#else
+    DLOG(("serial_open = %s online = %s q_transfer_buffer_raw_n = %d\n",
+            (q_status.serial_open == Q_TRUE ? "true" : "false"),
+            (q_status.online == Q_TRUE ? "true" : "false"),
+            q_transfer_buffer_raw_n));
+#endif
 
     /* Write the data in the output buffer to q_child_tty_fd */
     if ((Q_SERIAL_OPEN || (q_status.online == Q_TRUE)) &&

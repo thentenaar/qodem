@@ -673,13 +673,13 @@ static void set_errno(int x) {
 /**
  * A list of descriptions to match Winsock error codes.
  */
+struct winsock_error_text {
+        int errno;
+        const char * label;
+        const char * description;
+};
 
-static struct _wsaerrtext {
-        int err;
-        const char *errconst;
-        const char *errdesc;
-} _wsaerrtext[] = {
-
+struct winsock_error_text winsock_errors[] = {
     {
         WSA_E_CANCELLED, "WSA_E_CANCELLED", "Lookup cancelled."
     },
@@ -854,48 +854,46 @@ static struct _wsaerrtext {
         WSATYPE_NOT_FOUND, "WSATYPE_NOT_FOUND", "Class type not found."
     },
     {
-        WSAVERNOTSUPPORTED, "WSAVERNOTSUPPORTED", "Winsock.dll version out of range."
+        WSAVERNOTSUPPORTED, "WSAVERNOTSUPPORTED",
+        "Winsock.dll version out of range."
     },
     {
         WSAEDISCON, "WSAEDISCON", "Graceful shutdown in progress."
+    },
+    {
+        0, "WSAENONE", "No error."
+    },
+    {
+        -1, "Unknown", "Unknown error."
     }
 };
 
 /**
+ * The message returned by get_strerror().
+ */
+static char winsock_error_message[DIALOG_MESSAGE_SIZE];
+
+/**
  * Get the error message that goes with get_errno().
  *
+ * @param error_number the errno value
  * @return the appropriate error message for a network error value
  */
-const char * get_strerror(int err) {
-    /*
-     * This function is taken from win32lib.c shipped by the Squid Web Proxy
-     * Cache.  Squid is licensed GPL v2 or later.  win32lib.c's authors are
-     * listed below:
-     *
-     * Windows support
-     * AUTHOR: Guido Serassio <serassio@squid-cache.org>
-     * inspired by previous work by Romeo Anghelache & Eric Stern.
-     *
-     * SQUID Web Proxy Cache          http://www.squid-cache.org/
-     * ----------------------------------------------------------
-     */
-
-    static char xwsaerror_buf[BUFSIZ];
-    int i, errind = -1;
-    if (err == 0)
-        return "(0) No error.";
-    for (i = 0; i < sizeof(_wsaerrtext) / sizeof(struct _wsaerrtext); i++) {
-        if (_wsaerrtext[i].err != err)
-            continue;
-        errind = i;
-        break;
+const char * get_strerror(int error_number) {
+    int i = 0;
+    while (winsock_errors[i].errno != -1) {
+        if (winsock_errors[i].errno == error_number) {
+            sprintf(winsock_error_message, "%s: %s", winsock_errors[i].label,
+                winsock_errors[i].description);
+            return winsock_error_message;
+        }
+        i++;
     }
-    if (errind == -1)
-        snprintf(xwsaerror_buf, BUFSIZ, "Unknown");
-    else
-        snprintf(xwsaerror_buf, BUFSIZ, "%s, %s", _wsaerrtext[errind].errconst,
-                 _wsaerrtext[errind].errdesc);
-    return xwsaerror_buf;
+    /*
+     * We fell through to the "Unknown error" case.
+     */
+    sprintf(winsock_error_message, "Unknown error.");
+    return winsock_error_message;
 }
 
 #else
@@ -1444,14 +1442,13 @@ int net_listen(const char * port) {
                 rc = getaddrinfo(NULL, local_port, &hints, &local_address);
 
                 if (rc != 0) {
-                    DLOG(("net_listen() : getaddrinfo() error: %d %s\n",
-                            get_errno(), 
 #ifdef __BORLANDC__
-                            get_strerror(get_errno())
+                    DLOG(("net_listen() : getaddrinfo() error: %d %s\n",
+                            get_errno(), get_strerror(get_errno())));
 #else
-                            gai_strerror(get_errno())
+                    DLOG(("net_listen() : getaddrinfo() error: %d %s\n",
+                            get_errno(), gai_strerror(get_errno())));
 #endif
-                        ));
 
                     /*
                      * Can't lookup on this local interface ?

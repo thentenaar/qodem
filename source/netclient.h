@@ -291,9 +291,10 @@ extern int get_errno();
 /**
  * Get the error message that goes with get_errno().
  *
+ * @param error_number the errno value 
  * @return the appropriate error message for a network error value
  */
-extern const char * get_strerror(int err);
+extern const char * get_strerror(int error_number);
 
 #ifdef Q_PDCURSES_WIN32
 
