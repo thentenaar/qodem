@@ -1,6 +1,18 @@
 The Qodem Project Work Log
 ==========================
 
+May 25, 2015
+
+vt100 code sweep is complete.  Still need to merge linux.c into it,
+but probably won't get to that today.  We've got squirrels in the
+attic to evict first.  Tomorrow will be a vacation day and I will need
+some not-computer-time.
+
+But overall we've made a HUGE push in the last four weeks.  Most of
+qodem's technical debt is now paid off.  We are nearing the point
+where I finally get to write all-new code again, oh that will feel
+nice.
+
 May 24, 2015
 
 There goes netclient.  So the last thing is combining LINUX and XTERM

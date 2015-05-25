@@ -36,7 +36,7 @@ Refactor:
 
   Remove #if 0 / #if 1
 
-  Re-combine linux.c into vt100.c.
+  Merge linux.c into vt100.c.
 
 Detect xterm alternate screen and clear scrollback to retain what was
 seen before.
@@ -57,17 +57,6 @@ New autoconf build:
   --enable-x11 - builds PDCurses X11
   --enable-ssh - builds cryptlib
   --enable-upnp - builds miniupnpc
-
-Code sweep:
-  80 column max
-  Tab stop 4
-  Eliminate function tails ("} /* -----...-- */")
-  Ensure return codes are actually used, or switch them to void
-  Javadoc all functions
-  Eliminate "stored in X.c" on externs
-  Replace #ifdef DEBUG with DLOG/DLOG2
-    vt100.c
-    linux.c
 
 
 Win32 port:

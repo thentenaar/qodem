@@ -66,7 +66,7 @@
 /* static const char * DLOGNAME = "kermit"; */
 static const char * DLOGNAME = NULL;
 
-/* Define this for _REALLY_ versbose logging (every byte) */
+/* Define this for _REALLY_ verbose logging (every byte) */
 /* #define DEBUG_KERMIT_VERBOSE 1 */
 #undef DEBUG_KERMIT_VERBOSE
 
