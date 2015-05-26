@@ -1,4 +1,5 @@
 qodem (1.0beta-1) unstable; urgency=low
+  * As of May 26, 2015 Qodem is dedicated to the public domain.
   * Numerous bug fixes
   * Switch code repository to github: https://github.com/klamonte/qodem
   * Support for Borland C++ 5.02 compiler

@@ -275,7 +275,7 @@ Release:
     build/debian/qodem-x11/debian/control
     build/qodem.spec
     build/qodem-x11.spec
-  Update copyrights to current year:
+  Update written by date to current year:
     All code headers
     qodem.c --version
     console.c terminal header

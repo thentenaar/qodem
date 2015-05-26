@@ -1,25 +1,18 @@
 /*
  * help.c
  *
- * This module is licensed under the GNU General Public License Version 2.
- * Please see the file "COPYING" in this directory for more information about
- * the GNU General Public License Version 2.
+ * qodem - Qodem Terminal Emulator
  *
- *     Copyright (C) 2015  Kevin Lamonte
+ * Written 2003-2015 by Kevin Lamonte
  *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your option)
- * any later version.
+ * To the extent possible under law, the author(s) have dedicated all
+ * copyright and related and neighboring rights to this software to the
+ * public domain worldwide. This software is distributed without any
+ * warranty.
  *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc., 51
- * Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * You should have received a copy of the CC0 Public Domain Dedication along
+ * with this software. If not, see
+ * <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 
 #include "common.h"
@@ -2095,12 +2088,12 @@ char * raw_help_text = \
 "\n"
 "@TOPIC{REFERENCE_97_COPYRIGHT,Reference - Copyright}\n"
 "@BOLD{Qodem Terminal Emulator}\n"
-"Copyright(c) 2015 Kevin Lamonte\n"
+"Written 2003-2015 by Kevin Lamonte\n"
 "\n"
-"This program is free software; you can redistribute it and/or modify\n"
-"it under the terms of the GNU General Public License as published by\n"
-"the Free Software Foundation; either version 2 of the License, or\n"
-"(at your option) any later version.\n"
+"To the extent possible under law, the author(s) have dedicated all\n"
+"copyright and related and neighboring rights to this software to the\n"
+"public domain worldwide. This software is distributed without any\n"
+"warranty.\n"
 "\n"
 "Qodem has benefited from the contributions of several other people, and\n"
 "thanks specifically:\n"
@@ -2121,9 +2114,6 @@ char * raw_help_text = \
 "    Miquel van Smoorenburg and the many developers involved in\n"
 "    @BOLD{minicom} who licensed their work under the GNU General Public\n"
 "    License.\n"
-"\n"
-"    The developers involved in @BOLD{libssh2} who licensed their work under\n"
-"    a BSD-like license.\n"
 "\n"
 "    Thomas BERNARD and the developers involved in @BOLD{miniupnpc} who\n"
 "    licensed their work under a BSD-like license.\n"
@@ -2676,7 +2666,7 @@ char * raw_help_text = \
 "    Spawn a local shell and pass args to it.\n"
 "\n"
 "@BOLD{--version}\n"
-"Display program version and brief copyright statement.\n"
+"Display program version and brief public domain dedication statement.\n"
 "\n"
 "@BOLD{--help}, @BOLD{-h}, @BOLD{-?}\n"
 "    Display usage screen.\n"

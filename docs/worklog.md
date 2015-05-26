@@ -8,6 +8,11 @@ why but I'll find it eventually.
 
 Break time.
 
+    AS OF TODAY, MAY 26, 2015, THE SOURCE TO QODEM IS DEDICATED TO THE
+    PUBLIC DOMAIN.
+
+
+
 May 25, 2015
 
 vt100 code sweep is complete.  Still need to merge linux.c into it,

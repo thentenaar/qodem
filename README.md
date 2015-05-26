@@ -10,9 +10,6 @@ Systems ruled the night.  Qodem emulates the dialing directory and the
 terminal screen features of Qmodem over both modem and Internet
 connections.
 
-Qodem is distributed under the GNU General Public License Version 2 or
-later - see the accompanying COPYING file for more details.
-
 The Qodem homepage, which includes an extensive archive of Qmodem(tm)
 releases, a getting started guide, and Qodem binary downloads, is at:
 http://qodem.sourceforge.net .
@@ -26,6 +23,27 @@ class-action lawsuit from Quintus shareholders.  The lawsuit
 (C-00-4263 VRW in the Northern District of California, US District
 Chief Judge Vaughn R Walker presiding) was settled on December 5, 2006
 for $10.1 million (with 11% to plaintiffs legal fees).
+
+
+COPYRIGHT STATUS
+----------------
+
+To the extent possible under law, the author(s) of Qodem have
+dedicated all copyright and related and neighboring rights to Qodem to
+the public domain worldwide. This software is distributed without any
+warranty.  The COPYING file describes this intent, and provides a
+public license fallback for those jurisdictions that do not recognize
+the public domain.
+
+Qodem incorporates or links to software that is copyrighted and
+licensed under BSD-like terms.  The CREDITS file describes those
+pieces and their respective licenses.  The only qodem source file with
+such code is codepage.c, containing a UTF-8 decoding function; all
+other such code is in the lib directory.  The combined qodem
+executable has license terms that are effectively the same as the BSD
+or MIT license: attribution in the source, source is not required to
+be shared, and there is no warranty.
+
 
 INTENDED AUDIENCE
 -----------------
@@ -593,8 +611,9 @@ Qodem has three sources of documentation:
 CONTRIBUTING
 ------------
 
-Qodem is an open-source project under the GPL, meaning anyone is free
-to see and modify the source code and release their own versions.
+Qodem is dedicated to the public domain.  Anyone is free to see and
+modify the source code and release new versions under whatever license
+terms they wish.
 
 The official repository is hosted on github at
 https://github.com/klamonte/qodem .  Pull requests are very much
@@ -618,9 +637,6 @@ We'd like to thank the following individuals:
 
 * Miquel van Smoorenburg and the many developers involved in minicom
   who licensed their work under the GNU General Public License.
-
-* The developers involved in libssh2 who licensed their work under a
-  BSD-like license.
 
 * Thomas BERNARD and the developers involved in miniupnpc who licensed
   their work under a BSD-like license.
