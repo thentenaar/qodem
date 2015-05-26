@@ -33,7 +33,7 @@
 #include <assert.h>
 #include "qodem.h"
 #include "music.h"
-#include "linux.h"
+#include "vt100.h"
 #include "states.h"
 #include "screen.h"
 

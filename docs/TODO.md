@@ -36,8 +36,6 @@ Refactor:
 
   Remove #if 0 / #if 1
 
-  Merge linux.c into vt100.c.
-
 Detect xterm alternate screen and clear scrollback to retain what was
 seen before.
 

@@ -73,6 +73,34 @@ struct q_keypad_mode q_vt100_keypad_mode = {
     Q_KEYPAD_MODE_NUMERIC
 };
 
+/*
+ * The linux defaults are in drivers/char/console.c, as of 2.4.22 it's 750 Hz
+ * 250 milliseconds.
+ */
+#define DEFAULT_BEEP_FREQUENCY  750
+#define DEFAULT_BEEP_DURATION   250
+
+/**
+ * The bell frequency in Hz set by ESC [ 10 ; n ] .  Used by qodem_beep().
+ */
+int q_linux_beep_frequency      = DEFAULT_BEEP_FREQUENCY;
+
+/**
+ * The bell duration in milliseconds set by ESC [ 10 ; n ] .  Used by
+ * qodem_beep().
+ */
+int q_linux_beep_duration       = DEFAULT_BEEP_DURATION;
+
+/**
+ * The current mouse tracking protocol.  See handle_mouse() in input.c.
+ */
+XTERM_MOUSE_PROTOCOL q_xterm_mouse_protocol = XTERM_MOUSE_OFF;
+
+/**
+ * The current mouse tracking encoding.  See handle_mouse() in input.c.
+ */
+XTERM_MOUSE_ENCODING q_xterm_mouse_encoding = XTERM_MOUSE_ENCODING_X10;
+
 /**
  * States for the input parser finite state machine.  We deviate from Paul
  * Williams' overall design to support one unique sequence seen in VT52
@@ -132,6 +160,21 @@ static SCAN_STATE scan_state;
  * "I am a VT220" in 8bit
  */
 #define VT220_DEVICE_TYPE_STRING_S8C1T  "\233?62;1;6c"
+
+/*
+ * "I am a VT102"
+ */
+#define LINUX_DEVICE_TYPE_STRING        "\033[?6c"
+
+/*
+ * "I am a VT220"
+ */
+#define XTERM_DEVICE_TYPE_STRING        "\033[?62;1;6c"
+
+/*
+ * "I am a VT220" in 8bit
+ */
+#define XTERM_DEVICE_TYPE_STRING_S8C1T  "\233?62;1;6c"
 
 /**
  * Available character sets.  These include both the VT100/VT52, and the
@@ -315,7 +358,7 @@ struct vt100_state {
      */
     VT100_CHARACTER_SET saved_g1_charset;
 
-    /* VT220 */
+    /* VT220 ---------------------------------------------------------------- */
 
     /**
      * S8C1T.  True means 8bit controls, false means 7bit controls.
@@ -383,6 +426,23 @@ struct vt100_state {
      */
     LOCKSHIFT_MODE lockshift_gr;
 
+    /* LINUX/XTERM ---------------------------------------------------------- */
+
+    /**
+     * Wide char to return for Q_EMUL_LINUX_UTF8 or Q_EMUL_XTERM_UTF8.
+     */
+    uint32_t utf8_char;
+
+    /**
+     * State for the "Flexible and Economical UTF-8 Decoder".
+     */
+    uint32_t utf8_state;
+
+    /**
+     * Character to repeat in rep().
+     */
+    wchar_t rep_ch;
+
     /**
      * The parameters characters being collected, sixteen rows with sixteen
      * columns.
@@ -435,7 +495,10 @@ static struct vt100_state state = {
     LOCKSHIFT_NONE,
     LOCKSHIFT_NONE,
     LOCKSHIFT_NONE,
-    LOCKSHIFT_NONE
+    LOCKSHIFT_NONE,
+    0,
+    0,
+    0
 };
 
 /**
@@ -460,9 +523,10 @@ static void reset_tab_stops() {
         state.tab_stops = NULL;
         state.tab_stops_n = 0;
     }
-    for (i=0; (i*8) < WIDTH; i++) {
-        state.tab_stops = (int *)Xrealloc(state.tab_stops, (state.tab_stops_n+1)*sizeof(int), __FILE__, __LINE__);
-        state.tab_stops[i] = i*8;
+    for (i = 0; (i * 8) < WIDTH; i++) {
+        state.tab_stops = (int *) Xrealloc(state.tab_stops,
+            (state.tab_stops_n + 1) * sizeof(int), __FILE__, __LINE__);
+        state.tab_stops[i] = i * 8;
         state.tab_stops_n++;
     }
 }
@@ -477,7 +541,7 @@ static void advance_to_next_tab_stop() {
         cursor_right(WIDTH - 1 - q_status.cursor_x, Q_FALSE);
         return;
     }
-    for (i=0; i<state.tab_stops_n; i++) {
+    for (i = 0; i < state.tab_stops_n; i++) {
         if (state.tab_stops[i] > q_status.cursor_x) {
             cursor_right(state.tab_stops[i] - q_status.cursor_x, Q_FALSE);
             return;
@@ -525,6 +589,7 @@ void vt100_reset() {
     state.dec_private_mode_flag     = Q_FALSE;
     state.columns_132               = Q_FALSE;
     state.overridden_line_wrap      = Q_FALSE;
+    q_status.visible_cursor         = Q_TRUE;
 
     /* VT220 */
     state.singleshift               = SS_NONE;
@@ -542,6 +607,17 @@ void vt100_reset() {
     state.saved_g3_charset          = CHARSET_US;
     state.saved_gr_charset          = CHARSET_DEC_SUPPLEMENTAL;
     state.saved_linewrap            = q_status.line_wrap;
+
+    /* LINUX */
+    q_linux_beep_frequency          = DEFAULT_BEEP_FREQUENCY;
+    q_linux_beep_duration           = DEFAULT_BEEP_DURATION;
+
+    /* XTERM */
+    q_xterm_mouse_protocol          = XTERM_MOUSE_OFF;
+    q_xterm_mouse_encoding          = XTERM_MOUSE_ENCODING_X10;
+
+    /* L_UTF8 and X_UTF8 */
+    state.utf8_state                = 0;
 
     DLOG(("vt100_reset()\n"));
 
@@ -686,6 +762,20 @@ static wchar_t map_character(const unsigned char vt100_char) {
             charset_string(state.g3_charset)));
 
 #endif /* DEBUG_VT100_VERBOSE */
+
+    if ((q_status.emulation == Q_EMUL_LINUX) ||
+        (q_status.emulation == Q_EMUL_XTERM)) {
+
+        if (vt100_char >= 0x80) {
+            /*
+             * Use the 8-bit codepage.
+             */
+            DLOG(("VGA CHAR: '%c' (0x%02x) --> '%uc' (0x%02x)\n", vt100_char,
+                    vt100_char, codepage_map_char(vt100_char),
+                    codepage_map_char(vt100_char)));
+            return codepage_map_char(vt100_char);
+        }
+    }
 
     if (state.vt52_mode == Q_TRUE) {
         if (state.shift_out == Q_TRUE) {
@@ -849,7 +939,10 @@ static void set_toggle(const Q_BOOL value) {
                     state.g1_charset = CHARSET_DRAWING;
                     state.shift_out = Q_FALSE;
 
-                    if (q_status.emulation == Q_EMUL_VT220) {
+                    if ((q_status.emulation == Q_EMUL_VT220) ||
+                        (q_status.emulation == Q_EMUL_XTERM) ||
+                        (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                    ) {
                         /* VT52 mode is explicitly 7-bit */
                         state.s8c1t_mode = Q_FALSE;
                         state.singleshift = SS_NONE;
@@ -1057,7 +1150,12 @@ static void set_toggle(const Q_BOOL value) {
             break;
 
         case 25:
-            if (q_status.emulation == Q_EMUL_VT220) {
+            if ((q_status.emulation == Q_EMUL_VT220) ||
+                (q_status.emulation == Q_EMUL_LINUX) ||
+                (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                (q_status.emulation == Q_EMUL_XTERM) ||
+                (q_status.emulation == Q_EMUL_XTERM_UTF8)
+            ) {
                 if (state.dec_private_mode_flag == Q_TRUE) {
                     /* DECTCEM */
                     if (value == Q_TRUE) {
@@ -1076,7 +1174,10 @@ static void set_toggle(const Q_BOOL value) {
             break;
 
         case 42:
-            if (q_status.emulation == Q_EMUL_VT220) {
+            if ((q_status.emulation == Q_EMUL_VT220) ||
+                (q_status.emulation == Q_EMUL_XTERM) ||
+                (q_status.emulation == Q_EMUL_XTERM_UTF8)
+            ) {
                 if (state.dec_private_mode_flag == Q_TRUE) {
                     /* DECNRCM */
                     if (value == Q_TRUE) {
@@ -1091,6 +1192,86 @@ static void set_toggle(const Q_BOOL value) {
                 }
             }
 
+            break;
+
+        case 1000:
+            if ((state.dec_private_mode_flag == Q_TRUE) &&
+                ((q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8))
+            ) {
+                /* Mouse: normal tracking mode */
+                if (value == Q_TRUE) {
+                    DLOG(("MOUSE: Normal tracking mode on\n"));
+                    q_xterm_mouse_protocol = XTERM_MOUSE_NORMAL;
+                } else {
+                    DLOG(("MOUSE: Normal tracking mode off\n"));
+                    q_xterm_mouse_protocol = XTERM_MOUSE_OFF;
+                }
+            }
+            break;
+
+        case 1002:
+            if ((state.dec_private_mode_flag == Q_TRUE) &&
+                ((q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8))
+            ) {
+                /* Mouse: normal tracking mode */
+                if (value == Q_TRUE) {
+                    DLOG(("MOUSE: Button-event tracking mode on\n"));
+                    q_xterm_mouse_protocol = XTERM_MOUSE_BUTTONEVENT;
+                } else {
+                    DLOG(("MOUSE: Button-event tracking mode off\n"));
+                    q_xterm_mouse_protocol = XTERM_MOUSE_OFF;
+                }
+            }
+            break;
+
+        case 1003:
+            if ((state.dec_private_mode_flag == Q_TRUE) &&
+                ((q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8))
+            ) {
+                /* Mouse: Any-event tracking mode */
+                if (value == Q_TRUE) {
+                    DLOG(("MOUSE: Any-event tracking mode on\n"));
+                    q_xterm_mouse_protocol = XTERM_MOUSE_ANYEVENT;
+                } else {
+                    DLOG(("MOUSE: Any-event tracking mode off\n"));
+                    q_xterm_mouse_protocol = XTERM_MOUSE_OFF;
+                }
+            }
+            break;
+
+        case 1005:
+            if ((state.dec_private_mode_flag == Q_TRUE) &&
+                ((q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8))
+            ) {
+                /* Mouse: UTF-8 coordinates */
+                if (value == Q_TRUE) {
+                    DLOG(("MOUSE: UTF-8 coordinates on"));
+                    q_xterm_mouse_encoding = XTERM_MOUSE_ENCODING_UTF8;
+                } else {
+                    DLOG(("MOUSE: UTF-8 coordinates off\n"));
+                    q_xterm_mouse_encoding = XTERM_MOUSE_ENCODING_X10;
+                }
+            }
+            break;
+
+        case 1006:
+            if ((state.dec_private_mode_flag == Q_TRUE) &&
+                ((q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8))
+            ) {
+                /* Mouse: SGR coordinates */
+                if (value == Q_TRUE) {
+                    DLOG(("MOUSE: SGR coordinates on"));
+                    q_xterm_mouse_encoding = XTERM_MOUSE_ENCODING_SGR;
+                } else {
+                    DLOG(("MOUSE: SGR coordinates off\n"));
+                    q_xterm_mouse_encoding = XTERM_MOUSE_ENCODING_X10;
+                }
+            }
             break;
 
         default:
@@ -1723,6 +1904,28 @@ static void decscl() {
 }
 
 /**
+ * RIS - Reset to initial state.
+ */
+static void ris() {
+    DLOG(("ris()\n"));
+
+    vt100_reset();
+    q_cursor_on();
+    /* Do I clear screen too? I think so... */
+    erase_screen(0, 0, HEIGHT - STATUS_HEIGHT - 1, WIDTH - 1, Q_FALSE);
+}
+
+/**
+ * DECSTR - Soft Terminal Reset.
+ */
+static void decstr() {
+    DLOG(("decstr()\n"));
+
+    /* Do exactly like RIS - Reset to initial state */
+    ris();
+}
+
+/**
  * DECLL - Load keyboard leds.
  */
 static void decll() {
@@ -1752,15 +1955,27 @@ static void decll() {
                 q_status.led_4 = Q_FALSE;
                 break;
             case 1:
+                /*
+                 * Under LINUX, this is supposed to set scroll lock.
+                 */
                 q_status.led_1 = Q_TRUE;
                 break;
             case 2:
+                /*
+                 * Under LINUX, this is supposed to set num lock.
+                 */
                 q_status.led_2 = Q_TRUE;
                 break;
             case 3:
+                /*
+                 * Under LINUX, this is supposed to set caps lock.
+                 */
                 q_status.led_3 = Q_TRUE;
                 break;
             case 4:
+                /*
+                 * Under LINUX, this is supposed to do nothing.
+                 */
                 q_status.led_4 = Q_TRUE;
                 break;
             }
@@ -1776,7 +1991,9 @@ static void ed() {
     int i;
     Q_BOOL honor_protected = Q_FALSE;
 
-    if ((q_status.emulation == Q_EMUL_VT220) &&
+    if (((q_status.emulation == Q_EMUL_VT220) ||
+            (q_status.emulation == Q_EMUL_XTERM) ||
+            (q_status.emulation == Q_EMUL_XTERM_UTF8)) &&
         (state.dec_private_mode_flag == Q_TRUE)) {
         honor_protected = Q_TRUE;
     }
@@ -1852,7 +2069,9 @@ static void el() {
     int i;
     Q_BOOL honor_protected = Q_FALSE;
 
-    if ((q_status.emulation == Q_EMUL_VT220) &&
+    if (((q_status.emulation == Q_EMUL_VT220) ||
+            (q_status.emulation == Q_EMUL_XTERM) ||
+            (q_status.emulation == Q_EMUL_XTERM_UTF8)) &&
         (state.dec_private_mode_flag == Q_TRUE)) {
         honor_protected = Q_TRUE;
     }
@@ -1880,7 +2099,7 @@ static void el() {
 
 }
 
-/*(
+/**
  * IL - Insert line.
  */
 static void il() {
@@ -2034,10 +2253,26 @@ static void sgr() {
                 /* Reverse */
                 q_current_color |= Q_A_REVERSE;
                 break;
+
+            case 8:
+                /* Invisible */
+                if ((q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    q_current_color |= Q_A_INVIS;
+                }
+                break;
             }
 
-            if (q_status.emulation == Q_EMUL_VT220) {
+            if ((q_status.emulation == Q_EMUL_VT220) ||
+                (q_status.emulation == Q_EMUL_LINUX) ||
+                (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                (q_status.emulation == Q_EMUL_XTERM) ||
+                (q_status.emulation == Q_EMUL_XTERM_UTF8)
+            ) {
                 switch (j) {
+                case 21:
+                    /* Fall through... */
                 case 22:
                     /* Normal intensity */
                     q_current_color &= ~Q_A_BOLD;
@@ -2061,7 +2296,12 @@ static void sgr() {
             }
 
             /* Optional color support */
-            if (q_status.vt100_color == Q_TRUE) {
+            if ((q_status.vt100_color == Q_TRUE) ||
+                (q_status.emulation == Q_EMUL_LINUX) ||
+                (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                (q_status.emulation == Q_EMUL_XTERM) ||
+                (q_status.emulation == Q_EMUL_XTERM_UTF8)
+            ) {
 
                 /* Pull the current foreground and background */
                 curses_color = color_from_attr(q_current_color);
@@ -2069,7 +2309,39 @@ static void sgr() {
                 background = curses_color & 0x07;
 
                 switch(j) {
+                case 10:
+                    if ((q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                        (q_status.emulation == Q_EMUL_LINUX)
+                    ) {
+                        /*
+                         * 10 reset selected mapping, display control flag,
+                         *    and toggle meta flag.
+                         */
+                    }
+                    break;
 
+                case 11:
+                    if ((q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                        (q_status.emulation == Q_EMUL_LINUX)
+                    ) {
+                        /*
+                         * 11 select null mapping, set display control flag,
+                         *    reset toggle meta flag.
+                         */
+                    }
+                    break;
+                case 12:
+                    if ((q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                        (q_status.emulation == Q_EMUL_LINUX)
+                    ) {
+                        /*
+                         * 12 select null mapping, set display control flag,
+                         *    set toggle meta flag. (The toggle meta flag
+                         *    causes the high bit of a byte to be toggled
+                         *    before the mapping table translation is done.)
+                         */
+                    }
+                    break;
                 case 30:
                     /* Set black foreground */
                     foreground = Q_COLOR_BLACK;
@@ -2107,11 +2379,23 @@ static void sgr() {
                     if (q_text_colors[Q_COLOR_CONSOLE_TEXT].bold == Q_TRUE) {
                         q_current_color |= Q_A_BOLD;
                     }
+                    if ((q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                        (q_status.emulation == Q_EMUL_LINUX)
+                    ) {
+                        /* Linux console also flips underline */
+                        q_current_color |= Q_A_UNDERLINE;
+                    }
                     break;
                 case 39:
                     foreground = q_text_colors[Q_COLOR_CONSOLE_TEXT].fg;
                     if (q_text_colors[Q_COLOR_CONSOLE_TEXT].bold == Q_TRUE) {
                         q_current_color |= Q_A_BOLD;
+                    }
+                    if ((q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                        (q_status.emulation == Q_EMUL_LINUX)
+                    ) {
+                        /* Linux console also flips underline */
+                        q_current_color &= ~Q_A_UNDERLINE;
                     }
                     break;
                 case 40:
@@ -2189,7 +2473,9 @@ static void dsr() {
          *
          * Respond with "OK, no malfunction."
          */
-        if ((q_status.emulation == Q_EMUL_VT220) &&
+        if (((q_status.emulation == Q_EMUL_VT220) ||
+                (q_status.emulation == Q_EMUL_XTERM) ||
+                (q_status.emulation == Q_EMUL_XTERM_UTF8)) &&
             (state.s8c1t_mode == Q_TRUE)
         ) {
             qodem_write(q_child_tty_fd, "\2330n", 3, Q_TRUE);
@@ -2206,8 +2492,9 @@ static void dsr() {
          *
          * TODO: handle origin mode
          */
-
-        if ((q_status.emulation == Q_EMUL_VT220) &&
+        if (((q_status.emulation == Q_EMUL_VT220) ||
+                (q_status.emulation == Q_EMUL_XTERM) ||
+                (q_status.emulation == Q_EMUL_XTERM_UTF8)) &&
             (state.s8c1t_mode == Q_TRUE)
         ) {
             memset(response_buffer, 0, sizeof(response_buffer));
@@ -2229,7 +2516,9 @@ static void dsr() {
              *
              * Respond with "Printer not connected."
              */
-            if ((q_status.emulation == Q_EMUL_VT220) &&
+            if (((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)) &&
                 (state.s8c1t_mode == Q_TRUE)
             ) {
                 qodem_write(q_child_tty_fd, "\233?13n", 5, Q_TRUE);
@@ -2240,15 +2529,17 @@ static void dsr() {
         break;
 
     case 25:
-        if ((q_status.emulation == Q_EMUL_VT220) &&
-            (state.dec_private_mode_flag == Q_TRUE)
-        ) {
+        if (state.dec_private_mode_flag == Q_TRUE) {
             /*
              * Request user-defined keys are locked or unlocked.
              *
              * Respond with "User-defined keys are locked."
              */
-            if (state.s8c1t_mode == Q_TRUE) {
+            if (((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)) &&
+                (state.s8c1t_mode == Q_TRUE)
+            ) {
                 qodem_write(q_child_tty_fd, "\233?21n", 5, Q_TRUE);
             } else {
                 qodem_write(q_child_tty_fd, "\033[?21n", 6, Q_TRUE);
@@ -2257,15 +2548,17 @@ static void dsr() {
         break;
 
     case 26:
-        if ((q_status.emulation == Q_EMUL_VT220) &&
-            (state.dec_private_mode_flag == Q_TRUE)
-        ) {
+        if (state.dec_private_mode_flag == Q_TRUE) {
             /*
              * Request keyboard language.
              *
              * Respond with "Keyboard language is North American."
              */
-            if (state.s8c1t_mode == Q_TRUE) {
+            if (((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)) &&
+                (state.s8c1t_mode == Q_TRUE)
+            ) {
                 qodem_write(q_child_tty_fd, "\233?27;1n", 7, Q_TRUE);
             } else {
                 qodem_write(q_child_tty_fd, "\033[?27;1n", 8, Q_TRUE);
@@ -2327,6 +2620,11 @@ static void da() {
         } else if (q_status.emulation == Q_EMUL_VT102) {
             qodem_write(q_child_tty_fd, VT102_DEVICE_TYPE_STRING,
                         sizeof(VT102_DEVICE_TYPE_STRING), Q_TRUE);
+        } else if ((q_status.emulation == Q_EMUL_LINUX) ||
+            (q_status.emulation == Q_EMUL_LINUX_UTF8)
+        ) {
+            qodem_write(q_child_tty_fd, LINUX_DEVICE_TYPE_STRING,
+                        sizeof(LINUX_DEVICE_TYPE_STRING), Q_TRUE);
         } else if (q_status.emulation == Q_EMUL_VT220) {
             if (state.s8c1t_mode == Q_TRUE) {
                 qodem_write(q_child_tty_fd, VT220_DEVICE_TYPE_STRING_S8C1T,
@@ -2334,6 +2632,16 @@ static void da() {
             } else {
                 qodem_write(q_child_tty_fd, VT220_DEVICE_TYPE_STRING,
                             sizeof(VT220_DEVICE_TYPE_STRING), Q_TRUE);
+            }
+        } else if ((q_status.emulation == Q_EMUL_XTERM) ||
+            (q_status.emulation == Q_EMUL_XTERM_UTF8)
+        ) {
+            if (state.s8c1t_mode == Q_TRUE) {
+                qodem_write(q_child_tty_fd, XTERM_DEVICE_TYPE_STRING_S8C1T,
+                            sizeof(XTERM_DEVICE_TYPE_STRING_S8C1T), Q_TRUE);
+            } else {
+                qodem_write(q_child_tty_fd, XTERM_DEVICE_TYPE_STRING,
+                            sizeof(XTERM_DEVICE_TYPE_STRING), Q_TRUE);
             }
         }
         return;
@@ -2437,6 +2745,97 @@ static void tbc() {
         state.tab_stops_n = 0;
     }
 
+}
+/**
+ * CNL - Cursor down and to column 1.
+ */
+static void cnl() {
+    int i;
+
+    if (state.dec_private_mode_flag == Q_TRUE) {
+        return;
+    }
+
+    if (state.params_n < 0) {
+        DLOG(("cnl(): 1\n"));
+        cursor_down(1, Q_TRUE);
+    } else {
+        i = atoi((char *) state.params[0]);
+        DLOG(("cnl(): %d\n", i));
+        if (i <= 0) {
+            cursor_down(1, Q_TRUE);
+        } else {
+            cursor_down(i, Q_TRUE);
+        }
+    }
+    /* To column 0 */
+    cursor_left(q_status.cursor_x, Q_TRUE);
+}
+
+/**
+ * CPL - Cursor up and to column 1.
+ */
+static void cpl() {
+    int i;
+
+    if (state.dec_private_mode_flag == Q_TRUE) {
+        return;
+    }
+
+    if (state.params_n < 0) {
+        DLOG(("cpl(): 1\n"));
+        cursor_up(1, Q_TRUE);
+    } else {
+        i = atoi((char *) state.params[0]);
+        DLOG(("cpl(): %d\n", i));
+        if (i <= 0) {
+            cursor_up(1, Q_TRUE);
+        } else {
+            cursor_up(i, Q_TRUE);
+        }
+    }
+    /* To column 0 */
+    cursor_left(q_status.cursor_x, Q_TRUE);
+}
+
+/**
+ * CHA - Cursor to column # in current row.
+ */
+static void cha() {
+    int i;
+
+    if (state.dec_private_mode_flag == Q_TRUE) {
+        return;
+    }
+
+    if (state.params_n < 0) {
+        DLOG(("cha(): 1\n"));
+        cursor_position(q_status.cursor_y, 0);
+    } else {
+        i = atoi((char *) state.params[0]) - 1;
+        DLOG(("cha(): %d\n", i));
+        cursor_position(q_status.cursor_y, i);
+    }
+}
+
+/**
+ * VPA - Cursor to row #, same column.
+ */
+static void vpa() {
+    int i;
+
+    if (state.dec_private_mode_flag == Q_TRUE) {
+        return;
+    }
+
+    if (state.params_n < 0) {
+        DLOG(("vpa(): 1\n"));
+        cursor_position(0, q_status.cursor_x);
+    } else {
+        i = atoi((char *) state.params[0]) - 1;
+        DLOG(("vpa(): %d\n", i));
+        cursor_position(i, q_status.cursor_x);
+    }
 }
 
 /**
@@ -2568,6 +2967,40 @@ static void osc_put(unsigned char xterm_char) {
     q_emul_buffer[q_emul_buffer_n] = xterm_char;
     q_emul_buffer_n++;
 
+    if ((q_status.emulation == Q_EMUL_LINUX) ||
+        (q_status.emulation == Q_EMUL_LINUX_UTF8)
+    ) {
+
+        DLOG(("osc_put(): LINUX %c (%02x)\n", xterm_char, xterm_char));
+
+        if (q_emul_buffer[0] == 'R') {
+            /* ESC ] R - Reset palette */
+
+            /* Go to SCAN_GROUND state */
+            clear_params();
+            scan_state = SCAN_GROUND;
+            return;
+
+        } else if (q_emul_buffer[0] == 'P') {
+            /* ESC ] P nrrggbb - Set palette entry */
+            if (q_emul_buffer_n < 8) {
+                /* Still collecting characters for it */
+                return;
+            }
+            /* Go to SCAN_GROUND state */
+            clear_params();
+            scan_state = SCAN_GROUND;
+            return;
+        }
+
+        /* No other Linux OSC sequences, stop here. */
+        return;
+    }
+
+    /*
+     * OSC support for xterm: do nothing here, instead collect it call osc()
+     * when we see BEL or ST.
+     */
     DLOG(("osc_put(): XTERM %c (%02x)\n", xterm_char, xterm_char));
 
 }
@@ -2582,7 +3015,249 @@ static void osc() {
 }
 
 /**
- * Push one byte through the VT100, VT102, or VT220 emulator.
+ * Handle the private Linux CSI codes (CSI [ Pn ]).
+ */
+static void linux_csi() {
+    int i = 0;
+    int j = 0;
+
+    if (state.dec_private_mode_flag == Q_TRUE) {
+        return;
+    }
+
+    if (state.params_n < 0) {
+        /* Invalid command */
+        DLOG(("linux_csi(): no command given\n"));
+        return;
+    }
+
+    if (state.params_n >= 0) {
+        i = atoi((char *) state.params[0]);
+    }
+    if (state.params_n >= 1) {
+        j = atoi((char *) state.params[1]);
+    }
+
+    switch (i) {
+
+    case 1:
+        DLOG(("linux_csi(): Set underline color to %04x\n", j));
+        /* NOP */
+        break;
+
+    case 2:
+        DLOG(("linux_csi(): Set dim color to %04x\n", j));
+        /* NOP */
+        break;
+
+    case 8:
+        DLOG(("linux_csi(): Set current pair as default\n"));
+        /* NOP */
+        break;
+
+    case 9:
+        DLOG(("linux_csi(): Set screen blank timeout to %d minutes\n", j));
+        /* NOP */
+        break;
+
+    case 10:
+        DLOG(("linux_csi(): Set bell frequency to %d hertz\n", j));
+        q_linux_beep_frequency = j;
+        break;
+
+    case 11:
+        DLOG(("linux_csi(): Set bell duration to %d milliseconds\n", j));
+        q_linux_beep_duration = j;
+        break;
+
+    case 12:
+        DLOG(("linux_csi(): Bring console %d to front\n", j));
+        /* NOP */
+        break;
+
+    case 13:
+        DLOG(("linux_csi(): Unblank screen\n"));
+        /* NOP */
+        break;
+
+    case 14:
+        DLOG(("linux_csi(): Set VESA powerdown interval to %d minutes\n", j));
+        /* NOP */
+        break;
+
+    default:
+        DLOG(("linux_csi(): Unknown command %d %d\n", i, j));
+        /* NOP */
+        break;
+
+    } /* switch (i) */
+
+}
+
+/**
+ * REP - Repeat character.
+ */
+static void rep() {
+    int i;
+
+    if (state.dec_private_mode_flag == Q_TRUE) {
+        return;
+    }
+
+    if (state.params_n < 0) {
+        DLOG(("rep(): 1\n"));
+        print_character(state.rep_ch);
+    } else {
+        i = atoi((char *) state.params[0]);
+        DLOG(("rep(): %d\n", i));
+        if (i <= 0) {
+            print_character(state.rep_ch);
+        } else {
+            while (i > 0) {
+                print_character(state.rep_ch);
+                i--;
+            }
+        }
+    }
+}
+
+/**
+ * SU - Scroll up.
+ */
+static void su() {
+    int i;
+
+    if (state.dec_private_mode_flag == Q_TRUE) {
+        return;
+    }
+
+    if (state.params_n < 0) {
+        DLOG(("su(): 1\n"));
+        /* Default 1 */
+        scrolling_region_scroll_up(q_status.scroll_region_top,
+                                   q_status.scroll_region_bottom, 1);
+    } else {
+        i = atoi((char *) state.params[0]);
+        DLOG(("su(): %d\n", i));
+        if (i <= 0) {
+            /* Default 1 */
+            scrolling_region_scroll_up(q_status.scroll_region_top,
+                                       q_status.scroll_region_bottom, 1);
+        } else {
+            scrolling_region_scroll_up(q_status.scroll_region_top,
+                                       q_status.scroll_region_bottom, i);
+        }
+    }
+}
+
+/**
+ * SD - Scroll down.
+ */
+static void sd() {
+    int i;
+
+    if (state.dec_private_mode_flag == Q_TRUE) {
+        return;
+    }
+
+    if (state.params_n < 0) {
+        DLOG(("sd(): 1\n"));
+        /* Default 1 */
+        scrolling_region_scroll_down(q_status.scroll_region_top,
+                                     q_status.scroll_region_bottom, 1);
+    } else {
+        i = atoi((char *) state.params[0]);
+        DLOG(("sd(): %d\n", i));
+        if (i <= 0) {
+            /* Default 1 */
+            scrolling_region_scroll_down(q_status.scroll_region_top,
+                                         q_status.scroll_region_bottom, 1);
+        } else {
+            scrolling_region_scroll_down(q_status.scroll_region_top,
+                                         q_status.scroll_region_bottom, i);
+        }
+    }
+}
+
+/**
+ * CBT - Go back X tab stops.
+ */
+static void cbt() {
+    int i;
+    int j;
+    int tab_i;
+    int tabs_to_move = 0;
+
+    if (state.dec_private_mode_flag == Q_TRUE) {
+        return;
+    }
+
+    if (state.params_n < 0) {
+        /* Default 1 */
+        tabs_to_move = 1;
+    } else {
+        i = atoi((char *) state.params[0]);
+        if (i <= 0) {
+            /* Default 1 */
+            tabs_to_move = 1;
+        } else {
+            tabs_to_move = i;
+        }
+    }
+
+    DLOG(("cbt(): %d\n", tabs_to_move));
+
+    for (i = 0; i < tabs_to_move; i++) {
+        j = q_status.cursor_x;
+        for (tab_i = 0; tab_i < state.tab_stops_n; tab_i++) {
+            if (state.tab_stops[tab_i] >= q_status.cursor_x) {
+                break;
+            }
+        }
+        tab_i--;
+        if (tab_i <= 0) {
+            j = 0;
+        } else {
+            j = state.tab_stops[tab_i];
+        }
+        cursor_position(q_status.cursor_y, j);
+    }
+}
+
+/**
+ * CHT - Advance X tab stops.
+ */
+static void cht() {
+    int i;
+    int tabs_to_move = 0;
+
+    if (state.dec_private_mode_flag == Q_TRUE) {
+        return;
+    }
+
+    if (state.params_n < 0) {
+        /* Default 1 */
+        tabs_to_move = 1;
+    } else {
+        i = atoi((char *) state.params[0]);
+        if (i <= 0) {
+            /* Default 1 */
+            tabs_to_move = 1;
+        } else {
+            tabs_to_move = i;
+        }
+    }
+
+    DLOG(("cht(): %d\n", tabs_to_move));
+
+    for (i = 0; i < tabs_to_move; i++) {
+        advance_to_next_tab_stop();
+    }
+}
+
+/**
+ * Push one byte through the VT100, VT102, VT220, LINUX, L_UTF8, XTERM, or
+ * X_UTF8 emulator.
  *
  * @param from_modem one byte from the remote side.
  * @param to_screen if the return is Q_EMUL_FSM_ONE_CHAR or
@@ -2591,7 +3266,9 @@ static void osc() {
  * @return one of the Q_EMULATION_STATUS constants.  See emulation.h.
  */
 Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
+
     Q_BOOL discard = Q_FALSE;
+    uint32_t last_utf8_state;
     unsigned char from_modem = from_modem1;
 
     DLOG(("STATE: %d CHAR: 0x%02x '%c'\n", scan_state, from_modem, from_modem));
@@ -2605,13 +3282,72 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
         from_modem = from_modem1;
     }
 
+    /*
+     * Perform UTF-8 decode as needed.  We will save the UTF-8 character to
+     * state.utf8_char now, yet run the rest of the state machine against
+     * from_modem.  If from_modem doesn't cause a state change that sets
+     * discard, then we had a printable UTF-8 character that will be emitted
+     * at the very end.
+     */
+    if ((q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+        (q_status.emulation == Q_EMUL_XTERM_UTF8)
+    ) {
+        DLOG(("    UTF-8: decode before VTxxx state: %d\n", state.utf8_state));
+        last_utf8_state = state.utf8_state;
+        utf8_decode(&state.utf8_state, &state.utf8_char, from_modem);
+        DLOG(("    UTF-8: decode state: %d char %04x '%lc'\n", state.utf8_state,
+                state.utf8_char, (wint_t) state.utf8_char));
+
+        if ((last_utf8_state == state.utf8_state) &&
+            (state.utf8_state != UTF8_ACCEPT)
+        ) {
+            /* Bad character, reset UTF8 decoder state */
+            state.utf8_state = 0;
+
+            /* Discard character */
+            *to_screen = 1;
+            return Q_EMUL_FSM_NO_CHAR_YET;
+        }
+
+        if (state.utf8_state != UTF8_ACCEPT) {
+            /* Not enough characters to convert yet */
+            *to_screen = 1;
+            return Q_EMUL_FSM_NO_CHAR_YET;
+        }
+
+    }
+
     /* Special "anywhere" states */
 
     /* 18, 1A --> execute, then switch to SCAN_GROUND */
     if ((from_modem == 0x18) || (from_modem == 0x1A)) {
-        /* CAN and SUB abort escape sequences */
-        clear_params();
-        scan_state = SCAN_GROUND;
+        if ((scan_state == SCAN_GROUND) &&
+            ((q_status.emulation == Q_EMUL_LINUX) ||
+                (q_status.emulation == Q_EMUL_XTERM))
+        ) {
+            /*
+             * CAN aborts an escape sequence, but it is also used as up-arrow
+             * for 8-bit encodings.
+             */
+            print_character(cp437_chars[UPARROW]);
+        } else {
+            /* CAN and SUB abort escape sequences */
+            clear_params();
+            scan_state = SCAN_GROUND;
+        }
+        discard = Q_TRUE;
+    }
+
+    /* 19 --> printable */
+    if ((from_modem == 0x19) &&
+        (scan_state == SCAN_GROUND) &&
+        ((q_status.emulation == Q_EMUL_LINUX) ||
+            (q_status.emulation == Q_EMUL_XTERM))
+    ) {
+        /*
+         * EM is down-arrow for 8-bit encodings.
+         */
+        print_character(cp437_chars[DOWNARROW]);
         discard = Q_TRUE;
     }
 
@@ -2630,25 +3366,43 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
     }
 
     /* 0x9B == CSI 8-bit sequence */
-    if (from_modem == 0x9B) {
+    if ((from_modem == 0x9B) &&
+        ((q_status.emulation == Q_EMUL_VT220) ||
+            (q_status.emulation == Q_EMUL_XTERM) ||
+            (q_status.emulation == Q_EMUL_XTERM_UTF8))
+    ) {
         scan_state = SCAN_CSI_ENTRY;
         discard = Q_TRUE;
     }
 
     /* 0x9D goes to SCAN_OSC_STRING */
-    if (from_modem == 0x9D) {
+    if ((from_modem == 0x9D) &&
+        ((q_status.emulation == Q_EMUL_VT220) ||
+            (q_status.emulation == Q_EMUL_XTERM) ||
+            (q_status.emulation == Q_EMUL_XTERM_UTF8))
+    ) {
         scan_state = SCAN_OSC_STRING;
         discard = Q_TRUE;
     }
 
     /* 0x90 goes to SCAN_DCS_ENTRY */
-    if (from_modem == 0x90) {
+    if ((from_modem == 0x90) &&
+        ((q_status.emulation == Q_EMUL_VT220) ||
+            (q_status.emulation == Q_EMUL_XTERM) ||
+            (q_status.emulation == Q_EMUL_XTERM_UTF8))
+    ) {
         scan_state = SCAN_DCS_ENTRY;
         discard = Q_TRUE;
     }
 
     /* 0x98, 0x9E, and 0x9F go to SCAN_SOSPMAPC_STRING */
-    if ((from_modem == 0x98) || (from_modem == 0x9E) || (from_modem == 0x9F)) {
+    if (((from_modem == 0x98) ||
+            (from_modem == 0x9E) ||
+            (from_modem == 0x9F)) &&
+        ((q_status.emulation == Q_EMUL_VT220) ||
+            (q_status.emulation == Q_EMUL_XTERM) ||
+            (q_status.emulation == Q_EMUL_XTERM_UTF8))
+    ) {
         scan_state = SCAN_SOSPMAPC_STRING;
         discard = Q_TRUE;
     }
@@ -2668,9 +3422,12 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
 
     case SCAN_GROUND:
         /* 00-17, 19, 1C-1F --> execute */
-        /* 80-8F, 91-9A, 9C --> execute */
+        /* 80-8F, 91-9A, 9C --> execute (VTxxx only) */
         if ((from_modem <= 0x1F) ||
-            ((from_modem >= 0x80) && (from_modem <= 0x9F))
+            (((q_status.emulation == Q_EMUL_VT100) ||
+                (q_status.emulation == Q_EMUL_VT102) ||
+                (q_status.emulation == Q_EMUL_VT220)) &&
+                (from_modem >= 0x80) && (from_modem <= 0x9F))
         ) {
             handle_control_char(from_modem);
             discard = Q_TRUE;
@@ -2695,12 +3452,16 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
             render_screen_to_debug_file(dlogfile);
 #endif
 
+            state.rep_ch = *to_screen;
             return Q_EMUL_FSM_ONE_CHAR;
         }
 
         /* VT220: A0-FF --> print */
-        if (from_modem >= 0xA0) {
-
+        if ((from_modem >= 0xA0) &&
+            ((q_status.emulation == Q_EMUL_VT220) ||
+                (q_status.emulation == Q_EMUL_XTERM)
+            )
+        ) {
             /* VT220 printer --> trash bin */
             if (state.printer_controller_mode == Q_TRUE) {
                 discard = Q_TRUE;
@@ -2714,6 +3475,7 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
             render_screen_to_debug_file(dlogfile);
 #endif
 
+            state.rep_ch = *to_screen;
             return Q_EMUL_FSM_ONE_CHAR;
         }
 
@@ -2721,7 +3483,13 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
 
     case SCAN_ESCAPE:
         /* 00-17, 19, 1C-1F --> execute */
-        if (from_modem <= 0x1F) {
+        /* 80-8F, 91-9A, 9C --> execute (VTxxx only) */
+        if ((from_modem <= 0x1F) ||
+            (((q_status.emulation == Q_EMUL_VT100) ||
+                (q_status.emulation == Q_EMUL_VT102) ||
+                (q_status.emulation == Q_EMUL_VT220)) &&
+                (from_modem >= 0x80) && (from_modem <= 0x9F))
+        ) {
             handle_control_char(from_modem);
             discard = Q_TRUE;
             break;
@@ -2911,14 +3679,20 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 }
                 break;
             case 'N':
-                if (state.vt52_mode == Q_FALSE) {
+                if ((state.vt52_mode == Q_FALSE) &&
+                    ((q_status.emulation == Q_EMUL_VT220) ||
+                        (q_status.emulation == Q_EMUL_XTERM))
+                ) {
                     /* SS2 */
                     DLOG(("SS2\n"));
                     state.singleshift = SS2;
                 }
                 break;
             case 'O':
-                if (state.vt52_mode == Q_FALSE) {
+                if ((state.vt52_mode == Q_FALSE) &&
+                    ((q_status.emulation == Q_EMUL_VT220) ||
+                        (q_status.emulation == Q_EMUL_XTERM))
+                ) {
                     DLOG(("SS3\n"));
                     /* SS3 */
                     state.singleshift = SS3;
@@ -2969,12 +3743,15 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 if (q_status.emulation == Q_EMUL_VT100) {
                     qodem_write(q_child_tty_fd, VT100_DEVICE_TYPE_STRING,
                                 sizeof(VT100_DEVICE_TYPE_STRING), Q_TRUE);
-                }
-                if (q_status.emulation == Q_EMUL_VT102) {
+                } else if (q_status.emulation == Q_EMUL_VT102) {
                     qodem_write(q_child_tty_fd, VT102_DEVICE_TYPE_STRING,
                                 sizeof(VT102_DEVICE_TYPE_STRING), Q_TRUE);
-                }
-                if (q_status.emulation == Q_EMUL_VT220) {
+                } else if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8)
+                ) {
+                    qodem_write(q_child_tty_fd, LINUX_DEVICE_TYPE_STRING,
+                                sizeof(LINUX_DEVICE_TYPE_STRING), Q_TRUE);
+                } else if (q_status.emulation == Q_EMUL_VT220) {
                     if (state.s8c1t_mode == Q_TRUE) {
                         qodem_write(q_child_tty_fd,
                                     VT220_DEVICE_TYPE_STRING_S8C1T,
@@ -2983,6 +3760,18 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                     } else {
                         qodem_write(q_child_tty_fd, VT220_DEVICE_TYPE_STRING,
                                     sizeof(VT220_DEVICE_TYPE_STRING), Q_TRUE);
+                    }
+                } else if ((q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    if (state.s8c1t_mode == Q_TRUE) {
+                        qodem_write(q_child_tty_fd,
+                                    XTERM_DEVICE_TYPE_STRING_S8C1T,
+                                    sizeof(XTERM_DEVICE_TYPE_STRING_S8C1T),
+                                    Q_TRUE);
+                    } else {
+                        qodem_write(q_child_tty_fd, XTERM_DEVICE_TYPE_STRING,
+                                    sizeof(XTERM_DEVICE_TYPE_STRING), Q_TRUE);
                     }
                 }
             }
@@ -3016,11 +3805,7 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 break;
             case 'c':
                 /* RIS - Reset to initial state */
-                vt100_reset();
-                /* Do I clear screen too? I think so... */
-                erase_screen(0, 0, HEIGHT - STATUS_HEIGHT - 1, WIDTH - 1,
-                             Q_FALSE);
-                cursor_position(0, 0);
+                ris();
                 break;
             case 'd':
             case 'e':
@@ -3034,7 +3819,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
             case 'm':
                 break;
             case 'n':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     /* VT220 lockshift G2 into GL */
                     DLOG(("VT220:  LOCKSHIFT_G2_GL\n"));
                     state.lockshift_gl = LOCKSHIFT_G2_GL;
@@ -3042,7 +3830,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 }
                 break;
             case 'o':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     /* VT220 lockshift G3 into GL */
                     DLOG(("VT220:  LOCKSHIFT_G3_GL\n"));
                     state.lockshift_gl = LOCKSHIFT_G3_GL;
@@ -3063,7 +3854,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
             case '{':
                 break;
             case '|':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     /* VT220 lockshift G3 into GR */
                     DLOG(("VT220:  LOCKSHIFT_G3_GR\n"));
                     state.lockshift_gr = LOCKSHIFT_G3_GR;
@@ -3071,16 +3865,21 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 }
                 break;
             case '}':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     /* VT220 lockshift G2 into GR */
                     DLOG(("VT220:  LOCKSHIFT_G2_GR\n"));
                     state.lockshift_gr = LOCKSHIFT_G2_GR;
                     state.shift_out = Q_FALSE;
                 }
                 break;
-
             case '~':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     DLOG(("VT220:  LOCKSHIFT_G1_GR\n"));
                     /* VT220 lockshift G1 into GR */
                     state.lockshift_gr = LOCKSHIFT_G1_GR;
@@ -3134,7 +3933,13 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
 
     case SCAN_ESCAPE_INTERMEDIATE:
         /* 00-17, 19, 1C-1F --> execute */
-        if (from_modem <= 0x1F) {
+        /* 80-8F, 91-9A, 9C --> execute (VTxxx only) */
+        if ((from_modem <= 0x1F) ||
+            (((q_status.emulation == Q_EMUL_VT100) ||
+                (q_status.emulation == Q_EMUL_VT102) ||
+                (q_status.emulation == Q_EMUL_VT220)) &&
+                (from_modem >= 0x80) && (from_modem <= 0x9F))
+        ) {
             handle_control_char(from_modem);
             discard = Q_TRUE;
             break;
@@ -3161,7 +3966,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                     state.g1_charset = CHARSET_DRAWING;
                     DLOG(("CHARSET CHANGE: DRAWING in G1\n"));
                 }
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == '*')) {
                         /* G2 --> Special graphics */
                         state.g2_charset = CHARSET_DRAWING;
@@ -3209,7 +4017,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                     /* DECDHL - Double-height line (bottom half) */
                     dechdl(Q_FALSE);
                 }
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == '(')) {
                         /* G0 --> DUTCH */
                         state.g0_charset = CHARSET_NRC_DUTCH;
@@ -3237,7 +4048,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                     /* DECSWL - Single-width line */
                     decswl();
                 }
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == '(')) {
                         /* G0 --> FINNISH */
                         state.g0_charset = CHARSET_NRC_FINNISH;
@@ -3265,7 +4079,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                     /* DECDWL - Double-width line */
                     decdwl();
                 }
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == '(')) {
                         /* G0 --> NORWEGIAN */
                         state.g0_charset = CHARSET_NRC_NORWEGIAN;
@@ -3289,7 +4106,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 }
                 break;
             case '7':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == '(')) {
                         /* G0 --> SWEDISH */
                         state.g0_charset = CHARSET_NRC_SWEDISH;
@@ -3317,13 +4137,21 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                     /* DECALN - Screen alignment display */
                     decaln();
                 }
+                if (((q_status.emulation == Q_EMUL_LINUX) ||
+                        (q_status.emulation == Q_EMUL_LINUX_UTF8)) &&
+                    (q_emul_buffer_n == 1) && (q_emul_buffer[0] == '(')) {
+                    /* ESC % G --> Select UTF-8 (Obsolete) */
+                }
                 break;
             case '9':
             case ':':
             case ';':
                 break;
             case '<':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == '(')) {
                         /* G0 --> DEC_SUPPLEMENTAL */
                         state.g0_charset = CHARSET_DEC_SUPPLEMENTAL;
@@ -3347,7 +4175,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 }
                 break;
             case '=':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == '(')) {
                         /* G0 --> SWISS */
                         state.g0_charset = CHARSET_NRC_SWISS;
@@ -3372,7 +4203,13 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 break;
             case '>':
             case '?':
+                break;
             case '@':
+                if (((q_status.emulation == Q_EMUL_LINUX) ||
+                        (q_status.emulation == Q_EMUL_LINUX_UTF8)) &&
+                    (q_emul_buffer_n == 1) && (q_emul_buffer[0] == '%')) {
+                    /* ESC % @ --> Select default font (ISO 646 / ISO 8859-1) */
+                }
                 break;
             case 'A':
                 if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == '(')) {
@@ -3385,7 +4222,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                     state.g1_charset = CHARSET_UK;
                     DLOG(("CHARSET CHANGE: UK (BRITISH) in G1\n"));
                 }
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == '*')) {
                         /* G2 --> United Kingdom set */
                         state.g2_charset = CHARSET_UK;
@@ -3409,7 +4249,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                     state.g1_charset = CHARSET_US;
                     DLOG(("CHARSET CHANGE: US (ASCII) in G1\n"));
                 }
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == '*')) {
                         /* G2 --> ASCII */
                         state.g2_charset = CHARSET_US;
@@ -3423,7 +4266,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 }
                 break;
             case 'C':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == '(')) {
                         /* G0 --> FINNISH */
                         state.g0_charset = CHARSET_NRC_FINNISH;
@@ -3449,7 +4295,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
             case 'D':
                 break;
             case 'E':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == '(')) {
                         /* G0 --> NORWEGIAN */
                         state.g0_charset = CHARSET_NRC_NORWEGIAN;
@@ -3473,7 +4322,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 }
                 break;
             case 'F':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == ' ')) {
                         /* S7C1T */
                         state.s8c1t_mode = Q_FALSE;
@@ -3482,16 +4334,27 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 }
                 break;
             case 'G':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == ' ')) {
                         /* S8C1T */
                         state.s8c1t_mode = Q_TRUE;
                         DLOG(("S8C1T\n"));
                     }
                 }
+                if (((q_status.emulation == Q_EMUL_LINUX) ||
+                        (q_status.emulation == Q_EMUL_LINUX_UTF8)) &&
+                    (q_emul_buffer_n == 1) && (q_emul_buffer[0] == '%')) {
+                    /* ESC % G --> Select UTF8 */
+                }
                 break;
             case 'H':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == '(')) {
                         /* G0 --> SWEDISH */
                         state.g0_charset = CHARSET_NRC_SWEDISH;
@@ -3518,7 +4381,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
             case 'J':
                 break;
             case 'K':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == '(')) {
                         /* G0 --> GERMAN */
                         state.g0_charset = CHARSET_NRC_GERMAN;
@@ -3548,7 +4414,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
             case 'P':
                 break;
             case 'Q':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == '(')) {
                         /* G0 --> FRENCH_CA */
                         state.g0_charset = CHARSET_NRC_FRENCH_CA;
@@ -3572,7 +4441,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 }
                 break;
             case 'R':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == '(')) {
                         /* G0 --> FRENCH */
                         state.g0_charset = CHARSET_NRC_FRENCH;
@@ -3603,7 +4475,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
             case 'X':
                 break;
             case 'Y':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == '(')) {
                         /* G0 --> ITALIAN */
                         state.g0_charset = CHARSET_NRC_ITALIAN;
@@ -3627,7 +4502,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 }
                 break;
             case 'Z':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     if ((q_emul_buffer_n == 1) && (q_emul_buffer[0] == '(')) {
                         /* G0 --> SPANISH */
                         state.g0_charset = CHARSET_NRC_SPANISH;
@@ -3712,7 +4590,13 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
 
     case SCAN_CSI_ENTRY:
         /* 00-17, 19, 1C-1F --> execute */
-        if (from_modem <= 0x1F) {
+        /* 80-8F, 91-9A, 9C --> execute (VTxxx only) */
+        if ((from_modem <= 0x1F) ||
+            (((q_status.emulation == Q_EMUL_VT100) ||
+                (q_status.emulation == Q_EMUL_VT102) ||
+                (q_status.emulation == Q_EMUL_VT220)) &&
+                (from_modem >= 0x80) && (from_modem <= 0x9F))
+        ) {
             handle_control_char(from_modem);
             discard = Q_TRUE;
             break;
@@ -3772,14 +4656,46 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 cub();
                 break;
             case 'E':
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    /* CNL - Cursor down and to column 1 */
+                    cnl();
+                }
+                break;
             case 'F':
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    /* CPL - Cursor up and to column 1 */
+                    cpl();
+                }
+                break;
             case 'G':
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    /* CHA - Cursor to column # in current row */
+                    cha();
+                }
                 break;
             case 'H':
                 /* CUP - Cursor position */
                 cup();
                 break;
             case 'I':
+                /* CHT - Cursor forward X tab stops (default 1) */
+                if ((q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    cht();
+                }
                 break;
             case 'J':
                 /* ED - Erase in display */
@@ -3806,35 +4722,117 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 break;
             case 'Q':
             case 'R':
+                break;
             case 'S':
+                /* Scroll up X lines (default 1) */
+                if ((q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    su();
+                }
+                break;
             case 'T':
+                /* Scroll down X lines (default 1) */
+                if ((q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    sd();
+                }
+                break;
             case 'U':
             case 'V':
             case 'W':
                 break;
             case 'X':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     /* ECH - Erase character */
                     ech();
                 }
                 break;
             case 'Y':
+                break;
             case 'Z':
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    /* CBT - Cursor backward X tab stops (default 1) */
+                    cbt();
+                }
+                break;
             case '[':
             case '\\':
+                break;
             case ']':
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    /* Linux mode private CSI sequence OR xterm OSC */
+                    linux_csi();
+                }
+                break;
             case '^':
             case '_':
+                break;
             case '`':
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    /* HPA - Cursor to column # in current row.  Same as CHA */
+                    cha();
+                }
+                break;
             case 'a':
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    /* HPR - Cursor right.  Same as CUF */
+                    cuf();
+                }
+                break;
             case 'b':
+                /* REP - Repeat last char X times */
+                if ((q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    rep();
+                }
                 break;
             case 'c':
                 /* DA - Device attributes */
                 da();
                 break;
             case 'd':
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    /* VPA - Cursor to row, current column. */
+                    vpa();
+                }
+                break;
             case 'e':
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    /* VPR - Cursor down.  Same as CUD */
+                    cud();
+                }
                 break;
             case 'f':
                 /* HVP - Horizontal and vertical position */
@@ -3845,16 +4843,24 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 tbc();
                 break;
             case 'h':
+                /* Sets an ANSI or DEC private toggle */
+                set_toggle(Q_TRUE);
                 break;
             case 'i':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     /* Printer functions */
                     printer_functions();
                 }
                 break;
             case 'j':
             case 'k':
+                break;
             case 'l':
+                /* Sets an ANSI or DEC private toggle */
+                set_toggle(Q_FALSE);
                 break;
             case 'm':
                 /* SGR - Select graphics rendition */
@@ -3876,8 +4882,31 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 decstbm();
                 break;
             case 's':
+                /* Save cursor (ANSI.SYS compatibility) */
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    state.saved_cursor_x = q_status.cursor_x;
+                    state.saved_cursor_y = q_status.cursor_y;
+                }
+                break;
             case 't':
+                break;
             case 'u':
+                /* Restore cursor (ANSI.SYS compatibility) */
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    if (state.saved_cursor_x != -1) {
+                        cursor_position(state.saved_cursor_y,
+                                        state.saved_cursor_x);
+                    }
+                }
+                break;
             case 'v':
             case 'w':
                 break;
@@ -3924,7 +4953,13 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
 
     case SCAN_CSI_PARAM:
         /* 00-17, 19, 1C-1F --> execute */
-        if (from_modem <= 0x1F) {
+        /* 80-8F, 91-9A, 9C --> execute (VTxxx only) */
+        if ((from_modem <= 0x1F) ||
+            (((q_status.emulation == Q_EMUL_VT100) ||
+                (q_status.emulation == Q_EMUL_VT102) ||
+                (q_status.emulation == Q_EMUL_VT220)) &&
+                (from_modem >= 0x80) && (from_modem <= 0x9F))
+        ) {
             handle_control_char(from_modem);
             discard = Q_TRUE;
             break;
@@ -3987,14 +5022,46 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 cub();
                 break;
             case 'E':
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    /* CNL - Cursor down and to column 1 */
+                    cnl();
+                }
+                break;
             case 'F':
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    /* CPL - Cursor up and to column 1 */
+                    cpl();
+                }
+                break;
             case 'G':
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    /* CHA - Cursor to column # in current row */
+                    cha();
+                }
                 break;
             case 'H':
                 /* CUP - Cursor position */
                 cup();
                 break;
             case 'I':
+                /* CHT - Cursor forward X tab stops (default 1) */
+                if ((q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    cht();
+                }
                 break;
             case 'J':
                 /* ED - Erase in display */
@@ -4021,35 +5088,117 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 break;
             case 'Q':
             case 'R':
+                break;
             case 'S':
+                /* Scroll up X lines (default 1) */
+                if ((q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    su();
+                }
+                break;
             case 'T':
+                /* Scroll down X lines (default 1) */
+                if ((q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    sd();
+                }
+                break;
             case 'U':
             case 'V':
             case 'W':
                 break;
             case 'X':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     /* ECH - Erase character */
                     ech();
                 }
                 break;
             case 'Y':
+                break;
             case 'Z':
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    /* CBT - Cursor backward X tab stops (default 1) */
+                    cbt();
+                }
+                break;
             case '[':
             case '\\':
+                break;
             case ']':
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    /* Linux mode private CSI sequence OR xterm OSC */
+                    linux_csi();
+                }
+                break;
             case '^':
             case '_':
+                break;
             case '`':
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    /* HPA - Cursor to column # in current row.  Same as CHA */
+                    cha();
+                }
+                break;
             case 'a':
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    /* HPR - Cursor right.  Same as CUF */
+                    cuf();
+                }
+                break;
             case 'b':
+                /* REP - Repeat last char X times */
+                if ((q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    rep();
+                }
                 break;
             case 'c':
                 /* DA - Device attributes */
                 da();
                 break;
             case 'd':
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    /* VPA - Cursor to row, current column. */
+                    vpa();
+                }
+                break;
             case 'e':
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    /* VPR - Cursor down.  Same as CUD */
+                    cud();
+                }
                 break;
             case 'f':
                 /* HVP - Horizontal and vertical position */
@@ -4064,7 +5213,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 set_toggle(Q_TRUE);
                 break;
             case 'i':
-                if (q_status.emulation == Q_EMUL_VT220) {
+                if ((q_status.emulation == Q_EMUL_VT220) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
                     /* Printer functions */
                     printer_functions();
                 }
@@ -4096,8 +5248,31 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                 decstbm();
                 break;
             case 's':
+                /* Save cursor (ANSI.SYS compatibility) */
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    state.saved_cursor_x = q_status.cursor_x;
+                    state.saved_cursor_y = q_status.cursor_y;
+                }
+                break;
             case 't':
+                break;
             case 'u':
+                /* Restore cursor (ANSI.SYS compatibility) */
+                if ((q_status.emulation == Q_EMUL_LINUX) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                ) {
+                    if (state.saved_cursor_x != -1) {
+                        cursor_position(state.saved_cursor_y,
+                                        state.saved_cursor_x);
+                    }
+                }
+                break;
             case 'v':
             case 'w':
                 break;
@@ -4129,7 +5304,13 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
 
     case SCAN_CSI_INTERMEDIATE:
         /* 00-17, 19, 1C-1F --> execute */
-        if (from_modem <= 0x1F) {
+        /* 80-8F, 91-9A, 9C --> execute (VTxxx only) */
+        if ((from_modem <= 0x1F) ||
+            (((q_status.emulation == Q_EMUL_VT100) ||
+                (q_status.emulation == Q_EMUL_VT102) ||
+                (q_status.emulation == Q_EMUL_VT220)) &&
+                (from_modem >= 0x80) && (from_modem <= 0x9F))
+        ) {
             handle_control_char(from_modem);
             discard = Q_TRUE;
             break;
@@ -4202,15 +5383,26 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
             case 'o':
                 break;
             case 'p':
-                if ((q_status.emulation == Q_EMUL_VT220) &&
+                if (((q_status.emulation == Q_EMUL_VT220) ||
+                        (q_status.emulation == Q_EMUL_XTERM) ||
+                        (q_status.emulation == Q_EMUL_XTERM_UTF8)) &&
                     (q_emul_buffer[q_emul_buffer_n-1] == '\"')
                 ) {
                     /* DECSCL - compatibility level */
                     decscl();
                 }
+                if (((q_status.emulation == Q_EMUL_XTERM) ||
+                        (q_status.emulation == Q_EMUL_XTERM_UTF8)) &&
+                    (q_emul_buffer[q_emul_buffer_n-1] == '!')
+                ) {
+                    /* DECSTR */
+                    decstr();
+                }
                 break;
             case 'q':
-                if ((q_status.emulation == Q_EMUL_VT220) &&
+                if (((q_status.emulation == Q_EMUL_VT220) ||
+                        (q_status.emulation == Q_EMUL_XTERM) ||
+                        (q_status.emulation == Q_EMUL_XTERM_UTF8)) &&
                     (q_emul_buffer[q_emul_buffer_n-1] == '\"')
                 ) {
                     /* DESCSCA */
@@ -4248,7 +5440,13 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
 
     case SCAN_CSI_IGNORE:
         /* 00-17, 19, 1C-1F --> execute */
-        if (from_modem <= 0x1F) {
+        /* 80-8F, 91-9A, 9C --> execute (VTxxx only) */
+        if ((from_modem <= 0x1F) ||
+            (((q_status.emulation == Q_EMUL_VT100) ||
+                (q_status.emulation == Q_EMUL_VT102) ||
+                (q_status.emulation == Q_EMUL_VT220)) &&
+                (from_modem >= 0x80) && (from_modem <= 0x9F))
+        ) {
             handle_control_char(from_modem);
             discard = Q_TRUE;
             break;
@@ -4745,9 +5943,38 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
         return Q_EMUL_FSM_NO_CHAR_YET;
     }
 
-    /* Discard everything else */
-    *to_screen = 1;
-    return Q_EMUL_FSM_NO_CHAR_YET;
+    /*
+     * If we fell off here, then we either have an 8-bit VGA character or a
+     * UTF-8 code point.
+     */
+    if ((q_status.emulation == Q_EMUL_LINUX) ||
+        (q_status.emulation == Q_EMUL_XTERM)
+    ) {
+        /* 8-bit codepage */
+        DLOG(("Fell off the bottom, assume VGA CHAR: '%c' (0x%02x) --> '%uc' (0x%02x)\n",
+                from_modem, from_modem, codepage_map_char(from_modem),
+                codepage_map_char(from_modem)));
+        *to_screen = codepage_map_char(from_modem);
+        state.rep_ch = *to_screen;
+        clear_params();
+        scan_state = SCAN_GROUND;
+        return Q_EMUL_FSM_ONE_CHAR;
+    } else if ((q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+        (q_status.emulation == Q_EMUL_XTERM_UTF8)
+    ) {
+        /* Unicode code point */
+        DLOG(("Fell off the bottom, assume UTF-8 CHAR: '%c' (0x%04x)\n",
+                from_modem, state.utf8_char));
+        *to_screen = state.utf8_char;
+        state.rep_ch = *to_screen;
+        clear_params();
+        scan_state = SCAN_GROUND;
+        return Q_EMUL_FSM_ONE_CHAR;
+    } else {
+        /* VT100, VT102, VT220: Discard everything else. */
+        *to_screen = 1;
+        return Q_EMUL_FSM_NO_CHAR_YET;
+    }
 }
 
 /**
@@ -5052,6 +6279,939 @@ wchar_t * vt100_keystroke(const int keystroke) {
         /* Delete sends real delete for VTxxx */
         return L"\177";
         /* return L"\033[3~"; */
+
+    case Q_KEY_PAD0:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 0 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?p";
+            default:
+                return L"\033Op";
+            }
+        }
+        return L"0";
+
+    case Q_KEY_C1:
+    case Q_KEY_PAD1:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 1 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?q";
+            default:
+                return L"\033Oq";
+            }
+        }
+        return L"1";
+
+    case Q_KEY_C2:
+    case Q_KEY_PAD2:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 2 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?r";
+            default:
+                return L"\033Or";
+            }
+        }
+        return L"2";
+
+    case Q_KEY_C3:
+    case Q_KEY_PAD3:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 3 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?s";
+            default:
+                return L"\033Os";
+            }
+        }
+        return L"3";
+
+    case Q_KEY_B1:
+    case Q_KEY_PAD4:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 4 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?t";
+            default:
+                return L"\033Ot";
+            }
+        }
+        return L"4";
+
+    case Q_KEY_B2:
+    case Q_KEY_PAD5:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 5 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?u";
+            default:
+                return L"\033Ou";
+            }
+        }
+        return L"5";
+
+    case Q_KEY_B3:
+    case Q_KEY_PAD6:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 6 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?v";
+            default:
+                return L"\033Ov";
+            }
+        }
+        return L"6";
+
+    case Q_KEY_A1:
+    case Q_KEY_PAD7:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 7 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?w";
+            default:
+                return L"\033Ow";
+            }
+
+        }
+        return L"7";
+
+    case Q_KEY_A2:
+    case Q_KEY_PAD8:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 8 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?x";
+            default:
+                return L"\033Ox";
+            }
+        }
+        return L"8";
+
+    case Q_KEY_A3:
+    case Q_KEY_PAD9:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 9 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?y";
+            default:
+                return L"\033Oy";
+            }
+        }
+        return L"9";
+
+    case Q_KEY_PAD_STOP:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad . */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?n";
+            default:
+                return L"\033On";
+            }
+        }
+        return L".";
+
+    case Q_KEY_PAD_SLASH:
+        /* Number pad / */
+        return L"/";
+
+    case Q_KEY_PAD_STAR:
+        /* Number pad * */
+        return L"*";
+
+    case Q_KEY_PAD_MINUS:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad - */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?m";
+            default:
+                return L"\033Om";
+            }
+        }
+        return L"-";
+
+    case Q_KEY_PAD_PLUS:
+        /* Number pad + */
+        return L"+";
+
+    case Q_KEY_PAD_ENTER:
+    case Q_KEY_ENTER:
+        /* Number pad Enter */
+        if (telnet_is_ascii()) {
+            return L"\015\012";
+        }
+        return L"\015";
+
+    default:
+        break;
+    }
+
+    return NULL;
+}
+
+/**
+ * Generate a sequence of bytes to send to the remote side that correspond to
+ * a keystroke.  Used by LINUX and L_UTF8.
+ *
+ * @param keystroke one of the Q_KEY values, OR a Unicode code point.  See
+ * input.h.
+ * @return a wide string that is appropriate to send to the remote side.
+ * Note that LINUX emulation is an 8-bit emulation: only the bottom 8 bits
+ * are transmitted to the remote side.  L_UTF8 emulation sends a true Unicode
+ * sequence.  See post_keystroke().
+ */
+wchar_t * linux_keystroke(const int keystroke) {
+
+    switch (keystroke) {
+    case Q_KEY_BACKSPACE:
+        if (q_status.hard_backspace == Q_TRUE) {
+            return L"\010";
+        } else {
+            return L"\177";
+        }
+
+    case Q_KEY_LEFT:
+        switch (q_vt100_arrow_keys) {
+        case Q_EMUL_ANSI:
+            return L"\033[D";
+        case Q_EMUL_VT52:
+            return L"\033D";
+        default:
+            return L"\033OD";
+        }
+
+    case Q_KEY_RIGHT:
+        switch (q_vt100_arrow_keys) {
+        case Q_EMUL_ANSI:
+            return L"\033[C";
+        case Q_EMUL_VT52:
+            return L"\033C";
+        default:
+            return L"\033OC";
+        }
+
+    case Q_KEY_UP:
+        switch (q_vt100_arrow_keys) {
+        case Q_EMUL_ANSI:
+            return L"\033[A";
+        case Q_EMUL_VT52:
+            return L"\033A";
+        default:
+            return L"\033OA";
+        }
+
+    case Q_KEY_DOWN:
+        switch (q_vt100_arrow_keys) {
+        case Q_EMUL_ANSI:
+            return L"\033[B";
+        case Q_EMUL_VT52:
+            return L"\033B";
+        default:
+            return L"\033OB";
+        }
+
+    case Q_KEY_HOME:
+        return L"\033[1~";
+
+    case Q_KEY_END:
+        return L"\033[4~";
+
+    case Q_KEY_F(1):
+        /* PF1 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\033P";
+        default:
+            return L"\033[[A";
+        }
+
+    case Q_KEY_F(2):
+        /* PF2 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\033Q";
+        default:
+            return L"\033[[B";
+        }
+
+    case Q_KEY_F(3):
+        /* PF3 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\033R";
+        default:
+            return L"\033[[C";
+        }
+
+    case Q_KEY_F(4):
+        /* PF4 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\033S";
+        default:
+            return L"\033[[D";
+        }
+
+    case Q_KEY_F(5):
+        return L"\033[[E";
+
+    case Q_KEY_F(6):
+        return L"\033[17~";
+
+    case Q_KEY_F(7):
+        return L"\033[18~";
+
+    case Q_KEY_F(8):
+        return L"\033[19~";
+
+    case Q_KEY_F(9):
+        return L"\033[20~";
+
+    case Q_KEY_F(10):
+        return L"\033[21~";
+
+    case Q_KEY_F(11):
+        return L"\033[23~";
+
+    case Q_KEY_F(12):
+        return L"\033[24~";
+
+    case Q_KEY_F(13):
+        /* Shifted PF1 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\0332P";
+        default:
+            return L"\033[25~";
+        }
+
+    case Q_KEY_F(14):
+        /* Shifted PF2 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\0332Q";
+        default:
+            return L"\03326~";
+        }
+
+    case Q_KEY_F(15):
+        /* Shifted PF3 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\0332R";
+        default:
+            return L"\03328~";
+        }
+
+    case Q_KEY_F(16):
+        /* Shifted PF4 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\0332S";
+        default:
+            return L"\03329~";
+        }
+
+    case Q_KEY_F(17):
+        /* Shifted F5 */
+        return L"\033[31~";
+
+    case Q_KEY_F(18):
+        /* Shifted F6 */
+        return L"\033[32~";
+
+    case Q_KEY_F(19):
+        /* Shifted F7 */
+        return L"\033[33~";
+
+    case Q_KEY_F(20):
+        /* Shifted F8 */
+        return L"\033[34~";
+
+    case Q_KEY_F(21):
+        /* Shifted F9 */
+        return L"\033[35~";
+
+    case Q_KEY_F(22):
+        /* Shifted F10 */
+        return L"\033[36~";
+
+    case Q_KEY_F(23):
+        /* Shifted F11 */
+        return L"";
+
+    case Q_KEY_F(24):
+        /* Shifted F12 */
+        return L"";
+
+    case Q_KEY_F(25):
+        /* Control PF1 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\0335P";
+        default:
+            return L"";
+        }
+
+    case Q_KEY_F(26):
+        /* Control PF2 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\0335Q";
+        default:
+            return L"";
+        }
+
+    case Q_KEY_F(27):
+        /* Control PF3 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\0335R";
+        default:
+            return L"";
+        }
+
+    case Q_KEY_F(28):
+        /* Control PF4 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\0335S";
+        default:
+            return L"";
+        }
+
+    case Q_KEY_F(29):
+        /* Control F5 */
+        return L"";
+
+    case Q_KEY_F(30):
+        /* Control F6 */
+        return L"";
+
+    case Q_KEY_F(31):
+        /* Control F7 */
+        return L"";
+
+    case Q_KEY_F(32):
+        /* Control F8 */
+        return L"";
+
+    case Q_KEY_F(33):
+        /* Control F9 */
+        return L"";
+
+    case Q_KEY_F(34):
+        /* Control F10 */
+        return L"";
+
+    case Q_KEY_F(35):
+        /* Control F11 */
+        return L"";
+
+    case Q_KEY_F(36):
+        /* Control F12 */
+        return L"";
+
+    case Q_KEY_PPAGE:
+        return L"\033[5~";
+
+    case Q_KEY_NPAGE:
+        return L"\033[6~";
+
+    case Q_KEY_IC:
+    case Q_KEY_SIC:
+        return L"\033[2~";
+
+    case Q_KEY_DC:
+    case Q_KEY_SDC:
+        return L"\033[3~";
+
+    case Q_KEY_PAD0:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 0 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?p";
+            default:
+                return L"\033Op";
+            }
+        }
+        return L"0";
+
+    case Q_KEY_C1:
+    case Q_KEY_PAD1:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 1 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?q";
+            default:
+                return L"\033Oq";
+            }
+        }
+        return L"1";
+
+    case Q_KEY_C2:
+    case Q_KEY_PAD2:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 2 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?r";
+            default:
+                return L"\033Or";
+            }
+        }
+        return L"2";
+
+    case Q_KEY_C3:
+    case Q_KEY_PAD3:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 3 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?s";
+            default:
+                return L"\033Os";
+            }
+        }
+        return L"3";
+
+    case Q_KEY_B1:
+    case Q_KEY_PAD4:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 4 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?t";
+            default:
+                return L"\033Ot";
+            }
+        }
+        return L"4";
+
+    case Q_KEY_B2:
+    case Q_KEY_PAD5:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 5 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?u";
+            default:
+                return L"\033Ou";
+            }
+        }
+        return L"5";
+
+    case Q_KEY_B3:
+    case Q_KEY_PAD6:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 6 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?v";
+            default:
+                return L"\033Ov";
+            }
+        }
+        return L"6";
+
+    case Q_KEY_A1:
+    case Q_KEY_PAD7:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 7 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?w";
+            default:
+                return L"\033Ow";
+            }
+
+        }
+        return L"7";
+
+    case Q_KEY_A2:
+    case Q_KEY_PAD8:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 8 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?x";
+            default:
+                return L"\033Ox";
+            }
+        }
+        return L"8";
+
+    case Q_KEY_A3:
+    case Q_KEY_PAD9:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad 9 */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?y";
+            default:
+                return L"\033Oy";
+            }
+        }
+        return L"9";
+
+    case Q_KEY_PAD_STOP:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad . */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?n";
+            default:
+                return L"\033On";
+            }
+        }
+        return L".";
+
+    case Q_KEY_PAD_SLASH:
+        /* Number pad / */
+        return L"/";
+
+    case Q_KEY_PAD_STAR:
+        /* Number pad * */
+        return L"*";
+
+    case Q_KEY_PAD_MINUS:
+        if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {
+            /* Number pad - */
+            switch (q_vt100_keypad_mode.emulation) {
+            case Q_EMUL_VT52:
+                return L"\033?m";
+            default:
+                return L"\033Om";
+            }
+        }
+        return L"-";
+
+    case Q_KEY_PAD_PLUS:
+        /* Number pad + */
+        return L"+";
+
+    case Q_KEY_PAD_ENTER:
+    case Q_KEY_ENTER:
+        /* Number pad Enter */
+        if (telnet_is_ascii()) {
+            return L"\015\012";
+        }
+        return L"\015";
+
+
+    default:
+        break;
+    }
+
+    return NULL;
+}
+
+/**
+ * Generate a sequence of bytes to send to the remote side that correspond to
+ * a keystroke.  Used by XTERM and X_UTF8.
+ *
+ * @param keystroke one of the Q_KEY values, OR a Unicode code point.  See
+ * input.h.
+ * @return a wide string that is appropriate to send to the remote side.
+ * Note that XTERM emulation is an 8-bit emulation: only the bottom 8 bits
+ * are transmitted to the remote side.  X_UTF8 emulation sends a true Unicode
+ * sequence.  See post_keystroke().
+ */
+wchar_t * xterm_keystroke(const int keystroke) {
+
+    switch (keystroke) {
+    case Q_KEY_BACKSPACE:
+        if (q_status.hard_backspace == Q_TRUE) {
+            return L"\010";
+        } else {
+            return L"\177";
+        }
+
+    case Q_KEY_LEFT:
+        switch (q_vt100_arrow_keys) {
+        case Q_EMUL_ANSI:
+            return L"\033[D";
+        case Q_EMUL_VT52:
+            return L"\033D";
+        default:
+            return L"\033OD";
+        }
+
+    case Q_KEY_RIGHT:
+        switch (q_vt100_arrow_keys) {
+        case Q_EMUL_ANSI:
+            return L"\033[C";
+        case Q_EMUL_VT52:
+            return L"\033C";
+        default:
+            return L"\033OC";
+        }
+
+    case Q_KEY_UP:
+        switch (q_vt100_arrow_keys) {
+        case Q_EMUL_ANSI:
+            return L"\033[A";
+        case Q_EMUL_VT52:
+            return L"\033A";
+        default:
+            return L"\033OA";
+        }
+
+    case Q_KEY_DOWN:
+        switch (q_vt100_arrow_keys) {
+        case Q_EMUL_ANSI:
+            return L"\033[B";
+        case Q_EMUL_VT52:
+            return L"\033B";
+        default:
+            return L"\033OB";
+        }
+
+    case Q_KEY_SLEFT:
+        /* Shifted left */
+        return L"\033[1;2D";
+
+    case Q_KEY_SRIGHT:
+        /* Shifted right */
+        return L"\033[1;2C";
+
+    case Q_KEY_SR:
+        /* Shifted up */
+        return L"\033[1;2A";
+
+    case Q_KEY_SF:
+        /* Shifted down */
+        return L"\033[1;2B";
+
+    case Q_KEY_HOME:
+        return L"\033[H";
+
+    case Q_KEY_END:
+        return L"\033[F";
+
+    case Q_KEY_F(1):
+        /* PF1 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\033P";
+        default:
+            return L"\033OP";
+        }
+
+    case Q_KEY_F(2):
+        /* PF2 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\033Q";
+        default:
+            return L"\033OQ";
+        }
+
+    case Q_KEY_F(3):
+        /* PF3 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\033R";
+        default:
+            return L"\033OR";
+        }
+
+    case Q_KEY_F(4):
+        /* PF4 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\033S";
+        default:
+            return L"\033OS";
+        }
+
+    case Q_KEY_F(5):
+        return L"\033[15~";
+
+    case Q_KEY_F(6):
+        return L"\033[17~";
+
+    case Q_KEY_F(7):
+        return L"\033[18~";
+
+    case Q_KEY_F(8):
+        return L"\033[19~";
+
+    case Q_KEY_F(9):
+        return L"\033[20~";
+
+    case Q_KEY_F(10):
+        return L"\033[21~";
+
+    case Q_KEY_F(11):
+        return L"\033[23~";
+
+    case Q_KEY_F(12):
+        return L"\033[24~";
+
+    case Q_KEY_F(13):
+        /* Shifted PF1 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\0332P";
+        default:
+            return L"\033[1;2P";
+        }
+
+    case Q_KEY_F(14):
+        /* Shifted PF2 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\0332Q";
+        default:
+            return L"\033[1;2Q";
+        }
+
+    case Q_KEY_F(15):
+        /* Shifted PF3 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\0332R";
+        default:
+            return L"\033[1;2R";
+        }
+
+    case Q_KEY_F(16):
+        /* Shifted PF4 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\0332S";
+        default:
+            return L"\033[1;2S";
+        }
+
+    case Q_KEY_F(17):
+        /* Shifted F5 */
+        return L"\033[15;2~";
+
+    case Q_KEY_F(18):
+        /* Shifted F6 */
+        return L"\033[17;2~";
+
+    case Q_KEY_F(19):
+        /* Shifted F7 */
+        return L"\033[18;2~";
+
+    case Q_KEY_F(20):
+        /* Shifted F8 */
+        return L"\033[19;2~";
+
+    case Q_KEY_F(21):
+        /* Shifted F9 */
+        return L"\033[20;2~";
+
+    case Q_KEY_F(22):
+        /* Shifted F10 */
+        return L"\033[21;2~";
+
+    case Q_KEY_F(23):
+        /* Shifted F11 */
+        return L"\033[23;2~";
+
+    case Q_KEY_F(24):
+        /* Shifted F12 */
+        return L"\033[24;2~";
+
+    case Q_KEY_F(25):
+        /* Control PF1 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\0335P";
+        default:
+            return L"\033[1;5P";
+        }
+
+    case Q_KEY_F(26):
+        /* Control PF2 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\0335Q";
+        default:
+            return L"\033[1;5Q";
+        }
+
+    case Q_KEY_F(27):
+        /* Control PF3 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\0335R";
+        default:
+            return L"\033[1;5R";
+        }
+
+    case Q_KEY_F(28):
+        /* Control PF4 */
+        switch (q_vt100_keypad_mode.emulation) {
+        case Q_EMUL_VT52:
+            return L"\0335S";
+        default:
+            return L"\033[1;5S";
+        }
+
+    case Q_KEY_F(29):
+        /* Control F5 */
+        return L"\033[15;5~";
+
+    case Q_KEY_F(30):
+        /* Control F6 */
+        return L"\033[17;5~";
+
+    case Q_KEY_F(31):
+        /* Control F7 */
+        return L"\033[18;5~";
+
+    case Q_KEY_F(32):
+        /* Control F8 */
+        return L"\033[19;5~";
+
+    case Q_KEY_F(33):
+        /* Control F9 */
+        return L"\033[20;5~";
+
+    case Q_KEY_F(34):
+        /* Control F10 */
+        return L"\033[21;5~";
+
+    case Q_KEY_F(35):
+        /* Control F11 */
+        return L"\033[23;5~";
+
+    case Q_KEY_F(36):
+        /* Control F12 */
+        return L"\033[24;5~";
+
+    case Q_KEY_PPAGE:
+        return L"\033[5~";
+
+    case Q_KEY_NPAGE:
+        return L"\033[6~";
+
+    case Q_KEY_IC:
+    case Q_KEY_SIC:
+        return L"\033[2~";
+
+    case Q_KEY_DC:
+    case Q_KEY_SDC:
+        return L"\033[3~";
 
     case Q_KEY_PAD0:
         if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {

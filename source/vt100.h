@@ -50,6 +50,47 @@ extern struct q_keypad_mode q_vt100_keypad_mode;
  */
 extern Q_BOOL q_vt100_new_line_mode;
 
+/**
+ * The bell frequency in Hz set by ESC [ 10 ; n ] .  Used by qodem_beep().
+ */
+extern int q_linux_beep_frequency;
+
+/**
+ * The bell duration in milliseconds set by ESC [ 10 ; n ] .  Used by
+ * qodem_beep().
+ */
+extern int q_linux_beep_duration;
+
+/**
+ * The available mouse tracking protocols.  See handle_mouse() in input.c.
+ */
+typedef enum {
+    XTERM_MOUSE_OFF,
+    XTERM_MOUSE_X10,
+    XTERM_MOUSE_NORMAL,
+    XTERM_MOUSE_BUTTONEVENT,
+    XTERM_MOUSE_ANYEVENT
+} XTERM_MOUSE_PROTOCOL;
+
+/**
+ * The available mouse tracking encodings.  See handle_mouse() in input.c.
+ */
+typedef enum {
+    XTERM_MOUSE_ENCODING_X10,
+    XTERM_MOUSE_ENCODING_UTF8,
+    XTERM_MOUSE_ENCODING_SGR
+} XTERM_MOUSE_ENCODING;
+
+/**
+ * The current mouse tracking protocol.  See handle_mouse() in input.c.
+ */
+extern XTERM_MOUSE_PROTOCOL q_xterm_mouse_protocol;
+
+/**
+ * The current mouse tracking encoding.  See handle_mouse() in input.c.
+ */
+extern XTERM_MOUSE_ENCODING q_xterm_mouse_encoding;
+
 /* Functions -------------------------------------------------------------- */
 
 /**
@@ -71,7 +112,7 @@ extern void vt100_reset();
 
 /**
  * Generate a sequence of bytes to send to the remote side that correspond to
- * a keystroke.
+ * a keystroke.  Used by VT100, VT102, and VT220.
  *
  * @param keystroke one of the Q_KEY values, OR a Unicode code point.  See
  * input.h.
@@ -80,5 +121,31 @@ extern void vt100_reset();
  * are transmitted to the remote side.  See post_keystroke().
  */
 extern wchar_t * vt100_keystroke(const int keystroke);
+
+/**
+ * Generate a sequence of bytes to send to the remote side that correspond to
+ * a keystroke.  Used by LINUX and L_UTF8.
+ *
+ * @param keystroke one of the Q_KEY values, OR a Unicode code point.  See
+ * input.h.
+ * @return a wide string that is appropriate to send to the remote side.
+ * Note that LINUX emulation is an 8-bit emulation: only the bottom 8 bits
+ * are transmitted to the remote side.  L_UTF8 emulation sends a true Unicode
+ * sequence.  See post_keystroke().
+ */
+extern wchar_t * linux_keystroke(const int keystroke);
+
+/**
+ * Generate a sequence of bytes to send to the remote side that correspond to
+ * a keystroke.  Used by XTERM and X_UTF8.
+ *
+ * @param keystroke one of the Q_KEY values, OR a Unicode code point.  See
+ * input.h.
+ * @return a wide string that is appropriate to send to the remote side.
+ * Note that XTERM emulation is an 8-bit emulation: only the bottom 8 bits
+ * are transmitted to the remote side.  X_UTF8 emulation sends a true Unicode
+ * sequence.  See post_keystroke().
+ */
+extern wchar_t * xterm_keystroke(const int keystroke);
 
 #endif /* __VT100_H__ */

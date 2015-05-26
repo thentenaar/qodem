@@ -34,7 +34,6 @@
 #include "ansi.h"
 #include "vt52.h"
 #include "vt100.h"
-#include "linux.h"
 #include "avatar.h"
 #include "keyboard.h"
 #include "states.h"
@@ -888,16 +887,14 @@ Q_EMULATION_STATUS terminal_emulator(const unsigned char from_modem,
     case Q_EMUL_VT100:
     case Q_EMUL_VT102:
     case Q_EMUL_VT220:
-        last_state = vt100(from_modem, to_screen);
-        break;
-    case Q_EMUL_TTY:
-        last_state = tty(from_modem, to_screen);
-        break;
     case Q_EMUL_LINUX:
     case Q_EMUL_LINUX_UTF8:
     case Q_EMUL_XTERM:
     case Q_EMUL_XTERM_UTF8:
-        last_state = linux_emulator(from_modem, to_screen);
+        last_state = vt100(from_modem, to_screen);
+        break;
+    case Q_EMUL_TTY:
+        last_state = tty(from_modem, to_screen);
         break;
     case Q_EMUL_DEBUG:
         last_state = debug_emulator(from_modem, to_screen);
@@ -921,17 +918,14 @@ Q_EMULATION_STATUS terminal_emulator(const unsigned char from_modem,
             case Q_EMUL_VT100:
             case Q_EMUL_VT102:
             case Q_EMUL_VT220:
-                last_state = vt100(q_emul_repeat_state_buffer[i], to_screen);
-                break;
-            case Q_EMUL_TTY:
-                last_state = tty(q_emul_repeat_state_buffer[i], to_screen);
-                break;
             case Q_EMUL_LINUX:
             case Q_EMUL_LINUX_UTF8:
             case Q_EMUL_XTERM:
             case Q_EMUL_XTERM_UTF8:
-                last_state =
-                    linux_emulator(q_emul_repeat_state_buffer[i], to_screen);
+                last_state = vt100(q_emul_repeat_state_buffer[i], to_screen);
+                break;
+            case Q_EMUL_TTY:
+                last_state = tty(q_emul_repeat_state_buffer[i], to_screen);
                 break;
             case Q_EMUL_DEBUG:
                 last_state =
@@ -984,7 +978,6 @@ void reset_emulation() {
     vt52_reset();
     avatar_reset();
     vt100_reset();
-    linux_reset();
     debug_reset();
     q_emulation_right_margin = -1;
     q_status.scroll_region_top = 0;

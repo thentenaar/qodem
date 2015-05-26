@@ -109,7 +109,6 @@ $(QODEM_SRC_DIR)/host.c \
 $(QODEM_SRC_DIR)/input.c \
 $(QODEM_SRC_DIR)/kermit.c \
 $(QODEM_SRC_DIR)/keyboard.c \
-$(QODEM_SRC_DIR)/linux.c \
 $(QODEM_SRC_DIR)/modem.c \
 $(QODEM_SRC_DIR)/music.c \
 $(QODEM_SRC_DIR)/netclient.c\
@@ -143,7 +142,6 @@ $(QODEM_OBJS_DIR)/host.o \
 $(QODEM_OBJS_DIR)/input.o \
 $(QODEM_OBJS_DIR)/kermit.o \
 $(QODEM_OBJS_DIR)/keyboard.o \
-$(QODEM_OBJS_DIR)/linux.o \
 $(QODEM_OBJS_DIR)/modem.o \
 $(QODEM_OBJS_DIR)/music.o \
 $(QODEM_OBJS_DIR)/netclient.o \

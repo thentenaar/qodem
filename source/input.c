@@ -36,7 +36,7 @@
 #include "states.h"
 #include "scrollback.h"
 #include "netclient.h"
-#include "linux.h"
+#include "vt100.h"
 #include "input.h"
 
 /* Set this to a not-NULL value to enable debug log. */
@@ -915,7 +915,9 @@ void handle_mouse() {
                 XTERM_MOUSE_ANYEVENT ? "XTERM_MOUSE_ANYEVENT" : "UNKOWN",
                 q_xterm_mouse_encoding ==
                 XTERM_MOUSE_ENCODING_X10 ? "XTERM_MOUSE_ENCODING_X10" :
-                "XTERM_MOUSE_ENCODING_UTF8"));
+                q_xterm_mouse_encoding ==
+                XTERM_MOUSE_ENCODING_UTF8 ? "XTERM_MOUSE_ENCODING_UTF8" :
+                "XTERM_MOUSE_ENCODING_SGR"));
         DLOG(("raw: %d %d %d %08lx\t", mouse.x, mouse.y, mouse.z,
                 mouse.bstate));
 
@@ -1167,6 +1169,9 @@ void handle_mouse() {
             for (i = 0; i < 6; i++) {
                 rc += utf8_encode(raw_buffer[i], utf8_buffer + rc);
             }
+            break;
+        case XTERM_MOUSE_ENCODING_SGR:
+            /* TODO */
             break;
         }
         DLOG((" * WRITE %ld bytes: ", (long) strlen(utf8_buffer)));

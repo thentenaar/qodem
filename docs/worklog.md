@@ -1,6 +1,13 @@
 The Qodem Project Work Log
 ==========================
 
+May 26, 2015
+
+Linux is merged with vt100.  Xterm has some screen artifacts, not sure
+why but I'll find it eventually.
+
+Break time.
+
 May 25, 2015
 
 vt100 code sweep is complete.  Still need to merge linux.c into it,

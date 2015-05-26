@@ -98,7 +98,6 @@
 #include "ansi.h"
 #include "vt52.h"
 #include "vt100.h"
-#include "linux.h"
 #include "options.h"
 #include "field.h"
 #include "help.h"
@@ -1170,27 +1169,14 @@ void post_keystroke(const int keystroke, const int flags) {
          */
         if (((q_status.emulation == Q_EMUL_VT100) ||
              (q_status.emulation == Q_EMUL_VT102) ||
-             (q_status.emulation == Q_EMUL_VT220)
-            ) && (keystroke == C_CR)
-        ) {
-            if ((q_vt100_new_line_mode == Q_TRUE) || (telnet_is_ascii())) {
-                encode_utf8_char(C_LF);
-                qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer),
-                            Q_TRUE);
-            }
-        }
-
-        /*
-         * LINUX special case: when new_line_mode is true, post a LF after a
-         * CR.
-         */
-        if (((q_status.emulation == Q_EMUL_LINUX) ||
+             (q_status.emulation == Q_EMUL_VT220) ||
+             (q_status.emulation == Q_EMUL_LINUX) ||
              (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
              (q_status.emulation == Q_EMUL_XTERM) ||
              (q_status.emulation == Q_EMUL_XTERM_UTF8)
             ) && (keystroke == C_CR)
         ) {
-            if ((q_linux_new_line_mode == Q_TRUE) || (telnet_is_ascii())) {
+            if ((q_vt100_new_line_mode == Q_TRUE) || (telnet_is_ascii())) {
                 encode_utf8_char(C_LF);
                 qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer),
                             Q_TRUE);
