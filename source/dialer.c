@@ -596,6 +596,27 @@ void set_nonblock(const int fd) {
     ioctlsocket(fd, FIONBIO, &non_block_mode);
 }
 
+/**
+ * Set a file descriptor or Winsock socket handle to blocking mode.
+ *
+ * @param fd the descriptor
+ */
+void set_blocking(const int fd) {
+    u_long non_block_mode = 0;
+
+    if ((net_is_connected() == Q_FALSE) &&
+        (net_connect_pending == Q_FALSE) &&
+        (net_is_listening == Q_FALSE)
+    ) {
+        /*
+         * Do nothing for a not-socket case.
+         */
+        return;
+    }
+
+    ioctlsocket(fd, FIONBIO, &non_block_mode);
+}
+
 #else
 
 /**
@@ -608,6 +629,18 @@ void set_nonblock(const int fd) {
 
     flags = fcntl(fd, F_GETFL);
     fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+}
+
+/**
+ * Set a file descriptor or Winsock socket handle to blocking mode.
+ *
+ * @param fd the descriptor
+ */
+void set_blocking(const int fd) {
+    int flags;
+
+    flags = fcntl(fd, F_GETFL);
+    fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
 }
 
 /**

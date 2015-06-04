@@ -103,6 +103,13 @@ extern void dial_out(struct q_phone_struct * number);
 extern void set_nonblock(const int fd);
 
 /**
+ * Set a file descriptor or Winsock socket handle to blocking mode.
+ *
+ * @param fd the descriptor
+ */
+extern void set_blocking(const int fd);
+
+/**
  * Set a tty into raw mode.
  *
  * @param tty_fd the tty descriptor

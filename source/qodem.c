@@ -36,6 +36,18 @@
 
 #ifdef Q_SSH_CRYPTLIB
 #include <sys/time.h>
+
+/*
+ * SSH uses cryptlib, it's a very straightforward library.  We need to define
+ * __WINDOWS__ or __UNIX__ before loading crypt.h.
+ */
+#ifdef Q_PDCURSES_WIN32
+#define __WINDOWS__
+#else
+#define __UNIX__
+#endif
+#include <crypt.h>
+
 #endif
 
 #include "qodem.h"
@@ -214,6 +226,19 @@ static struct option q_getopt_long_options[] = {
  * get_workingdir_filename(), and get_scriptdir_filename().
  */
 static char datadir_filename[FILENAME_SIZE];
+#ifdef Q_SSH_CRYPTLIB
+
+/*
+ * TODO: do we still need this timeout for cryptlib?
+ */
+#ifdef Q_PDCURSES_WIN32
+static long ssh_last_time = 1000000;
+#else
+static suseconds_t ssh_last_time = 1000000;
+#endif
+static struct timeval ssh_tv;
+
+#endif /* Q_SSH_CRYPTLIB */
 
 /**
  * Write data from a buffer to the remote system, dispatching to the
@@ -2590,7 +2615,10 @@ int qodem_main(int argc, char * const argv[]) {
         }
 
 #ifdef Q_SSH_CRYPTLIB
-        if (cryptInit() != CRYPT_OK) {
+        if ((cryptStatusError(cryptInit()) != CRYPT_OK) ||
+            (cryptStatusError(cryptAddRandom(NULL,
+                    CRYPT_RANDOM_SLOWPOLL)) != CRYPT_OK)
+        ) {
             screen_put_color_printf_yx(0, 0, Q_COLOR_CONSOLE_TEXT,
                 _("Error initializing cryptlib\n"));
             screen_put_color_printf_yx(3, 0, Q_COLOR_CONSOLE_TEXT,
@@ -2640,7 +2668,7 @@ int qodem_main(int argc, char * const argv[]) {
     music_teardown();
 
 #ifdef Q_SSH_CRYPTLIB
-    cryptExit();
+    cryptEnd();
 #endif
 
 #ifdef Q_PDCURSES_WIN32

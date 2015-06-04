@@ -60,25 +60,38 @@ QODEM_SRC_DIR = source
 QODEM_OBJS_DIR = objs
 QODEM_BIN_DIR = bin
 QODEM_EXE = $(QODEM_BIN_DIR)/qodem
-
-CC = cc
 INC = -I$(QODEM_SRC_DIR)
+LDFLAGS =
+
+# cryptlib support
+CRYPTLIB_DIR = lib/cryptlib
+CRYPTLIB_A = $(CRYPTLIB_DIR)/libcl.a
+
+# Compiler
+CC = cc
 
 # Normal settings
-CFLAGS = -O2 -Wall $(INC)
-LDLIBS = -lncursesw -lutil
+# EXTRA_LIBS =
+# EXTRA_INC =
+# CFLAGS = -O2 -Wall $(INC)
+# LDLIBS = -lncursesw -lutil
 
-# Debug settings which include libssh2 support
-# CFLAGS = -O0 -Wall -ggdb $(INC) -DQ_LIBSSH2
-# LDLIBS = -lncursesw -lutil -lssh2
+# Debug settings which include cryptlib support
+EXTRA_LIBS = $(CRYPTLIB_A)
+EXTRA_INC = $(CRYPTLIB_DIR)
+CFLAGS = -O0 -Wall -ggdb $(INC) -I$(EXTRA_INC) -DQ_SSH_CRYPTLIB -DCONFIG_PROFILE_SSH
+LDLIBS = -lncursesw -lutil $(CRYPTLIB_A) -lpthread
 
-LDFLAGS = $(LDLIBS)
+
 
 # ----------------------------------------------------------------------------
 # What's below this line should not require modifications
 # ----------------------------------------------------------------------------
 
 .SUFFIXES: .o .c
+
+$(CRYPTLIB_A):
+	cd $(CRYPTLIB_DIR) && make
 
 $(QODEM_OBJS_DIR):
 	-mkdir $(QODEM_OBJS_DIR)
@@ -157,8 +170,8 @@ clean:
 
 qodem: $(QODEM_EXE)
 
-$(QODEM_EXE): $(QODEM_BIN_DIR) $(QODEM_OBJS)
-	$(CC) $(LDFLAGS) -o $(QODEM_EXE) $(QODEM_OBJS)
+$(QODEM_EXE): $(QODEM_BIN_DIR) $(QODEM_OBJS) $(EXTRA_LIBS)
+	$(CC) $(LDFLAGS) -o $(QODEM_EXE) $(QODEM_OBJS) $(LDLIBS)
 
 $(QODEM_OBJS_DIR)/%.o : $(QODEM_SRC_DIR)/%.c
 	$(CC) $(CFLAGS) -o $@ -c $<

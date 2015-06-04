@@ -41,9 +41,14 @@ seen before.
 
 CryptLib support
   SSH server for host
-  Patch to handle terminal re-sizing
+  qodem knownhosts file
+  Patches:
+    env - send TERM and LANG
+    window-change - send new window dimensions
+
 
 SGR mouse reporting
+
 
 Q_OPTION_SCRIPTS_DIR
 

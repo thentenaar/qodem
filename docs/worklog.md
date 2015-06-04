@@ -1,6 +1,24 @@
 The Qodem Project Work Log
 ==========================
 
+June 3, 2015
+
+Took a week off for various personal things.  Now it's time to look at
+bringing back cryptlib.
+
+OK, I have a basic SSH client working again.  cryptlib still needs
+some patches to handle environment variables and terminal resize, but
+I think I can see how to do that.  It will be somewhat ugly, breaking
+a lot of cryptlib's internal API, but good enough for me.
+
+I've updated the licensing language to credit cryptlib, and the readme
+to note that qodem effectively becomes GPLv3 (Sleepycat license) when
+cryptlib is used but stays BSD/MIT when not.  This will have the
+interesting effect that the Windows binary will actually be Sleepycat
+while the non-Windows builds will be BSD.  Oh well, anyone is free to
+rip out the cryptlib calls in netclient if they wish: qodem itself
+remains public domain.
+
 May 26, 2015
 
 Linux is merged with vt100.  Xterm has some screen artifacts, not sure

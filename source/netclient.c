@@ -92,7 +92,6 @@
  * SSH Notes
  * ---------
  *
- * ssh_maybe_readable() - TODO: do we still need this for cryptlib ssh?
  *
  */
 
@@ -117,6 +116,7 @@
 #endif /* _WIN32_WINNT */
 #endif /* __BORLANDC__ */
 #else
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <pwd.h>
 #include <netdb.h>
@@ -1250,11 +1250,6 @@ Q_BOOL net_connect_finish() {
              */
             q_dial_state = Q_DIAL_LINE_BUSY;
             time(&q_dialer_cycle_start_time);
-
-            snprintf(notify_message, sizeof(notify_message),
-                     _("Error: Failed to negotiate SSH connection"));
-            snprintf(q_dialer_modem_message,
-                     sizeof(q_dialer_modem_message), "%s", notify_message);
             q_screen_dirty = Q_TRUE;
             refresh_handler();
 
@@ -1705,7 +1700,7 @@ void net_close() {
 
 #ifdef Q_SSH_CRYPTLIB
     /*
-     * SSH needs to destroy the crypto session
+     * SSH needs to destroy the crypto session.
      */
     if (q_status.dial_method == Q_DIAL_METHOD_SSH) {
         ssh_close();
@@ -3525,3 +3520,417 @@ ssize_t rlogin_read(const int fd, void * buf, size_t count, Q_BOOL oob) {
 ssize_t rlogin_write(const int fd, void * buf, size_t count) {
     return send(fd, (const char *) buf, count, 0);
 }
+
+#ifdef Q_SSH_CRYPTLIB
+
+/* -------------------------------------------------------------------------- */
+/* SSH connect/read/write --------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * SSH uses cryptlib, it's a very straightforward library.  We need to define
+ * __WINDOWS__ or __UNIX__ before loading crypt.h.
+ */
+#ifdef Q_PDCURSES_WIN32
+#define __WINDOWS__
+#else
+#define __UNIX__
+#endif
+
+#include <crypt.h>
+
+/*
+ * cryptlib says to set TCP_NODELAY
+ */
+#include <netinet/tcp.h>
+
+/**
+ * Everything is done through the crypt session interface.
+ */
+static CRYPT_SESSION cryptSession;
+
+/**
+ * cryptlib RBAC parameter.  We will never use it.
+ */
+static int cryptUser = CRYPT_UNUSED;
+
+/**
+ * Flag to indicate some more data MIGHT be ready to read.
+ */
+static Q_BOOL maybe_readable = Q_FALSE;
+
+/**
+ * Flag to indicate some more data MIGHT be ready to read.  This can happen
+ * if the last call to ssh_read() resulted in a length of 0 or EAGAIN.  The
+ * socket will not be readable to select(), but another call to ssh_read()
+ * could read some data.
+ *
+ * @return true if there might be data to read from the ssh session
+ */
+Q_BOOL ssh_maybe_readable() {
+    return maybe_readable;
+}
+
+/**
+ * Write the cryptlib error message to the debug log.
+ *
+ * @param status the return code from a cryptlib call
+ * @param object the cryptlib object that reported the error
+ */
+static void emit_crypto_error(int status, CRYPT_HANDLE object) {
+    int errorLocus;
+    int errorType;
+    char errorMessage[1024];
+    int errorMessage_n;
+
+    if (DLOGNAME != NULL) {
+        cryptGetAttribute(object, CRYPT_ATTRIBUTE_ERRORLOCUS, &errorLocus);
+        cryptGetAttribute(object, CRYPT_ATTRIBUTE_ERRORTYPE, &errorType);
+        cryptGetAttributeString(object, CRYPT_ATTRIBUTE_ERRORMESSAGE,
+                                errorMessage, &errorMessage_n);
+
+        DLOG(("cryptlib ERROR: status %d\n", status));
+        DLOG(("                errorType %d\n", errorType));
+        DLOG(("                errorLocus %d\n", errorLocus));
+        DLOG(("                errorMessage %s\n", errorMessage));
+    }
+}
+
+/**
+ * Perform SSH protocol negotiation for a new TCP connection.
+ *
+ * @param fd a socket that is already connected
+ * @param host the hostname
+ * @param the port, for example "22"
+ * @return the descriptor for the socket, or -1 if there was an error
+ */
+static int ssh_setup_connection(int fd, const char * host, const char * port) {
+    char notify_message[DIALOG_MESSAGE_SIZE];
+    char errorMessage[DIALOG_MESSAGE_SIZE];
+    int errorMessage_n;
+    int cryptStatus;
+    char buffer[64];
+
+    /*
+     * cryptlib needs the socket to be blocking.  We can do this now because
+     * net_connect_finish() is done.
+     */
+    set_blocking(fd);
+
+    DLOG(("ssh_setup_connection(): user %ls\n", q_status.current_username));
+
+    /* Make sure we have a socket */
+    assert (fd != -1);
+
+    /* Setup the crypt session */
+    cryptStatus = cryptCreateSession(&cryptSession, cryptUser,
+                                     CRYPT_SESSION_SSH);
+    if (cryptStatusError(cryptStatus)) {
+        /* Error creating session object */
+        memset(errorMessage, 0, sizeof(errorMessage));
+        cryptGetAttributeString(cryptSession, CRYPT_ATTRIBUTE_ERRORMESSAGE,
+                                errorMessage, &errorMessage_n);
+
+        snprintf(notify_message, sizeof(notify_message),
+                _("Error: %s"), errorMessage);
+        snprintf(q_dialer_modem_message,
+            sizeof(q_dialer_modem_message), "%s", notify_message);
+        return -1;
+    }
+    /* Username and password need to be converted to char, not wchar_t */
+    sprintf(buffer, "%ls", q_status.current_username);
+    cryptSetAttributeString(cryptSession, CRYPT_SESSINFO_USERNAME,
+                            buffer, strlen(buffer));
+    sprintf(buffer, "%ls", q_status.current_password);
+    cryptSetAttributeString(cryptSession, CRYPT_SESSINFO_PASSWORD,
+                            buffer, strlen(buffer));
+
+    /* Disable Nagle's algorithm as per cryptlib docs */
+    int tcp_flag = 1;
+    if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (void *)&tcp_flag,
+                   sizeof(tcp_flag)) != 0) {
+        DLOG(("Unable to set TCP_NODELAY\n"));
+    } else {
+        DLOG(("Disabled Nagle's algorithm\n"));
+    }
+
+    /* Pass in the network socket */
+    cryptSetAttribute(cryptSession, CRYPT_SESSINFO_NETWORKSOCKET, fd);
+
+    /* Activate the session */
+    cryptStatus = cryptSetAttribute(cryptSession, CRYPT_SESSINFO_ACTIVE, 1);
+
+    if (cryptStatusError(cryptStatus)) {
+        /* Could not establish session */
+        emit_crypto_error(cryptStatus, cryptSession);
+
+        memset(errorMessage, 0, sizeof(errorMessage));
+        cryptGetAttributeString(cryptSession, CRYPT_ATTRIBUTE_ERRORMESSAGE,
+                                errorMessage, &errorMessage_n);
+
+        /* Error establishing session */
+        snprintf(notify_message, sizeof(notify_message),
+                _("Error: %s"), errorMessage);
+        snprintf(q_dialer_modem_message,
+            sizeof(q_dialer_modem_message), "%s", notify_message);
+        return -1;
+    }
+
+    DLOG(("SSH connection established: fd = %d\n", fd));
+
+    /* Set the network timeouts to mimic non-blocking behavior */
+    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_READTIMEOUT, 0.05);
+    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_WRITETIMEOUT, 0.05);
+
+    /* All done, let's get to moving data! */
+    return fd;
+}
+
+/**
+ * Close SSH session.
+ */
+static void ssh_close() {
+    int cryptStatus;
+    cryptStatus = cryptDestroySession(cryptSession);
+    if (cryptStatusError(cryptStatus)) {
+        /*
+         * cryptlib failed to close session.  Just log it, we will be closing
+         * the network socket anyway.
+         */
+        emit_crypto_error(cryptStatus, cryptSession);
+        return;
+    }
+}
+
+/**
+ * Read data from remote system to a buffer, via an 8-bit clean channel
+ * through the ssh protocol.
+ *
+ * @param fd the socket descriptor
+ * @param buf the buffer to write to
+ * @param count the number of bytes requested
+ * @return the number of bytes read into buf
+ */
+ssize_t ssh_read(const int fd, void * buf, size_t count) {
+    int cryptStatus;
+    int readBytes;
+    int i;
+
+    /* Return read_buffer first - it has the connect message */
+    if (read_buffer_n > 0) {
+        DLOG(("ssh_read(): direct string bypass: %s\n", read_buffer));
+        memcpy(buf, read_buffer, read_buffer_n);
+        readBytes = read_buffer_n;
+        read_buffer_n = 0;
+        return readBytes;
+    }
+
+    if (nvt.is_eof == Q_TRUE) {
+        DLOG(("ssh_read() : no read because EOF\n"));
+        /* Return EOF */
+        return 0;
+    }
+
+    /* Read some more bytes from the remote side */
+    cryptStatus = cryptPopData(cryptSession, buf, count, &readBytes);
+    if (cryptStatusError(cryptStatus)) {
+        /* cryptlib error */
+        if (cryptStatus == CRYPT_ERROR_COMPLETE) {
+            DLOG(("EOF EOF EOF\n"));
+
+            /* Remote end has closed connection */
+            if (q_program_state != Q_STATE_HOST) {
+                snprintf((char *) read_buffer, sizeof(read_buffer), "%s",
+                    _("Connection closed.\r\n"));
+                read_buffer_n = strlen((char *) read_buffer);
+            }
+            nvt.is_eof = Q_TRUE;
+            /*
+             * The message will be returned on the next ssh_read().
+             */
+            maybe_readable = Q_TRUE;
+#ifdef Q_PDCURSES_WIN32
+            set_errno(WSAEWOULDBLOCK);
+#else
+            set_errno(EAGAIN);
+#endif
+            return -1;
+        } else {
+            emit_crypto_error(cryptStatus, cryptSession);
+            /* TODO: handle it somehow */
+        }
+    }
+
+    DLOG(("ssh_read() : read %d bytes (count = %d):\n", readBytes, (int)count));
+    for (i = 0; i < readBytes; i++) {
+        DLOG2((" %02x", (((char *) buf)[i] & 0xFF)));
+    }
+    DLOG2(("\n"));
+    for (i = 0; i < readBytes; i++) {
+        if ((((char *) buf)[i] & 0xFF) >= 0x80) {
+            DLOG2((" %02x", (((char *) buf)[i] & 0xFF)));
+        } else {
+            DLOG2((" %c ", (((char *) buf)[i] & 0xFF)));
+        }
+    }
+    DLOG2(("\n"));
+
+    if (readBytes == 0) {
+        /* SSH protocol consumed everything.  Come back again. */
+        maybe_readable = Q_TRUE;
+#ifdef Q_PDCURSES_WIN32
+        set_errno(WSAEWOULDBLOCK);
+#else
+        set_errno(EAGAIN);
+#endif
+        return -1;
+    }
+
+    if (readBytes == count) {
+        DLOG(("ssh_read() maybe_readable: TRUE\n"));
+        /*
+         * There might still be more data in the envelope, have
+         * process_incoming_data() call us again.
+         */
+        maybe_readable = Q_TRUE;
+    } else {
+        DLOG(("ssh_read() maybe_readable: FALSE\n"));
+        maybe_readable = Q_FALSE;
+    }
+
+    /* We read something, pass it on. */
+    return readBytes;
+}
+
+/**
+ * Write data from a buffer to the remote system, via an 8-bit clean channel
+ * through the ssh protocol.
+ *
+ * @param fd the socket descriptor
+ * @param buf the buffer to read from
+ * @param count the number of bytes to write to the remote side
+ * @return the number of bytes written
+ */
+ssize_t ssh_write(const int fd, void * buf, size_t count) {
+    int cryptStatus;
+    int writtenBytes;
+    int i;
+
+    /* Make sure we're supposed to send something */
+    assert(count > 0);
+
+    cryptStatus = cryptPushData(cryptSession, buf, count, &writtenBytes);
+    if (cryptStatusError(cryptStatus)) {
+        /* cryptlib error */
+        emit_crypto_error(cryptStatus, cryptSession);
+        /* This will be an error */
+        set_errno(EIO);
+        return -1;
+    }
+
+    /* Post everything */
+    cryptStatus = cryptFlushData(cryptSession);
+    if (cryptStatusError(cryptStatus)) {
+        /* cryptlib error */
+        emit_crypto_error(cryptStatus, cryptSession);
+        /* This will be an error */
+        set_errno(EIO);
+        return -1;
+    }
+
+    if (writtenBytes == 0) {
+        /* This isn't EOF yet */
+#ifdef Q_PDCURSES_WIN32
+        set_errno(WSAEWOULDBLOCK);
+#else
+        set_errno(EAGAIN);
+#endif
+        return -1;
+    }
+
+    DLOG(("ssh_write() : wrote %d bytes (count = %d):\n", writtenBytes,
+            (int)count));
+    for (i = 0; i < writtenBytes; i++) {
+        DLOG2((" %02x", (((char *) buf)[i] & 0xFF)));
+    }
+    DLOG2(("\n"));
+    for (i = 0; i < writtenBytes; i++) {
+        if ((((char *) buf)[i] & 0xFF) >= 0x80) {
+            DLOG2((" %02x", (((char *) buf)[i] & 0xFF)));
+        } else {
+            DLOG2((" %c ", (((char *) buf)[i] & 0xFF)));
+        }
+    }
+    DLOG2(("\n"));
+
+    /* We wrote something, pass it on. */
+    return writtenBytes;
+}
+
+/**
+ * Send new screen dimensions to the remote side.
+ *
+ * @param lines the number of screen rows
+ * @param columns the number of screen columns
+ */
+void ssh_resize_screen(const int lines, const int columns) {
+    /* TODO */
+}
+
+static char * ssh_server_key = NULL;
+
+static void md5_to_string(const unsigned char * md5, char * dest) {
+    const int len = 16;
+    int i;
+    memset(dest, 0, len * 3 + 2);
+    for (i = 0; i < len / 2; i++) {
+        sprintf(dest + strlen(dest), "%x", (md5[i] >> 4) & 0x0F);
+        sprintf(dest + strlen(dest), "%x",  md5[i]       & 0x0F);
+        sprintf(dest + strlen(dest), ":");
+    }
+    for (; i < len; i++) {
+        sprintf(dest + strlen(dest), "%x", (md5[i] >> 4) & 0x0F);
+        sprintf(dest + strlen(dest), "%x",  md5[i]       & 0x0F);
+        sprintf(dest + strlen(dest), ":");
+    }
+    dest[strlen(dest) - 1] = 0;
+}
+
+/**
+ * Get the ssh server key fingerprint as a hex-encoded MD5 hash of the server
+ * key, the same as the key fingerprint exposed by most ssh clients.
+ *
+ * @return the key string
+ */
+const char * ssh_server_key_str() {
+    unsigned char fingerprint[CRYPT_MAX_HASHSIZE + 1];
+    int fingerprint_n;
+    int cryptStatus;
+    int i;
+
+    if (ssh_server_key == NULL) {
+        cryptStatus =  cryptGetAttributeString(cryptSession,
+            CRYPT_SESSINFO_SERVER_FINGERPRINT_SHA1,
+            fingerprint, &fingerprint_n);
+
+        if (cryptStatusError(cryptStatus)) {
+            /* cryptlib error */
+            emit_crypto_error(cryptStatus, cryptSession);
+            sprintf(fingerprint, "%s", "UNKNOWN");
+            fingerprint_n = strlen("UNKNOWN");
+        }
+
+        DLOG(("SSH server fingerprint: "));
+        for (i = 0; i < fingerprint_n; i++) {
+            DLOG2((" %02x", (((char *) fingerprint)[i] & 0xFF)));
+        }
+        DLOG2(("\n"));
+
+        ssh_server_key = (char *) Xmalloc((fingerprint_n * 3 + 2) * sizeof(char),
+            __FILE__, __LINE__);
+        md5_to_string(fingerprint, ssh_server_key);
+    }
+    return ssh_server_key;
+}
+
+#endif /* Q_SSH_CRYPTLIB */

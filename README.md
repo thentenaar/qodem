@@ -1,6 +1,7 @@
 Qodem Terminal Emulator
 =======================
 
+
 WHAT IS QODEM?
 --------------
 
@@ -25,6 +26,7 @@ Chief Judge Vaughn R Walker presiding) was settled on December 5, 2006
 for $10.1 million (with 11% to plaintiffs legal fees).
 
 
+
 COPYRIGHT STATUS
 ----------------
 
@@ -36,13 +38,24 @@ public license fallback for those jurisdictions that do not recognize
 the public domain.
 
 Qodem incorporates or links to software that is copyrighted and
-licensed under BSD-like terms.  The CREDITS file describes those
-pieces and their respective licenses.  The only qodem source file with
-such code is codepage.c, containing a UTF-8 decoding function; all
-other such code is in the lib directory.  The combined qodem
-executable has license terms that are effectively the same as the BSD
-or MIT license: attribution in the source, source is not required to
-be shared, and there is no warranty.
+licensed under BSD-like or GPL-like terms.  The CREDITS file describes
+those pieces and their respective licenses.  The only qodem source
+file with such code is codepage.c, containing a UTF-8 decoding
+function; all other such code is in the lib directory.
+
+The effective license for the combined qodem executable differs
+depending on whether or not it was linked to cryptlib:
+
+  * WITHOUT CRYPTLIB, the combined license terms are effectively the
+    same as the BSD or MIT license: attribution in the source, source
+    is not required to be shared, and there is no warranty.
+
+  * WITH CRYPTLIB, the combined license terms are effectively the same
+    as the GPLv3 license: attribution in the source, source for both
+    cryptlib and qodem IS required to be shared (even if somehow
+    modified into a SaaS style architecture), and there is no
+    warranty.
+
 
 
 INTENDED AUDIENCE
@@ -80,9 +93,12 @@ Qodem is designed to help the following kinds of people:
   approach to text-based communication.
 
 
+
 BUILDING QODEM
 --------------
 
+For now, use build/Makefile.generic.  Eventually this will be a
+configure && make.
 
 
 
@@ -125,6 +141,8 @@ the raw Linux console by using its PC speaker control sequences.
 Finally, Qodem hopes to bundle all of this function inside a pleasant
 environment with some eye appeal.
 
+
+
 HOW TO USE QODEM
 ----------------
 
@@ -152,6 +170,8 @@ Throughout Qodem, the bottom-most line of the screen is used to report
 status and provide hints about what keystrokes are available.  In
 TERMINAL mode the status line can be turned off with Alt--
 (Alt-minus), or toggled between two different forms with Alt-7.
+
+
 
 DIFFERENCES BETWEEN THE TEXT, X11, AND WIN32 VERSIONS
 -----------------------------------------------------
@@ -203,6 +223,8 @@ affects ANSI music.
 
 Qodem manages its own known_hosts file for SSH connections.  This file
 is stored in the Documents\qodem\prefs directory.
+
+
 
 KNOWN ISSUES / DECISIONS
 ------------------------
@@ -301,6 +323,12 @@ environment options to the remote host, due to limitations of remote
 daemons and the ssh library used.  Specifically: telnet and rlogin do
 not set LANG; ssh does not set TERM, LANG, LINES, or COLUMNS.
 
+The SSH server key fingerprint displayed in the Alt-I info screen is
+unique, but does not match the key fingerprints reported by ssh-keygen
+or the OpenSSH client.
+
+
+
 SCRIPT SUPPORT
 --------------
 
@@ -374,6 +402,8 @@ pressing Alt-F and entering "my_script.pl arg1" will launch
 my_script.pl and with its first command-line argument ($ARGV[0] in
 Perl) set to "arg1".
 
+
+
 TERMINAL EMULATION LIMITATIONS
 ------------------------------
 
@@ -420,6 +450,8 @@ VT220 discards all data meant for the 'printer' (CSI Pc ? i).
 The ANSI.SYS screen mode switch sequence (ESC [ = Pn {h | l}) only
 supports enable/disable line wrap (Pn = 7); the various screen mode
 settings (e.g 40x25 mono, 640x480 16-color, etc.) are not supported.
+
+
 
 DEVIATIONS FROM QMODEM
 ----------------------
@@ -481,19 +513,19 @@ Some functions are different in TERMINAL mode:
 ```
     Key      Qodem function         Qmodem function
     ----------------------------------------------------------
-    Alt-L    Log View               Change drive
-    Alt-O    Modem Config           Change directory
     Alt-2    Backspace/Del Mode     80x25 (EGA/VGA)
     Alt-3    Line Wrap              Debug Status Info
     Alt-4    Display NULL           80x43/50 (EGA/VGA)
     Alt-9    Serial Port            Printer Echo
-    Alt-P    Capture File           COM Parameters
     Alt-K    Send BREAK             Change COM Port
+    Alt-L    Log View               Change drive
+    Alt-O    Modem Config           Change directory
+    Alt-P    Capture File           COM Parameters
     Alt-Y    COM Parameters         -
     Alt-,    ANSI Music             -
-    Alt-\    Compose Key            -
     Alt-;    Codepage               -
     Alt-:    Colors                 -
+    Alt-\    Compose Key            -
 ```
 
 The phone book stores an arbitrary number of entries, not the
@@ -597,6 +629,8 @@ listening on the modem, it can also listen on TCP ports for raw
 socket, telnet, and ssh connections; optionally the TCP port can be
 exposed via UPnP to the general Internet.
 
+
+
 DOCUMENTATION
 -------------
 
@@ -608,6 +642,8 @@ Qodem has three sources of documentation:
 
 * The qodem and qodem-x11 man pages.
 
+
+
 CONTRIBUTING
 ------------
 
@@ -618,6 +654,8 @@ terms they wish.
 The official repository is hosted on github at
 https://github.com/klamonte/qodem .  Pull requests are very much
 welcomed.
+
+
 
 ACKNOWLEDGMENTS
 ---------------
@@ -646,3 +684,7 @@ We'd like to thank the following individuals:
 * Martin Godisch for help in packaging for the deb build.
 
 * Jason Scott for creating "BBS: The Documentary".
+
+* Peter Gutmann for developing cryptlib and licensed it under an open
+  source compatible license.
+
