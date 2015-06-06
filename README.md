@@ -399,8 +399,8 @@ Scripts are launched in two ways:
 Script command-line arguments can be passed directly in both the Alt-F
 script dialog and the phone book linked script field.  For example,
 pressing Alt-F and entering "my_script.pl arg1" will launch
-my_script.pl and with its first command-line argument ($ARGV[0] in
-Perl) set to "arg1".
+my_script.pl with its first command-line argument ($ARGV[0] in Perl)
+set to "arg1".
 
 
 
@@ -685,6 +685,6 @@ We'd like to thank the following individuals:
 
 * Jason Scott for creating "BBS: The Documentary".
 
-* Peter Gutmann for developing cryptlib and licensed it under an open
+* Peter Gutmann for developing cryptlib and licensing it under an open
   source compatible license.
 

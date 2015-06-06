@@ -863,7 +863,7 @@ static void handle_resize() {
 }
 
 /**
- * Sends mous tracking sequences to the other side if KEY_MOUSE comes in.
+ * Sends mouse tracking sequences to the other side if KEY_MOUSE comes in.
  */
 void handle_mouse() {
 

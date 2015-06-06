@@ -13,13 +13,9 @@ Bug on xterm: A_REVERSE + DECSCNM + A_BOLD
 BUG: check when phonebook calls start_quicklearn() after either
      net_connect() or for dialup
 
-BUG: with ssh, enter username/password, press ESC, press Enter --> crash
-
 BUG: uploads are jerky to local synchronet.  Timing?
 
 BUG: no bold text in help system on Borland
-
-BUG: vttest DSR ignores origin mode
 
 BUG: free kbytes on download menu broken on Borland
 

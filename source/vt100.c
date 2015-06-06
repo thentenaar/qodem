@@ -886,6 +886,7 @@ static void set_toggle(const Q_BOOL value) {
     int i;
     int x;
 
+    DLOG(("set_toggle() %s\n", value == Q_TRUE ? "true" : "false"));
 
     for (i = 0; i <= state.params_n; i++) {
         x = atoi((char *) state.params[i]);
@@ -1242,7 +1243,7 @@ static void set_toggle(const Q_BOOL value) {
             ) {
                 /* Mouse: UTF-8 coordinates */
                 if (value == Q_TRUE) {
-                    DLOG(("MOUSE: UTF-8 coordinates on"));
+                    DLOG(("MOUSE: UTF-8 coordinates on\n"));
                     q_xterm_mouse_encoding = XTERM_MOUSE_ENCODING_UTF8;
                 } else {
                     DLOG(("MOUSE: UTF-8 coordinates off\n"));
@@ -1258,7 +1259,7 @@ static void set_toggle(const Q_BOOL value) {
             ) {
                 /* Mouse: SGR coordinates */
                 if (value == Q_TRUE) {
-                    DLOG(("MOUSE: SGR coordinates on"));
+                    DLOG(("MOUSE: SGR coordinates on\n"));
                     q_xterm_mouse_encoding = XTERM_MOUSE_ENCODING_SGR;
                 } else {
                     DLOG(("MOUSE: SGR coordinates off\n"));
@@ -2213,7 +2214,7 @@ static void sgr() {
             scrollback_full_attr(Q_COLOR_CONSOLE_TEXT);
         foreground = q_text_colors[Q_COLOR_CONSOLE_TEXT].fg;
         background = q_text_colors[Q_COLOR_CONSOLE_TEXT].bg;
-        DLOG(("RESET\n"));
+        DLOG2(("RESET\n"));
 
     } else {
 
@@ -2448,6 +2449,7 @@ static void sgr() {
 static void dsr() {
     int i;
     char response_buffer[VT100_RESPONSE_LENGTH];
+    int row = q_status.cursor_y;
 
     if (state.params_n >= 0) {
         i = atoi((char *) state.params[0]);
@@ -2482,9 +2484,10 @@ static void dsr() {
          * Request cursor position.
          *
          * Respond with current position.
-         *
-         * TODO: handle origin mode
          */
+        if (q_status.origin_mode == Q_TRUE) {
+            row -= q_status.scroll_region_top;
+        }
         if (((q_status.emulation == Q_EMUL_VT220) ||
                 (q_status.emulation == Q_EMUL_XTERM) ||
                 (q_status.emulation == Q_EMUL_XTERM_UTF8)) &&
@@ -2492,11 +2495,11 @@ static void dsr() {
         ) {
             memset(response_buffer, 0, sizeof(response_buffer));
             snprintf(response_buffer, sizeof(response_buffer), "\233%u;%uR",
-                     q_status.cursor_y + 1, q_status.cursor_x + 1);
+                     row + 1, q_status.cursor_x + 1);
         } else {
             memset(response_buffer, 0, sizeof(response_buffer));
             snprintf(response_buffer, sizeof(response_buffer), "\033[%u;%uR",
-                     q_status.cursor_y + 1, q_status.cursor_x + 1);
+                     row + 1, q_status.cursor_x + 1);
         }
         qodem_write(q_child_tty_fd, response_buffer, strlen(response_buffer),
                     Q_TRUE);
@@ -3014,6 +3017,9 @@ static void linux_csi() {
     int i = 0;
     int j = 0;
 
+    DLOG(("linux_csi(): dec_private_mode_flag = %s\n",
+            state.dec_private_mode_flag == Q_TRUE ? "true" : "false"));
+
     if (state.dec_private_mode_flag == Q_TRUE) {
         return;
     }
@@ -3285,11 +3291,17 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
     if ((q_status.emulation == Q_EMUL_LINUX_UTF8) ||
         (q_status.emulation == Q_EMUL_XTERM_UTF8)
     ) {
+        /*
         DLOG(("    UTF-8: decode before VTxxx state: %d\n", state.utf8_state));
+         */
+
         last_utf8_state = state.utf8_state;
         utf8_decode(&state.utf8_state, &state.utf8_char, from_modem);
+
+        /*
         DLOG(("    UTF-8: decode state: %d char %04x '%lc'\n", state.utf8_state,
                 state.utf8_char, (wint_t) state.utf8_char));
+         */
 
         if ((last_utf8_state == state.utf8_state) &&
             (state.utf8_state != UTF8_ACCEPT)
@@ -3361,8 +3373,7 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
     /* 0x9B == CSI 8-bit sequence */
     if ((from_modem == 0x9B) &&
         ((q_status.emulation == Q_EMUL_VT220) ||
-            (q_status.emulation == Q_EMUL_XTERM) ||
-            (q_status.emulation == Q_EMUL_XTERM_UTF8))
+            (q_status.emulation == Q_EMUL_XTERM))
     ) {
         scan_state = SCAN_CSI_ENTRY;
         discard = Q_TRUE;
@@ -3371,8 +3382,7 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
     /* 0x9D goes to SCAN_OSC_STRING */
     if ((from_modem == 0x9D) &&
         ((q_status.emulation == Q_EMUL_VT220) ||
-            (q_status.emulation == Q_EMUL_XTERM) ||
-            (q_status.emulation == Q_EMUL_XTERM_UTF8))
+            (q_status.emulation == Q_EMUL_XTERM))
     ) {
         scan_state = SCAN_OSC_STRING;
         discard = Q_TRUE;
@@ -3381,8 +3391,7 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
     /* 0x90 goes to SCAN_DCS_ENTRY */
     if ((from_modem == 0x90) &&
         ((q_status.emulation == Q_EMUL_VT220) ||
-            (q_status.emulation == Q_EMUL_XTERM) ||
-            (q_status.emulation == Q_EMUL_XTERM_UTF8))
+            (q_status.emulation == Q_EMUL_XTERM))
     ) {
         scan_state = SCAN_DCS_ENTRY;
         discard = Q_TRUE;
@@ -3393,8 +3402,7 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
             (from_modem == 0x9E) ||
             (from_modem == 0x9F)) &&
         ((q_status.emulation == Q_EMUL_VT220) ||
-            (q_status.emulation == Q_EMUL_XTERM) ||
-            (q_status.emulation == Q_EMUL_XTERM_UTF8))
+            (q_status.emulation == Q_EMUL_XTERM))
     ) {
         scan_state = SCAN_SOSPMAPC_STRING;
         discard = Q_TRUE;
@@ -4881,8 +4889,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                     (q_status.emulation == Q_EMUL_XTERM) ||
                     (q_status.emulation == Q_EMUL_XTERM_UTF8)
                 ) {
-                    state.saved_cursor_x = q_status.cursor_x;
-                    state.saved_cursor_y = q_status.cursor_y;
+                    if (state.dec_private_mode_flag == Q_FALSE) {
+                        state.saved_cursor_x = q_status.cursor_x;
+                        state.saved_cursor_y = q_status.cursor_y;
+                    }
                 }
                 break;
             case 't':
@@ -4894,7 +4904,9 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                     (q_status.emulation == Q_EMUL_XTERM) ||
                     (q_status.emulation == Q_EMUL_XTERM_UTF8)
                 ) {
-                    if (state.saved_cursor_x != -1) {
+                    if ((state.dec_private_mode_flag == Q_FALSE) &&
+                        (state.saved_cursor_x != -1)
+                    ) {
                         cursor_position(state.saved_cursor_y,
                                         state.saved_cursor_x);
                     }
@@ -5247,8 +5259,10 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                     (q_status.emulation == Q_EMUL_XTERM) ||
                     (q_status.emulation == Q_EMUL_XTERM_UTF8)
                 ) {
-                    state.saved_cursor_x = q_status.cursor_x;
-                    state.saved_cursor_y = q_status.cursor_y;
+                    if (state.dec_private_mode_flag == Q_FALSE) {
+                        state.saved_cursor_x = q_status.cursor_x;
+                        state.saved_cursor_y = q_status.cursor_y;
+                    }
                 }
                 break;
             case 't':
@@ -5260,7 +5274,9 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                     (q_status.emulation == Q_EMUL_XTERM) ||
                     (q_status.emulation == Q_EMUL_XTERM_UTF8)
                 ) {
-                    if (state.saved_cursor_x != -1) {
+                    if ((state.dec_private_mode_flag == Q_FALSE) &&
+                        (state.saved_cursor_x != -1)
+                    ) {
                         cursor_position(state.saved_cursor_y,
                                         state.saved_cursor_x);
                     }
