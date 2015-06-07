@@ -43,9 +43,6 @@ CryptLib support
     window-change - send new window dimensions
 
 
-SGR mouse reporting
-
-
 Q_OPTION_SCRIPTS_DIR
 
 

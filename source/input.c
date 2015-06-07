@@ -20,6 +20,7 @@
 
 #include <string.h>
 #include <assert.h>
+#include <stdlib.h>
 #ifdef Q_PDCURSES_WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -869,6 +870,7 @@ void handle_mouse() {
 
     wchar_t raw_buffer[6];
     char utf8_buffer[6 * 2 + 4 + 1];
+    char sgr_buffer[32];
     MEVENT mouse;
     int rc;
     int i;
@@ -880,13 +882,25 @@ void handle_mouse() {
      * Hang onto the prior states and convert MOTION into RELEASE events as
      * needed.
      */
-    static Q_BOOL mouse1 = Q_FALSE;
-    static Q_BOOL mouse2 = Q_FALSE;
-    static Q_BOOL mouse3 = Q_FALSE;
-    static Q_BOOL mouse4 = Q_FALSE;
-    static Q_BOOL mouse5 = Q_FALSE;
+    static Q_BOOL old_mouse1 = Q_FALSE;
+    static Q_BOOL old_mouse2 = Q_FALSE;
+    static Q_BOOL old_mouse3 = Q_FALSE;
+    static Q_BOOL old_mouse4 = Q_FALSE;
+    Q_BOOL mouse1 = Q_FALSE;
+    Q_BOOL mouse2 = Q_FALSE;
+    Q_BOOL mouse3 = Q_FALSE;
+    Q_BOOL mouse4 = Q_FALSE;
+    /*
+     * ncurses doesn't always support button 5, so put all references to
+     * button 5 inside an ifdef check.
+     */
+#ifdef BUTTON5_PRESSED
+    static Q_BOOL old_mouse5 = Q_FALSE;
+    Q_BOOL mouse5 = Q_FALSE;
+#endif
     static int old_x = -1;
     static int old_y = -1;
+    Q_BOOL press = Q_FALSE;
     Q_BOOL release = Q_FALSE;
     Q_BOOL motion = Q_FALSE;
     Q_BOOL real_motion = Q_FALSE;
@@ -911,174 +925,14 @@ void handle_mouse() {
                 q_xterm_mouse_encoding ==
                 XTERM_MOUSE_ENCODING_UTF8 ? "XTERM_MOUSE_ENCODING_UTF8" :
                 "XTERM_MOUSE_ENCODING_SGR"));
-        DLOG(("raw: %d %d %d %08lx\t", mouse.x, mouse.y, mouse.z,
+        DLOG2(("raw: %d %d %d %08lx\t", mouse.x, mouse.y, mouse.z,
                 mouse.bstate));
-
-        if (mouse.bstate & REPORT_MOUSE_POSITION) {
-            motion = Q_TRUE;
-        }
-        if ((old_x != mouse.x) || (old_y != mouse.y)) {
-            real_motion = Q_TRUE;
-        }
-
-        if ((mouse.bstate & BUTTON1_PRESSED) && (mouse1 == Q_FALSE)) {
-            mouse1 = Q_TRUE;
-        } else if ((mouse1 == Q_TRUE) && (real_motion == Q_FALSE)) {
-            /*
-             * Convert to RELEASE
-             */
-            mouse1 = Q_FALSE;
-            release = Q_TRUE;
-            motion = Q_FALSE;
-        }
-        if ((mouse.bstate & BUTTON2_PRESSED) && (mouse2 == Q_FALSE)) {
-            mouse2 = Q_TRUE;
-        } else if ((mouse2 == Q_TRUE) && (real_motion == Q_FALSE)) {
-            /*
-             * Convert to RELEASE
-             */
-            mouse2 = Q_FALSE;
-            release = Q_TRUE;
-            motion = Q_FALSE;
-        }
-        if ((mouse.bstate & BUTTON3_PRESSED) && (mouse3 == Q_FALSE)) {
-            mouse3 = Q_TRUE;
-        } else if ((mouse3 == Q_TRUE) && (real_motion == Q_FALSE)) {
-            /*
-             * Convert to RELEASE
-             */
-            mouse3 = Q_FALSE;
-            release = Q_TRUE;
-            motion = Q_FALSE;
-        }
-
-        if ((mouse.bstate & BUTTON4_PRESSED) &&
-            ((mouse1 == Q_TRUE) || (mouse2 == Q_TRUE) || (mouse3 == Q_TRUE))
-        ) {
-            /*
-             * This is actually a motion event with another mouse button
-             * down.
-             */
-            motion = Q_TRUE;
-        } else if ((mouse.bstate & BUTTON4_PRESSED) && (mouse4 == Q_FALSE)) {
-            mouse4 = Q_TRUE;
-        } else if ((mouse4 == Q_TRUE) && (real_motion == Q_FALSE)) {
-            /*
-             * Convert to RELEASE
-             */
-            mouse4 = Q_FALSE;
-            release = Q_TRUE;
-            motion = Q_FALSE;
-        }
-#ifdef BUTTON5_PRESSED
-        /*
-         * ncurses doesn't always support button 5
-         */
-        if ((mouse.bstate & BUTTON5_PRESSED) && (mouse5 == Q_FALSE)) {
-            mouse5 = Q_TRUE;
-        } else if ((mouse5 == Q_TRUE) && (real_motion == Q_FALSE)) {
-            /*
-             * Convert to RELEASE
-             */
-            mouse5 = Q_FALSE;
-            release = Q_TRUE;
-            motion = Q_FALSE;
-        }
-#endif
-
-        if (mouse.bstate & BUTTON1_RELEASED) {
-            mouse1 = Q_FALSE;
-            release = Q_TRUE;
-            motion = Q_FALSE;
-        }
-        if (mouse.bstate & BUTTON2_RELEASED) {
-            mouse2 = Q_FALSE;
-            release = Q_TRUE;
-            motion = Q_FALSE;
-        }
-        if (mouse.bstate & BUTTON3_RELEASED) {
-            mouse3 = Q_FALSE;
-            release = Q_TRUE;
-            motion = Q_FALSE;
-        }
-        if (mouse.bstate & BUTTON4_RELEASED) {
-            mouse4 = Q_FALSE;
-            release = Q_TRUE;
-            motion = Q_FALSE;
-        }
-#ifdef BUTTON5_RELEASED
-        /*
-         * ncurses doesn't always support button 5
-         */
-        if (mouse.bstate & BUTTON5_RELEASED) {
-            mouse5 = Q_FALSE;
-            release = Q_TRUE;
-            motion = Q_FALSE;
-        }
-#endif
-
-        /*
-         * Default to a mouse motion event
-         */
-        raw_buffer[0] = C_ESC;
-        raw_buffer[1] = '[';
-        raw_buffer[2] = 'M';
-        raw_buffer[3] = 3;
-        raw_buffer[4] = mouse.x + 33;
-        raw_buffer[5] = mouse.y + 33;
-
-        DLOG(("buttons: %s %s %s %s %s %s %s\n",
-                (release == Q_TRUE ? "RELEASE" : "PRESS  "),
-                (motion == Q_TRUE ? "MOTION" : "      "),
-                (mouse1 == Q_TRUE ? "1" : " "),
-                (mouse2 == Q_TRUE ? "2" : " "),
-                (mouse3 == Q_TRUE ? "3" : " "),
-                (mouse4 == Q_TRUE ? "4" : " "),
-                (mouse5 == Q_TRUE ? "5" : " ")));
-
-        /*
-         * Encode button information
-         */
-        if (release == Q_TRUE) {
-            raw_buffer[3] = 3;
-        } else if (mouse1 == Q_TRUE) {
-            raw_buffer[3] = 0;
-        } else if (mouse2 == Q_TRUE) {
-            raw_buffer[3] = 1;
-        } else if (mouse3 == Q_TRUE) {
-            raw_buffer[3] = 2;
-        } else if (mouse4 == Q_TRUE) {
-            raw_buffer[3] = 4;
-        } else if (mouse5 == Q_TRUE) {
-            raw_buffer[3] = 5;
-        }
-
-        /*
-         * At this point, if raw_buffer[3] == 3 and release == false, then
-         * this was a mouse motion event without a button down.  Otherwise
-         * there is a button and release either true or false.
-         */
-
-        if (!((raw_buffer[3] == 3) && (release == Q_FALSE))) {
-            DLOG(("   button press or button release or motion while button down\n"));
-        } else if (!((release == Q_TRUE) || (raw_buffer[3] == 3))) {
-            DLOG(("   button press only\n"));
-        } else if (!((raw_buffer[3] == 3))) {
-            DLOG(("   button press or button release only\n"));
-        } else {
-            DLOG(("   motion with no button down: %s\n",
-                    (motion == Q_TRUE ? "MOTION" : "      ")));
-        }
-
-        old_x = mouse.x;
-        old_y = mouse.y;
 
         /*
          * Mouse event is parsed, now decide what to do with it.
          */
-
         if (q_program_state != Q_STATE_CONSOLE) {
-            DLOG((" DISCARD not in console\n"));
+            DLOG2((" DISCARD not in console\n"));
 
             /*
              * Discard.  We only care about the mouse when connected and in
@@ -1087,10 +941,148 @@ void handle_mouse() {
             return;
         }
         if ((q_status.online == Q_FALSE) && !Q_SERIAL_OPEN) {
-            DLOG((" DISCARD not online\n"));
+            DLOG2((" DISCARD not online\n"));
             return;
         }
 
+        /*
+         * Analyze the MOUSE structure to figure out if this is a press,
+         * release, or motion event.
+         */
+
+        if (mouse.bstate & REPORT_MOUSE_POSITION) {
+            motion = Q_TRUE;
+        }
+        if ((old_x != mouse.x) || (old_y != mouse.y)) {
+            real_motion = Q_TRUE;
+        }
+        old_x = mouse.x;
+        old_y = mouse.y;
+
+        if ((mouse.bstate & BUTTON1_PRESSED) && (old_mouse1 == Q_FALSE)) {
+            /*
+             * This is a fresh press on mouse1.
+             */
+            mouse1 = Q_TRUE;
+            old_mouse1 = Q_TRUE;
+        } else if ((old_mouse1 == Q_TRUE) && (real_motion == Q_FALSE)) {
+            /*
+             * Convert this motion into a RELEASE.  Same logic for the other
+             * buttons.
+             */
+            mouse1 = Q_TRUE;
+            release = Q_TRUE;
+            motion = Q_FALSE;
+        }
+        if ((mouse.bstate & BUTTON2_PRESSED) && (old_mouse2 == Q_FALSE)) {
+            mouse2 = Q_TRUE;
+            old_mouse2 = Q_TRUE;
+        } else if ((old_mouse2 == Q_TRUE) && (real_motion == Q_FALSE)) {
+            mouse2 = Q_TRUE;
+            release = Q_TRUE;
+            motion = Q_FALSE;
+        }
+        if ((mouse.bstate & BUTTON3_PRESSED) && (old_mouse3 == Q_FALSE)) {
+            mouse3 = Q_TRUE;
+            old_mouse3 = Q_TRUE;
+        } else if ((old_mouse3 == Q_TRUE) && (real_motion == Q_FALSE)) {
+            mouse3 = Q_TRUE;
+            release = Q_TRUE;
+            motion = Q_FALSE;
+        }
+
+        if ((mouse.bstate & BUTTON4_PRESSED) &&
+            ((old_mouse1 == Q_TRUE) ||
+                (old_mouse2 == Q_TRUE) ||
+                (old_mouse3 == Q_TRUE))
+        ) {
+            /*
+             * This is actually a motion event with another mouse button
+             * down.
+             */
+            motion = Q_TRUE;
+        } else if ((mouse.bstate & BUTTON4_PRESSED) && (old_mouse4 == Q_FALSE)
+        ) {
+            mouse4 = Q_TRUE;
+            old_mouse4 = Q_TRUE;
+        } else if ((old_mouse4 == Q_TRUE) && (real_motion == Q_FALSE)) {
+            mouse4 = Q_TRUE;
+            release = Q_TRUE;
+            motion = Q_FALSE;
+        }
+
+#ifdef BUTTON5_PRESSED
+        if ((mouse.bstate & BUTTON5_PRESSED) && (old_mouse5 == Q_FALSE)) {
+            mouse5 = Q_TRUE;
+            old_mouse5 = Q_TRUE;
+        } else if ((old_mouse5 == Q_TRUE) && (real_motion == Q_FALSE)) {
+            mouse5 = Q_TRUE;
+            release = Q_TRUE;
+            motion = Q_FALSE;
+        }
+#endif
+
+        if (mouse.bstate & BUTTON1_RELEASED) {
+            mouse1 = Q_TRUE;
+            old_mouse1 = Q_FALSE;
+            release = Q_TRUE;
+            motion = Q_FALSE;
+        }
+        if (mouse.bstate & BUTTON2_RELEASED) {
+            mouse2 = Q_TRUE;
+            old_mouse2 = Q_FALSE;
+            release = Q_TRUE;
+            motion = Q_FALSE;
+        }
+        if (mouse.bstate & BUTTON3_RELEASED) {
+            mouse3 = Q_TRUE;
+            old_mouse3 = Q_FALSE;
+            release = Q_TRUE;
+            motion = Q_FALSE;
+        }
+        if (mouse.bstate & BUTTON4_RELEASED) {
+            mouse4 = Q_TRUE;
+            old_mouse4 = Q_FALSE;
+            release = Q_TRUE;
+            motion = Q_FALSE;
+        }
+#ifdef BUTTON5_RELEASED
+        if (mouse.bstate & BUTTON5_RELEASED) {
+            mouse5 = Q_TRUE;
+            old_mouse5 = Q_FALSE;
+            release = Q_TRUE;
+            motion = Q_FALSE;
+        }
+#endif
+        if ((release == Q_FALSE) && (motion == Q_FALSE)) {
+            press = Q_TRUE;
+        }
+
+#ifdef BUTTON5_RELEASED
+        DLOG2(("buttons: %s %s %s %s %s %s %s %s\n",
+                (release == Q_TRUE ? "RELEASE" : "       "),
+                (press == Q_TRUE ? "PRESS" : "     "),
+                (motion == Q_TRUE ? "MOTION" : "      "),
+                (mouse1 == Q_TRUE ? "1" : " "),
+                (mouse2 == Q_TRUE ? "2" : " "),
+                (mouse3 == Q_TRUE ? "3" : " "),
+                (mouse4 == Q_TRUE ? "4" : " "),
+                (mouse5 == Q_TRUE ? "5" : " ")));
+#else
+        DLOG2(("buttons: %s %s %s %s %s %s %s\n",
+                (release == Q_TRUE ? "RELEASE" : "       "),
+                (press == Q_TRUE ? "PRESS" : "     "),
+                (motion == Q_TRUE ? "MOTION" : "      "),
+                (mouse1 == Q_TRUE ? "1" : " "),
+                (mouse2 == Q_TRUE ? "2" : " "),
+                (mouse3 == Q_TRUE ? "3" : " "),
+                (mouse4 == Q_TRUE ? "4" : " ")));
+#endif
+
+        /*
+         * See if we need to report this event based on the requested
+         * protocol.
+         */
         switch (q_xterm_mouse_protocol) {
         case XTERM_MOUSE_OFF:
             /*
@@ -1102,7 +1094,7 @@ void handle_mouse() {
             /*
              * Only report button presses
              */
-            if ((release == Q_TRUE) || (raw_buffer[3] == 3)) {
+            if ((release == Q_TRUE) || (motion == Q_TRUE)) {
                 return;
             }
             break;
@@ -1111,17 +1103,27 @@ void handle_mouse() {
             /*
              * Only report button presses and releases
              */
-            if (raw_buffer[3] == 3) {
+            if ((press == Q_FALSE) && (release == Q_FALSE)) {
                 return;
             }
             break;
 
         case XTERM_MOUSE_BUTTONEVENT:
             /*
-             * Only report button presses and releases with button down
+             * Only report button presses, button releases, and motions that
+             * have a button down (i.e. drag-and-drop).
              */
-            if ((raw_buffer[3] == 3) && (release == Q_FALSE)) {
-                return;
+            if (motion == Q_TRUE) {
+                if ((mouse1 == Q_FALSE) &&
+                    (mouse2 == Q_FALSE) &&
+                    (mouse3 == Q_FALSE) &&
+                    (mouse4 == Q_FALSE)
+#ifdef BUTTON5_RELEASED
+                    && (mouse5 == Q_FALSE)
+#endif
+                ) {
+                    return;
+                }
             }
             break;
 
@@ -1134,46 +1136,189 @@ void handle_mouse() {
 
         DLOG(("   -- DO ENCODE --\n"));
 
-        if ((raw_buffer[3] == 4) || (raw_buffer[3] == 5)) {
-            DLOG(("   mouse wheel\n"));
-            raw_buffer[3] += 64;
+        /*
+         * At this point, if motion == true and release == false, then this
+         * was a mouse motion event without a button down.  Otherwise there
+         * is a button and release is either true or false.
+         */
+        if (!((motion == Q_TRUE) && (release == Q_FALSE))) {
+            DLOG(("   button press or button release or motion while button down\n"));
+        } else if (!((release == Q_TRUE) || (real_motion == Q_TRUE))) {
+            DLOG(("   button press only\n"));
+        } else if (real_motion == Q_FALSE) {
+            DLOG(("   button press or button release only\n"));
         } else {
-            raw_buffer[3] += 32;
+            DLOG(("   motion with no button down: motion %s real_motion %s\n",
+                    (motion == Q_TRUE ? "TRUE" : "FALSE"),
+                    (real_motion == Q_TRUE ? "TRUE" : "")));
+        }
+
+#ifdef BUTTON5_RELEASED
+        if ((mouse4 == Q_TRUE) || (mouse5 == Q_TRUE)) {
+#else
+        if (mouse4 == Q_TRUE) {
+#endif
+            DLOG(("   mouse wheel\n"));
         }
 
         if (motion == Q_TRUE) {
             assert(release == Q_FALSE);
             DLOG(("   -motion only\n"));
-            /*
-             * Motion-only event
-             */
-            raw_buffer[3] += 32;
         }
 
-        memset(utf8_buffer, 0, sizeof(utf8_buffer));
-        switch (q_xterm_mouse_encoding) {
-        case XTERM_MOUSE_ENCODING_X10:
-            for (i = 0; i < 6; i++) {
-                utf8_buffer[i] = raw_buffer[i];
+        if (q_xterm_mouse_encoding != XTERM_MOUSE_ENCODING_SGR) {
+
+            raw_buffer[0] = C_ESC;
+            raw_buffer[1] = '[';
+            raw_buffer[2] = 'M';
+            if (release == Q_TRUE) {
+                raw_buffer[3] = 3 + 32;
+            } else if (mouse1 == Q_TRUE) {
+                if (motion == Q_TRUE) {
+                    raw_buffer[3] = 0 + 32 + 32;
+                } else {
+                    raw_buffer[3] = 0 + 32;
+                }
+            } else if (mouse2 == Q_TRUE) {
+                if (motion == Q_TRUE) {
+                    raw_buffer[3] = 1 + 32 + 32;
+                } else {
+                    raw_buffer[3] = 1 + 32;
+                }
+            } else if (mouse3 == Q_TRUE) {
+                if (motion == Q_TRUE) {
+                    raw_buffer[3] = 2 + 32 + 32;
+                } else {
+                    raw_buffer[3] = 2 + 32;
+                }
+            } else if (mouse4 == Q_TRUE) {
+                /*
+                 * Mouse wheel up.
+                 */
+                raw_buffer[3] = 4 + 64;
+#ifdef BUTTON5_RELEASED
+            } else if (mouse5 == Q_TRUE) {
+                /*
+                 * Mouse wheel down.
+                 */
+                raw_buffer[3] = 5 + 64;
+#endif
+            } else {
+                /*
+                 * This is motion with no buttons down.
+                 */
+                raw_buffer[3] = 3 + 32;
             }
-            break;
-        case XTERM_MOUSE_ENCODING_UTF8:
-            rc = 0;
-            for (i = 0; i < 6; i++) {
-                rc += utf8_encode(raw_buffer[i], utf8_buffer + rc);
+            raw_buffer[4] = mouse.x + 33;
+            raw_buffer[5] = mouse.y + 33;
+
+            memset(utf8_buffer, 0, sizeof(utf8_buffer));
+            switch (q_xterm_mouse_encoding) {
+            case XTERM_MOUSE_ENCODING_X10:
+                for (i = 0; i < 6; i++) {
+                    utf8_buffer[i] = raw_buffer[i];
+                }
+                break;
+            case XTERM_MOUSE_ENCODING_UTF8:
+                rc = 0;
+                for (i = 0; i < 6; i++) {
+                    rc += utf8_encode(raw_buffer[i], utf8_buffer + rc);
+                }
+                break;
+            case XTERM_MOUSE_ENCODING_SGR:
+                /*
+                 * BUG: should never get here
+                 */
+                abort();
             }
-            break;
-        case XTERM_MOUSE_ENCODING_SGR:
-            /* TODO */
-            break;
-        }
-        DLOG((" * WRITE %ld bytes: ", (long) strlen(utf8_buffer)));
-        for (i = 0; i < strlen(utf8_buffer); i++) {
-            DLOG2(("%c", utf8_buffer[i]));
-        }
-        DLOG2(("\n"));
-        qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer), Q_TRUE);
-    }
+
+            DLOG((" * WRITE %ld bytes: ", (long) strlen(utf8_buffer)));
+            for (i = 0; i < strlen(utf8_buffer); i++) {
+                DLOG2(("%02x ", utf8_buffer[i]));
+            }
+            DLOG2(("\n"));
+            qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer),
+                        Q_TRUE);
+            return;
+
+        } else {
+            /*
+             * SGR encoding.
+             */
+            memset(sgr_buffer, 0, sizeof(sgr_buffer));
+            sgr_buffer[0] = 0x1B;
+            sgr_buffer[1] = '[';
+            sgr_buffer[2] = '<';
+
+            if (mouse1 == Q_TRUE) {
+                if (motion == Q_TRUE) {
+                    snprintf(sgr_buffer + strlen(sgr_buffer),
+                             sizeof(sgr_buffer) - strlen(sgr_buffer) - 1, "%s",
+                             "32;");
+                } else {
+                    snprintf(sgr_buffer + strlen(sgr_buffer),
+                             sizeof(sgr_buffer) - strlen(sgr_buffer) - 1, "%s",
+                             "0;");
+                }
+            } else if (mouse2 == Q_TRUE) {
+                if (motion == Q_TRUE) {
+                    snprintf(sgr_buffer + strlen(sgr_buffer),
+                             sizeof(sgr_buffer) - strlen(sgr_buffer) - 1, "%s",
+                             "33;");
+                } else {
+                    snprintf(sgr_buffer + strlen(sgr_buffer),
+                             sizeof(sgr_buffer) - strlen(sgr_buffer) - 1, "%s",
+                             "1;");
+                }
+            } else if (mouse3 == Q_TRUE) {
+                if (motion == Q_TRUE) {
+                    snprintf(sgr_buffer + strlen(sgr_buffer),
+                             sizeof(sgr_buffer) - strlen(sgr_buffer) - 1, "%s",
+                             "34;");
+                } else {
+                    snprintf(sgr_buffer + strlen(sgr_buffer),
+                             sizeof(sgr_buffer) - strlen(sgr_buffer) - 1, "%s",
+                             "2;");
+                }
+            } else if (mouse4 == Q_TRUE) {
+                snprintf(sgr_buffer + strlen(sgr_buffer),
+                         sizeof(sgr_buffer) - strlen(sgr_buffer) - 1, "%s",
+                         "64;");
+#ifdef BUTTON5_RELEASED
+            } else if (mouse5 == Q_TRUE) {
+                snprintf(sgr_buffer + strlen(sgr_buffer),
+                         sizeof(sgr_buffer) - strlen(sgr_buffer) - 1, "%s",
+                         "65;");
+#endif
+            } else {
+                /*
+                 * This is motion with no buttons down.
+                 */
+                snprintf(sgr_buffer + strlen(sgr_buffer),
+                         sizeof(sgr_buffer) - strlen(sgr_buffer) - 1, "%s",
+                         "35;");
+            }
+
+            snprintf(sgr_buffer + strlen(sgr_buffer),
+                     sizeof(sgr_buffer) - strlen(sgr_buffer) - 1, "%d;%d",
+                     mouse.x + 1, mouse.y + 1);
+
+            if (release == Q_TRUE) {
+                sgr_buffer[strlen(sgr_buffer)] = 'm';
+            } else {
+                sgr_buffer[strlen(sgr_buffer)] = 'M';
+            }
+
+            DLOG((" * WRITE %ld bytes: ", (long) strlen(sgr_buffer)));
+            for (i = 0; i < strlen(sgr_buffer); i++) {
+                DLOG2(("%c ", sgr_buffer[i]));
+            }
+            DLOG2(("\n"));
+            qodem_write(q_child_tty_fd, sgr_buffer, strlen(sgr_buffer), Q_TRUE);
+
+        } /* if (q_xterm_mouse_encoding != XTERM_MOUSE_ENCODING_SGR) */
+
+    } /* if ((rc = getmouse(&mouse)) == OK) */
 
     /*
      * All done

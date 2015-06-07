@@ -467,9 +467,12 @@ The default emulation for raw serial and command line connections is
 VT102 rather than ANSI.
 
 Qodem will listen for mouse events and send them to the remote side
-using the same wire protocol as xterm's X10 or UTF8 encoding.  It
-supports the X10-, normal-, button-, and any-event-tracking modes.
-This is only supported for XTERM and X_UTF8 emulations.
+using the same wire protocol as xterm's X10, UTF8, or SGR encoding.
+It supports the X10-, normal-, button-, and any-event-tracking modes.
+This is only available for XTERM and X_UTF8 emulations.  Note that
+ncurses will not report any-event mouse events to qodem unles TERM is
+"xterm-1003"; similarly button-event tracking requires TERM to be
+"xterm-1002".
 
 The IBM PC ALT and CTRL + {function key} combinations do not work
 through the curses terminal library.  CTRL-Home, CTRL-End, CTRL-PgUp,
