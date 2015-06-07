@@ -3774,7 +3774,7 @@ static void zmodem_receive(unsigned char * input, int input_n,
             /*
              * Receive should NEVER see these states
              */
-            assert(1 == 0);
+            abort();
             break;
 
         } /* switch (status.state) */
@@ -5326,7 +5326,7 @@ static void zmodem_send(unsigned char * input, int input_n,
                 /*
                  * Send should NEVER see these states
                  */
-                assert(1 == 0);
+                abort();
                 break;
             } /* switch (status.state) */
 

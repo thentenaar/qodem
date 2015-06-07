@@ -2553,7 +2553,7 @@ static Q_BOOL prompt_ssh_password(const wchar_t * initial_username,
     /*
      * Should never get here.
      */
-    assert(1 == 0);
+    abort();
     return Q_FALSE;
 }
 
@@ -7826,7 +7826,7 @@ static void modem_data(unsigned char * input, int input_n, int * remaining,
         break;
 
     case DIAL_MODEM_CONNECTED:
-        assert(1 == 0);
+        abort();
     }
 
 }
@@ -7887,7 +7887,7 @@ void dialer_process_data(unsigned char * input, const int input_n,
         /*
          * BUG - these go straight to CONSOLE
          */
-        assert(1 == 0);
+        abort();
     }
 
     DLOG(("DIALER: EXITING %d input bytes:  ", *remaining));

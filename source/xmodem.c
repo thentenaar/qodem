@@ -2902,7 +2902,7 @@ Q_BOOL xmodem_start(const char * in_filename, const Q_BOOL send,
             /*
              * Should never get here
              */
-            assert(1 == 0);
+            abort();
         }
     }
 
@@ -2938,7 +2938,7 @@ Q_BOOL xmodem_start(const char * in_filename, const Q_BOOL send,
         /*
          * Should never get here
          */
-        assert(1 == 0);
+        abort();
     }
 
     /*

@@ -305,7 +305,7 @@ static void convert_unicode(char * input, wchar_t * output) {
                 /*
                  * This is a bug. Bail out.
                  */
-                assert(1 == 0);
+                abort();
             }
             break;
         case U_HEX:
@@ -326,7 +326,7 @@ static void convert_unicode(char * input, wchar_t * output) {
                 /*
                  * This is a bug. Bail out.
                  */
-                assert(1 == 0);
+                abort();
             }
             break;
         }

@@ -6039,7 +6039,7 @@ static void handle_timeout(unsigned char * output, int * output_n,
                     /*
                      * This should be a bug
                      */
-                    assert(1 == 0);
+                    abort();
                 }
             }
         }

@@ -421,7 +421,7 @@ char * baud_string(const Q_BAUD_RATE baud) {
         /*
          * BUG
          */
-        assert(1 == 0);
+        abort();
     }
     return NULL;
 }
@@ -451,7 +451,7 @@ char * data_bits_string(const Q_DATA_BITS bits) {
         /*
          * BUG
          */
-        assert(1 == 0);
+        abort();
     }
     return NULL;
 }
@@ -487,7 +487,7 @@ char * parity_string(const Q_PARITY parity, const Q_BOOL short_form) {
         /*
          * BUG
          */
-        assert(1 == 0);
+        abort();
     }
     return NULL;
 }
@@ -511,7 +511,7 @@ char * stop_bits_string(const Q_STOP_BITS bits) {
         /*
          * BUG
          */
-        assert(1 == 0);
+        abort();
     }
     return NULL;
 }
@@ -1258,7 +1258,7 @@ exit_dialog:
                 /*
                  * BUG
                  */
-                assert(1 == 0);
+                abort();
 
             case M_NAME:
                 Xfree(q_modem_config.name, __FILE__, __LINE__);
@@ -1312,7 +1312,7 @@ exit_dialog:
                 /*
                  * Never get here
                  */
-                assert(1 == 0);
+                abort();
                 break;
             }
 
@@ -1415,7 +1415,7 @@ exit_dialog:
         /*
          * BUG
          */
-        assert(1 == 0);
+        abort();
 
     case M_NAME:
         field_set_value(modem_config_entry_field, q_modem_config.name);
@@ -1458,7 +1458,7 @@ exit_dialog:
         /*
          * Never get here
          */
-        assert(1 == 0);
+        abort();
         break;
     }
 

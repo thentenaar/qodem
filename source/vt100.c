@@ -239,7 +239,7 @@ static const char * charset_string(VT100_CHARACTER_SET charset) {
         return "SWISS";
     }
 
-    assert(1 == 0);
+    abort();
     return "";
 };
 
@@ -823,7 +823,7 @@ static wchar_t map_character(const unsigned char vt100_char) {
         case LOCKSHIFT_G1_GR:
         case LOCKSHIFT_G2_GR:
         case LOCKSHIFT_G3_GR:
-            assert(1 == 0);
+            abort();
             break;
 
         case LOCKSHIFT_G2_GL:
@@ -846,7 +846,7 @@ static wchar_t map_character(const unsigned char vt100_char) {
 
         case LOCKSHIFT_G2_GL:
         case LOCKSHIFT_G3_GL:
-            assert(1 == 0);
+            abort();
             break;
 
         case LOCKSHIFT_G1_GR:

@@ -151,7 +151,7 @@ void keyboard_handler() {
         /*
          * Program BUG
          */
-        assert(1 == 0);
+        abort();
     }
 }
 
@@ -265,7 +265,7 @@ void refresh_handler() {
         /*
          * Program BUG
          */
-        assert(1 == 0);
+        abort();
 
     }
 }

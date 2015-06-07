@@ -150,9 +150,9 @@ const char * emulation_string(const Q_EMULATION emulation) {
     }
 
     /*
-     * Never get here
+     * Should never get here.
      */
-    assert(1 == 0);
+    abort();
     return NULL;
 }
 

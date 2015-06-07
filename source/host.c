@@ -659,7 +659,7 @@ static void do_login() {
     /*
      * Should never get here
      */
-    assert(1 == 0);
+    abort();
 }
 
 /* Finished entering a message. */
@@ -762,7 +762,7 @@ static void enter_message() {
     /*
      * Should never get here
      */
-    assert(1 == 0);
+    abort();
 }
 
 /* Abandon a message without saving it */
@@ -1516,7 +1516,7 @@ download_top:
             /*
              * Should never get here
              */
-            assert(1 == 0);
+            abort();
         }
 
         DLOG(("START_FILE_TRANSFER\n"));
@@ -1542,7 +1542,7 @@ download_top:
     /*
      * Should never get here
      */
-    assert(1 == 0);
+    abort();
 }
 
 /* Do download with xmodem */
@@ -1662,7 +1662,7 @@ upload_top:
                     /*
                      * Should never get here
                      */
-                    assert(1 == 0);
+                    abort();
                 }
 
                 q_transfer_stats.protocol = protocol;
@@ -1786,7 +1786,7 @@ upload_top:
     /*
      * Should never get here
      */
-    assert(1 == 0);
+    abort();
 }
 
 /* Do upload with xmodem */
