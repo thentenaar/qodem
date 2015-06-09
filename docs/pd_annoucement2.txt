@@ -1,0 +1,63 @@
+========================================================================
+ System: Vertrauen
+   Area: General
+   Date: 05-27-15 06:22
+   From: Kevinl
+     To: All
+   Subj: Qodem in public domain
+------------------------------------------------------------------------
+A month ago I started working on qodem again, with the goal of taking
+it from the barely-working 1.0alpha to a solid reliable 1.0beta
+release.
+
+This is after a very long three-year gap in development, driven by
+multiple work-related moves in my meatspace life.  This is the longest
+such gap but certainly not the first: there have been many gaps
+spanning from 6 to 18 months since I started qodem in 2003.  It is
+time for me to recognize that the unusual events in my life between
+2003-2006 that supported qodem's development are unlikely to happen
+again.  So I have decided to do several things for qodem and the wider
+BBS / command line terminal community:
+
+1. I am paying off nearly all of qodem's technical debt.  The code
+   base has gone through a monstrous update including code style,
+   internal documentation, cleaning up loose ends, and performing most
+   of the big refactorings that I have been putting off.  The new code
+   base is much easier to read and (crossing fingers) easier to
+   maintain for the long haul.
+
+2. I have made Windows a top priority.  The 1.0beta will feature full
+   feature parity between Windows and Linux (including serial ports)
+   and a Windows installer that will include the most recent Internet
+   BBS list.  I am using Borland 5.02 for now, but will also verify
+   that the code will work with Visual C++ 6.0.  The goal is to work
+   with all versions of Windows since Windows 95.
+
+3. As of yesterday, May 26, 2015, the qodem code base has been
+   dedicated to the public domain.  (CC0 for those jurisdictions that
+   don't recognize public domain.)  This is as "free" as one can make
+   anything: anyone who wants to make commercial closed-source
+   products out of this code is now legally free to do so.
+
+The qodem github repository is here: https://github.com/klamonte/qodem
+
+If you are a developer who finds something interesting and I didn't
+document it well enough to figure out quickly, please let me know and
+I will try to do better.
+
+The 1.0beta is still another 4-8 weeks out, but it is on the way.  I
+have about a dozen real bugs to fix, a revert back to cryptlib, a new
+autoconf build system (with corresponding updates for the deb and rpm
+builds), and a few other minor things.
+
+The one thing it will not have is the ability to answer the phone for
+host mode. If someone out there has an ssh-accessible landline and
+modem I could test with, I could probably get that in.  qodem 1.0beta
+would then be a complete superset of Qmodem 5.0 (well, scripts are
+different but that is by design).
+
+ - Kevin Lamonte
+
+... MultiMail, the new multi-platform, multi-format offline reader!
+--- MultiMail/Linux v0.49
+
