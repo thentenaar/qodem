@@ -10,9 +10,6 @@ Bug on xterm/ncurses: A_BOLD and ACS_VLINE
 Bug on xterm: -fbx/+fbx doesn't seem to do anything
 Bug on xterm: A_REVERSE + DECSCNM + A_BOLD
 
-BUG: check when phonebook calls start_quicklearn() after either
-     net_connect() or for dialup
-
 BUG: uploads are jerky to local synchronet.  Timing?
 
 BUG: no bold text in help system on Borland
@@ -28,10 +25,6 @@ Refactor:
 
   q_status.serial_open --> Q_SERIAL_OPEN
 
-  avatar: make ansi fallback an option instead of #DEFINE
-
-  Remove #if 0 / #if 1
-
 Detect xterm alternate screen and clear scrollback to retain what was
 seen before.
 
@@ -41,9 +34,6 @@ CryptLib support
   Patches:
     env - send TERM and LANG
     window-change - send new window dimensions
-
-
-Q_OPTION_SCRIPTS_DIR
 
 
 New autoconf build:

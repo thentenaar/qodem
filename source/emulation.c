@@ -798,13 +798,14 @@ Q_EMULATION_STATUS terminal_emulator(const unsigned char from_modem,
 
         if (q_status.emulation == Q_EMUL_AVATAR) {
             /*
-             * Avatar has its own logic for RLE strings
+             * Avatar has its own logic that needs to handle RLE strings.  It
+             * will also dump unknown sequences.
              */
             last_state = avatar(from_modem, to_screen);
             return last_state;
         } else {
             /*
-             * Everybody else just dumps the string to q_emul_buffer
+             * Everybody else just dumps the string in q_emul_buffer
              */
             if (q_emul_buffer_n == 0) {
                 /*

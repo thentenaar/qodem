@@ -72,9 +72,10 @@ void dlogprintf(const char * format, ...) {
     if (dlogtimestamp == Q_TRUE) {
         gettimeofday(&now, NULL);
         timestamp = localtime(&now.tv_sec);
-        strftime(timestring, sizeof(timestring), "[%Y-%m-%d %H:%M:%S.%%03d] ",
+        strftime(timestring, sizeof(timestring),
+                 "[%Y-%m-%d %H:%M:%S.%%03d] %%s ",
                  timestamp);
-        fprintf(dlogfile, timestring, (now.tv_usec / 1000));
+        fprintf(dlogfile, timestring, (now.tv_usec / 1000), dlogname);
     }
 
     va_start(arglist, format);

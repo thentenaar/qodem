@@ -2007,17 +2007,13 @@ Q_EMULATION_STATUS ansi(const unsigned char from_modem, wchar_t * to_screen) {
     }
 
     /*
-     * This point means we got most, but not all, of a sequence.  Start
-     * sending what we had, but translate to the codepage.  This has the nice
-     * benefit that escape sequences won't be emitted to qodem's console
-     * (which would junk up the curses display).
+     * This point means we got most, but not all, of a sequence.
      */
-
-    DLOG(("UNKNOWN SEQUENCE: \"%s\"\n", q_emul_buffer));
-
     q_emul_buffer[q_emul_buffer_n] = from_modem;
     q_emul_buffer_n++;
-    *to_screen = codepage_map_char(q_emul_buffer[q_emul_buffer_i]);
+    DLOG(("UNKNOWN SEQUENCE: \"%s\"\n", q_emul_buffer));
+
+    *to_screen = q_emul_buffer[q_emul_buffer_i];
     q_emul_buffer_i++;
     scan_state = SCAN_NONE;
 

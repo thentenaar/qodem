@@ -818,7 +818,7 @@ void script_start(const char * script_filename) {
      * Open stderr
      */
     stderr_filename =
-        substitute_string("$HOME/.qodem/scripts/script.stderr", "$HOME",
+        substitute_string(get_option(Q_OPTION_SCRIPTS_STDERR_FIFO), "$HOME",
                           env_string);
 
     if (access(stderr_filename, F_OK) != 0) {
@@ -1040,7 +1040,7 @@ void script_start(const char * script_filename) {
      * as easily.
      */
     snprintf(command_line, sizeof(command_line) - 1,
-             "perl -w \"%s\\scripts\\%s\"", get_option(Q_OPTION_WORKING_DIR),
+             "perl -w \"%s\\%s\"", get_option(Q_OPTION_SCRIPTS_DIR),
              script_filename);
 
     /*
@@ -1164,7 +1164,6 @@ void script_start(const char * script_filename) {
         /*
          * Child process, will become the spawned script.
          */
-        char * scripts_dir;
 
         /*
          * We re-create the same environment conditions that dial_out() sets
@@ -1264,20 +1263,12 @@ void script_start(const char * script_filename) {
         putenv(strdup(buffer));
 
         /*
-         * This part is unique to script_start() : prepend
-         * $HOME/.qodem/scripts to PATH.
+         * This part is unique to script_start() : prepend SCRIPTS_DIR to
+         * PATH.
          */
-        env_string = getenv("HOME");
-        scripts_dir =
-            substitute_string("$HOME/.qodem/scripts", "$HOME", env_string);
         snprintf(path_string, sizeof(path_string) - 1, "PATH=%s:%s",
-                 scripts_dir, getenv("PATH"));
+                 get_option(Q_OPTION_SCRIPTS_DIR), getenv("PATH"));
         putenv(strdup(path_string));
-
-        /*
-         * No leak
-         */
-        Xfree(scripts_dir, __FILE__, __LINE__);
 
         /*
          * Build exec arguments.  This needs to be done in a different way

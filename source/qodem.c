@@ -2037,14 +2037,8 @@ char * get_workingdir_filename(const char * filename) {
  * or My Documents\\qodem\\scripts\\filename).
  */
 char * get_scriptdir_filename(const char * filename) {
-    assert(q_home_directory != NULL);
-
-#ifdef Q_PDCURSES_WIN32
-    sprintf(datadir_filename, "%s\\scripts\\%s",
-        get_option(Q_OPTION_WORKING_DIR), filename);
-#else
-    sprintf(datadir_filename, "%s/scripts/%s", q_home_directory, filename);
-#endif
+    sprintf(datadir_filename, "%s/%s",
+        get_option(Q_OPTION_SCRIPTS_DIR), filename);
 
     return datadir_filename;
 }
@@ -2140,7 +2134,7 @@ void spawn_terminal(const char * command) {
  * Reset the global status and variables to their default state.
  */
 static void reset_global_state() {
-    
+
     /* Initial program state */
     q_program_state = Q_STATE_INITIALIZATION;
 
@@ -2336,7 +2330,7 @@ int qodem_main(int argc, char * const argv[]) {
      * Set the global status to its defaults.
      */
     reset_global_state();
-    
+
     /*
      * Reset the screensaver clock, otherwise the very first keystroke will
      * activate it.

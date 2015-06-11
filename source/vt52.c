@@ -586,9 +586,7 @@ vt52_start:
     }
 
     /*
-     * This point means we got most, but not all, of a sequence.  Start
-     * sending what we had, but kill the ESCAPES so they don't interfere with
-     * the real console.
+     * This point means we got most, but not all, of a sequence.
      */
     q_emul_buffer[q_emul_buffer_n] = from_modem2;
     q_emul_buffer_n++;

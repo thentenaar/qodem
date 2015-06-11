@@ -5914,16 +5914,6 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
 
                 field_number++;
                 local_dirty = Q_TRUE;
-/* TESTME */
-#if 0
-                if (field_number == CLEAR_CALL_INFO) {
-                    /*
-                     * I guess I have to call field_form_driver to force it
-                     * to refresh it's display.
-                     */
-                    fieldset_render(edit_form);
-                }
-#endif
 
                 if (field_number == PASSWORD) {
                     /*

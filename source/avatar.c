@@ -59,7 +59,8 @@ typedef enum SCAN_STATES {
     SCAN_ESC,
     SCAN_CSI,
     SCAN_CSI_PARAM,
-    SCAN_ANSI_FALLBACK
+    SCAN_ANSI_FALLBACK,
+    DUMP_UNKNOWN_SEQUENCE
 } SCAN_STATE;
 
 /* Current scanning state. */
@@ -218,7 +219,6 @@ Q_EMULATION_STATUS avatar(const unsigned char from_modem, wchar_t * to_screen) {
     int old_y;
     int i;
 
-
     DLOG(("STATE: %d CHAR: 0x%02x '%c'\n", scan_state, from_modem, from_modem));
 
 avatar_start:
@@ -231,8 +231,16 @@ avatar_start:
          * From here on out we pass through ANSI until we don't get
          * Q_EMUL_FSM_NO_CHAR_YET.
          */
-        ansi_buffer[ansi_buffer_n] = from_modem;
-        ansi_buffer_n++;
+
+        if (ansi_buffer_n == 0) {
+            assert(ansi_buffer_i == 0);
+            /*
+             * We have already cleared the old buffer, now push one byte at a
+             * time through ansi until it is finished with its state machine.
+             */
+            ansi_buffer[ansi_buffer_n] = from_modem;
+            ansi_buffer_n++;
+        }
 
         DLOG(("ANSI FALLBACK ansi()\n"));
 
@@ -257,6 +265,13 @@ avatar_start:
                 ansi_buffer_i = 0;
                 break;
             }
+        }
+
+        if (rc == Q_EMUL_FSM_MANY_CHARS) {
+            /*
+             * ANSI is dumping q_emul_buffer.  Finish the job.
+             */
+            scan_state = DUMP_UNKNOWN_SEQUENCE;
         }
 
         return rc;
@@ -302,8 +317,8 @@ avatar_start:
          * ^Y
          */
         if (from_modem == 0x19) {
+            save_char(from_modem, to_screen);
             scan_state = SCAN_Y_1;
-            *to_screen = 1;
             return Q_EMUL_FSM_NO_CHAR_YET;
         }
 
@@ -363,8 +378,8 @@ avatar_start:
         return Q_EMUL_FSM_NO_CHAR_YET;
 
     case SCAN_Y_1:
+        save_char(from_modem, to_screen);
         y_char = from_modem;
-        *to_screen = 1;
         scan_state = SCAN_Y_2;
         return Q_EMUL_FSM_NO_CHAR_YET;
 
@@ -476,6 +491,7 @@ repeat_loop:
         return Q_EMUL_FSM_NO_CHAR_YET;
 
     case SCAN_V_Y_1:
+        save_char(from_modem, to_screen);
         v_y_chars_n = from_modem;
         v_y_chars =
             (unsigned char *) Xmalloc(sizeof(unsigned char) * (v_y_chars_n + 1),
@@ -484,17 +500,15 @@ repeat_loop:
         v_y_chars_i = 0;
 
         scan_state = SCAN_V_Y_2;
-        *to_screen = 1;
         return Q_EMUL_FSM_NO_CHAR_YET;
 
     case SCAN_V_Y_2:
+        save_char(from_modem, to_screen);
         v_y_chars[v_y_chars_i] = from_modem;
         v_y_chars_i++;
         if (v_y_chars_i == v_y_chars_n) {
             scan_state = SCAN_V_Y_3;
         }
-
-        *to_screen = 1;
         return Q_EMUL_FSM_NO_CHAR_YET;
 
     case SCAN_V_Y_3:
@@ -739,6 +753,7 @@ repeat_loop:
          * ^Y
          */
         if (from_modem == 0x19) {
+            save_char(from_modem, to_screen);
             scan_state = SCAN_V_Y_1;
             return Q_EMUL_FSM_NO_CHAR_YET;
         }
@@ -746,13 +761,13 @@ repeat_loop:
         break;
 
     case SCAN_ESC:
+        save_char(from_modem, to_screen);
 
         if (from_modem == '[') {
             if (q_status.avatar_color == Q_TRUE) {
                 /*
                  * Fall into SCAN_CSI only if AVATAR_COLOR is enabled.
                  */
-                save_char(from_modem, to_screen);
                 scan_state = SCAN_CSI;
                 return Q_EMUL_FSM_NO_CHAR_YET;
             }
@@ -760,6 +775,8 @@ repeat_loop:
         break;
 
     case SCAN_CSI:
+        save_char(from_modem, to_screen);
+
         /*
          * We are only going to support CSI Pn [ ; Pn ... ] m a.k.a. ANSI
          * Select Graphics Rendition.  We can see only a digit or 'm'.
@@ -768,8 +785,7 @@ repeat_loop:
             /*
              * Save the position for the counter.
              */
-            count = q_emul_buffer + q_emul_buffer_n;
-            save_char(from_modem, to_screen);
+            count = q_emul_buffer + q_emul_buffer_n - 1;
             scan_state = SCAN_CSI_PARAM;
             return Q_EMUL_FSM_NO_CHAR_YET;
         }
@@ -787,12 +803,12 @@ repeat_loop:
         break;
 
     case SCAN_CSI_PARAM:
+        save_char(from_modem, to_screen);
         /*
          * Following through on the SGR code, we are now looking only for a
          * digit, semicolon, or 'm'.
          */
         if ((isdigit(from_modem)) || (from_modem == ';')) {
-            save_char(from_modem, to_screen);
             scan_state = SCAN_CSI_PARAM;
             return Q_EMUL_FSM_NO_CHAR_YET;
         }
@@ -816,50 +832,89 @@ repeat_loop:
 
         break;
 
+    case DUMP_UNKNOWN_SEQUENCE:
+        /*
+         * Dump the string in q_emul_buffer
+         */
+        assert(q_emul_buffer_n > 0);
+
+        *to_screen = codepage_map_char(q_emul_buffer[q_emul_buffer_i]);
+        q_emul_buffer_i++;
+        if (q_emul_buffer_i == q_emul_buffer_n) {
+            /*
+             * This was the last character.
+             */
+            q_emul_buffer_n = 0;
+            q_emul_buffer_i = 0;
+            memset(q_emul_buffer, 0, sizeof(q_emul_buffer));
+            scan_state = SCAN_NONE;
+            return Q_EMUL_FSM_ONE_CHAR;
+
+        } else {
+            return Q_EMUL_FSM_MANY_CHARS;
+        }
+
     } /* switch (scan_state) */
 
-#if 1
+    if (q_status.avatar_ansi_fallback == Q_TRUE) {
+        /*
+         * Process through ANSI fallback code.
+         *
+         * This is UGLY AS HELL, but lots of BBSes assume that Avatar
+         * emulators will "fallback" to ANSI for sequences they don't
+         * understand.
+         */
+        scan_state = SCAN_ANSI_FALLBACK;
+        DLOG(("ANSI FALLBACK BEGIN\n"));
+
+        /*
+         * From here on out we pass through ANSI until we don't get
+         * Q_EMUL_FSM_NO_CHAR_YET.
+         */
+        memcpy(ansi_buffer, q_emul_buffer, q_emul_buffer_n);
+        ansi_buffer_i = 0;
+        ansi_buffer_n = q_emul_buffer_n;
+        q_emul_buffer_i = 0;
+        q_emul_buffer_n = 0;
+
+        DLOG(("ANSI FALLBACK ansi()\n"));
+
+        /*
+         * Run through the emulator again
+         */
+        assert(ansi_buffer_n > 0);
+        goto avatar_start;
+
+    } else {
+
+        DLOG(("Unknown sequence, and no ANSI fallback\n"));
+        scan_state = DUMP_UNKNOWN_SEQUENCE;
+
+        /*
+         * This point means we got most, but not all, of a sequence.
+         */
+        *to_screen = codepage_map_char(q_emul_buffer[q_emul_buffer_i]);
+        q_emul_buffer_i++;
+
+        /*
+         * Special case: one character returns Q_EMUL_FSM_ONE_CHAR.
+         */
+        if (q_emul_buffer_n == 1) {
+            q_emul_buffer_i = 0;
+            q_emul_buffer_n = 0;
+            return Q_EMUL_FSM_ONE_CHAR;
+        }
+
+        /*
+         * Tell the emulator layer that I need to be called many more times
+         * to dump the string in q_emul_buffer.
+         */
+        return Q_EMUL_FSM_MANY_CHARS;
+    }
 
     /*
-     * NORMAL: process through ANSI fallback code.
-     *
-     * This is UGLY AS HELL, but lots of BBSes assume that Avatar emulators
-     * will "fallback" to ANSI for sequences they don't understand.
+     * Should never get here.
      */
-    scan_state = SCAN_ANSI_FALLBACK;
-    DLOG(("ANSI FALLBACK BEGIN\n"));
+    abort();
 
-    /*
-     * From here on out we pass through ANSI until we don't get
-     * Q_EMUL_FSM_NO_CHAR_YET.
-     */
-    memcpy(ansi_buffer, q_emul_buffer, q_emul_buffer_n);
-    ansi_buffer_i = 0;
-    ansi_buffer_n = q_emul_buffer_n;
-    q_emul_buffer_i = 0;
-    q_emul_buffer_n = 0;
-
-    DLOG(("ANSI FALLBACK ansi()\n"));
-
-    /*
-     * Run through the emulator again
-     */
-    goto avatar_start;
-
-#else
-
-    /*
-     * DEBUG:  crap out on the unknown sequence
-     */
-    DLOG(("NO IDEA WHAT TO DO!\n"));
-
-    clear_state(to_screen);
-    return Q_EMUL_FSM_NO_CHAR_YET;
-
-#endif
-
-    /*
-     * Should never get here
-     */
-    return Q_EMUL_FSM_NO_CHAR_YET;
 }

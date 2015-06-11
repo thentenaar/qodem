@@ -106,6 +106,24 @@ static struct option_struct options[] = {
 "### environment variable will be substituted if specified."},
 
 #ifdef Q_PDCURSES_WIN32
+        {Q_OPTION_SCRIPTS_DIR, NULL, "scripts_dir", "$HOME\\qodem\\scripts", ""
+#else
+        {Q_OPTION_SCRIPTS_DIR, NULL, "scripts_dir", "$HOME/.qodem/scripts", ""
+#endif
+"### The default directory to look for scripts.  The $HOME environment\n"
+"### variable will be substituted if specified."},
+
+#ifdef Q_PDCURSES_WIN32
+        {Q_OPTION_SCRIPTS_STDERR_FIFO, NULL, "scripts_fifo", "unused", ""
+#else
+        {Q_OPTION_SCRIPTS_STDERR_FIFO, NULL, "scripts_fifo",
+         "$HOME/.qodem/scripts/script.stderr", ""
+#endif
+"### The fifo (named pipe) used to capture the stderr stream from scripts.\n"
+"### The $HOME environment  variable will be substituted if specified.\n"
+"### This is not used by the Windows version."},
+
+#ifdef Q_PDCURSES_WIN32
         {Q_OPTION_BATCH_ENTRY_FILE, NULL, "bew_file",
          "$HOME\\qodem\\batch_upload.txt", ""
 #else
@@ -406,7 +424,20 @@ static struct option_struct options[] = {
 "### instead.  If this value is set to true the AVATAR emulation will\n"
 "### honor the ANSI.SYS-style color selection codes.  If this value is\n"
 "### false the color selection codes will be visible in the output, as a\n"
-"### real Avatar emulator would do."},
+"### real Avatar-only emulator would do."},
+
+         {Q_OPTION_AVATAR_ANSI_FALLBACK, NULL,
+          "avatar_ansi_fallback", "true", ""
+"### Whether or not AVATAR will fallback to ANSI.SYS for anything it does not\n"
+"### recognize.  Value is 'true' or 'false'.\n"
+"###\n"
+"### The Avatar emulation standard does not require fallback to ANSI, but\n"
+"### most BBS clients either supported fallback or emitted unknown sequences\n"
+"### to the DOS console where ANSI.SYS would act on them.\n"
+"###\n"
+"### If this value is set to true the AVATAR emulation will recognize both\n"
+"### Avatar and ANSI.  If this value is false then unknown ANSI sequences\n"
+"### will be visible in the output, as a real Avatar-only emulator would do."},
 
 /* Emulation: VT52 */
 
@@ -971,7 +1002,7 @@ char * get_option(const Q_OPTION option) {
         }
         current_option++;
     }
-    return NULL;
+    return "";
 }
 
 /**
@@ -989,7 +1020,7 @@ const char * get_option_description(const Q_OPTION option) {
         }
         current_option++;
     }
-    return NULL;
+    return "";
 }
 
 /**
@@ -1007,7 +1038,7 @@ const char * get_option_key(const Q_OPTION option) {
         }
         current_option++;
     }
-    return NULL;
+    return "";
 }
 
 /**
@@ -1025,7 +1056,7 @@ const char * get_option_default(const Q_OPTION option) {
         }
         current_option++;
     }
-    return NULL;
+    return "";
 }
 
 /**
@@ -1036,7 +1067,7 @@ const char * get_option_default(const Q_OPTION option) {
  */
 static Q_BOOL save_options(const char * filename) {
     struct option_struct * current_option;
-    FILE *file;
+    FILE * file;
     int rc;
 
     file = fopen(filename, "w");
@@ -1166,6 +1197,7 @@ static void check_option(struct option_struct * option) {
 
     case Q_OPTION_WORKING_DIR:
     case Q_OPTION_HOST_DIR:
+    case Q_OPTION_SCRIPTS_DIR:
     case Q_OPTION_BATCH_ENTRY_FILE:
     case Q_OPTION_UPLOAD_DIR:
     case Q_OPTION_DOWNLOAD_DIR:
@@ -1591,28 +1623,6 @@ void load_options() {
      */
     Xfree(substituted_filename, __FILE__, __LINE__);
 
-#ifndef Q_PDCURSES_WIN32
-    /*
-     * Special check: $HOME/.qodem/scripts/script.stderr
-     */
-    /*
-     * Sustitute for $HOME
-     */
-    substituted_filename =
-        substitute_string("$HOME/.qodem/scripts/script.stderr", "$HOME",
-                          env_string);
-    if (access(substituted_filename, F_OK) != 0) {
-        /*
-         * Try to create it
-         */
-        mkfifo(substituted_filename, S_IRUSR | S_IWUSR);
-    }
-    /*
-     * Free leak
-     */
-    Xfree(substituted_filename, __FILE__, __LINE__);
-#endif
-
     i = 0;
     for (current_filename = filenames[i]; current_filename != NULL;
          i++, current_filename = filenames[i]) {
@@ -1742,6 +1752,69 @@ void load_options() {
      * Free leak
      */
     Xfree(working_dir, __FILE__, __LINE__);
+
+    /*
+     * Check for scripts directory
+     */
+    working_dir =
+        substitute_string(get_option(Q_OPTION_SCRIPTS_DIR), "$HOME",
+                          env_string);
+    if (directory_exists(working_dir) == Q_FALSE) {
+#ifdef ASK_TO_CREATE
+        printf(_(""
+"Qodem needs to create a directory to store script files.\n"
+"The default directory is %s.  Should I create this directory now? [Y/n] "),
+               working_dir);
+        i = getchar();
+        if ((tolower(i) == 'y') || (i == '\r') || (i == '\n')) {
+#endif
+            rc = create_directory(working_dir);
+            if (rc == Q_FALSE) {
+                printf(_(""
+"Could not create the directory %s.  Scripts might not work correctly\n"),
+                       working_dir);
+            } else {
+                printf(_("Created directory %s.\n"), working_dir);
+            }
+#ifdef ASK_TO_CREATE
+        } else {
+            printf(_(""
+"Will NOT create the directory %s.  Scripts might not work correctly\n"),
+                   working_dir);
+        }
+
+        /*
+         * Clear any other characters waiting in stdin
+         */
+        purge_stdin();
+
+        printf(_("Press any key to continue...\n"));
+        getchar();
+#endif
+    }
+    /*
+     * Free leak
+     */
+    Xfree(working_dir, __FILE__, __LINE__);
+
+#ifndef Q_PDCURSES_WIN32
+    /*
+     * Check for the scripts stderr fifo.
+     */
+    substituted_filename =
+        substitute_string(get_option(Q_OPTION_SCRIPTS_STDERR_FIFO), "$HOME",
+                          env_string);
+    if (access(substituted_filename, F_OK) != 0) {
+        /*
+         * Try to create it
+         */
+        mkfifo(substituted_filename, S_IRUSR | S_IWUSR);
+    }
+    /*
+     * Free leak
+     */
+    Xfree(substituted_filename, __FILE__, __LINE__);
+#endif
 
     /*
      * Special-case options.  For each one, reset to default and then re-load
@@ -1948,6 +2021,10 @@ void load_options() {
     q_status.avatar_color = Q_TRUE;
     if (strcasecmp(get_option(Q_OPTION_AVATAR_COLOR), "false") == 0) {
         q_status.avatar_color = Q_FALSE;
+    }
+    q_status.avatar_ansi_fallback = Q_TRUE;
+    if (strcasecmp(get_option(Q_OPTION_AVATAR_ANSI_FALLBACK), "false") == 0) {
+        q_status.avatar_ansi_fallback = Q_FALSE;
     }
 
 }

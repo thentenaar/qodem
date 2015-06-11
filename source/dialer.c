@@ -764,7 +764,9 @@ void dial_success() {
              */
             if (q_current_dial_entry->script_filename != NULL) {
                 if (strlen(q_current_dial_entry->script_filename) > 0) {
-                    if (q_status.quicklearn == Q_FALSE) {
+                    if ((q_status.quicklearn == Q_FALSE) && 
+                        (q_current_dial_entry->quicklearn == Q_FALSE)
+                    ) {
                         /*
                          * We're not quicklearning, start the script
                          */

@@ -1,6 +1,14 @@
 The Qodem Project Work Log
 ==========================
 
+June 11, 2015
+
+Fixed a lot of one-off things between Avatar, Avatar SGR, and Avatar
+ANSI fallback modes.  Also moved the hardcode references to the
+scripts directory and the stderr fifo out to the options file.  Along
+the way I think I just fixed the scripts quicklearn bug, we'll see if
+it comes back.
+
 June 3, 2015
 
 Took a week off for various personal things.  Now it's time to look at
