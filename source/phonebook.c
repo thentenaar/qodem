@@ -657,7 +657,7 @@ void set_dial_out_toggles(int toggles) {
     /*
      * Reconfigure the port if it's open
      */
-    if (q_status.serial_open == Q_TRUE) {
+    if (Q_SERIAL_OPEN) {
         if (configure_serial_port() == Q_FALSE) {
             /*
              * Oops, we couldn't change a setting.  Do nothing.
@@ -1673,7 +1673,7 @@ void do_dialer() {
      * Kill the modem.  Either we are switching to a non-modem connection, or
      * we want the terminal settings of the phonebook entry.
      */
-    if (q_status.serial_open == Q_TRUE) {
+    if (Q_SERIAL_OPEN) {
         close_serial_port();
     }
     if (q_current_dial_entry->method == Q_DIAL_METHOD_MODEM) {

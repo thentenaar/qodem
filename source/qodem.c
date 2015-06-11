@@ -258,6 +258,8 @@ int qodem_write(const int fd, char * data, const int data_n, Q_BOOL sync) {
     int i;
     int rc;
     int old_errno;
+    int begin = 0;
+    int n = data_n;
 
     if (data_n == 0) {
         /* NOP */
@@ -301,6 +303,8 @@ int qodem_write(const int fd, char * data, const int data_n, Q_BOOL sync) {
         DLOG2(("\n"));
     }
 
+do_write:
+
     /* Write bytes out */
     /* Which function to call depends on the connection method */
     if (((q_status.dial_method == Q_DIAL_METHOD_TELNET) &&
@@ -309,25 +313,25 @@ int qodem_write(const int fd, char * data, const int data_n, Q_BOOL sync) {
             (q_host_type == Q_HOST_TYPE_TELNETD))
     ) {
         /* Telnet */
-        rc = telnet_write(fd, data, data_n);
+        rc = telnet_write(fd, data + begin, data_n);
     } else if ((q_status.dial_method == Q_DIAL_METHOD_RLOGIN) &&
         (net_is_connected() == Q_TRUE)
     ) {
         /* Rlogin */
-        rc = rlogin_write(fd, data, data_n);
+        rc = rlogin_write(fd, data + begin, data_n);
     } else if (((q_status.dial_method == Q_DIAL_METHOD_SOCKET) &&
             (net_is_connected() == Q_TRUE)) ||
         (((q_program_state == Q_STATE_HOST) || (q_host_active == Q_TRUE)) &&
             (q_host_type == Q_HOST_TYPE_SOCKET))
     ) {
         /* Socket */
-        rc = send(fd, data, data_n, 0);
+        rc = send(fd, data + begin, data_n, 0);
 #ifdef Q_SSH_CRYPTLIB
     } else if ((q_status.dial_method == Q_DIAL_METHOD_SSH) &&
         (net_is_connected() == Q_TRUE)
     ) {
         /* SSH */
-        rc = ssh_write(fd, data, data_n);
+        rc = ssh_write(fd, data + begin, data_n);
 #endif
 
     } else {
@@ -342,7 +346,7 @@ int qodem_write(const int fd, char * data, const int data_n, Q_BOOL sync) {
             (q_status.dial_method == Q_DIAL_METHOD_SHELL)
         ) {
             DWORD bytes_written = 0;
-            if (WriteFile(q_child_stdin, data, data_n, &bytes_written,
+            if (WriteFile(q_child_stdin, data + begin, data_n, &bytes_written,
                     NULL) == TRUE) {
 
                 rc = bytes_written;
@@ -363,26 +367,55 @@ int qodem_write(const int fd, char * data, const int data_n, Q_BOOL sync) {
         } else {
             DLOG(("qodem_write() write() %d bytes to fd %d\n", data_n, fd));
             /* Everyone else */
-            rc = write(fd, data, data_n);
+            rc = write(fd, data + begin, data_n);
         }
 #else
 
         /* Everyone else */
-        rc = write(fd, data, data_n);
+        rc = write(fd, data + begin, data_n);
 
 #endif /* Q_PDCURSES_WIN32 */
 
     }
 
-    old_errno = errno;
+    old_errno = get_errno();
     if (rc < 0) {
-        DLOG(("qodem_write() write() error %s (%d)\n", strerror(errno), errno));
+        DLOG(("qodem_write() write() error %s (%d)\n", get_strerror(old_errno),
+                old_errno));
+    }
+
+    if (sync == Q_TRUE) {
+        if (rc > 0) {
+            n -= rc;
+            begin += n;
+            if (n > 0) {
+                /*
+                 * The last write was successful, and there are more bytes to
+                 * write.
+                 */
+                goto do_write;
+            }
+        } else if ((get_errno() == EAGAIN) ||
+#ifdef Q_PDCURSES_WIN32
+            (get_errno() == WSAEWOULDBLOCK)
+#else
+            (get_errno() == EWOULDBLOCK)
+#endif
+        ) {
+            /*
+             * Do a busy wait on the write until everything goes out.
+             */
+            goto do_write;
+        }
     }
 
     /* Reset clock for keepalive/idle timeouts */
     time(&q_data_sent_time);
 
-    errno = old_errno;
+    /* Reset errno for our caller */
+    set_errno(old_errno);
+
+    /* All done */
     return rc;
 }
 

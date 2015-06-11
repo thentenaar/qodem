@@ -457,7 +457,7 @@ void host_start(Q_HOST_TYPE type, const char * port) {
     case Q_HOST_TYPE_SERIAL:
 
         DLOG(("host_start() SERIAL PORT\n"));
-        if (q_status.serial_open == Q_FALSE) {
+        if (!Q_SERIAL_OPEN) {
             if (open_serial_port() == Q_FALSE) {
                 /*
                  * notify_form() just turned off the cursor
@@ -510,7 +510,7 @@ static void host_stop() {
         assert(q_child_tty_fd != -1);
         assert(q_status.online == Q_TRUE);
 #ifndef Q_NO_SERIAL
-        if (q_status.serial_open == Q_FALSE) {
+        if (!Q_SERIAL_OPEN) {
             close_connection();
         } else {
             hangup_modem();
@@ -1827,7 +1827,7 @@ static void hangup(char *msg) {
         if (q_status.online == Q_TRUE) {
             assert(q_child_tty_fd != -1);
 #ifndef Q_NO_SERIAL
-            if (q_status.serial_open) {
+            if (Q_SERIAL_OPEN) {
                 if (q_host_type != Q_HOST_TYPE_SERIAL) {
                     /*
                      * Modem

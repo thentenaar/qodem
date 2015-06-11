@@ -284,10 +284,19 @@ extern int get_errno();
 /**
  * Get the error message that goes with get_errno().
  *
- * @param error_number the errno value 
+ * @param error_number the errno value
  * @return the appropriate error message for a network error value
  */
 extern const char * get_strerror(int error_number);
+
+/**
+ * Set the value returned by get_errno().  This is used to make higher-level
+ * protocol (telnet/rlogin/ssh) errors mimic the low-level I/O errors,
+ * e.g. to be able to return EAGAIN.
+ *
+ * @param x the new error value
+ */
+extern void set_errno(int x);
 
 #ifdef Q_PDCURSES_WIN32
 

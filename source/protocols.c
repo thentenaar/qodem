@@ -2091,7 +2091,7 @@ void protocol_transfer_refresh() {
                             _("Efficiency   "), Q_COLOR_MENU_TEXT);
 
 #ifndef Q_NO_SERIAL
-    if (q_status.serial_open == Q_TRUE) {
+    if (Q_SERIAL_OPEN) {
         switch (q_serial_port.data_bits) {
         case Q_DATA_BITS_8:
             bits_per_byte = 8;

@@ -659,7 +659,7 @@ int get_errno() {
  *
  * @param x the new error value
  */
-static void set_errno(int x) {
+void set_errno(int x) {
     WSASetLastError(x);
 }
 
@@ -907,7 +907,7 @@ int get_errno() {
  *
  * @param x the new error value
  */
-static void set_errno(int x) {
+void set_errno(int x) {
     errno = x;
 }
 

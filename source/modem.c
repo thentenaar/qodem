@@ -1519,7 +1519,7 @@ void hangup_modem() {
     Q_BOOL do_hangup_string = Q_TRUE;
 
     assert(q_child_tty_fd != -1);
-    assert(q_status.serial_open == Q_TRUE);
+    assert(Q_SERIAL_OPEN);
 
     /*
      * First, drop DTR.  Most modems will hangup with this.

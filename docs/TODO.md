@@ -19,12 +19,6 @@ BUG: free kbytes on download menu broken on Borland
 1.0.0
 -----
 
-Refactor:
-  qodem_write() - honor sync for the emulations to do a busy loop rather
-    than assume qodem_write() always works
-
-  q_status.serial_open --> Q_SERIAL_OPEN
-
 Detect xterm alternate screen and clear scrollback to retain what was
 seen before.
 

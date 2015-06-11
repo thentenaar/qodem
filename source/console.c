@@ -2469,7 +2469,7 @@ void console_refresh(Q_BOOL status_line) {
             /*
              * Modem lines
              */
-            if (q_status.serial_open == Q_TRUE) {
+            if (Q_SERIAL_OPEN) {
                 query_serial_port();
                 if (q_serial_port.rs232.DCD == Q_TRUE) {
                     screen_put_color_str_yx(HEIGHT - 1, 58,
