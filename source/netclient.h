@@ -26,6 +26,10 @@ typedef int ssize_t;
 #include <unistd.h>             /* ssize_t */
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 #ifdef Q_UPNP
@@ -305,6 +309,10 @@ extern void set_errno(int x);
  */
 extern void stop_winsock();
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* __NETCLIENT_H__ */

@@ -20,6 +20,12 @@
 
 #ifdef USE_SSH
 
+// KAL
+#ifdef Q_PDCURSES_WIN32
+#include "emulation.h"
+#include "qodem.h"
+#endif
+
 /* The type of a channel-open request and the type of service that we're
    requesting */
 
@@ -447,6 +453,11 @@ static int createSessionOpenRequest( INOUT SESSION_INFO *sessionInfoPtr,
 												CHANNEL_WRITE );
 	int packetOffset, status;
 
+        // KAL
+#ifdef Q_PDCURSES_WIN32
+        char buffer[32];
+#endif
+
 	assert( isWritePtr( sessionInfoPtr, sizeof( SESSION_INFO ) ) );
 	assert( isWritePtr( stream, sizeof( STREAM ) ) );
 
@@ -547,10 +558,7 @@ static int createSessionOpenRequest( INOUT SESSION_INFO *sessionInfoPtr,
 	sputc( stream, 0 );					/* No reply */
 
         // KAL
-#if 1
-        #include "emulation.h"
-        #include "qodem.h"
-        char buffer[32];
+#ifdef Q_PDCURSES_WIN32
         memset(buffer, 0, sizeof(buffer));
         sprintf(buffer, "%s", emulation_term(q_status.emulation));
 	writeString32( stream, buffer, strlen(buffer) );

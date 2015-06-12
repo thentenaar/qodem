@@ -23,6 +23,10 @@
 #include <time.h>
 #include "phonebook.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /**
@@ -120,5 +124,9 @@ extern void set_raw_termios(const int tty_fd);
  * Called upon the completion of a successful connection.
  */
 extern void dial_success();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __DIALER_H__ */

@@ -53,6 +53,10 @@
 #include "config.h"
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 #define RELEASE
 /* #undef RELEASE */
@@ -273,5 +277,9 @@ typedef int pid_t;
 extern wchar_t * wmemmove(wchar_t * dest, const wchar_t * src, size_t n);
 
 #endif /* __BORLANDC__ */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __COMMON_H__ */

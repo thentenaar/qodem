@@ -168,7 +168,7 @@ ret_type gcm_decrypt_message(               /* decrypt an entire message    */
 /* the user is responsible for verfiying the computed tag on decryption     */
 
 ret_type gcm_init_message(                  /* initialise a new message     */
-            const unsigned char iv[],       /* the initialisation vector    */
+            unsigned char iv[],             /* the initialisation vector    */
             unsigned long iv_len,           /* and its length in bytes      */
             gcm_ctx ctx[1]);                /* the mode context             */
 

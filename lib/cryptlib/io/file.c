@@ -4814,7 +4814,22 @@ void fileErase( IN_STRING const char *fileName )
 
 /* Build the path to a file in the cryptlib directory */
 
-#if defined( __WIN32__ )
+#if defined( __WIN32__ ) && defined(__BORLANDC__)
+
+CHECK_RETVAL STDC_NONNULL_ARG( ( 1, 3 ) )                               \
+static int getFolderPath( OUT_BUFFER( pathMaxLen, *pathLen ) char *path, 
+						  IN_LENGTH_SHORT const int pathMaxLen, 
+						  OUT_LENGTH_SHORT_Z int *pathLen )
+{
+    /*
+     * KAL: for qodem, we never need getFolderPath() to actually do anything
+     * useful.
+     */
+    return( CRYPT_ERROR_OPEN );
+}
+
+
+#else if defined( __WIN32__ ) && !defined(__BORLANDC__)
 
 #if VC_GE_2005( _MSC_VER )
   #pragma warning( push )

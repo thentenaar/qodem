@@ -46,7 +46,16 @@
 #else
 #define __UNIX__
 #endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <crypt.h>
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

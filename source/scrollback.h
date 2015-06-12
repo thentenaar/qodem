@@ -24,6 +24,10 @@
 #include <stddef.h>             /* wchar_t */
 #include "common.h"             /* Q_BOOL */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /**
@@ -394,5 +398,9 @@ extern void render_screen_to_debug_file(FILE * file);
  * characters and qodem is using a trick to do so.
  */
 extern Q_BOOL has_true_doublewidth();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __SCROLLBACK_H__ */

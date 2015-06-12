@@ -165,7 +165,7 @@ void gf_mul_hh(gf_t a, gcm_ctx ctx[1])
 }
 
 ret_type gcm_init_message(                  /* initialise a new message     */
-            const unsigned char iv[],       /* the initialisation vector    */
+            unsigned char iv[],             /* the initialisation vector    */
             unsigned long iv_len,           /* and its length in bytes      */
             gcm_ctx ctx[1])                 /* the mode context             */
 {   uint32_t i, n_pos = 0;

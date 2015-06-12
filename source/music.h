@@ -20,6 +20,10 @@
 
 /* Includes --------------------------------------------------------------- */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /**
@@ -87,5 +91,9 @@ extern void play_sequence(const Q_MUSIC_SEQUENCE sequence);
  */
 extern void play_music(const struct q_music_struct * music,
                        const Q_BOOL interruptible);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __MUSIC_H__ */

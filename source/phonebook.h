@@ -26,6 +26,10 @@
 #include "emulation.h"          /* Q_EMULATION */
 #include "codepage.h"           /* Q_CODEPAGE */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /**
@@ -213,5 +217,9 @@ extern void phonebook_normalize();
  * connection.
  */
 extern void do_dialer();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __PHONEBOOK_H__ */

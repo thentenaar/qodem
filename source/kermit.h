@@ -23,6 +23,10 @@
 #include "common.h"             /* Q_BOOL */
 #include "forms.h"              /* struct file_info */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /* Globals ---------------------------------------------------------------- */
@@ -71,5 +75,9 @@ extern void kermit_stop(const Q_BOOL save_partial);
  * Kermit Protocol."
  */
 extern void kermit_skip_file();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __KERMIT_H__ */

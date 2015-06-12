@@ -175,6 +175,10 @@
 
 /* Includes --------------------------------------------------------------- */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /* Globals ---------------------------------------------------------------- */
@@ -254,5 +258,9 @@ extern int q_cursor(const int cursor);
  * @return 1 if this is a special key, 0 otherwise
  */
 extern int q_key_code_yes(int keystroke);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __INPUT_H__ */

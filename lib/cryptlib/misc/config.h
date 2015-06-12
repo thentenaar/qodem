@@ -825,8 +825,10 @@
 	/* Contexts */
 	#undef USE_DSA
 
+        // KAL
 	/* Certificates */
-	#undef USE_CERTIFICATES
+        // #undef USE_CERTIFICATES
+	#define USE_CERTIFICATES
 	#undef USE_CMSATTR
 
 	/* Envelopes */
@@ -841,8 +843,11 @@
 	/* Sessions */
 	#undef USE_SSL
 
+        // KAL
 	/* Internal data formats */
-	#undef USE_INT_CMS
+        // #undef USE_INT_CMS
+        #define USE_INT_CMS
+
 
 #endif /* CONFIG_PROFILE_SSH */
 

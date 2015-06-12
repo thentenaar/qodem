@@ -668,7 +668,7 @@ void set_errno(int x) {
  * A list of descriptions to match Winsock error codes.
  */
 struct winsock_error_text {
-        int errno;
+        int winsock_errno;
         const char * label;
         const char * description;
 };
@@ -875,14 +875,15 @@ static char winsock_error_message[DIALOG_MESSAGE_SIZE];
  */
 const char * get_strerror(int error_number) {
     int i = 0;
-    while (winsock_errors[i].errno != -1) {
-        if (winsock_errors[i].errno == error_number) {
+    while (winsock_errors[i].winsock_errno != -1) {
+        if (winsock_errors[i].winsock_errno == error_number) {
             sprintf(winsock_error_message, "%s: %s", winsock_errors[i].label,
                 winsock_errors[i].description);
             return winsock_error_message;
         }
         i++;
     }
+
     /*
      * We fell through to the "Unknown error" case.
      */
@@ -1243,7 +1244,11 @@ Q_BOOL net_connect_finish() {
             /*
              * There was an error connecting, break out
              */
+#ifdef Q_PDCURSES_WIN32
+            closesocket(q_child_tty_fd);
+#else
             close(q_child_tty_fd);
+#endif
             q_child_tty_fd = -1;
 
             /*
@@ -1505,7 +1510,11 @@ int net_listen(const char * port) {
                              * re-open the socket though because the bind()
                              * call earlier was successful.
                              */
+#ifdef Q_PDCURSES_WIN32
+                            closesocket(fd);
+#else
                             close(fd);
+#endif
                             fd = socket(p->ai_family, p->ai_socktype,
                                         p->ai_protocol);
                             if (fd == -1) {
@@ -3545,12 +3554,23 @@ ssize_t rlogin_write(const int fd, void * buf, size_t count) {
 #define __UNIX__
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <crypt.h>
+
+#ifdef __cplusplus
+}
+
+#endif
 
 /*
  * cryptlib says to set TCP_NODELAY
  */
+#ifndef Q_PDCURSES_WIN32
 #include <netinet/tcp.h>
+#endif
 
 /**
  * Everything is done through the crypt session interface.
@@ -3628,6 +3648,7 @@ static int ssh_setup_connection(int fd, const char * host, const char * port) {
     int errorMessage_n;
     int cryptStatus;
     char buffer[64];
+    int tcp_flag = 1;
 
     /*
      * cryptlib needs the socket to be blocking.  We can do this now because
@@ -3664,9 +3685,13 @@ static int ssh_setup_connection(int fd, const char * host, const char * port) {
                             buffer, strlen(buffer));
 
     /* Disable Nagle's algorithm as per cryptlib docs */
-    int tcp_flag = 1;
+#ifdef Q_PDCURSES_WIN32
+    if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (const char *)&tcp_flag,
+                   sizeof(tcp_flag)) != 0) {
+#else
     if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (void *)&tcp_flag,
                    sizeof(tcp_flag)) != 0) {
+#endif
         DLOG(("Unable to set TCP_NODELAY\n"));
     } else {
         DLOG(("Disabled Nagle's algorithm\n"));
@@ -4127,8 +4152,13 @@ static int ssh_accept(int fd) {
 
     /* Disable Nagle's algorithm as per cryptlib docs */
     int tcp_flag = 1;
+#ifdef Q_PDCURSES_WIN32
+    if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (const char *)&tcp_flag,
+                   sizeof(tcp_flag)) != 0) {
+#else
     if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (void *)&tcp_flag,
                    sizeof(tcp_flag)) != 0) {
+#endif
         DLOG(("Unable to set TCP_NODELAY\n"));
     } else {
         DLOG(("Disabled Nagle's algorithm\n"));

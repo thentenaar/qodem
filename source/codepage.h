@@ -24,6 +24,10 @@
 #include <stdint.h>             /* uint32_t */
 #include "qcurses.h"            /* attr_t */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /* Control characters used in lots of places */
@@ -269,5 +273,9 @@ extern void codepage_keyboard_handler(const int keystroke, const int flags);
  * Draw screen for the codepage selection dialog.
  */
 extern void codepage_refresh();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __CODEPAGE_H__ */

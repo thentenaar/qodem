@@ -25,6 +25,10 @@
 
 #include "common.h"             /* Q_BOOL */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /*
@@ -259,6 +263,10 @@ extern char * parity_string(const Q_PARITY parity, const Q_BOOL short_form);
  * @return "1" etc.
  */
 extern char * stop_bits_string(const Q_STOP_BITS bits);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* Q_NO_SERIAL */
 

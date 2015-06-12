@@ -18,6 +18,10 @@
 #ifndef __VT52_H__
 #define __VT52_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Includes --------------------------------------------------------------- */
 
 #include "emulation.h"
@@ -61,5 +65,9 @@ extern void vt52_reset();
  * transmitted to the remote side.  See post_keystroke().
  */
 extern wchar_t * vt52_keystroke(const int keystroke);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __VT52_H__ */

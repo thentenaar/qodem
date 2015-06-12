@@ -22,6 +22,10 @@
 
 #include "emulation.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /* Globals ---------------------------------------------------------------- */
@@ -44,5 +48,9 @@ extern Q_EMULATION_STATUS avatar(const unsigned char from_modem,
  * Reset the emulation state.
  */
 extern void avatar_reset();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __AVATAR_H__ */

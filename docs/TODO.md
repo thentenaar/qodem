@@ -88,8 +88,7 @@ RPM build
 
 Debian build
   Pass lintian
-  Apply for Debian maintainer position, or seek willing
-  maintainer
+  Apply for Debian maintainer position, or seek willing maintainer
   qodem
   qodem-x11
 

@@ -22,6 +22,10 @@
 
 #include <wchar.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /* One of the locations to look for in load_options() */
@@ -219,5 +223,9 @@ extern const char * get_option_description(const Q_OPTION option);
  * @return the option default value
  */
 extern const char * get_option_default(const Q_OPTION option);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __OPTIONS_H__ */

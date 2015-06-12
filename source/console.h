@@ -22,6 +22,10 @@
 
 #include "common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /* Globals ---------------------------------------------------------------- */
@@ -167,5 +171,9 @@ extern void setup_doorway_handling();
  * Enable or disable the Alt-Minus show status line flag.
  */
 extern void set_status_line(Q_BOOL make_visible);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __CONSOLE_H__ */

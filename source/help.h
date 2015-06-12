@@ -20,6 +20,10 @@
 
 /* Includes --------------------------------------------------------------- */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /**
@@ -59,5 +63,9 @@ extern void setup_help();
  * @param help_screen the screen to start with
  */
 extern void launch_help(Q_HELP_SCREEN help_screen);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __HELP_H__ */

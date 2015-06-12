@@ -958,7 +958,10 @@ HMODULE WINAPI SafeLoadLibrary( IN_STRING LPCTSTR lpFileName )
 	   Win98, which doesn't have ACLs to protect the files in the system
 	   directory anyway, isn't going to achieve much, and in any case both
 	   of these OSes should be long dead by now */
-#if VC_LT_2005( _MSC_VER )
+#ifdef __BORLANDC__
+        // KAL: qodem doesn't care, we don't load libraries anyway.
+        return( LoadLibrary( lpFileName ) );
+#elif VC_LT_2005( _MSC_VER )
 	if( getSysVar( SYSVAR_OSMAJOR ) <= 4 )
 		return( LoadLibrary( lpFileName ) );
 #else
@@ -1279,7 +1282,7 @@ void vc6assert( const char *exprString, const char *fileName,
    OS/2-era DllEntryPoint(), so we have to alias it to DllMain() in order
    for things to be initialised properly */
 
-#if defined( __BORLANDC__ ) && ( __BORLANDC__ < 0x550 )
+#if defined( __BORLANDC__ ) && ( __BORLANDC__ < 0x550 ) && !defined( STATIC_LIB )
 
 BOOL WINAPI DllEntryPoint( HINSTANCE hinstDLL, DWORD fdwReason, \
 						   LPVOID lpvReserved )
@@ -2267,7 +2270,9 @@ int getSysVar( const SYSVAR_TYPE type )
    manner used by roundUp().  Because we have to do pointer-casting we can't 
    use roundUp() directly but have to build our own version here */
 
-#if defined( __WIN32__ ) || defined( __WIN64__ ) 
+#if defined( __BORLANDC__ )
+  #define intptr_t	int
+#elif defined( __WIN32__ ) || defined( __WIN64__ ) 
   #define intptr_t	INT_PTR
 #elif defined( __ECOS__ )
   #define intptr_t	unsigned int

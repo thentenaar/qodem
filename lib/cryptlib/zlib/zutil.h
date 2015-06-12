@@ -167,7 +167,8 @@ extern const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #  endif
 #endif
 
-#if defined(__BORLANDC__)
+/* KAL: These pragmas no longer work for BC 5.02 */
+#if defined(__BORLANDC__) && 0
   #pragma warn -8004
   #pragma warn -8008
   #pragma warn -8066

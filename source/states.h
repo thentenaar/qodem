@@ -20,6 +20,10 @@
 
 /* Includes --------------------------------------------------------------- */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /**
@@ -153,5 +157,9 @@ extern void screensaver_keyboard_handler(const int keystroke, const int flags);
  * Draw screen for the screensaver.
  */
 extern void screensaver_refresh();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __STATES_H__ */

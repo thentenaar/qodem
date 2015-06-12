@@ -26,6 +26,10 @@
 #include "qodem.h"              /* Q_CAPTURE_TYPE */
 #include "host.h"               /* Q_HOST_TYPE */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /**
@@ -239,5 +243,9 @@ extern Q_BOOL prompt_listen_port(char ** port);
  * @return true if the screen is big enough to show the window
  */
 extern Q_BOOL check_subwin_result(void * window);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __FORMS_H__ */

@@ -24,6 +24,10 @@
 #include <sys/types.h>
 #include "forms.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /**
@@ -276,5 +280,9 @@ extern void protocol_transfer_refresh();
 extern void protocol_process_data(unsigned char * input, const int input_n,
                                   int * remaining, unsigned char * output,
                                   int * output_n, const int output_max);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __PROTOCOLS_H__ */

@@ -22,6 +22,10 @@
 
 #include "emulation.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /* Globals ---------------------------------------------------------------- */
@@ -69,5 +73,9 @@ extern wchar_t * ansi_keystroke(const int keystroke);
  * @return Q_TRUE if parsing was successful.
  */
 extern Q_BOOL ansi_color(attr_t * output, unsigned char ** count);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ANSI_H__ */

@@ -22,6 +22,10 @@
 
 #include "emulation.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /* Globals ---------------------------------------------------------------- */
@@ -140,5 +144,9 @@ extern wchar_t * linux_keystroke(const int keystroke);
  * sequence.  See post_keystroke().
  */
 extern wchar_t * xterm_keystroke(const int keystroke);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __VT100_H__ */

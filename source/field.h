@@ -20,6 +20,10 @@
 
 /* Includes --------------------------------------------------------------- */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 #define Q_FIELD_SIZE 256
@@ -264,5 +268,9 @@ extern struct fieldset * fieldset_malloc(struct field ** fields,
  * @param fieldset the fieldset
  */
 extern void fieldset_free(struct fieldset * fieldset);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __FIELD_H__ */

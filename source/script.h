@@ -20,6 +20,10 @@
 
 /* Includes --------------------------------------------------------------- */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /**
@@ -162,5 +166,9 @@ extern void script_print_character(const wchar_t ch);
 extern void script_process_data(unsigned char * input, const int input_n,
                                 int * remaining, unsigned char * output,
                                 int * output_n, const int output_max);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __SCRIPT_H__ */

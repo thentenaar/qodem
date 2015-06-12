@@ -629,6 +629,10 @@ static void readEverestData( void )
 typedef BYTE VARIANT[ 16 ];	/* Kludge for OLE data type */
 typedef BYTE UINT8;
 typedef WORD UINT16;
+#ifdef __BORLANDC__
+typedef DWORD UINT32;
+typedef size_t SIZE_T;
+#endif
 
 #define SH_MEM_MAX_SENSORS 128
 

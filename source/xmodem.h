@@ -23,6 +23,10 @@
 #include "common.h"             /* Q_BOOL */
 #include "forms.h"              /* struct file_info */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /**
@@ -102,5 +106,9 @@ extern Q_BOOL ymodem_start(struct file_info * file_list, const char * pathname,
  * @param save_partial if true, save any partially-downloaded files.
  */
 extern void ymodem_stop(const Q_BOOL save_partial);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __XMODEM_H__ */

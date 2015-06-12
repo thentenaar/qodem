@@ -22,6 +22,10 @@
 
 #include "codepage.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /**
@@ -208,5 +212,9 @@ extern const char * emulation_lang(Q_EMULATION emulation);
  * @param ch the byte that was sent to the remote side
  */
 extern void debug_local_echo(const unsigned char ch);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __EMULATION_H__ */

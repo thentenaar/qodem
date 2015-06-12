@@ -29,6 +29,10 @@
 #include "common.h"
 #include "common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /* The network buffer size. */
@@ -663,5 +667,9 @@ extern void spawn_terminal(const char * command);
  * connection-specific close function.
  */
 extern void close_connection();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __QODEM_H__ */

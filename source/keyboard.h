@@ -20,6 +20,10 @@
 
 /* Includes --------------------------------------------------------------- */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /* Maximum length of a keyboard macro */
@@ -68,5 +72,9 @@ extern void switch_current_keyboard(const char * filename);
  * vt100.key, etc.)
  */
 extern void create_keybindings_files();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __KEYBOARD_H__ */

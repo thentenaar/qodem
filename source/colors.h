@@ -50,6 +50,10 @@
  * black color".
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /**
@@ -270,5 +274,9 @@ extern char * get_colors_filename();
  * Load (or reload) colors from the colors.cfg file.
  */
 extern void load_colors();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __COLORS_H__ */

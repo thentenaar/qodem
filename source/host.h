@@ -20,6 +20,10 @@
 
 /* Includes --------------------------------------------------------------- */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /**
@@ -112,5 +116,9 @@ extern void host_refresh();
 extern void host_process_data(unsigned char * input, const int input_n,
                               int * remaining, unsigned char * output,
                               int * output_n, const int output_max);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __HOST_H__ */

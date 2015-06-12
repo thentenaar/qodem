@@ -23,6 +23,10 @@
 #include "input.h"              /* attr_t */
 #include "colors.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /* Globals ---------------------------------------------------------------- */
@@ -559,5 +563,9 @@ extern void screen_win_draw_box_color(void * window, const int left,
                                       const int top, const int right,
                                       const int bottom, const Q_COLOR border,
                                       const Q_COLOR background);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __SCREEN_H__ */

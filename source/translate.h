@@ -20,6 +20,10 @@
 
 /* Includes --------------------------------------------------------------- */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /**
@@ -90,5 +94,9 @@ extern void create_translate_table_file();
  * file.
  */
 extern void load_translate_tables();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __TRANSLATE_H__ */

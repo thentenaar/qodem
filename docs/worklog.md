@@ -1,6 +1,14 @@
 The Qodem Project Work Log
 ==========================
 
+June 12, 2015
+
+I've got cryptlib compiling under BC502, though I had to put in some
+fugly workarounds here and there.  Since my qodem is currently using
+the CppCompiler I also needed to extern "C" in all my headers so that
+cryptlib can call back into qodem.  The code is still not quite
+working, but I'll go ahead and commit at this point.
+
 June 11, 2015
 
 Fixed a lot of one-off things between Avatar, Avatar SGR, and Avatar
