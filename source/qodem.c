@@ -327,8 +327,10 @@ do_write:
         /* Socket */
         rc = send(fd, data + begin, data_n, 0);
 #ifdef Q_SSH_CRYPTLIB
-    } else if ((q_status.dial_method == Q_DIAL_METHOD_SSH) &&
-        (net_is_connected() == Q_TRUE)
+    } else if (((q_status.dial_method == Q_DIAL_METHOD_SSH) &&
+            (net_is_connected() == Q_TRUE)) ||
+        (((q_program_state == Q_STATE_HOST) || (q_host_active == Q_TRUE)) &&
+            (q_host_type == Q_HOST_TYPE_SSHD))
     ) {
         /* SSH */
         rc = ssh_write(fd, data + begin, data_n);
@@ -460,8 +462,10 @@ static ssize_t qodem_read(const int fd, void * buf, size_t count) {
         return recv(fd, (char *)buf, count, 0);
     }
 #ifdef Q_SSH_CRYPTLIB
-    if ((q_status.dial_method == Q_DIAL_METHOD_SSH) &&
-        (net_is_connected() == Q_TRUE)
+    if (((q_status.dial_method == Q_DIAL_METHOD_SSH) &&
+            (net_is_connected() == Q_TRUE)) ||
+        (((q_program_state == Q_STATE_HOST) || (q_host_active == Q_TRUE)) &&
+            (q_host_type == Q_HOST_TYPE_SSHD))
     ) {
         /* SSH */
         return ssh_read(fd, buf, count);
@@ -787,6 +791,10 @@ static void cleanup_connection() {
             /* Fall through... */
         case Q_HOST_TYPE_TELNETD:
             /* Fall through... */
+#ifdef Q_SSH_CRYPTLIB
+        case Q_HOST_TYPE_SSHD:
+            /* Fall through... */
+#endif
 #ifdef Q_PDCURSES_WIN32
             closesocket(q_child_tty_fd);
 #else
@@ -1099,6 +1107,10 @@ static void process_incoming_data() {
 #endif
                         ((q_host_active == Q_TRUE) &&
                             (q_host_type == Q_HOST_TYPE_TELNETD)) ||
+#ifdef Q_SSH_CRYPTLIB
+                        ((q_host_active == Q_TRUE) &&
+                            (q_host_type == Q_HOST_TYPE_SSHD)) ||
+#endif
                         ((q_host_active == Q_TRUE) &&
                             (q_host_type == Q_HOST_TYPE_SOCKET)) ||
                         (q_status.hanging_up == Q_TRUE)

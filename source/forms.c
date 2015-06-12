@@ -3738,7 +3738,7 @@ Q_BOOL ask_host_type(Q_HOST_TYPE * type) {
     void * form_window;
     int window_left;
     int window_top;
-    int window_height = 9;
+    int window_height = 10;
     int window_length;
     int keystroke;
     int status_left_stop;
@@ -3829,6 +3829,9 @@ Q_BOOL ask_host_type(Q_HOST_TYPE * type) {
     screen_win_put_color_str_yx(form_window, i, 7, "4", Q_COLOR_MENU_COMMAND);
     screen_win_put_color_str(form_window, _(" - telnetd"), Q_COLOR_MENU_TEXT);
     i++;
+    screen_win_put_color_str_yx(form_window, i, 7, "5", Q_COLOR_MENU_COMMAND);
+    screen_win_put_color_str(form_window, _(" - sshd"), Q_COLOR_MENU_TEXT);
+    i++;
     i++;
 
     /*
@@ -3871,6 +3874,14 @@ Q_BOOL ask_host_type(Q_HOST_TYPE * type) {
             done = Q_TRUE;
             abort = Q_FALSE;
             break;
+
+#ifdef Q_SSH_CRYPTLIB
+        case '5':
+            host_type = Q_HOST_TYPE_SSHD;
+            done = Q_TRUE;
+            abort = Q_FALSE;
+            break;
+#endif
 
         case '`':
             /*

@@ -227,6 +227,7 @@ static void rlogin_send_login(const int fd);
 #ifdef Q_SSH_CRYPTLIB
 static int ssh_setup_connection(int fd, const char * host, const char * port);
 static void ssh_close();
+static int ssh_accept(int fd);
 #endif
 
 #ifdef Q_UPNP
@@ -1680,6 +1681,13 @@ int net_accept() {
     memset(write_buffer, 0, sizeof(write_buffer));
     write_buffer_n = 0;
     reset_nvt();
+
+#ifdef Q_SSH_CRYPTLIB
+    /* SSH has its session management here */
+    if (q_host_type == Q_HOST_TYPE_SSHD) {
+        return ssh_accept(fd);
+    }
+#endif
 
     DLOG(("net_accept() : return fd = %d\n", fd));
     return fd;
@@ -3555,6 +3563,16 @@ static CRYPT_SESSION cryptSession;
 static int cryptUser = CRYPT_UNUSED;
 
 /**
+ * The human-readable MD5 key for a ssh server.
+ */
+static char * ssh_server_key = NULL;
+
+/**
+ * The filename in the working directory to store a qodem ssh server key.
+ */
+#define HOST_SSH_SERVER_KEY_FILENAME "ssh_server_key.p15"
+
+/**
  * Flag to indicate some more data MIGHT be ready to read.
  */
 static Q_BOOL maybe_readable = Q_FALSE;
@@ -3698,7 +3716,11 @@ static void ssh_close() {
          * the network socket anyway.
          */
         emit_crypto_error(cryptStatus, cryptSession);
-        return;
+    }
+
+    if (ssh_server_key != NULL) {
+        Xfree(ssh_server_key, __FILE__, __LINE__);
+        ssh_server_key = NULL;
     }
 }
 
@@ -3715,6 +3737,8 @@ ssize_t ssh_read(const int fd, void * buf, size_t count) {
     int cryptStatus;
     int readBytes;
     int i;
+
+    DLOG(("ssh_read()\n"));
 
     /* Return read_buffer first - it has the connect message */
     if (read_buffer_n > 0) {
@@ -3816,6 +3840,8 @@ ssize_t ssh_write(const int fd, void * buf, size_t count) {
     int writtenBytes;
     int i;
 
+    DLOG(("ssh_write()\n"));
+
     /* Make sure we're supposed to send something */
     assert(count > 0);
 
@@ -3877,9 +3903,13 @@ void ssh_resize_screen(const int lines, const int columns) {
     /* TODO */
 }
 
-static char * ssh_server_key = NULL;
-
-static void md5_to_string(const unsigned char * md5, char * dest) {
+/**
+ * Convert a raw 16-byte hash value to a human-readable ASCII string.
+ *
+ * @param md5 the hash value
+ * @param dest the string to write
+ */
+static void md5_to_string(const char * md5, char * dest) {
     const int len = 16;
     int i;
     memset(dest, 0, len * 3 + 2);
@@ -3903,7 +3933,7 @@ static void md5_to_string(const unsigned char * md5, char * dest) {
  * @return the key string
  */
 const char * ssh_server_key_str() {
-    unsigned char fingerprint[CRYPT_MAX_HASHSIZE + 1];
+    char fingerprint[CRYPT_MAX_HASHSIZE + 1];
     int fingerprint_n;
     int cryptStatus;
     int i;
@@ -3931,6 +3961,223 @@ const char * ssh_server_key_str() {
         md5_to_string(fingerprint, ssh_server_key);
     }
     return ssh_server_key;
+}
+
+/**
+ * Create a RSA private key for the SSH server.
+ */
+static void create_server_key() {
+    int cryptStatus;
+    CRYPT_CONTEXT privKeyContext;
+    int keyLen = 1024 / 8;
+    CRYPT_KEYSET keySet;
+    char * filename;
+
+    filename = get_datadir_filename(HOST_SSH_SERVER_KEY_FILENAME);
+    if (file_exists(filename) == Q_TRUE) {
+        /* Server key already exists, bail out. */
+        return;
+    }
+
+    DLOG(("create_server_key()\n"));
+
+    /* Create the key */
+    cryptStatus = cryptCreateContext(&privKeyContext, CRYPT_UNUSED,
+                                     CRYPT_ALGO_RSA);
+    if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptCreateContext()\n"));
+        emit_crypto_error(cryptStatus, cryptSession);
+        return;
+    }
+
+    cryptStatus = cryptSetAttributeString(privKeyContext, CRYPT_CTXINFO_LABEL,
+                                          "RSA_KEY", 7);
+    if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptSetAttributeString(CRYPT_CTXINFO_LABEL)\n"));
+        emit_crypto_error(cryptStatus, cryptSession);
+        return;
+    }
+
+    cryptStatus = cryptSetAttribute(privKeyContext, CRYPT_CTXINFO_KEYSIZE,
+                                    keyLen);
+    if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptSetAttribute(CRYPT_CTXINFO_KEYSIZE)\n"));
+        emit_crypto_error(cryptStatus, cryptSession);
+        return;
+    }
+
+    cryptStatus = cryptGenerateKey(privKeyContext);
+    if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptGenerateKey()\n"));
+        emit_crypto_error(cryptStatus, cryptSession);
+        return;
+    }
+
+    /* Save the key */
+    cryptStatus = cryptKeysetOpen(&keySet, CRYPT_UNUSED, CRYPT_KEYSET_FILE,
+                                  filename, CRYPT_KEYOPT_CREATE);
+    if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptKeysetOpen()\n"));
+        emit_crypto_error(cryptStatus, cryptSession);
+        return;
+    }
+
+    cryptStatus = cryptAddPrivateKey(keySet, privKeyContext, "password");
+    if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptAddPrivateKey()\n"));
+        emit_crypto_error(cryptStatus, cryptSession);
+        return;
+    }
+
+    cryptStatus = cryptKeysetClose(keySet);
+    if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptKeysetClose()\n"));
+        emit_crypto_error(cryptStatus, cryptSession);
+        return;
+    }
+
+    DLOG(("create_server_key() FINISHED\n"));
+}
+
+/**
+ * Retrieve a RSA private key for the SSH server.
+ */
+static CRYPT_CONTEXT load_server_key() {
+    CRYPT_CONTEXT privKey;
+    CRYPT_KEYSET keySet;
+    int cryptStatus = 0;
+    char * filename;
+
+    DLOG(("load_server_key()\n"));
+
+    filename = get_datadir_filename(HOST_SSH_SERVER_KEY_FILENAME);
+    if (file_exists(filename) == Q_FALSE) {
+        /* Server key doesn't exist, create it first. */
+        create_server_key();
+    }
+
+    cryptStatus = cryptKeysetOpen(&keySet, CRYPT_UNUSED, CRYPT_KEYSET_FILE,
+                                  filename, CRYPT_KEYOPT_READONLY);
+    if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptKeysetOpen()\n"));
+        emit_crypto_error(cryptStatus, cryptSession);
+        return CRYPT_UNUSED;
+    }
+
+    cryptStatus = cryptGetPrivateKey(keySet, &privKey, CRYPT_KEYID_NAME,
+                                     "RSA_KEY", "password");
+    if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptGetPrivateKey()\n"));
+        emit_crypto_error(cryptStatus, cryptSession);
+        return CRYPT_UNUSED;
+    }
+
+    cryptStatus = cryptKeysetClose(keySet);
+    if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptKeysetClose()\n"));
+        emit_crypto_error(cryptStatus, cryptSession);
+        return CRYPT_UNUSED;
+    }
+
+    DLOG(("load_server_key(): privKey = %d\n", privKey));
+    return privKey;
+}
+
+/**
+ * Accept a ssh server connection.
+ *
+ * @return the accepted socket descriptor, or -1 if no new connection is
+ * available.
+ */
+static int ssh_accept(int fd) {
+    char notify_message[DIALOG_MESSAGE_SIZE];
+    char errorMessage[DIALOG_MESSAGE_SIZE];
+    int errorMessage_n;
+    int cryptStatus;
+
+    DLOG(("ssh_accept()\n"));
+
+    /* Make sure we have a socket */
+    if (fd == -1) {
+        /* We never bind()'d in net_accept() */
+        return fd;
+    }
+
+    /* We had better be listening now. */
+    assert(listening == Q_TRUE);
+
+    /* Setup the crypt session */
+    cryptStatus = cryptCreateSession(&cryptSession, cryptUser,
+                                     CRYPT_SESSION_SSH_SERVER);
+    if (cryptStatusError(cryptStatus)) {
+        /* Error creating session object */
+        cryptGetAttributeString(cryptSession, CRYPT_ATTRIBUTE_ERRORMESSAGE,
+            errorMessage, &errorMessage_n);
+
+        /* Error establishing session */
+        snprintf(notify_message, sizeof(notify_message),
+            _("Error establishing SSH server session: %s"), errorMessage);
+        notify_form(notify_message, 1.5);
+        /* Do a full close: pretend it's open and we got EOF */
+        connected = Q_TRUE;
+        q_child_tty_fd = fd;
+        net_close();
+        return -1;
+    }
+
+    /* Disable Nagle's algorithm as per cryptlib docs */
+    int tcp_flag = 1;
+    if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (void *)&tcp_flag,
+                   sizeof(tcp_flag)) != 0) {
+        DLOG(("Unable to set TCP_NODELAY\n"));
+    } else {
+        DLOG(("Disabled Nagle's algorithm\n"));
+    }
+
+    /* Pass in the SSH server private key */
+    cryptSetAttribute(cryptSession, CRYPT_SESSINFO_PRIVATEKEY,
+                      load_server_key());
+
+    /* Pass in the network socket */
+    cryptSetAttribute(cryptSession, CRYPT_SESSINFO_NETWORKSOCKET, fd);
+
+    /* Automatically authenticate the user (any user) */
+    cryptStatus = cryptSetAttribute(cryptSession, CRYPT_SESSINFO_ACTIVE, 1);
+
+    if ((cryptStatusError(cryptStatus)) &&
+        (cryptStatus != CRYPT_ENVELOPE_RESOURCE)
+    ) {
+        /* This is some kind of un-recoverable error */
+        emit_crypto_error(cryptStatus, cryptSession);
+
+        cryptGetAttributeString(cryptSession, CRYPT_ATTRIBUTE_ERRORMESSAGE,
+                                errorMessage, &errorMessage_n);
+
+        /* Error establishing session */
+        snprintf(notify_message, sizeof(notify_message),
+            _("Error establishing SSH server session: %s"), errorMessage);
+        notify_form(notify_message, 1.5);
+        /* Do a full close: pretend it's open and we got EOF */
+        connected = Q_TRUE;
+        q_child_tty_fd = fd;
+        net_close();
+        return -1;
+    }
+
+    /*
+     * Login OK.  We don't care what the username or password are, host mode
+     * does its own login prompt.
+     */
+    cryptSetAttribute(cryptSession, CRYPT_SESSINFO_AUTHRESPONSE, 1);
+
+    /* Set the network timeouts to mimic non-blocking behavior */
+    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_READTIMEOUT, 0.05);
+    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_WRITETIMEOUT, 0.05);
+
+    DLOG(("SSH server session established: fd = %d\n", fd));
+
+    /* Session is established, let's get to moving data! */
+    return fd;
 }
 
 #endif /* Q_SSH_CRYPTLIB */

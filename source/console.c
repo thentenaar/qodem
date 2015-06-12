@@ -1057,6 +1057,9 @@ void console_keyboard_handler(int keystroke, int flags) {
                 switch (host_type) {
                 case Q_HOST_TYPE_SOCKET:
                 case Q_HOST_TYPE_TELNETD:
+#ifdef Q_SSH_CRYPTLIB
+                case Q_HOST_TYPE_SSHD:
+#endif
                     /*
                      * Get a port selection
                      */

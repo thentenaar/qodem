@@ -51,6 +51,13 @@ typedef enum {
      */
     Q_HOST_TYPE_TELNETD,
 
+#ifdef Q_SSH_CRYPTLIB
+    /**
+     * Listen on socket and speak the ssh server protocol.
+     */
+    Q_HOST_TYPE_SSHD,
+#endif
+
 } Q_HOST_TYPE;
 
 /* Globals ---------------------------------------------------------------- */

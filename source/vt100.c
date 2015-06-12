@@ -5414,7 +5414,7 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
                         (q_status.emulation == Q_EMUL_XTERM_UTF8)) &&
                     (q_emul_buffer[q_emul_buffer_n-1] == '\"')
                 ) {
-                    /* DESCSCA */
+                    /* DECSCA */
                     decsca();
                 }
                 break;

@@ -397,6 +397,9 @@ void host_start(Q_HOST_TYPE type, const char * port) {
     switch (type) {
     case Q_HOST_TYPE_SOCKET:
     case Q_HOST_TYPE_TELNETD:
+#ifdef Q_SSH_CRYPTLIB
+    case Q_HOST_TYPE_SSHD:
+#endif
 
 #ifdef Q_UPNP
         if (strcmp(port, UPNP_PORT_STRING) == 0) {
@@ -497,6 +500,9 @@ static void host_stop() {
     switch (q_host_type) {
     case Q_HOST_TYPE_SOCKET:
     case Q_HOST_TYPE_TELNETD:
+#ifdef Q_SSH_CRYPTLIB
+    case Q_HOST_TYPE_SSHD:
+#endif
         net_listen_close();
         listen_fd = -1;
         break;
@@ -602,7 +608,7 @@ static void do_login() {
 
     if (login_state == LOGIN_INIT) {
         DLOG(("do_login(): LOGIN_INIT\n"));
-        do_menu("login: ");
+        do_menu(EOL "login: ");
         login_state = USERNAME;
         reset_line_buffer();
         do_line_buffer = Q_TRUE;
@@ -2118,6 +2124,9 @@ void host_process_data(unsigned char * input, const int input_n,
     switch (q_host_type) {
     case Q_HOST_TYPE_SOCKET:
     case Q_HOST_TYPE_TELNETD:
+#ifdef Q_SSH_CRYPTLIB
+    case Q_HOST_TYPE_SSHD:
+#endif
         q_child_tty_fd = net_accept();
         if (q_child_tty_fd != -1) {
             /*

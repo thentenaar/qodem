@@ -327,6 +327,18 @@ The SSH server key fingerprint displayed in the Alt-I info screen is
 unique, but does not match the key fingerprints reported by ssh-keygen
 or the OpenSSH client.
 
+The ssh library used by the host mode SSH server (cryptlib) has a
+known issue accepting connections from ssh clients that request DH
+keys larger than 4096 bits.  See
+http://article.gmane.org/gmane.comp.encryption.cryptlib/2793 for some
+discussion regarding this.  ssh clients to a qodem host can pass the
+'-m hmac-md5' command line argument to work around this.
+
+The host mode SSH server does not care what username or password are
+passed through the ssh client.  After the ssh connection is
+established, the login sequence is identical to socket and telnet
+connections.
+
 
 
 SCRIPT SUPPORT
