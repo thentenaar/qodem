@@ -276,6 +276,12 @@ extern Q_BOOL ssh_maybe_readable();
  */
 extern const char * ssh_server_key_str();
 
+/**
+ * Create a RSA private key for the SSH server.  This does nothing if the key
+ * file already exists.
+ */
+void ssh_create_server_key();
+
 #endif /* Q_SSH_CRYPTLIB */
 
 /**

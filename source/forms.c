@@ -740,7 +740,7 @@ void notify_form(const char * message, const double timeout) {
  */
 void notify_form_long(char ** message, const double timeout, const int lines) {
     notify_prompt_form_long(message, _("Status"), _(" Message "), Q_FALSE,
-                            0, "\033` \r", lines);
+                            timeout, "\033` \r", lines);
 }
 
 /**

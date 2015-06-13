@@ -16,8 +16,6 @@ BUG: no bold text in help system on Borland
 
 BUG: free kbytes on download menu broken on Borland
 
-BUG: very first "login:" not emitted on host ssh server
-
 1.0.0
 -----
 

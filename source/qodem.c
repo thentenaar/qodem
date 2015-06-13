@@ -2673,6 +2673,8 @@ int qodem_main(int argc, char * const argv[]) {
                 _("Press any key to continue...\n"));
             screen_flush();
             discarding_getch();
+        } else {
+            ssh_create_server_key();
         }
 #endif
 

@@ -1655,7 +1655,7 @@ int net_accept() {
          */
         snprintf(notify_message, sizeof(notify_message),
                  _("Error in accept(): %s"), get_strerror(get_errno()));
-        notify_form(notify_message, 1.5);
+        notify_form(notify_message, 3.0);
         return -1;
     }
 
@@ -3665,24 +3665,25 @@ static int ssh_setup_connection(int fd, const char * host, const char * port) {
     cryptStatus = cryptCreateSession(&cryptSession, cryptUser,
                                      CRYPT_SESSION_SSH);
     if (cryptStatusError(cryptStatus)) {
-        /* Error creating session object */
-        memset(errorMessage, 0, sizeof(errorMessage));
-        cryptGetAttributeString(cryptSession, CRYPT_ATTRIBUTE_ERRORMESSAGE,
-                                errorMessage, &errorMessage_n);
-
-        snprintf(notify_message, sizeof(notify_message),
-                _("Error: %s"), errorMessage);
-        snprintf(q_dialer_modem_message,
-            sizeof(q_dialer_modem_message), "%s", notify_message);
-        return -1;
+        DLOG(("ERROR cryptCreateSession()\n"));
+        goto crypt_error;
     }
     /* Username and password need to be converted to char, not wchar_t */
     sprintf(buffer, "%ls", q_status.current_username);
-    cryptSetAttributeString(cryptSession, CRYPT_SESSINFO_USERNAME,
-                            buffer, strlen(buffer));
+    cryptStatus = cryptSetAttributeString(cryptSession, CRYPT_SESSINFO_USERNAME,
+                                          buffer, strlen(buffer));
+    if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptSetAttribute(CRYPT_SESSINFO_USERNAME)\n"));
+        goto crypt_error;
+    }
+
     sprintf(buffer, "%ls", q_status.current_password);
-    cryptSetAttributeString(cryptSession, CRYPT_SESSINFO_PASSWORD,
-                            buffer, strlen(buffer));
+    cryptStatus = cryptSetAttributeString(cryptSession, CRYPT_SESSINFO_PASSWORD,
+                                          buffer, strlen(buffer));
+    if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptSetAttribute(CRYPT_SESSINFO_PASSWORD)\n"));
+        goto crypt_error;
+    }
 
     /* Disable Nagle's algorithm as per cryptlib docs */
 #ifdef Q_PDCURSES_WIN32
@@ -3699,24 +3700,16 @@ static int ssh_setup_connection(int fd, const char * host, const char * port) {
 
     /* Pass in the network socket */
     cryptSetAttribute(cryptSession, CRYPT_SESSINFO_NETWORKSOCKET, fd);
+    if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptSetAttribute(CRYPT_SESSINFO_NETWORKSOCKET)\n"));
+        goto crypt_error;
+    }
 
     /* Activate the session */
     cryptStatus = cryptSetAttribute(cryptSession, CRYPT_SESSINFO_ACTIVE, 1);
-
     if (cryptStatusError(cryptStatus)) {
-        /* Could not establish session */
-        emit_crypto_error(cryptStatus, cryptSession);
-
-        memset(errorMessage, 0, sizeof(errorMessage));
-        cryptGetAttributeString(cryptSession, CRYPT_ATTRIBUTE_ERRORMESSAGE,
-                                errorMessage, &errorMessage_n);
-
-        /* Error establishing session */
-        snprintf(notify_message, sizeof(notify_message),
-                _("Error: %s"), errorMessage);
-        snprintf(q_dialer_modem_message,
-            sizeof(q_dialer_modem_message), "%s", notify_message);
-        return -1;
+        DLOG(("ERROR cryptSetAttribute(CRYPT_SESSINFO_ACTIVE)\n"));
+        goto crypt_error;
     }
 
     DLOG(("SSH connection established: fd = %d\n", fd));
@@ -3727,6 +3720,22 @@ static int ssh_setup_connection(int fd, const char * host, const char * port) {
 
     /* All done, let's get to moving data! */
     return fd;
+
+crypt_error:
+
+    /* Could not establish session */
+    emit_crypto_error(cryptStatus, cryptSession);
+
+    memset(errorMessage, 0, sizeof(errorMessage));
+    cryptGetAttributeString(cryptSession, CRYPT_ATTRIBUTE_ERRORMESSAGE,
+                            errorMessage, &errorMessage_n);
+
+    /* Error establishing session */
+    snprintf(notify_message, sizeof(notify_message),
+        _("Error: %s"), errorMessage);
+    snprintf(q_dialer_modem_message,
+        sizeof(q_dialer_modem_message), "%s", notify_message);
+    return -1;
 }
 
 /**
@@ -3783,6 +3792,9 @@ ssize_t ssh_read(const int fd, void * buf, size_t count) {
     /* Read some more bytes from the remote side */
     cryptStatus = cryptPopData(cryptSession, buf, count, &readBytes);
     if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptPopData()\n"));
+        emit_crypto_error(cryptStatus, cryptSession);
+
         /* cryptlib error */
         if (cryptStatus == CRYPT_ERROR_COMPLETE) {
             DLOG(("EOF EOF EOF\n"));
@@ -3805,7 +3817,6 @@ ssize_t ssh_read(const int fd, void * buf, size_t count) {
 #endif
             return -1;
         } else {
-            emit_crypto_error(cryptStatus, cryptSession);
             /* TODO: handle it somehow */
         }
     }
@@ -3872,16 +3883,32 @@ ssize_t ssh_write(const int fd, void * buf, size_t count) {
 
     cryptStatus = cryptPushData(cryptSession, buf, count, &writtenBytes);
     if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptPushData()\n"));
+
         /* cryptlib error */
         emit_crypto_error(cryptStatus, cryptSession);
-        /* This will be an error */
-        set_errno(EIO);
+        if ((cryptStatus == CRYPT_ERROR_PERMISSION) &&
+            (q_program_state == Q_STATE_HOST)
+        ) {
+            /*
+             * For some odd reason the VERY FIRST write is returning
+             * CRYPT_ERROR_PERMISSION.  I suspect this is a timing thing.
+             * For this one case return EAGAIN so that qodem_write() will try
+             * again.
+             */
+            set_errno(EAGAIN);
+        } else {
+            /* This will be an error */
+            set_errno(EIO);
+        }
         return -1;
     }
 
     /* Post everything */
     cryptStatus = cryptFlushData(cryptSession);
     if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptFlushData()\n"));
+
         /* cryptlib error */
         emit_crypto_error(cryptStatus, cryptSession);
         /* This will be an error */
@@ -3890,6 +3917,8 @@ ssize_t ssh_write(const int fd, void * buf, size_t count) {
     }
 
     if (writtenBytes == 0) {
+        DLOG(("ssh_write() writtenBytes is 0, returning EAGAIN\n"));
+
         /* This isn't EOF yet */
 #ifdef Q_PDCURSES_WIN32
         set_errno(WSAEWOULDBLOCK);
@@ -3981,22 +4010,25 @@ const char * ssh_server_key_str() {
         }
         DLOG2(("\n"));
 
-        ssh_server_key = (char *) Xmalloc((fingerprint_n * 3 + 2) * sizeof(char),
-            __FILE__, __LINE__);
+        ssh_server_key = (char *) Xmalloc((fingerprint_n * 3 + 2) *
+            sizeof(char), __FILE__, __LINE__);
         md5_to_string(fingerprint, ssh_server_key);
     }
     return ssh_server_key;
 }
 
 /**
- * Create a RSA private key for the SSH server.
+ * Create a RSA private key for the SSH server.  This does nothing if the key
+ * file already exists.
  */
-static void create_server_key() {
+void ssh_create_server_key() {
     int cryptStatus;
     CRYPT_CONTEXT privKeyContext;
     int keyLen = 1024 / 8;
     CRYPT_KEYSET keySet;
     char * filename;
+    char notify_message[DIALOG_MESSAGE_SIZE];
+    Q_BOOL old_keyboard_blocks = q_keyboard_blocks;
 
     filename = get_datadir_filename(HOST_SSH_SERVER_KEY_FILENAME);
     if (file_exists(filename) == Q_TRUE) {
@@ -4004,7 +4036,17 @@ static void create_server_key() {
         return;
     }
 
-    DLOG(("create_server_key()\n"));
+    DLOG(("ssh_create_server_key()\n"));
+
+    /*
+     * Show the user a message that we are creating the server key.  Make
+     * sure we don't wait on them to press a key, just compute and go.
+     */
+    snprintf(notify_message, sizeof(notify_message),
+        _("Creating new SSH server key, this may take some time..."));
+    q_keyboard_blocks = Q_FALSE;
+    notify_form(notify_message, 0.1);
+    q_keyboard_blocks = old_keyboard_blocks;
 
     /* Create the key */
     cryptStatus = cryptCreateContext(&privKeyContext, CRYPT_UNUSED,
@@ -4078,7 +4120,7 @@ static CRYPT_CONTEXT load_server_key() {
     filename = get_datadir_filename(HOST_SSH_SERVER_KEY_FILENAME);
     if (file_exists(filename) == Q_FALSE) {
         /* Server key doesn't exist, create it first. */
-        create_server_key();
+        ssh_create_server_key();
     }
 
     cryptStatus = cryptKeysetOpen(&keySet, CRYPT_UNUSED, CRYPT_KEYSET_FILE,
@@ -4119,6 +4161,7 @@ static int ssh_accept(int fd) {
     char errorMessage[DIALOG_MESSAGE_SIZE];
     int errorMessage_n;
     int cryptStatus;
+    int tcp_flag = 1;
 
     DLOG(("ssh_accept()\n"));
 
@@ -4135,23 +4178,11 @@ static int ssh_accept(int fd) {
     cryptStatus = cryptCreateSession(&cryptSession, cryptUser,
                                      CRYPT_SESSION_SSH_SERVER);
     if (cryptStatusError(cryptStatus)) {
-        /* Error creating session object */
-        cryptGetAttributeString(cryptSession, CRYPT_ATTRIBUTE_ERRORMESSAGE,
-            errorMessage, &errorMessage_n);
-
-        /* Error establishing session */
-        snprintf(notify_message, sizeof(notify_message),
-            _("Error establishing SSH server session: %s"), errorMessage);
-        notify_form(notify_message, 1.5);
-        /* Do a full close: pretend it's open and we got EOF */
-        connected = Q_TRUE;
-        q_child_tty_fd = fd;
-        net_close();
-        return -1;
+        DLOG(("ERROR cryptCreateSession()\n"));
+        goto crypt_error;
     }
 
     /* Disable Nagle's algorithm as per cryptlib docs */
-    int tcp_flag = 1;
 #ifdef Q_PDCURSES_WIN32
     if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (const char *)&tcp_flag,
                    sizeof(tcp_flag)) != 0) {
@@ -4165,40 +4196,40 @@ static int ssh_accept(int fd) {
     }
 
     /* Pass in the SSH server private key */
-    cryptSetAttribute(cryptSession, CRYPT_SESSINFO_PRIVATEKEY,
-                      load_server_key());
+    cryptStatus = cryptSetAttribute(cryptSession, CRYPT_SESSINFO_PRIVATEKEY,
+                                    load_server_key());
+    if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptSetAttribute(CRYPT_SESSINFO_PRIVATEKEY)\n"));
+        goto crypt_error;
+    }
 
     /* Pass in the network socket */
-    cryptSetAttribute(cryptSession, CRYPT_SESSINFO_NETWORKSOCKET, fd);
+    cryptStatus = cryptSetAttribute(cryptSession, CRYPT_SESSINFO_NETWORKSOCKET,
+                                    fd);
+    if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptSetAttribute(CRYPT_SESSINFO_NETWORKSOCKET)\n"));
+        goto crypt_error;
+    }
 
     /* Automatically authenticate the user (any user) */
     cryptStatus = cryptSetAttribute(cryptSession, CRYPT_SESSINFO_ACTIVE, 1);
-
     if ((cryptStatusError(cryptStatus)) &&
         (cryptStatus != CRYPT_ENVELOPE_RESOURCE)
     ) {
-        /* This is some kind of un-recoverable error */
-        emit_crypto_error(cryptStatus, cryptSession);
-
-        cryptGetAttributeString(cryptSession, CRYPT_ATTRIBUTE_ERRORMESSAGE,
-                                errorMessage, &errorMessage_n);
-
-        /* Error establishing session */
-        snprintf(notify_message, sizeof(notify_message),
-            _("Error establishing SSH server session: %s"), errorMessage);
-        notify_form(notify_message, 1.5);
-        /* Do a full close: pretend it's open and we got EOF */
-        connected = Q_TRUE;
-        q_child_tty_fd = fd;
-        net_close();
-        return -1;
+        DLOG(("ERROR cryptSetAttribute(CRYPT_SESSINFO_ACTIVE)\n"));
+        goto crypt_error;
     }
 
     /*
      * Login OK.  We don't care what the username or password are, host mode
      * does its own login prompt.
      */
-    cryptSetAttribute(cryptSession, CRYPT_SESSINFO_AUTHRESPONSE, 1);
+    cryptStatus = cryptSetAttribute(cryptSession, CRYPT_SESSINFO_AUTHRESPONSE,
+                                    1);
+    if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptSetAttribute(CRYPT_SESSINFO_AUTHRESPONSE)\n"));
+        goto crypt_error;
+    }
 
     /* Set the network timeouts to mimic non-blocking behavior */
     cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_READTIMEOUT, 0.05);
@@ -4208,6 +4239,24 @@ static int ssh_accept(int fd) {
 
     /* Session is established, let's get to moving data! */
     return fd;
+
+crypt_error:
+
+    /* This is some kind of un-recoverable error */
+    emit_crypto_error(cryptStatus, cryptSession);
+
+    cryptGetAttributeString(cryptSession, CRYPT_ATTRIBUTE_ERRORMESSAGE,
+                            errorMessage, &errorMessage_n);
+
+    /* Error establishing session */
+    snprintf(notify_message, sizeof(notify_message),
+        _("Error establishing SSH server session: %s"), errorMessage);
+    notify_form(notify_message, 3.0);
+    /* Do a full close: pretend it's open and we got EOF */
+    connected = Q_TRUE;
+    q_child_tty_fd = fd;
+    net_close();
+    return -1;
 }
 
 #endif /* Q_SSH_CRYPTLIB */
