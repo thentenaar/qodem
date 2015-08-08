@@ -4223,15 +4223,15 @@ static Q_CODEPAGE pick_codepage(Q_EMULATION emulation) {
         case Q_KEY_DOWN:
             if (codepage_dec == Q_FALSE) {
                 selected_field++;
+                if (selected_field == Q_CODEPAGE_MAX) {
+                    selected_field = 0;
+                }
                 /*
                  * Skip over DEC
                  */
                 if (selected_field == Q_CODEPAGE_DEC) {
                     selected_field++;
                 }
-            }
-            if (selected_field == Q_CODEPAGE_MAX) {
-                selected_field--;
             }
             break;
         case Q_KEY_UP:
@@ -4243,9 +4243,9 @@ static Q_CODEPAGE pick_codepage(Q_EMULATION emulation) {
                 if (selected_field == Q_CODEPAGE_DEC) {
                     selected_field--;
                 }
-            }
-            if (selected_field < 0) {
-                selected_field++;
+                if (selected_field < 0) {
+                    selected_field = Q_CODEPAGE_MAX - 1;
+                }
             }
             break;
         case Q_KEY_HOME:
