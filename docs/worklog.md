@@ -1,6 +1,90 @@
 The Qodem Project Work Log
 ==========================
 
+August 8, 2015
+
+I've been slammed with a major project at work the last four weeks,
+leaving little time to dedicate to qodem.  However it is not forgotten
+or fully idle, even now.
+
+A user submitted some bug reports on github, which is very nice to
+see.  I've addressed one of them already (up/down wrapping around in
+the codepage pick dialog in phonebook), but the other significant one
+is a much bigger issue, namely how should we handle keyboard input to
+non-Unicode hosts?  This really drives deep into the "Output" part
+(with respect to the user) of the whole I/O paradigm, and will impact
+at the least: capture file, keyboard macros screen, local echo,
+keystrokes themselves, and translate tables.  So let's get going on
+defining the questions that need good answers:
+
+1. In what order should the following operations happen to a byte
+   received from recv(): process through translate table, written to
+   capture file (raw), written to capture file (normal/html),
+   converted to Unicode, modem parity handling, displayed on screen?
+
+2. In what order should the following operations happen to a Unicode
+   keystroke received from wgetch(): process through translate table,
+   local echo, local echo (DEBUG), modem parity handling, convert to
+   UTF-8?
+
+3. Same as #2, but regarding a wchar from compose_key() ?  Should
+   compose key bypass translate table mapping?  Also, Compose Key is
+   more commonly known as Alt Code, it should be renamed anyway.
+
+4. Should keyboard macros be aware of codepage?  If yes, how?  Each
+   filename has both emulation and codepage?  Or: macros are encoded
+   as Unicode always but converted in post_keystroke() to current
+   remote codepage?  Should the keyboard macro editing screen show
+   8-bit glyphs (ISO-8859-1) as the current codepage instead?
+
+5. Parity processing can already hose file transfers and Zmodem/Kermit
+   autostart, by definition.  Should translate table be able to do the
+   same?  If yes, then it can also break UTF-8 encoding.
+
+6. Should translate table behave differently for Unicode hosts?
+   Should it be capable of breaking UTF-8 encoding?
+
+7. What should happen when a Unicode code point that can match the
+   glyph for an 8-bit codepage comes in from the keyboard?  Should it
+   be mapped to the 8-bit glyph equivalent (e.g. perform the reverse
+   function of codepage_map_char())?  If so, should that 8-bit char
+   have multiple Unicode code points backmap to it (e.g. the gazillion
+   forms of left arrow become 0x1B)?
+
+8. What should happen when a code point comes from the keyboard that
+   has more bits than any available mappable 8-bit char?  Mask the
+   higher bits off (and then do what?)?  Ignore the character?  Warn
+   the user?
+
+9. Should the username and password fields as rendered by the
+   phonebook UI be codepage aware?
+
+10. Should the translate table UI screen be codepage aware?
+
+I think this is a reasonable start to the questions.  In answering
+these, what I want is for users to have sane defaults for both the
+classic BBS users and the modern Xterm users.
+
+I could do the same underlying assumption as Qmodem(tm) did: the
+codepage is a system default setting, make that codepage really easy
+to use and the rest of the codepages possible even if not as easy.
+This could be done via a default codepage option (which would be
+CP437) that controls the UI screens, and then backmap keystrokes into
+remote codepage in the terminal.  The keyboard macros and translate
+table screens would use the default codepage, and the
+username/password in phonebook would use the phonebook entry codepage.
+
+The other extreme is to make codepage really visible everywhere.
+Maybe have a current UI codepage that is switchable any time in all
+codepage-aware screens.  That would be cool to put in something like
+the TradeWars CIM code in a macro in CP437 (using compose key) and
+then seeing how that looks in other codepages including ISO-8859-1.
+
+Let's let this noodle for a bit.  I'm already seeing that I need to
+rename compose_key() and create two different codepage_backmap_char()
+functions (one for rendering a wchar_t to UI and one for sending a
+unsigned char to the remote side).
+
 June 12, 2015
 
 I've got cryptlib compiling under BC502, though I had to put in some
