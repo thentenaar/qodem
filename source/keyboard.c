@@ -3268,7 +3268,13 @@ void function_key_editor_keyboard_handler(const int keystroke,
          * Pass to form handler
          */
         if (editing_key == Q_TRUE) {
-            if (!q_key_code_yes(keystroke2)) {
+            if (keystroke2 < 0x20) {
+                /*
+                 * This is a control character, insert it in hat-notation.
+                 */
+                fieldset_keystroke(edit_keybinding_form, '^');
+                fieldset_keystroke(edit_keybinding_form, keystroke2 + 0x40);
+            } else if (!q_key_code_yes(keystroke2)) {
                 /*
                  * Pass normal keys to form driver
                  */

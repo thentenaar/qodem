@@ -1,6 +1,132 @@
 The Qodem Project Work Log
 ==========================
 
+August 10, 2015
+
+I think I have settled onto the Unicode-vs-8-bit design issues in my
+head now.  I wanted to think about mapping keyboard wchar_t's to 8-bit
+codepage values but couldn't get past the translate tables behavior.
+The way they work just doesn't make sense in the bigger picture, and
+in fact the Qmodem(tm) translate tables feature seems like it probably
+solved one very specific problem but was just left in place rather
+than properly "finished", with these major problems:
+
+  * It is a global setting rather than a per-dial-entry setting.  If
+    one set it up for say EBCDIC then you would need to have a whole
+    separate Qmodem(tm) install just for those EBCDIC systems.
+
+  * It is unclear what program states it is supposed to operate on.
+    ASCII transfers have an option to use it or not, but not the other
+    protocols.  Again, this seems like a one-off "translate from
+    EBCDIC to ASCII for text only" type feature.
+
+Here is what I think needs to happen: the translate tables function
+needs to be "finished" and expanded to make sense in a Unicode world
+too.  I see the need for two kinds of translate tables: 8-bit that
+operates on the bytes sent to and from the wire, and Unicode that
+operates on the code points sent to the screen and received from the
+keyboard.  Add a few special cases to handle the non-terminal-mode
+states (host mode, downloads, UI screens) plus DEBUG emulation and
+this can all fit together neatly.  Core philosophy statements:
+
+1. We do not record in capture file or user data files the result of a
+   destructive codeset transformation.  So: raw capture records the
+   bytes before the 8-bit input translate table is applied,
+   normal/text capture records the code points before the input
+   Unicode translate table is applied, and data files record the code
+   points from the keyboard before the output Unicode translate table
+   is applied.  The only places where destructive transformations may
+   occur are in the scrollback and screen output functions.  This also
+   means that scrollback capture and screen dump are permitted to have
+   different code points than capture file.
+
+2. The translate tables are optional, and operate as a per-dial-entry
+   function.  This will mean a new phonebook entry field.
+
+3. If a Unicode code point does not have an 8-bit character to map to,
+   the '?' will be used in its place.  This is consistent with Windows
+   OS behavior and browser conventions.  Due to #1 though the user
+   files (phonebook, macros) will still have the original Unicode
+   data, and selecting a different codepage might make it show up.  In
+   terminal mode this means that '?' will be sent to the remote side
+   for un-mappable code points.
+
+4. DEBUG emulation targets what goes on the wire.  Unicode from the
+   keyboard will be encoded as UTF-8, but show up in the hex display
+   as the 2-6 bytes being sent across the wire (using the global
+   default codepage) rather than a wchar_t.  This will be the default
+   behavior, as UTF-8 is the future.  However, I suppose I will also
+   provide an option to have DEBUG encode to the 8-bit codepage, with
+   the same caveat that un-mappable code points are sent to the remote
+   side as '?'.
+
+5. There will be an option for a single global default codepage.  This
+   will be used to render the C0 and 8-bit region of DEBUG and TTY and
+   the translate tables glyphs when q_status.codepage is DEC.
+   (Further detail: qodem will never support Unicode for emulations
+   that do not have a clean method of handling it.  The Unicode
+   standard says that it is in essence a wire protocol so could be
+   used anywhere.  However Avatar can potentially use 8-bit bytes as
+   part of the protocol by way of sending raw keyboard scan codes,
+   ANSI.SYS has waaaay too much BBS-era CP437 use to permit it to do
+   UTF-8 too, and VT52 formally specifies itself as 7-bit.  Until
+   something like a UTF-8-aware Wyse60 emulation is added, practically
+   speaking the only Unicode emulations are also DEC emulations.)
+
+6. The translate tables only apply to terminal mode, scripts, and host
+   mode, EXCEPT for ASCII file transfers.  So one can use the 8-bit
+   table to break UTF-8 encoding and decoding, emulation parsing, and
+   Zmodem/Kermit autostart.
+
+7. ASCII transfers will use the codepage of the current connection,
+   whether that is 8-bit or UTF-8, both when receiving and sending
+   files.  Another special case: if ASCII transfers are using an 8-bit
+   codepage, then they will read the file as binary and send it
+   directly on with no UTF-8 conversion.  In other words ASCII
+   transfers CANNOT destructively convert maybe-valid Unicode into
+   '?'.
+
+8. Host mode will have an option to use either the global default
+   codepage or UTF-8.  Messages will be stored in UTF-8 regardless.
+
+9. The phonebook entry fields will display in the specific entry
+   codepage.  Keyboard macros will display in the current connection
+   codepage.  This will mean codepage awareness in fieldsets.
+
+Wow, there are a lot of details here.  But the net result will be
+really nice in the end.  This will deliver features like the
+following:
+
+* Support for new 8-bit codepages (e.g. EBCDIC) can be added by the
+  user with a new 8-bit translate table.  qodem will ship with an
+  EBCDIC table to provide an example.
+
+* Support for "pseudo-canonicalizing" Unicode code points, for example
+  converting all of the arrow forms to a single arrow, smushing all of
+  the smiley face emoticons into a single smiley face, or converting
+  all of the things that look like an umlauted vowel into an
+  ISO-8859-1 code point.  This will also be used internally for the
+  keyboard-to-8-bit-codepage conversion, by first converting to the
+  same code points in the existing codepages tables and then emitting
+  the index of that code point to the wire.
+
+* The ability to convert an 8-bit codepage to Unicode, for example
+  turning Wingdings into emoticons.
+
+The other nice thing is that by defining the data pipeline and noting
+where the conversions occur, it should hopefully be straightforward to
+get qodem to do "the right thing".  If you want to operate on bytes,
+use the 8-bit table; if you want to make glyphs look right on screen,
+use the Unicode table.  There is some overlap here: the Unicode tables
+could be used to do the same glyph-to-byte conversion that the byte
+tables do, but along the way would be pushing code points that are
+SUPPOSED to be ISO-8859-1 and pretending they are some other codepage
+-- the UI I will provide would make that ugly to work with indeed.
+
+OK, let's make this a roadmap and get that into git.  It will be maybe
+a couple weeks at least before I can really crank on it, but I won't
+call 1.0beta done until this is in.
+
 August 8, 2015
 
 I've been slammed with a major project at work the last four weeks,

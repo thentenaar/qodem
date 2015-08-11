@@ -2073,9 +2073,9 @@ void console_process_incoming_data(unsigned char * buffer, const int n,
         }
 
         /*
-         * Only do Zmodem and Kermit autostart when not executing a script
+         * Only do Zmodem and Kermit autostart when in actual console mode.
          */
-        if (q_program_state != Q_STATE_SCRIPT_EXECUTE) {
+        if (q_program_state == Q_STATE_CONSOLE) {
 
             /*
              * Check for Zmodem autostart
@@ -2133,7 +2133,7 @@ void console_process_incoming_data(unsigned char * buffer, const int n,
                 return;
             }
 
-        } /* if (q_status.state != Q_STATE_SCRIPT_EXECUTE) */
+        } /* if (q_status.state == Q_STATE_CONSOLE) */
 
         /*
          * Capture
