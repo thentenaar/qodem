@@ -24,12 +24,18 @@
  * Kermit; ASCII and -G protocols are not supported.
  */
 
+#include "qcurses.h"
 #include "common.h"
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <errno.h>
+#if defined(Q_PDCURSES_WIN32) && !defined(__BORLANDC__)
+#  include <windows.h>
+#  include <shlwapi.h>
+#  define S_ISDIR(x) ((x & _S_IFDIR))
+#endif
 #include "screen.h"
 #include "states.h"
 #include "qodem.h"

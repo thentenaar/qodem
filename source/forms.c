@@ -15,6 +15,7 @@
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 
+#include "qcurses.h"
 #include "common.h"
 
 #include <string.h>
@@ -23,9 +24,15 @@
 #include <stdlib.h>
 #include <libgen.h>
 #if defined(Q_PDCURSES_WIN32) && !defined(__BORLANDC__)
-#include <shlwapi.h>
+#  include <windows.h>
+#  include <shlwapi.h>
+#  define S_ISDIR(x) ((x & _S_IFDIR))
+#  define S_ISCHR(x) ((x & _S_IFCHR))
+#  define S_ISFIFO(x) ((x & _S_IFIFO))
+#  define S_IRUSR _S_IREAD
+#  define S_IWUSR _S_IWRITE
 #else
-#include <fnmatch.h>
+#  include <fnmatch.h>
 #endif
 #include <assert.h>
 #include "console.h"
@@ -1376,8 +1383,10 @@ char * file_mode_string(mode_t mode) {
 #endif
     } else if (S_ISCHR(mode)) {
         file_mode_string_buffer[0] = 'c';
+#ifndef _MSC_VER
     } else if (S_ISBLK(mode)) {
         file_mode_string_buffer[0] = 'b';
+#endif
     } else if (S_ISFIFO(mode)) {
         file_mode_string_buffer[0] = 'p';
 #ifndef Q_PDCURSES_WIN32

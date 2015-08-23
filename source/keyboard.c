@@ -79,8 +79,8 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
-#ifdef Q_PDCURSES_WIN32
-#include <mem.h>
+#ifdef __BORLANDC__
+#  include <mem.h>
 #endif
 #include <libgen.h>
 #include "qodem.h"

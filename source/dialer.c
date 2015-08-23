@@ -19,6 +19,7 @@
 #include "common.h"
 
 #ifdef Q_PDCURSES_WIN32
+#  include <winsock2.h>
 #  include <windows.h>
 #else
 /* Find the right header for forkpty() */
@@ -604,17 +605,17 @@ void set_nonblock(const int fd) {
 void set_blocking(const int fd) {
     u_long non_block_mode = 0;
 
-    if ((net_is_connected() == Q_FALSE) &&
-        (net_connect_pending == Q_FALSE) &&
-        (net_is_listening == Q_FALSE)
-    ) {
-        /*
-         * Do nothing for a not-socket case.
-         */
-        return;
-    }
+    /*
+     * The only code that calls this is ssh, which will always be a socket.
+     */
 
+    /*
+     * Clear the event object BEFORE switching the mode, as per the
+     * documentation for ioctlsocket().
+     */
+    WSAEventSelect(fd, NULL, 0);
     ioctlsocket(fd, FIONBIO, &non_block_mode);
+
 }
 
 #else
@@ -764,7 +765,7 @@ void dial_success() {
              */
             if (q_current_dial_entry->script_filename != NULL) {
                 if (strlen(q_current_dial_entry->script_filename) > 0) {
-                    if ((q_status.quicklearn == Q_FALSE) && 
+                    if ((q_status.quicklearn == Q_FALSE) &&
                         (q_current_dial_entry->quicklearn == Q_FALSE)
                     ) {
                         /*

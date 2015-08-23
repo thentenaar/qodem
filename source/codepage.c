@@ -128,7 +128,7 @@ Q_CODEPAGE codepage_from_string(const char * string) {
  */
 int utf8_encode(const wchar_t ch, char * utf8_buffer) {
     if (ch <= 0x7F) {
-        utf8_buffer[0] = ch;
+        utf8_buffer[0] = (char) ch;
         return 1;
     }
     if (ch <= 0x7FF) {

@@ -296,7 +296,10 @@ void script_process_data(unsigned char * input, const int input_n,
     int i;
     uint32_t utf8_char;
     uint32_t last_utf8_state;
-#ifndef Q_PDCURSES_WIN32
+#ifdef Q_PDCURSES_WIN32
+    DWORD actual_bytes = 0;
+    DWORD bytes_read = 0;
+#else
     struct pollfd pfd;
 #endif
     Q_BOOL check_stderr = Q_FALSE;
@@ -418,7 +421,6 @@ void script_process_data(unsigned char * input, const int input_n,
      */
 #ifdef Q_PDCURSES_WIN32
 
-    DWORD actual_bytes = 0;
     if (PeekNamedPipe(q_script_stderr, NULL, 0, NULL, &actual_bytes,
                       NULL) == 0) {
         /*
@@ -476,7 +478,6 @@ void script_process_data(unsigned char * input, const int input_n,
 
 #ifdef Q_PDCURSES_WIN32
 
-            DWORD actual_bytes = 0;
             if (PeekNamedPipe(q_script_stderr, NULL, 0, NULL, &actual_bytes,
                               NULL) == 0) {
 
@@ -490,7 +491,6 @@ void script_process_data(unsigned char * input, const int input_n,
                 } else if (actual_bytes > n) {
                     actual_bytes = n;
                 }
-                DWORD bytes_read = 0;
                 if (ReadFile(q_script_stderr,
                              stderr_buffer + stderr_buffer_n,
                              actual_bytes, &bytes_read, NULL) == TRUE) {
@@ -607,7 +607,6 @@ void script_process_data(unsigned char * input, const int input_n,
 
 #ifdef Q_PDCURSES_WIN32
 
-            DWORD actual_bytes = 0;
             if (PeekNamedPipe(q_script_stdout, NULL, 0, NULL, &actual_bytes,
                               NULL) == 0) {
 
@@ -621,7 +620,6 @@ void script_process_data(unsigned char * input, const int input_n,
                 } else if (actual_bytes > n) {
                     actual_bytes = n;
                 }
-                DWORD bytes_read = 0;
                 if (ReadFile(q_script_stdout,
                              stdout_buffer + stdout_buffer_n,
                              actual_bytes, &bytes_read, NULL) == TRUE) {
@@ -763,7 +761,17 @@ void script_process_data(unsigned char * input, const int input_n,
  */
 void script_start(const char * script_filename) {
 
-#ifndef Q_PDCURSES_WIN32
+#ifdef Q_PDCURSES_WIN32
+    PROCESS_INFORMATION process_info;
+    STARTUPINFOA startup_info;
+    HANDLE q_script_stdin_2 = NULL;
+    HANDLE q_script_stdout_2 = NULL;
+    HANDLE q_script_stderr_2 = NULL;
+    SECURITY_ATTRIBUTES security_attr;
+    char buffer[32];
+    int columns;
+    DWORD pipe_flags = PIPE_NOWAIT;
+#else
     char path_string[COMMAND_LINE_SIZE];
     Q_BOOL use_stderr = Q_TRUE;
     char * stderr_filename;
@@ -844,14 +852,6 @@ void script_start(const char * script_filename) {
      * Modeled after example on MSDN:
      * http://msdn.microsoft.com/en-us/library/ms682499%28v=VS.85%29.aspx
      */
-    PROCESS_INFORMATION process_info;
-    STARTUPINFOA startup_info;
-    HANDLE q_script_stdin_2 = NULL;
-    HANDLE q_script_stdout_2 = NULL;
-    HANDLE q_script_stderr_2 = NULL;
-    SECURITY_ATTRIBUTES security_attr;
-    char buffer[32];
-    int columns;
 
     security_attr.nLength = sizeof(SECURITY_ATTRIBUTES);
     security_attr.bInheritHandle = TRUE;
@@ -956,7 +956,6 @@ void script_start(const char * script_filename) {
     /*
      * Don't block on writes to q_script_stdin
      */
-    DWORD pipe_flags = PIPE_NOWAIT;
     if (SetNamedPipeHandleState(q_script_stdin, &pipe_flags, NULL, NULL) ==
         FALSE) {
         /*

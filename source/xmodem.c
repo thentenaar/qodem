@@ -89,16 +89,21 @@
 
 #include <errno.h>
 #include <assert.h>
-#ifdef __BORLANDC__
-#include <io.h>
-#define ftruncate chsize
+#if defined(__BORLANDC__) || defined(_MSC_VER)
+#  include <io.h>
+#  define ftruncate chsize
 #else
-#include <unistd.h>
+#  include <unistd.h>
 #endif
 #include <libgen.h>
 #include <string.h>
 #include <stdlib.h>
-#include <utime.h>
+#ifdef _MSC_VER
+#  include <time.h>
+#  include <sys/utime.h>
+#else
+#  include <utime.h>
+#endif
 #include "console.h"
 #include "music.h"
 #include "protocols.h"
@@ -260,9 +265,10 @@ static void reset_timer() {
  * @return true if a timeout has occurred
  */
 static Q_BOOL check_timeout(unsigned char * output, int * output_n) {
-    DLOG(("check_timeout()\n"));
     time_t now;
     time(&now);
+
+    DLOG(("check_timeout()\n"));
 
     /*
      * Let the receive have one freebie
@@ -1342,8 +1348,6 @@ static Q_BOOL verify_block() {
 static void xmodem_receive(unsigned char * input, int * input_n,
                            unsigned char * output, int * output_n) {
 
-    DLOG(("xmodem_receive() input_n = %d\n", *input_n));
-
     time_t now;
     int i;
     int rc;
@@ -1352,6 +1356,8 @@ static void xmodem_receive(unsigned char * input, int * input_n,
     char full_filename[FILENAME_SIZE];
     struct utimbuf utime_buffer;
     char notify_message[DIALOG_MESSAGE_SIZE];
+
+    DLOG(("xmodem_receive() input_n = %d\n", *input_n));
 
     /*
      * INIT begins the entire transfer.  We send first_byte and immediately
@@ -1898,7 +1904,7 @@ static void xmodem_receive(unsigned char * input, int * input_n,
         }
 
         /*
-         * We have enough for a full block. 
+         * We have enough for a full block.
          */
         DLOG(("block received, calling verify_block()...\n"));
 

@@ -442,6 +442,8 @@ do_write:
 static ssize_t qodem_read(const int fd, void * buf, size_t count) {
 #ifdef Q_PDCURSES_WIN32
     char notify_message[DIALOG_MESSAGE_SIZE];
+    DWORD actual_bytes = 0;
+    DWORD bytes_read = 0;
 #endif
 
     /* Which function to call depends on the connection method */
@@ -492,7 +494,6 @@ static ssize_t qodem_read(const int fd, void * buf, size_t count) {
             (q_status.dial_method == Q_DIAL_METHOD_SHELL))
     ) {
         assert(q_child_process != NULL);
-        DWORD actual_bytes = 0;
         if (PeekNamedPipe(q_child_stdout, NULL, 0, NULL, &actual_bytes,
                 NULL) == 0) {
 
@@ -518,7 +519,6 @@ static ssize_t qodem_read(const int fd, void * buf, size_t count) {
             } else if (actual_bytes > count) {
                 actual_bytes = count;
             }
-            DWORD bytes_read = 0;
             if (ReadFile(q_child_stdout, buf, actual_bytes, &bytes_read,
                     NULL) == TRUE) {
                 return bytes_read;
@@ -784,7 +784,9 @@ void close_connection() {
  */
 static void cleanup_connection() {
 
-#ifndef Q_PDCURSES_WIN32
+#ifdef Q_PDCURSES_WIN32
+    DWORD status;
+#else
     int status;
 #endif
 
@@ -863,7 +865,6 @@ static void cleanup_connection() {
 
             assert(q_child_tty_fd == -1);
 
-            DWORD status;
             if (GetExitCodeProcess(q_child_process, &status) == TRUE) {
                 /* Got return code */
                 if (status == STILL_ACTIVE) {
@@ -1558,6 +1559,9 @@ static void data_handler() {
     int hours, minutes, seconds;
     double connect_time;
 #endif
+#ifdef Q_PDCURSES_WIN32
+    Q_BOOL check_net_data = Q_FALSE;
+#endif
 
     /* Flush curses */
     screen_flush();
@@ -1569,7 +1573,6 @@ static void data_handler() {
      * on what we're connected to.  We still use the select() as a general
      * idle call.
      */
-    Q_BOOL check_net_data = Q_FALSE;
 
     if ((net_is_connected() == Q_FALSE) &&
         (net_connect_pending() == Q_FALSE) &&
@@ -2150,6 +2153,7 @@ void spawn_terminal(const char * command) {
 #ifdef Q_PDCURSES
     int i;
     char * substituted_string;
+    char * wait_msg;
     substituted_string = substitute_string(get_option(Q_OPTION_X11_TERMINAL),
         "$COMMAND", command);
 
@@ -2158,9 +2162,9 @@ void spawn_terminal(const char * command) {
         screen_put_color_hline_yx(i, 0, ' ', WIDTH, Q_COLOR_CONSOLE);
     }
 #ifdef Q_PDCURSES_WIN32
-    char * wait_msg = _("Waiting On Command Shell To Exit...");
+    wait_msg = _("Waiting On Command Shell To Exit...");
 #else
-    char * wait_msg = _("Waiting On X11 Terminal To Exit...");
+    wait_msg = _("Waiting On X11 Terminal To Exit...");
 #endif
 
     screen_put_color_str_yx(HEIGHT / 2, (WIDTH - strlen(wait_msg)) / 2,
@@ -2289,7 +2293,10 @@ int qodem_main(int argc, char * const argv[]) {
     int rc;
     char * env_string;
     char * substituted_filename;
-#ifndef Q_PDCURSES_WIN32
+#ifdef Q_PDCURSES_WIN32
+    TCHAR windows_user_name[65];
+    DWORD windows_user_name_n;
+#else
     wchar_t value_wchar[128];
     char * username;
 #endif
@@ -2337,8 +2344,6 @@ int qodem_main(int argc, char * const argv[]) {
      */
 #ifdef Q_PDCURSES_WIN32
 
-    TCHAR windows_user_name[65];
-    DWORD windows_user_name_n;
     memset(windows_user_name, 0, sizeof(windows_user_name));
     windows_user_name_n = 64;
 

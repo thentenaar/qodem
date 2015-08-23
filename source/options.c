@@ -1339,11 +1339,18 @@ static struct option_struct * find_option(const Q_OPTION option) {
  * @return true if successful
  */
 static Q_BOOL create_directory(const char * path) {
+    char * path_copy;
+    char * parent_dir;
+#ifdef Q_PDCURSES_WIN32
+        BOOL rc;
+#else
+        int i;
+#endif
 
     assert(directory_exists(path) == Q_FALSE);
 
-    char * path_copy = Xstrdup(path, __FILE__, __LINE__);
-    char * parent_dir = Xstrdup(dirname(path_copy), __FILE__, __LINE__);
+    path_copy = Xstrdup(path, __FILE__, __LINE__);
+    parent_dir = Xstrdup(dirname(path_copy), __FILE__, __LINE__);
     if (directory_exists(parent_dir) == Q_FALSE) {
         create_directory(parent_dir);
     }
@@ -1351,14 +1358,14 @@ static Q_BOOL create_directory(const char * path) {
     Xfree(path_copy, __FILE__, __LINE__);
 
 #ifdef Q_PDCURSES_WIN32
-    BOOL rc = CreateDirectoryA(path, NULL);
+    rc = CreateDirectoryA(path, NULL);
     if (rc == TRUE) {
         return Q_TRUE;
     } else {
         return Q_FALSE;
     }
 #else
-    int i = mkdir(path, S_IRUSR | S_IWUSR | S_IXUSR);
+    i = mkdir(path, S_IRUSR | S_IWUSR | S_IXUSR);
     if (i == 0) {
         return Q_TRUE;
     } else {

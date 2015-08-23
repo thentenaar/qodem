@@ -38,17 +38,21 @@
 #include "common.h"
 
 #include <assert.h>
-#ifdef __BORLANDC__
-#include <strptime.h>
+#if defined(__BORLANDC__) || defined(_MSC_VER)
+#  include <strptime.h>
 #else
-#include <unistd.h>
+#  include <unistd.h>
 #endif
 #include <libgen.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <utime.h>
+#ifdef _MSC_VER
+#  include <sys/utime.h>
+#else
+#  include <utime.h>
+#endif
 #include "qodem.h"
 #include "console.h"
 #include "music.h"
@@ -1821,7 +1825,7 @@ static int encode_one_byte(unsigned char ch, unsigned int repeat_count,
 }
 /**
  * Encode the data payload for a packet.
- * 
+ *
  * @param type the packet type
  * @param input the raw bytes to encode
  * @param input_n the number of bytes in input_n
@@ -4841,7 +4845,7 @@ static Q_BOOL kermit_receive() {
             abort();
 
             /*
-             * Fall through... 
+             * Fall through...
              */
         case ABORT:
         case COMPLETE:
@@ -4980,7 +4984,7 @@ static Q_BOOL send_SF() {
                 status.state = KM_SZ;
             } else {
                 /*
-                 * We read some data from the file, switch to data transfer 
+                 * We read some data from the file, switch to data transfer
                  */
                 status.state = KM_SDW;
             }
@@ -5485,7 +5489,7 @@ static Q_BOOL window_next_packet_seq(const int seq) {
  * SEQ (where it should go) or is the next slot to append data to.
  *
  * This function implements the logic on p. 55 of "The Kermit Protocol".
- * 
+ *
  * @return the slot, or -1 if the packet should be ignored
  */
 static int find_input_slot() {
@@ -5676,7 +5680,7 @@ static int find_input_slot() {
 
 /**
  * Find the slot in the output window that matches input_packet's SEQ.
- * 
+ *
  * @return the slot, or -1 if it is outside the window.
  */
 static int find_output_slot() {
@@ -5706,7 +5710,7 @@ static int find_output_slot() {
 
 /**
  * Check for repeated packets from the remote side.
- * 
+ *
  * @param output a buffer to contain the bytes to send to the remote side
  * @param output_n the number of bytes that this function wrote to output
  * @param output_max the maximum number of bytes this function may write to
@@ -5981,7 +5985,7 @@ static void save_input_packet() {
 /**
  * Re-send the most recent packet to the other side, or drop a NAK to speed
  * things along.
- * 
+ *
  * @param output a buffer to contain the bytes to send to the remote side
  * @param output_n the number of bytes that this function wrote to output
  * @param output_max the maximum number of bytes this function may write to

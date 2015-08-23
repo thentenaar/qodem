@@ -4822,12 +4822,30 @@ static int getFolderPath( OUT_BUFFER( pathMaxLen, *pathLen ) char *path,
 						  OUT_LENGTH_SHORT_Z int *pathLen )
 {
     /*
-     * KAL: for qodem, we never need getFolderPath() to actually do anything
-     * useful.
+     * KAL: for qodem on Borland C++ 5.02, just return %USERPROFILE%\\My
+     * Documents.  Note that this HORRIBLY breaks i10n.
      */
-    return( CRYPT_ERROR_OPEN );
-}
+    char * env_string;
+    int i, j;
+    char * myDocumentsString = "My Documents";
+    REQUIRES( pathMaxLen >= MAX_PATH );
 
+    env_string = getenv("USERPROFILE");
+    memset(path, 0, pathMaxLen);
+    for (i = 0; i < strlen(env_string); i++) {
+        path[i] = env_string[i];
+    }
+    path[i] = '\\';
+    i++;
+
+    for (j = 0; j < strlen(myDocumentsString); j++) {
+        path[i] = myDocumentsString[j];
+        i++;
+    }
+    /* *pathLen = strlen( path ); */
+    *pathLen = i;
+    return( CRYPT_OK );
+}
 
 #else if defined( __WIN32__ ) && !defined(__BORLANDC__)
 

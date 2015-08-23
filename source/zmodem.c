@@ -48,14 +48,19 @@
 
 #include <assert.h>
 #ifndef Q_PDCURSES_WIN32
-#include <unistd.h>
+#  include <unistd.h>
 #endif
 #include <libgen.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <utime.h>
+#ifdef _MSC_VER
+#  include <time.h>
+#  include <sys/utime.h>
+#else
+#  include <utime.h>
+#endif
 #include "console.h"
 #include "protocols.h"
 #include "music.h"
@@ -2293,10 +2298,10 @@ static ZM_PARSE_PACKET parse_packet(const unsigned char * input,
 static Q_BOOL receive_zchallenge(unsigned char * output, int * output_n,
                                  const int output_max) {
 
-    DLOG(("receive_zchallenge()\n"));
-
     uint32_t options;
     FILE * dev_random;
+
+    DLOG(("receive_zchallenge()\n"));
 
     /*
      * Build a random value for ZCHALLENGE using /dev/random
@@ -2346,11 +2351,11 @@ static Q_BOOL receive_zchallenge(unsigned char * output, int * output_n,
 static Q_BOOL receive_zchallenge_wait(unsigned char * output, int * output_n,
                                       const int output_max) {
 
-    DLOG(("receive_zchallenge_wait()\n"));
     ZM_PARSE_PACKET rc_pp;
-
     uint32_t options = 0;
     int discard;
+
+    DLOG(("receive_zchallenge_wait()\n"));
 
     if (packet_buffer_n > 0) {
         rc_pp = parse_packet(packet_buffer, packet_buffer_n, &discard);
@@ -2466,8 +2471,6 @@ static Q_BOOL receive_zchallenge_wait(unsigned char * output, int * output_n,
 static Q_BOOL receive_zcrc(unsigned char * output, int * output_n,
                            const int output_max) {
 
-    DLOG(("receive_zcrc() ENTER\n"));
-
     /*
      * Buffer for reading the file
      */
@@ -2479,6 +2482,8 @@ static Q_BOOL receive_zcrc(unsigned char * output, int * output_n,
      */
     off_t original_position = status.file_position;
     int total_bytes = 0;
+
+    DLOG(("receive_zcrc() ENTER\n"));
 
     /*
      * Reset crc32
@@ -2528,8 +2533,6 @@ static Q_BOOL receive_zcrc(unsigned char * output, int * output_n,
 static Q_BOOL receive_zcrc_wait(unsigned char * output, int * output_n,
                                 const int output_max) {
 
-    DLOG(("receive_zcrc_wait()\n"));
-
     ZM_PARSE_PACKET rc_pp;
 
     struct stat fstats;
@@ -2537,6 +2540,8 @@ static Q_BOOL receive_zcrc_wait(unsigned char * output, int * output_n,
     int rc;
     uint32_t options = 0;
     int discard;
+
+    DLOG(("receive_zcrc_wait()\n"));
 
     if (packet_buffer_n > 0) {
         rc_pp = parse_packet(packet_buffer, packet_buffer_n, &discard);
@@ -2704,9 +2709,9 @@ static Q_BOOL receive_zcrc_wait(unsigned char * output, int * output_n,
 static Q_BOOL receive_zrinit(unsigned char * output, int * output_n,
                              const int output_max) {
 
-    DLOG(("receive_zrinit()\n"));
-
     uint32_t options;
+
+    DLOG(("receive_zrinit()\n"));
 
     options = TX_CAN_FULL_DUPLEX | TX_CAN_OVERLAP_IO;
     if (status.use_crc32 == Q_TRUE) {
@@ -2734,12 +2739,12 @@ static Q_BOOL receive_zrinit(unsigned char * output, int * output_n,
 static Q_BOOL receive_zrinit_wait(unsigned char * output, int * output_n,
                                   const int output_max) {
 
-    DLOG(("receive_zrinit_wait()\n"));
-
     ZM_PARSE_PACKET rc_pp;
 
     int discard;
     uint32_t options = 0;
+
+    DLOG(("receive_zrinit_wait()\n"));
 
     if (packet_buffer_n > 0) {
         rc_pp = parse_packet(packet_buffer, packet_buffer_n, &discard);
@@ -2906,9 +2911,9 @@ static Q_BOOL receive_zrinit_wait(unsigned char * output, int * output_n,
 static Q_BOOL receive_zrpos(unsigned char * output, int * output_n,
                             const int output_max) {
 
-    DLOG(("receive_zrpos()\n"));
-
     uint32_t options;
+
+    DLOG(("receive_zrpos()\n"));
 
     options = status.file_position;
     build_packet(P_ZRPOS, options, output, output_n, output_max);
@@ -2932,12 +2937,12 @@ static Q_BOOL receive_zrpos(unsigned char * output, int * output_n,
 static Q_BOOL receive_zrpos_wait(unsigned char * output, int * output_n,
                                  const int output_max) {
 
-    DLOG(("receive_zrpos_wait()\n"));
-
     ZM_PARSE_PACKET rc_pp;
     int discard;
     uint32_t options = 0;
     struct utimbuf utime_buffer;
+
+    DLOG(("receive_zrpos_wait()\n"));
 
     if (packet_buffer_n > 0) {
         rc_pp = parse_packet(packet_buffer, packet_buffer_n, &discard);
@@ -3565,10 +3570,10 @@ static Q_BOOL receive_zdata(unsigned char * output, int * output_n,
 static Q_BOOL receive_zskip(unsigned char * output, int * output_n,
                             const int output_max) {
 
-    DLOG(("receive_zskip()\n"));
-
     uint32_t options = 0;
     struct utimbuf utime_buffer;
+
+    DLOG(("receive_zskip()\n"));
 
     /*
      * Close existing file handle, reset file fields...
@@ -3804,9 +3809,9 @@ static void zmodem_receive(unsigned char * input, int input_n,
 static Q_BOOL send_zrqinit(unsigned char * output, int * output_n,
                            const int output_max) {
 
-    DLOG(("send_zrqinit()\n"));
-
     uint32_t options;
+
+    DLOG(("send_zrqinit()\n"));
 
     options = 0;
     build_packet(P_ZRQINIT, options, output, output_n, output_max);
@@ -3826,12 +3831,12 @@ static Q_BOOL send_zrqinit(unsigned char * output, int * output_n,
 static Q_BOOL send_zrqinit_wait(unsigned char * output, int * output_n,
                                 const int output_max) {
 
-    DLOG(("send_zrqinit_wait()\n"));
-
     ZM_PARSE_PACKET rc_pp;
 
     int discard;
     uint32_t options = 0;
+
+    DLOG(("send_zrqinit_wait()\n"));
 
     if (packet_buffer_n > 0) {
         rc_pp = parse_packet(packet_buffer, packet_buffer_n, &discard);
@@ -3963,9 +3968,9 @@ static Q_BOOL send_zrqinit_wait(unsigned char * output, int * output_n,
 static Q_BOOL send_zsinit(unsigned char * output, int * output_n,
                           const int output_max) {
 
-    DLOG(("send_zsinit()\n"));
-
     uint32_t options;
+
+    DLOG(("send_zsinit()\n"));
 
     /*
      * Escape ctrl characters by default, but not 8bit characters
@@ -4023,12 +4028,12 @@ static Q_BOOL send_zsinit(unsigned char * output, int * output_n,
 static Q_BOOL send_zsinit_wait(unsigned char * output, int * output_n,
                                const int output_max) {
 
-    DLOG(("send_zsinit_wait()\n"));
-
     ZM_PARSE_PACKET rc_pp;
 
     int discard;
     uint32_t options = 0;
+
+    DLOG(("send_zsinit_wait()\n"));
 
     if (packet_buffer_n > 0) {
         rc_pp = parse_packet(packet_buffer, packet_buffer_n, &discard);
@@ -4114,9 +4119,9 @@ static Q_BOOL send_zsinit_wait(unsigned char * output, int * output_n,
 static Q_BOOL send_zfile(unsigned char * output, int * output_n,
                          const int output_max) {
 
-    DLOG(("send_zfile()\n"));
-
     uint32_t options;
+
+    DLOG(("send_zfile()\n"));
 
     /*
      * Send header for the next file
@@ -4163,12 +4168,12 @@ static Q_BOOL send_zfile(unsigned char * output, int * output_n,
 static Q_BOOL send_zfile_wait(unsigned char * output, int * output_n,
                               const int output_max) {
 
-    DLOG(("send_zfile_wait()\n"));
-
     ZM_PARSE_PACKET rc_pp;
 
     int discard;
     uint32_t options = 0;
+
+    DLOG(("send_zfile_wait()\n"));
 
     if (packet_buffer_n > 0) {
         rc_pp = parse_packet(packet_buffer, packet_buffer_n, &discard);
@@ -5038,9 +5043,9 @@ static Q_BOOL send_zeof_wait(unsigned char * output, int * output_n,
 static Q_BOOL send_zfin(unsigned char * output, int * output_n,
                         const int output_max) {
 
-    DLOG(("send_zfin()\n"));
-
     uint32_t options;
+
+    DLOG(("send_zfin()\n"));
 
     options = 0;
     build_packet(P_ZFIN, options, output, output_n, output_max);
@@ -5060,12 +5065,12 @@ static Q_BOOL send_zfin(unsigned char * output, int * output_n,
 static Q_BOOL send_zfin_wait(unsigned char * output, int * output_n,
                              const int output_max) {
 
-    DLOG(("send_zfin_wait()\n"));
-
     ZM_PARSE_PACKET rc_pp;
 
     int discard;
     uint32_t options = 0;
+
+    DLOG(("send_zfin_wait()\n"));
 
     if (packet_buffer_n > 0) {
         rc_pp = parse_packet(packet_buffer, packet_buffer_n, &discard);

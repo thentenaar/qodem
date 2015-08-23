@@ -1398,8 +1398,6 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
     }
 
     if (*keystroke != ERR) {
-        time(&screensaver_time);
-
 #if defined(Q_PDCURSES) || defined(Q_PDCURSES_WIN32)
         unsigned long modifiers = PDC_get_key_modifiers();
         if ((modifiers & PDC_KEY_MODIFIER_CONTROL) != 0) {
@@ -1428,6 +1426,7 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
         }
 #endif /* Q_PDCURSES */
 
+        time(&screensaver_time);
     }
 
     if (*keystroke == ERR) {

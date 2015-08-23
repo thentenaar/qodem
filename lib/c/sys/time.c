@@ -1,6 +1,6 @@
 #include <sys/time.h>
 
-#ifdef __BORLANDC__
+#if defined(__BORLANDC__) || defined(_MSC_VER)
 
 #include <sys/timeb.h>
 

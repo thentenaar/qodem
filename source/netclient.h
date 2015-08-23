@@ -20,7 +20,7 @@
 
 /* Includes --------------------------------------------------------------- */
 
-#ifdef __BORLANDC__
+#if defined(__BORLANDC__) || defined(_MSC_VER)
 typedef int ssize_t;
 #else
 #include <unistd.h>             /* ssize_t */

@@ -83,15 +83,17 @@
  *   STATE = Q_STATE_CONSOLE
  *
  */
+
+#include "qcurses.h"
 #include "common.h"
 #include <stdlib.h>
 #include <errno.h>
 #ifndef Q_PDCURSES_WIN32
-#include <sys/resource.h>
-#include <sys/wait.h>
-#include <sys/ioctl.h>
-#include <sys/statvfs.h>
-#include <unistd.h>
+#  include <sys/resource.h>
+#  include <sys/wait.h>
+#  include <sys/ioctl.h>
+#  include <sys/statvfs.h>
+#  include <unistd.h>
 #endif
 
 #include <libgen.h>
@@ -99,7 +101,7 @@
 #include <string.h>
 #include <assert.h>
 #ifdef __linux
-#include <sys/statfs.h>
+#  include <sys/statfs.h>
 #endif
 #include "screen.h"
 #include "qodem.h"

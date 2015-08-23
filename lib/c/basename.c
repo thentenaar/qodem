@@ -31,25 +31,31 @@
 
 #include <libgen.h>
 #include <stddef.h>
+#include <string.h>
 
 #ifdef __BORLANDC__
-#ifndef __FLAT__
-#define __FLAT__
-#define undef_FLAT
-#endif
-#ifndef _POSIX_
-#define _POSIX_
-#define undef_POSIX
-#endif
-#include <limits.h>
-#ifdef undef_POSIX
-#undef _POSIX_
-#endif
-#ifdef undef_FLAT
-#undef __FLAT__
-#endif
-#include <mem.h>
+#  ifndef __FLAT__
+#    define __FLAT__
+#    define undef_FLAT
+#  endif
+#  ifndef _POSIX_
+#    define _POSIX_
+#    define undef_POSIX
+#  endif
+#  include <limits.h>
+#    ifdef undef_POSIX
+#    undef _POSIX_
+#  endif
+#  ifdef undef_FLAT
+#    undef __FLAT__
+#  endif
+#  include <mem.h>
 #endif /* __BORLANDC__ */
+
+#ifdef _MSC_VER
+#  define _POSIX_
+#  include <limits.h>
+#endif
 
 char *
 basename(char *path)

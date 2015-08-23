@@ -15,14 +15,18 @@
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 
+#include "qcurses.h"
 #include "common.h"
 #include <assert.h>
 #include <ctype.h>
 #ifdef Q_PDCURSES_WIN32
-#include <stdio.h>
+#  include <stdio.h>
 #else
-#include <wctype.h>
-#include <unistd.h>
+#  include <wctype.h>
+#  include <unistd.h>
+#endif
+#ifdef _MSC_VER
+#  include <windows.h>			/* GetCurrentProcessId() */
 #endif
 #include <libgen.h>
 #include <stdlib.h>
@@ -2952,6 +2956,16 @@ static Q_BOOL kill_redialer_number() {
  */
 #ifdef Q_PDCURSES_WIN32
 
+#ifdef _MSC_VER
+
+/* VC has _snwprintf() that has the same function as POSIX swprintf() */
+#define my_swprintf _snwprintf
+#define my_swprintf2 _snwprintf
+#define my_swprintf3 _snwprintf
+#define my_swprintf4 _snwprintf
+
+#else
+
 /**
  * _snwprintf() has trouble with "%s" arguments.  Replace those calls
  * with a simple appender.
@@ -3011,6 +3025,8 @@ static void my_swprintf4(wchar_t * str, int n, wchar_t * format, int arg1) {
     swprintf(str, n, format, arg1);
 #endif
 }
+
+#endif /* _MSC_VER */
 
 #else
 

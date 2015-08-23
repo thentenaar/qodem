@@ -310,7 +310,12 @@ char * get_home_directory() {
      * Windows: try the CSIDL function, if that fails just return
      * %USERPROFILE% .
      */
-    if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, 0, myDocsPath))) {
+
+        /*
+         * VC6 has SHGetSpecialFolderPath, not SHGetFolderPath.
+         * if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, 0, myDocsPath))) {
+         */
+    if (SUCCEEDED(SHGetSpecialFolderPath(NULL, myDocsPath, CSIDL_PERSONAL, 0))) {
 
 #endif /* __BORLANDC__ */
 
@@ -459,7 +464,7 @@ void shorten_string(char * string, const int length) {
 
 }
 
-#ifdef __BORLANDC__
+#if defined(__BORLANDC__)
 
 /**
  * wmemmove() implementation to make up for Borland C++ not having it.
@@ -470,7 +475,7 @@ void shorten_string(char * string, const int length) {
  * @param n the number of wide-chars to copy
  * @return dest
  */
-extern wchar_t * wmemmove(wchar_t * dest, const wchar_t * src, size_t n) {
+wchar_t * wmemmove(wchar_t * dest, const wchar_t * src, size_t n) {
     return (wchar_t *) memmove(dest, src, n * sizeof(wchar_t));
 }
 

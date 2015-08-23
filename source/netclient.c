@@ -103,23 +103,24 @@
 #include <errno.h>
 
 #ifdef Q_PDCURSES_WIN32
-#ifdef __BORLANDC__
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <wspiapi.h>
-#define UNLEN 256
+#  if defined(__BORLANDC__) || defined(_MSC_VER)
+#    include <winsock2.h>
+#    include <ws2tcpip.h>
+#    include <wspiapi.h>
+#    define UNLEN 256
+#  else
+#    ifndef _WIN32_WINNT
+#      define _WIN32_WINNT 0x0501
+#      include <ws2tcpip.h>
+#      include <lmcons.h>
+#    endif /* _WIN32_WINNT */
+#  endif /* __BORLANDC__ */
 #else
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0501
-#include <ws2tcpip.h>
-#include <lmcons.h>
-#endif /* _WIN32_WINNT */
-#endif /* __BORLANDC__ */
-#else
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <pwd.h>
-#include <netdb.h>
+#  include <sys/types.h>
+#  include <sys/socket.h>
+#  include <sys/select.h>
+#  include <pwd.h>
+#  include <netdb.h>
 #endif /* Q_PDCURSES_WIN32 */
 
 #include "common.h"
@@ -605,12 +606,11 @@ static Q_BOOL wsaStarted = Q_FALSE;
 static Q_BOOL start_winsock() {
     int rc;
     char notify_message[DIALOG_MESSAGE_SIZE];
+    WSADATA wsaData;
 
     if (wsaStarted == Q_TRUE) {
         return Q_TRUE;
     }
-
-    WSADATA wsaData;
 
     /*
      * Ask for Winsock 2.2
@@ -949,6 +949,7 @@ int net_connect_start(const char * host, const char * port) {
     int i;
     char local_port[NI_MAXSERV];
     char * message[2];
+    int local_errno;
 
     DLOG(("net_connect_start() : %s %s\n", host, port));
 
@@ -992,7 +993,7 @@ int net_connect_start(const char * host, const char * port) {
          * Error resolving name
          */
         snprintf(notify_message, sizeof(notify_message), _("Error: %s"),
-#ifdef __BORLANDC__
+#if defined(__BORLANDC__) || defined(_MSC_VER)
                  get_strerror(rc));
 #else
                  gai_strerror(rc));
@@ -1112,6 +1113,7 @@ rlogin_bound_ok:
         q_screen_dirty = Q_TRUE;
         refresh_handler();
         pending = Q_TRUE;
+
         /*
          * Make fd non-blocking.  Note do this LAST so that net_is_pending()
          * is true inside set_nonblock().
@@ -1119,14 +1121,17 @@ rlogin_bound_ok:
         set_nonblock(fd);
         rc = connect(fd, p->ai_addr, p->ai_addrlen);
 
+        local_errno = get_errno();
+        DLOG(("connect() rc %d errno %d\n", rc, local_errno));
+
 #ifdef Q_PDCURSES_WIN32
-        if ((rc == -1) && (get_errno() != WSAEINPROGRESS) &&
-            (get_errno() != WSAEWOULDBLOCK)) {
+        if ((rc == -1) && (local_errno != WSAEINPROGRESS) &&
+            (local_errno != WSAEWOULDBLOCK)) {
 #else
-        if ((rc == -1) && (get_errno() != EINPROGRESS)) {
+        if ((rc == -1) && (local_errno != EINPROGRESS)) {
 #endif
             snprintf(notify_message, sizeof(notify_message),
-                     _("Error: %s"), get_strerror(get_errno()));
+                     _("Error: %s"), get_strerror(local_errno));
             snprintf(q_dialer_modem_message, sizeof(q_dialer_modem_message),
                      "%s", notify_message);
             freeaddrinfo(address);
@@ -1396,7 +1401,7 @@ int net_listen(const char * port) {
          */
         snprintf(notify_message, sizeof(notify_message),
                  _("Error converting port string %s to socket: %s"),
-#ifdef __BORLANDC__
+#if defined(__BORLANDC__) || defined(_MSC_VER)
                  port, get_strerror(get_errno()));
 #else
                  port, gai_strerror(get_errno()));
@@ -1436,7 +1441,7 @@ int net_listen(const char * port) {
                 rc = getaddrinfo(NULL, local_port, &hints, &local_address);
 
                 if (rc != 0) {
-#ifdef __BORLANDC__
+#if defined(__BORLANDC__) || defined(_MSC_VER)
                     DLOG(("net_listen() : getaddrinfo() error: %d %s\n",
                             get_errno(), get_strerror(get_errno())));
 #else
@@ -1614,9 +1619,66 @@ listen_bound_ok:
      * Make fd non-blocking.  Note do this LAST so that net_is_listening() is
      * true inside set_nonblock().
      */
-    set_nonblock(fd);
+    // set_nonblock(fd);
 
     return fd;
+}
+
+/**
+ * See if we have a new connection.
+ *
+ * @return true if a new connection is available.
+ */
+static Q_BOOL has_connection() {
+    /*
+     * select() on listen_fd for read.  If it comes back, then a connection
+     * is ready to be accept()'ed.
+     */
+
+    char notify_message[DIALOG_MESSAGE_SIZE];
+    fd_set readfds;
+    fd_set writefds;
+    fd_set exceptfds;
+    int select_fd_max;
+    struct timeval listen_timeout;
+    int rc;
+
+    /* Initialize select() structures */
+    FD_ZERO(&readfds);
+    FD_ZERO(&writefds);
+    FD_ZERO(&exceptfds);
+
+    /* Add listen_fd */
+    select_fd_max = listen_fd + 1;
+    FD_SET(listen_fd, &readfds);
+
+    /* Perform a polling check */
+    listen_timeout.tv_sec = 0;
+    listen_timeout.tv_usec = 0;
+
+    rc = select(select_fd_max, &readfds, &writefds, &exceptfds,
+                &listen_timeout);
+
+    if (rc > 0) {
+        /*
+         * There is only one event to look for, so this means a connection is
+         * here.
+         */
+        return Q_TRUE;
+    }
+
+    if (rc < 0) {
+        snprintf(notify_message, sizeof(notify_message),
+                 _("Error in select() on listening socket: %s"),
+                 get_strerror(get_errno()));
+        notify_form(notify_message, 3.0);
+        return Q_FALSE;
+    }
+
+    /*
+     * This is a timeout, do nothing.
+     */
+    return Q_FALSE;
 }
 
 /**
@@ -1633,15 +1695,21 @@ int net_accept() {
     struct sockaddr local_sockaddr;
     socklen_t local_sockaddr_length = sizeof(struct sockaddr);
     char local_port[NI_MAXSERV];
+    int local_errno;
+
+    if (has_connection() == Q_FALSE) {
+        return -1;
+    }
 
     fd = accept(listen_fd, &remote_sockaddr, &remote_sockaddr_length);
+    local_errno = get_errno();
     if (fd < 0) {
 
-        if ((get_errno() == EAGAIN) ||
+        if ((local_errno == EAGAIN) ||
 #ifdef Q_PDCURSES_WIN32
-            (get_errno() == WSAEWOULDBLOCK)
+            (local_errno == WSAEWOULDBLOCK)
 #else
-            (get_errno() == EWOULDBLOCK)
+            (local_errno == EWOULDBLOCK)
 #endif
         ) {
             /*
@@ -1654,7 +1722,7 @@ int net_accept() {
          * The last bind attempt failed
          */
         snprintf(notify_message, sizeof(notify_message),
-                 _("Error in accept(): %s"), get_strerror(get_errno()));
+                 _("Error in accept(): %s"), get_strerror(local_errno));
         notify_form(notify_message, 3.0);
         return -1;
     }
@@ -1695,7 +1763,19 @@ int net_accept() {
     /* SSH has its session management here */
     if (q_host_type == Q_HOST_TYPE_SSHD) {
         return ssh_accept(fd);
+    } else {
+        /*
+         * Make fd non-blocking.  Note do this LAST so that
+         * net_is_connected() is true inside set_nonblock().
+         */
+        set_nonblock(fd);
     }
+#else
+    /*
+     * Make fd non-blocking.  Note do this LAST so that net_is_connected() is
+     * true inside set_nonblock().
+     */
+    set_nonblock(fd);
 #endif
 
     DLOG(("net_accept() : return fd = %d\n", fd));
@@ -3262,6 +3342,7 @@ static void rlogin_send_login(const int fd) {
 #ifdef Q_PDCURSES_WIN32
     char username[UNLEN + 1];
     DWORD username_n = sizeof(username) - 1;
+    char notify_message[DIALOG_MESSAGE_SIZE];
 #endif
 
     /*
@@ -3275,7 +3356,6 @@ static void rlogin_send_login(const int fd) {
      */
 #ifdef Q_PDCURSES_WIN32
     memset(username, 0, sizeof(username));
-    char notify_message[DIALOG_MESSAGE_SIZE];
     if (GetUserNameA(username, &username_n) == FALSE) {
         /*
          * Error: can't get local username
@@ -3336,6 +3416,7 @@ ssize_t rlogin_read(const int fd, void * buf, size_t count, Q_BOOL oob) {
     int rc;
     int total = 0;
     size_t max_read;
+    int i;
 
     DLOG(("rlogin_read() : %d bytes in read_buffer\n", read_buffer_n));
 
@@ -3411,7 +3492,6 @@ ssize_t rlogin_read(const int fd, void * buf, size_t count, Q_BOOL oob) {
          */
         rc = recv(fd, (char *) read_buffer + read_buffer_n, max_read, 0);
 
-        int i;
         DLOG(("rlogin_read() : read %d bytes:\n", rc));
         for (i = 0; i < rc; i++) {
             DLOG2((" %02x", (read_buffer[read_buffer_n + i] & 0xFF)));
@@ -3489,7 +3569,6 @@ ssize_t rlogin_read(const int fd, void * buf, size_t count, Q_BOOL oob) {
     /*
      * Return bytes read
      */
-    int i;
     DLOG(("rlogin_read() : send %d bytes to caller:\n", (int) total));
     for (i = 0; i < total; i++) {
         DLOG2((" %02x", (((char *) buf)[i] & 0xFF)));
@@ -3699,6 +3778,7 @@ static int ssh_setup_connection(int fd, const char * host, const char * port) {
     }
 
     /* Pass in the network socket */
+    DLOG(("Passing network socket to cryptlib\n"));
     cryptSetAttribute(cryptSession, CRYPT_SESSINFO_NETWORKSOCKET, fd);
     if (cryptStatusError(cryptStatus)) {
         DLOG(("ERROR cryptSetAttribute(CRYPT_SESSINFO_NETWORKSOCKET)\n"));
@@ -3706,6 +3786,7 @@ static int ssh_setup_connection(int fd, const char * host, const char * port) {
     }
 
     /* Activate the session */
+    DLOG(("Activating SSH session\n"));
     cryptStatus = cryptSetAttribute(cryptSession, CRYPT_SESSINFO_ACTIVE, 1);
     if (cryptStatusError(cryptStatus)) {
         DLOG(("ERROR cryptSetAttribute(CRYPT_SESSINFO_ACTIVE)\n"));
@@ -4162,6 +4243,10 @@ static int ssh_accept(int fd) {
     int errorMessage_n;
     int cryptStatus;
     int tcp_flag = 1;
+#if 0
+    char buffer[256];
+    int buffer_n = 0;
+#endif
 
     DLOG(("ssh_accept()\n"));
 
@@ -4173,6 +4258,13 @@ static int ssh_accept(int fd) {
 
     /* We had better be listening now. */
     assert(listening == Q_TRUE);
+
+    /*
+     * On Linux, fd will be a blocking socket (it does NOT inherit from its
+     * parent), however on Windows it will be a non-blocking socket.
+     * Regardless of that, cryptlib needs a blocking socket.
+     */
+    set_blocking(fd);
 
     /* Setup the crypt session */
     cryptStatus = cryptCreateSession(&cryptSession, cryptUser,
@@ -4196,6 +4288,7 @@ static int ssh_accept(int fd) {
     }
 
     /* Pass in the SSH server private key */
+    DLOG(("Loading server key into session...\n"));
     cryptStatus = cryptSetAttribute(cryptSession, CRYPT_SESSINFO_PRIVATEKEY,
                                     load_server_key());
     if (cryptStatusError(cryptStatus)) {
@@ -4204,6 +4297,7 @@ static int ssh_accept(int fd) {
     }
 
     /* Pass in the network socket */
+    DLOG(("Supplying network socket fd = %d\n", fd));
     cryptStatus = cryptSetAttribute(cryptSession, CRYPT_SESSINFO_NETWORKSOCKET,
                                     fd);
     if (cryptStatusError(cryptStatus)) {
@@ -4212,6 +4306,7 @@ static int ssh_accept(int fd) {
     }
 
     /* Automatically authenticate the user (any user) */
+    DLOG(("Starting SSH session...\n"));
     cryptStatus = cryptSetAttribute(cryptSession, CRYPT_SESSINFO_ACTIVE, 1);
     if ((cryptStatusError(cryptStatus)) &&
         (cryptStatus != CRYPT_ENVELOPE_RESOURCE)
@@ -4220,10 +4315,21 @@ static int ssh_accept(int fd) {
         goto crypt_error;
     }
 
+#if 0
+    /* Clear any messages from the client for the initial handshare */
+    DLOG(("Pop data to initiate handshake...\n"));
+    cryptStatus = cryptPopData(cryptSession, buffer, sizeof(buffer), &buffer_n);
+    if (cryptStatusError(cryptStatus)) {
+        DLOG(("ERROR cryptPopData()\n"));
+        goto crypt_error;
+    }
+#endif
+
     /*
      * Login OK.  We don't care what the username or password are, host mode
      * does its own login prompt.
      */
+    DLOG(("Telling client they are authenticated.\n"));
     cryptStatus = cryptSetAttribute(cryptSession, CRYPT_SESSINFO_AUTHRESPONSE,
                                     1);
     if (cryptStatusError(cryptStatus)) {
@@ -4232,6 +4338,7 @@ static int ssh_accept(int fd) {
     }
 
     /* Set the network timeouts to mimic non-blocking behavior */
+    DLOG(("Setting network timeouts to small values.\n"));
     cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_READTIMEOUT, 0.05);
     cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_WRITETIMEOUT, 0.05);
 

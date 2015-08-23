@@ -138,7 +138,7 @@ if (DLOGNAME != NULL) {         \
     dlogprintf A;               \
 } else {                        \
     /* Do nothing */            \
-}}  while (false);
+}}  while (0);
 
 /*
  * Continue a previous DLOG message, i.e. do not emit the timestamp.
@@ -151,7 +151,7 @@ if (DLOGNAME != NULL) {         \
     dlogprintf A;               \
 } else {                        \
     /* Do nothing */            \
-}}  while (false);
+}}  while (0);
 
 /* Globals ---------------------------------------------------------------- */
 
@@ -252,22 +252,19 @@ extern Q_BOOL directory_exists(const char * path);
  */
 extern void shorten_string(char * string, const int length);
 
-/* Borland C 5.02 support ------------------------------------------------- */
+/* Borland C 5.02 and Visual C++ 6.0 support ------------------------------ */
 
-#ifdef __BORLANDC__
+/**/
+
+#if defined(__BORLANDC__) || defined(_MSC_VER)
 
 #include <snprintf.h>
 
-typedef int pid_t;
-
-#define strcasecmp strcmpi
-#define strncasecmp strncmpi
-#define wmemset _wmemset
-#define wmemcpy _wmemcpy
-
 /**
  * wmemmove() implementation to make up for Borland C++ not having it.
- * Wide-char equivalent of memmove().
+ * Wide-char equivalent of memmove().  (Visual C++ actually has a wmemmove(),
+ * but it is not visible in C89-only compiles, so leave this declaration
+ * where it can see it.)
  *
  * @param dest the destination location
  * @param src the source wide-chars to copy
@@ -275,6 +272,24 @@ typedef int pid_t;
  * @return dest
  */
 extern wchar_t * wmemmove(wchar_t * dest, const wchar_t * src, size_t n);
+
+typedef int pid_t;
+
+#endif
+
+#ifdef _MSC_VER
+
+#define strcasecmp _stricmp
+#define strncasecmp _strnicmp
+
+#endif /* _MSC_VER */
+
+#ifdef __BORLANDC__
+
+#define strcasecmp strcmpi
+#define strncasecmp strncmpi
+#define wmemset _wmemset
+#define wmemcpy _wmemcpy
 
 #endif /* __BORLANDC__ */
 

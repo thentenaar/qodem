@@ -1,6 +1,42 @@
 The Qodem Project Work Log
 ==========================
 
+August 22, 2015
+
+Just a short update tonight, I'm pretty beat.  I've been beating my
+head up on cryptlib under Borland 5.02.  Let's just say that cryptlib
+is excessively difficult to debug when it is having trouble, due to
+its kernel dispatch type design: you have to run over and over again
+through the krnlSendMessage() framework just to find the right spot in
+the backend that is barfing, and then continually recompile the entire
+project to see what USE_ flag was missing.
+
+I am now down to the client is sort of working but I don't know why,
+because it is breaking Borland's tracing and breakpoints as soon as I
+activate the SSH session.  There are other strange behaviors: the
+entire app locks if I redirect stdout or stderr to a file, my DLOG()
+stops emitting output (through the program keeps running) after the
+activated session, and the server socket behaves as though it is
+non-blocking despite me never calling ioctlsocket() to make it
+non-blocking (and the listening socket is also non-blocking).  So I am
+left believing that I have left a memory corruption bug in it
+somewhere.  Time for the next turn: getting it running under Visual
+C++ 6 so that I can compile the cryptlib unit tests and see if the
+small changes I have made to cryptlib are failing any of its tests.
+If they don't fail, then I go further and just start debugging in VC
+until I see what it is that is different between VC and Borland.
+
+But Borland C has proven that cryptlib is possible, and despite all
+the pain of my debugging I sort of have a better idea how cryptlib is
+put together now.  If I do manage to get this working then I will
+submit a patch back to Gutmann.  (I also have some ideas on how to
+expose the SSH terminal features, and maybe that will be generalizable
+enough to be worth doing to mainline cryptlib, we will see.)
+
+So I'm off to commit a qodem that barely compiles in Visual C++ 6.
+Fortunately it caught a lot of my C89 errors which will make it easier
+to run on other older platforms, yay.
+
 August 10, 2015
 
 I think I have settled onto the Unicode-vs-8-bit design issues in my

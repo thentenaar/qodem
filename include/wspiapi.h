@@ -16,9 +16,9 @@ Revision History:
 #ifndef _WSPIAPI_H_
 #define _WSPIAPI_H_
 
-#ifdef __BORLANDC__
-typedef int socklen_t;
+#if defined(__BORLANDC__) || defined(_MSC_VER)
 
+typedef int socklen_t;
 
 typedef struct addrinfo {
   int             ai_flags;
@@ -31,11 +31,11 @@ typedef struct addrinfo {
   struct addrinfo  *ai_next;
 } ADDRINFOA, *PADDRINFOA;
 
-/* getnameinfo constants */ 
+/* getnameinfo constants */
 #define NI_MAXHOST	1025
 #define NI_MAXSERV	32
 
-#define NI_NOFQDN 	0x01
+#define NI_NOFQDN       0x01
 #define NI_NUMERICHOST	0x02
 #define NI_NAMEREQD	0x04
 #define NI_NUMERICSERV	0x08
@@ -105,7 +105,7 @@ extern "C" {
 char *
 WINAPI
 WspiapiStrdup (
-	IN  const char *                    pszString);
+        IN  const char *                    pszString);
 
 
 BOOL
@@ -226,5 +226,3 @@ WspiapiFreeAddrInfo (
 #endif
 
 #endif // _WSPIAPI_H_
-
-

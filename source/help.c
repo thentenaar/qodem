@@ -91,8 +91,8 @@ static struct help_topic * TOPICS = NULL;
  * @return the help_topic entry
  */
 static struct help_topic * find_topic(const char * key) {
-    DLOG(("find_topic: look for %s\n", key));
     struct help_topic *topic = TOPICS;
+    DLOG(("find_topic: look for %s\n", key));
     while (topic != NULL) {
         if (strcmp(topic->key, key) == 0) {
             DLOG(("find_topic: found %ls\n", topic->title));
@@ -111,8 +111,8 @@ static struct help_topic * find_topic(const char * key) {
  * @return the new help_link
  */
 static struct help_link * new_link() {
-    DLOG(("new_link() : "));
     struct help_link * link;
+    DLOG(("new_link() : "));
     link =
         (struct help_link *) Xmalloc(sizeof(struct help_link), __FILE__,
                                      __LINE__);
@@ -127,9 +127,8 @@ static struct help_link * new_link() {
  * @return the new help_topic
  */
 struct help_topic * new_topic() {
-    DLOG(("new_topic() : "));
-
     struct help_topic * topic;
+    DLOG(("new_topic() : "));
     topic =
         (struct help_topic *) Xmalloc(sizeof(struct help_topic), __FILE__,
                                       __LINE__);
@@ -625,8 +624,6 @@ static void build_help_index() {
  */
 void setup_help() {
 
-    DLOG(("HELP: setup_help()\n"));
-
     enum STATES {
         NORMAL,
         TAG,
@@ -651,6 +648,8 @@ void setup_help() {
     char x[4];
     int rc;
     int i;
+
+    DLOG(("HELP: setup_help()\n"));
 
     /*
      * Translate everything at once
