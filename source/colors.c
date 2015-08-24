@@ -853,7 +853,7 @@ void q_setup_colors() {
         /*
          * Special case: put black-on-black at 0x38 and 128 + 0x38
          */
-        init_pair(0x38, COLOR_BLACK, COLOR_BLACK);
+        init_pair(0x38                      , COLOR_BLACK    , COLOR_BLACK);
         init_pair(0x38 + q_color_bold_offset, COLOR_BLACK + 8, COLOR_BLACK);
 
         /*
