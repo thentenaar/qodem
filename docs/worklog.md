@@ -1,6 +1,22 @@
 The Qodem Project Work Log
 ==========================
 
+August 26, 2015
+
+I've got a VC6 qodem built with all of the same functionality
+(theoretically) as the Borland 5.02 version.  Along the way I fixed a
+lot of compiler warnings, mostly these where implicit casts and
+signed/unsigned things in function signatures.
+
+So now I have cryptlib running under its native VC6 compiler, and it's
+still broken.  This time it doesn't look like it's corrupting memory
+though, it is providing the same error message for both client and
+server: -11 "Network subsystem not available".  For the server it
+doesn this on setting the network socket, and for the client it does
+it when activating the session.  Yay for more consistent behavior.
+
+Alright, time to pack it in for a bit and get to bed.
+
 August 22, 2015
 
 Just a short update tonight, I'm pretty beat.  I've been beating my

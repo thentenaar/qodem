@@ -163,9 +163,11 @@ extern void script_print_character(const wchar_t ch);
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-extern void script_process_data(unsigned char * input, const int input_n,
+extern void script_process_data(unsigned char * input,
+                                const unsigned int input_n,
                                 int * remaining, unsigned char * output,
-                                int * output_n, const int output_max);
+                                unsigned int * output_n,
+                                const unsigned int output_max);
 
 #ifdef __cplusplus
 }

@@ -71,9 +71,9 @@ extern Q_BOOL xmodem_start(const char * in_filename, const Q_BOOL send,
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-extern void xmodem(unsigned char * input, const int input_n, int * remaining,
-                   unsigned char * output, int * output_n,
-                   const int output_max);
+extern void xmodem(unsigned char * input, const unsigned int input_n,
+                   int * remaining, unsigned char * output,
+                   unsigned int * output_n, const int output_max);
 
 /**
  * Stop the file transfer.  Note that this function is only called in

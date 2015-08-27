@@ -192,7 +192,7 @@ static int q_buffer_raw_n = 0;
  * qodem_write().
  */
 static unsigned char q_transfer_buffer_raw[Q_BUFFER_SIZE];
-static int q_transfer_buffer_raw_n = 0;
+static unsigned int q_transfer_buffer_raw_n = 0;
 
 /* These are used by the select() call in data_handler() */
 static fd_set readfds;
@@ -1042,7 +1042,7 @@ static void process_incoming_data() {
     char time_string[SHORT_TIME_SIZE];
     time_t current_time;
     int hours, minutes, seconds;
-    double connect_time;
+    time_t connect_time;
     int i;
     char notify_message[DIALOG_MESSAGE_SIZE];
 
@@ -1194,10 +1194,11 @@ static void process_incoming_data() {
                 /* Compute time */
                 /* time_string needs to be hours/minutes/seconds CONNECTED */
                 time(&current_time);
-                connect_time = difftime(current_time, q_status.connect_time);
-                hours = connect_time / 3600;
-                minutes = ((int)connect_time % 3600) / 60;
-                seconds = (int)connect_time % 60;
+                connect_time = (time_t) difftime(current_time,
+                                                 q_status.connect_time);
+                hours   = (int)  (connect_time / 3600);
+                minutes = (int) ((connect_time % 3600) / 60);
+                seconds = (int)  (connect_time % 60);
                 snprintf(time_string, sizeof(time_string), "%02u:%02u:%02u",
                     hours, minutes, seconds);
 
@@ -1493,7 +1494,7 @@ no_data:
 #endif
 
         /* Write the data to q_child_tty_fd */
-        rc = qodem_write(q_child_tty_fd, (char *)q_transfer_buffer_raw,
+        rc = qodem_write(q_child_tty_fd, (char *) q_transfer_buffer_raw,
             q_transfer_buffer_raw_n, Q_FALSE);
 
         if (rc < 0) {
@@ -1557,7 +1558,7 @@ static void data_handler() {
 #ifndef Q_NO_SERIAL
     char time_string[SHORT_TIME_SIZE];
     int hours, minutes, seconds;
-    double connect_time;
+    time_t connect_time;
 #endif
 #ifdef Q_PDCURSES_WIN32
     Q_BOOL check_net_data = Q_FALSE;
@@ -1851,10 +1852,11 @@ static void data_handler() {
                 qlog(_("OFFLINE: modem DCD line went down, lost carrier\n"));
 
                 time(&current_time);
-                connect_time = difftime(current_time, q_status.connect_time);
-                hours = connect_time / 3600;
-                minutes = ((int)connect_time % 3600) / 60;
-                seconds = (int)connect_time % 60;
+                connect_time = (time_t) difftime(current_time,
+                                                 q_status.connect_time);
+                hours   = (int)  (connect_time / 3600);
+                minutes = (int) ((connect_time % 3600) / 60);
+                seconds = (int)  (connect_time % 60);
                 snprintf(time_string, sizeof(time_string), "%02u:%02u:%02u",
                     hours, minutes, seconds);
 

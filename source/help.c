@@ -370,7 +370,7 @@ static void build_options_topic() {
     struct help_topic * topic;
     wchar_t line[80];
     char ch;
-    int i;
+    unsigned int i;
     const char * begin;
     Q_OPTION option;
     int skip_line_count = 0;
@@ -647,7 +647,7 @@ void setup_help() {
     wchar_t text_wcs[74];
     char x[4];
     int rc;
-    int i;
+    unsigned int i;
 
     DLOG(("HELP: setup_help()\n"));
 
@@ -1069,10 +1069,10 @@ reload:
                         break;
                     }
                     if (line[j] & HELP_BOLD) {
-                        screen_put_color_char(line[j] & ~HELP_BOLD,
+                        screen_put_color_char((wchar_t) (line[j] & ~HELP_BOLD),
                                               Q_COLOR_HELP_BOLD);
                     } else {
-                        screen_put_color_char(line[j] & ~HELP_BOLD,
+                        screen_put_color_char((wchar_t) (line[j] & ~HELP_BOLD),
                                               Q_COLOR_HELP_BACKGROUND);
                     }
                 }

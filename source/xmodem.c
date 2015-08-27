@@ -132,7 +132,7 @@ static FILE * file = NULL;
 static unsigned char current_block[XMODEM_MAX_BLOCK_SIZE];
 
 /* Size of current_block */
-static int current_block_n = 0;
+static unsigned int current_block_n = 0;
 
 /* Sequence # of current_block.  Start with 1. */
 static unsigned char current_block_sequence_i = 1;
@@ -204,13 +204,13 @@ static int timeout_length = 10;
 static time_t timeout_begin;
 
 /* Total number of timeouts before aborting is 10 */
-static int timeout_max = 10;
+static unsigned int timeout_max = 10;
 
 /* Total number of timeouts so far */
-static int timeout_count;
+static unsigned int timeout_count;
 
 /* Total number of errors before aborting is 15 */
-static int errors_max = 15;
+static unsigned int errors_max = 15;
 
 /* The flavor of Xmodem to use */
 static XMODEM_FLAVOR flavor;
@@ -264,7 +264,7 @@ static void reset_timer() {
  * @param output_n length of the output buffer
  * @return true if a timeout has occurred
  */
-static Q_BOOL check_timeout(unsigned char * output, int * output_n) {
+static Q_BOOL check_timeout(unsigned char * output, unsigned int * output_n) {
     time_t now;
     time(&now);
 
@@ -679,7 +679,7 @@ static int calcrc(unsigned char *ptr, int count) {
  * time.
  */
 static void ymodem_construct_block_0() {
-    int i;
+    unsigned int i;
     int crc;
     char local_buffer[32];
 
@@ -785,7 +785,7 @@ static void ymodem_construct_block_0() {
  * the file could not be opened.
  */
 static Q_BOOL ymodem_decode_block_0() {
-    int i;
+    unsigned int i;
     int crc;
     char full_filename[FILENAME_SIZE];
     char local_buffer[FILENAME_SIZE];
@@ -1116,7 +1116,7 @@ static Q_BOOL construct_block() {
  * @return true if the block was valid AND the block wrote to disk OK
  */
 static Q_BOOL verify_block() {
-    int i;
+    unsigned int i;
     unsigned char checksum;
     int crc;
     int rc;
@@ -1345,8 +1345,8 @@ static Q_BOOL verify_block() {
  * @param output a buffer to contain the bytes to send to the remote side
  * @param output_n the number of bytes that this function wrote to output
  */
-static void xmodem_receive(unsigned char * input, int * input_n,
-                           unsigned char * output, int * output_n) {
+static void xmodem_receive(unsigned char * input, unsigned int * input_n,
+                           unsigned char * output, unsigned int * output_n) {
 
     time_t now;
     int i;
@@ -1537,7 +1537,7 @@ static void xmodem_receive(unsigned char * input, int * input_n,
              * Xmodem - 1K/G case: pull in just enough to make a complete
              * block, process it, and come back for more.
              */
-            int n = XMODEM_MAX_BLOCK_SIZE - current_block_n;
+            unsigned int n = XMODEM_MAX_BLOCK_SIZE - current_block_n;
             if (*input_n < n) {
                 /*
                  * Copy only what is here
@@ -1995,8 +1995,8 @@ static void xmodem_receive(unsigned char * input, int * input_n,
  * @param output a buffer to contain the bytes to send to the remote side
  * @param output_n the number of bytes that this function wrote to output
  */
-static void xmodem_send(unsigned char * input, int * input_n,
-                        unsigned char * output, int * output_n) {
+static void xmodem_send(unsigned char * input, unsigned int * input_n,
+                        unsigned char * output, unsigned int * output_n) {
 
 
     DLOG(("xmodem_send() STATE = %d input_n = %d\n", state, *input_n));
@@ -2711,11 +2711,11 @@ static void xmodem_send(unsigned char * input, int * input_n,
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-void xmodem(unsigned char * input, const int input_n, int * remaining,
-            unsigned char * output, int * output_n, const int output_max) {
+void xmodem(unsigned char * input, const unsigned int input_n, int * remaining,
+            unsigned char * output, unsigned int * output_n,
+            const int output_max) {
 
-
-    int i;
+    unsigned int i;
 
     /*
      * Check my input arguments
@@ -2784,12 +2784,12 @@ void xmodem(unsigned char * input, const int input_n, int * remaining,
          * -G protocols might see multiple packets in the receive buffer, so
          * loop this.
          */
-        int n = input_n;
+        unsigned int n = input_n;
         do {
             xmodem_receive(input, &n, output, output_n);
         } while (n > 0);
     } else {
-        int n = input_n;
+        unsigned int n = input_n;
         if (output_max - *output_n < XMODEM_MAX_BLOCK_SIZE) {
             /*
              * Don't send unless there is enough room for a full block
@@ -3078,7 +3078,7 @@ Q_BOOL ymodem_start(struct file_info * file_list, const char * pathname,
  *
  * @param save_partial if true, save any partially-downloaded files.
  */
-void ymodem_stop(Q_BOOL save_partial) {
+void ymodem_stop(const Q_BOOL save_partial) {
     DLOG(("YMODEM: STOP\n"));
 
     xmodem_stop(save_partial);

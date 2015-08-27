@@ -497,7 +497,7 @@ static void advance_to(const int new_col) {
  * Print the current byte offset at the beginning of the line.
  */
 static void print_byte_offset() {
-    int i;
+    unsigned int i;
 
     char buffer[16];
 
@@ -565,7 +565,7 @@ static void print_printable_chars() {
 static void debug_reset() {
 
     char header[80];
-    int i;
+    unsigned int i;
 
     /*
      * Explicitly check, since this function alters the scrollback.
@@ -934,7 +934,7 @@ Q_EMULATION_STATUS terminal_emulator(const unsigned char from_modem,
                 /*
                  * Print this character
                  */
-                print_character(codepage_map_char(*to_screen));
+                print_character(codepage_map_char((unsigned char) *to_screen));
             }
 
         }

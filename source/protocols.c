@@ -197,13 +197,14 @@ static ASCII_XFER_CRLF_POLICY ascii_xfer_download_lf_handling =
  * @param lf_policy selection for LF (strip, add, or leave as-is)
  */
 static void ascii_transfer_crlf_handling(const unsigned char * input,
-                                         const int input_n,
-                                         unsigned char * output, int * output_n,
+                                         const unsigned int input_n,
+                                         unsigned char * output,
+                                         unsigned int * output_n,
                                          const ASCII_XFER_CRLF_POLICY cr_policy,
                                          const ASCII_XFER_CRLF_POLICY
                                          lf_policy) {
 
-    int i, j;
+    unsigned int i, j;
 
     /*
      * Check if we need to do anything
@@ -291,15 +292,16 @@ static void ascii_transfer_crlf_handling(const unsigned char * input,
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-static void ascii_transfer(unsigned char * input, const int input_n,
+static void ascii_transfer(unsigned char * input, const unsigned int input_n,
                            int * remaining, unsigned char * output,
-                           int * output_n, const int output_max) {
+                           unsigned int * output_n,
+                           const unsigned int output_max) {
 
     unsigned char working_buffer[2 * Q_BUFFER_SIZE];
-    int working_buffer_n;
+    unsigned int working_buffer_n;
     char notify_message[DIALOG_MESSAGE_SIZE];
     int rc;
-    int i;
+    unsigned int i;
 
     /*
      * Check my input arguments
@@ -670,9 +672,10 @@ void set_transfer_stats_last_message(const char * format, ...) {
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-void protocol_process_data(unsigned char * input, const int input_n,
+void protocol_process_data(unsigned char * input, const unsigned int input_n,
                            int * remaining, unsigned char * output,
-                           int * output_n, const int output_max) {
+                           unsigned int * output_n,
+                           const unsigned int output_max) {
 
     if ((q_transfer_stats.state == Q_TRANSFER_STATE_ABORT) ||
         (q_transfer_stats.state == Q_TRANSFER_STATE_END)) {
@@ -1695,7 +1698,7 @@ void protocol_transfer_refresh() {
     int i;
     int percent_complete;
     int batch_percent_complete;
-    int cps;
+    unsigned int cps;
 
     char time_elapsed_string[SHORT_TIME_SIZE];
     char remaining_time_string[SHORT_TIME_SIZE];
@@ -1746,9 +1749,9 @@ void protocol_transfer_refresh() {
         transfer_time =
             (time_t) difftime(current_time, q_transfer_stats.file_start_time);
     }
-    hours = transfer_time / 3600;
-    minutes = (transfer_time % 3600) / 60;
-    seconds = transfer_time % 60;
+    hours   = (int)  (transfer_time / 3600);
+    minutes = (int) ((transfer_time % 3600) / 60);
+    seconds = (int)  (transfer_time % 60);
     snprintf(time_elapsed_string, sizeof(time_elapsed_string), "%02u:%02u:%02u",
              hours, minutes, seconds);
 
@@ -1831,12 +1834,12 @@ void protocol_transfer_refresh() {
             (q_transfer_stats.state == Q_TRANSFER_STATE_ABORT)) &&
         (q_screen_dirty == Q_FALSE)
     ) {
-        transfer_time = difftime(current_time, q_transfer_stats.end_time);
+        transfer_time = (time_t) difftime(current_time, q_transfer_stats.end_time);
 
         /*
          * Wait up to 3 seconds
          */
-        if (transfer_time > 3.0) {
+        if (transfer_time > 3) {
             /*
              * Switch back to TERMINAL mode  or host mode
              */

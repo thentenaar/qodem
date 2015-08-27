@@ -171,7 +171,7 @@ void load_translate_tables() {
             continue;
         }
 
-        map_to = strtoul(value, &endptr, 10);
+        map_to = (unsigned char) strtoul(value, &endptr, 10);
         if (*endptr != 0) {
             /*
              * Invalid mapping
@@ -183,7 +183,7 @@ void load_translate_tables() {
             key[strlen(key) - 1] = 0;
         }
 
-        map_from = strtoul(key, &endptr, 10);
+        map_from = (unsigned char) strtoul(key, &endptr, 10);
         if (*endptr != 0) {
             /*
              * Invalid mapping
@@ -648,7 +648,7 @@ void translate_table_editor_keyboard_handler(const int keystroke,
              * The OK exit point
              */
             value = field_get_value(edit_table_entry_field);
-            editing_table->map_to[selected_entry] = wcstoul(value, NULL, 10);
+            editing_table->map_to[selected_entry] = (unsigned char) wcstoul(value, NULL, 10);
             Xfree(value, __FILE__, __LINE__);
 
             saved_changes = Q_FALSE;

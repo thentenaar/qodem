@@ -1051,9 +1051,9 @@ void scrollback_keyboard_handler(const int keystroke, const int flags) {
     struct q_scrolline_struct * line = NULL;
     static struct q_scrolline_struct * last_line = NULL;
     static struct q_scrolline_struct * last_position = NULL;
-    int i, j;
-    int row;
-    int local_height;
+    unsigned int i, j;
+    unsigned int row;
+    unsigned int local_height;
     char * filename;
     char notify_message[DIALOG_MESSAGE_SIZE];
     wchar_t * lower_line = NULL;
@@ -1523,7 +1523,10 @@ void render_scrollback(const int skip_lines) {
     Q_BOOL double_on_this_screen = Q_FALSE;
     Q_BOOL odd_line = Q_FALSE;
     struct q_scrolline_struct * top_line;
+#ifndef Q_PDCURSES
     char * term;
+#endif
+
     if (first == Q_TRUE) {
 #ifndef Q_PDCURSES
         if (q_status.xterm_double == Q_TRUE) {

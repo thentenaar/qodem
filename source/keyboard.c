@@ -273,12 +273,12 @@ static char * editing_keyboard_filename = NULL;
  */
 struct function_key_textbox {
     Q_BOOL highlighted;
-    int label_top;
-    int label_left;
+    unsigned int label_top;
+    unsigned int label_left;
     char * label_text;
-    int value_left;
-    int value_length;
-    wchar_t *value;
+    unsigned int value_left;
+    unsigned int value_length;
+    wchar_t * value;
 };
 
 /* 48 function keys, 10 grey keys, 16 number pad keys */
@@ -948,7 +948,7 @@ static wchar_t * bound_keyboard_keystroke(const int keystroke,
  *
  * @param ch a letter between 'A' and '_'
  */
-static void substitute_ctrl_char(char ch) {
+static void substitute_ctrl_char(unsigned char ch) {
     wchar_t ch_string[3];
     wchar_t ch_char[2];
     wchar_t * substituted_string;
@@ -974,7 +974,7 @@ static void substitute_ctrl_char(char ch) {
  */
 static void postprocess_keyboard_macro(wchar_t ** macro_string) {
     wchar_t * substituted_string;
-    char control_ch;
+    unsigned char control_ch;
 
     assert(macro_string != NULL);
     assert(*macro_string != NULL);
@@ -1000,7 +1000,7 @@ static void postprocess_keyboard_macro(wchar_t ** macro_string) {
     for (control_ch = 'A'; control_ch <= '_'; control_ch++) {
         substitute_ctrl_char(control_ch);
         if ((control_ch >= 'A') && (control_ch <= 'Z')) {
-            substitute_ctrl_char(tolower(control_ch));
+            substitute_ctrl_char((unsigned char) tolower(control_ch));
         }
     }
     substituted_string = substitute_wcs(macro_output_buffer, L"@|@#@|@", L"^");
@@ -1060,7 +1060,7 @@ void post_keystroke(const int keystroke, const int flags) {
     char unknown_string[64];
 
     wchar_t * term_string = L"";
-    int i;
+    unsigned int i;
 
     /*
      * Be a NOP if not connected to anything
@@ -1094,7 +1094,7 @@ void post_keystroke(const int keystroke, const int flags) {
                 /*
                  * UTF-8 emulations: encode outbound keystroke
                  */
-                encode_utf8_char(keystroke);
+                encode_utf8_char((wchar_t) keystroke);
             } else {
                 /*
                  * Everyone else: send lower 8 bits only
@@ -1107,7 +1107,7 @@ void post_keystroke(const int keystroke, const int flags) {
         }
 
         if (q_status.emulation == Q_EMUL_DEBUG) {
-            debug_local_echo(keystroke);
+            debug_local_echo((unsigned char) keystroke);
 
             /*
              * Force the console to refresh
@@ -1123,12 +1123,12 @@ void post_keystroke(const int keystroke, const int flags) {
                  * from the remote side.
                  */
                 if (keystroke < 0x20) {
-                    generic_handle_control_char(keystroke);
+                    generic_handle_control_char((unsigned char) keystroke);
                 } else {
                     /*
                      * Local echo for everything else
                      */
-                    print_character(keystroke);
+                    print_character((wchar_t) keystroke);
                 }
 
                 /*
@@ -3338,7 +3338,7 @@ void function_key_editor_refresh() {
     int status_left_stop;
     int window_left;
     int window_top;
-    int i, j;
+    unsigned int i, j;
     char filename[FILENAME_SIZE];
 
     window_left = (WIDTH - 80) / 2;

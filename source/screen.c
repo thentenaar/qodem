@@ -124,7 +124,7 @@ attr_t scrollback_full_attr(const Q_COLOR q_color) {
  * @return the pair number
  */
 short color_from_attr(const attr_t attr) {
-    return PAIR_NUMBER(attr);
+    return ((short) PAIR_NUMBER(attr));
 }
 
 /**
@@ -300,7 +300,7 @@ static void screen_win_put_char_yx(void * win, const int y, const int x,
  */
 static void screen_win_put_str(void * win, const char * str, const attr_t attr,
                                const short color) {
-    int i;
+    unsigned int i;
     for (i = 0; i < strlen(str); i++) {
         screen_win_put_char(win, str[i], attr, color);
     }
@@ -316,7 +316,7 @@ static void screen_win_put_str(void * win, const char * str, const attr_t attr,
  */
 static void screen_win_put_wcs(void * win, const wchar_t * wcs,
                                const attr_t attr, const short color) {
-    int i;
+    unsigned int i;
     for (i = 0; i < wcslen(wcs); i++) {
         screen_win_put_char(win, wcs[i], attr, color);
     }
@@ -335,7 +335,7 @@ static void screen_win_put_wcs(void * win, const wchar_t * wcs,
 static void screen_win_put_str_yx(void * win, const int y, const int x,
                                   const char * str, const attr_t attr,
                                   const short color) {
-    int i;
+    unsigned int i;
     for (i = 0; i < strlen(str); i++) {
         screen_win_put_char_yx(win, y, x + i, str[i], attr, color);
     }
@@ -350,9 +350,10 @@ static void screen_win_put_str_yx(void * win, const int y, const int x,
  * @param attr the attributes to use
  * @param color the pair number
  */
-static void screen_win_put_strn(void * win, const char * str, const int n,
-                                const attr_t attr, const short color) {
-    int i;
+static void screen_win_put_strn(void * win, const char * str,
+                                const unsigned int n, const attr_t attr,
+                                const short color) {
+    unsigned int i;
     for (i = 0; (i < strlen(str)) && (i < n); i++) {
         screen_win_put_char(win, str[i], attr, color);
     }
@@ -370,9 +371,9 @@ static void screen_win_put_strn(void * win, const char * str, const int n,
  * @param color the pair number
  */
 static void screen_win_put_strn_yx(void * win, const int y, const int x,
-                                   const char * str, const int n,
+                                   const char * str, const unsigned int n,
                                    const attr_t attr, const short color) {
-    int i;
+    unsigned int i;
     for (i = 0; (i < strlen(str)) && (i < n); i++) {
         screen_win_put_char_yx(win, y, x + i, str[i], attr, color);
     }
@@ -391,7 +392,7 @@ static void screen_win_put_strn_yx(void * win, const int y, const int x,
 static void screen_win_put_wcs_yx(void * win, const int y, const int x,
                                   const wchar_t * wcs, const attr_t attr,
                                   const short color) {
-    int i;
+    unsigned int i;
     for (i = 0; i < wcslen(wcs); i++) {
         screen_win_put_char_yx(win, y, x + i, wcs[i], attr, color);
     }
@@ -474,7 +475,7 @@ void screen_put_str_yx(const int y, const int x, const char * str,
      * when I am about to spawn an X11 terminal in another window, I will NOP
      * if I see a newline in the string.
      */
-    int i;
+    unsigned int i;
     for (i = 0; i < strlen(str); i++) {
         if (str[i] == '\n') {
             return;
@@ -1067,9 +1068,9 @@ void screen_setup() {
      * version.  The user can maximize the window beyond these limits.
      */
     ttytype[0] = 25;
-    ttytype[1] = 250;
+    ttytype[1] = (unsigned char) 250;
     ttytype[2] = 80;
-    ttytype[3] = 250;
+    ttytype[3] = (unsigned char) 250;
     initscr();
 
     /*

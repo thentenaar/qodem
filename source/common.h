@@ -282,6 +282,30 @@ typedef int pid_t;
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp
 
+/**
+ * Wide-char equivalent of memset().  Visual C++ actually has a wmemset(),
+ * but it is not visible in C89-only compiles, so leave this declaration
+ * where it can see it.
+ *
+ * @param wcs the destination location
+ * @param wc the source wide-char to copy
+ * @param n the number of wide-chars to copy
+ * @return wcs
+ */
+extern wchar_t * wmemset(wchar_t * wcs, const wchar_t wc, size_t n);
+
+/**
+ * Wide-char equivalent of memcpy().  Visual C++ actually has a wmemcpy(),
+ * but it is not visible in C89-only compiles, so leave this declaration
+ * where it can see it.
+ *
+ * @param dest the destination location
+ * @param src the source wide-chars to copy
+ * @param n the number of wide-chars to copy
+ * @return dest
+ */
+extern wchar_t * wmemcpy(wchar_t * dest, const wchar_t * src, size_t n);
+
 #endif /* _MSC_VER */
 
 #ifdef __BORLANDC__

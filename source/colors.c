@@ -681,8 +681,8 @@ void load_colors() {
  * This must be called to initialize the colors from the config file.
  */
 void q_setup_colors() {
-    int i;
-    const attr_t COLOR_DEFAULT = COLOR_BLACK;
+    short i;
+    const short COLOR_DEFAULT = COLOR_BLACK;
 
     q_text_colors[Q_COLOR_STATUS].bold = Q_FALSE;
     q_text_colors[Q_COLOR_STATUS].fg = COLOR_BLUE;
@@ -839,15 +839,16 @@ void q_setup_colors() {
          * Normal intensity
          */
         for (i = 1; i < q_color_bold_offset; i++) {
-            init_pair(i, ((i & 0x38) >> 3), (i & 0x07));
+            init_pair(i, (short) ((i & 0x38) >> 3), (short) (i & 0x07));
         }
 
         /*
          * Bright intensity
          */
         for (i = 1 + q_color_bold_offset; i < 2 * q_color_bold_offset; i++) {
-            init_pair(i, (((i - q_color_bold_offset) & 0x38) >> 3) + 8,
-                      ((i - q_color_bold_offset) & 0x07));
+            init_pair(i,
+                      (short) ((((i - q_color_bold_offset) & 0x38) >> 3) + 8),
+                      (short) ((i - q_color_bold_offset) & 0x07));
         }
 
         /*
@@ -871,7 +872,7 @@ void q_setup_colors() {
     }
 
     for (i = 1; (i < 64) && (i < COLOR_PAIRS); i++) {
-        init_pair(i, ((i & 0x38) >> 3), (i & 0x07));
+        init_pair(i, (short) ((i & 0x38) >> 3), (short) (i & 0x07));
     }
 
     /*
@@ -940,8 +941,8 @@ char * color_to_html(const attr_t attr) {
     short fg;
     short bg;
 
-    fg = PAIR_NUMBER(attr) >> 3;
-    bg = PAIR_NUMBER(attr) & 0x07;
+    fg = (short) (PAIR_NUMBER(attr) >> 3);
+    bg = (short) (PAIR_NUMBER(attr) & 0x07);
 
     memset(font_color, 0, sizeof(font_color));
 

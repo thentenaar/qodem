@@ -16,6 +16,8 @@ BUG: no bold text in help system on Borland
 
 BUG: free kbytes on download menu broken on Borland
 
+BUG: reverse video vttest on Borland
+
 1.0.0
 -----
 

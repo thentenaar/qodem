@@ -1227,6 +1227,10 @@ STDAPI DllRegisterServer( void )
   #define MB_YESNOCANCEL	0x00000003L
 #endif /* MB_YESNOCANCEL */
 
+  #define MB_ICONEXCLAMATION	0x00000030L
+int WINAPI MessageBoxA( HWND hWnd, LPCSTR lpText, LPCSTR lpCaption,
+						UINT uType );
+
 void vc6assert( const char *exprString, const char *fileName, 
 				const int lineNo )
 	{

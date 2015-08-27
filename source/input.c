@@ -873,7 +873,7 @@ void handle_mouse() {
     char sgr_buffer[32];
     MEVENT mouse;
     int rc;
-    int i;
+    unsigned int i;
     /*
      * ncurses appears to be providing a PRESS followed by MOUSE_POSITION
      * rather than PRESS/RELEASE/MOUSE_POSITION.  This looks like a bug in
@@ -1216,7 +1216,7 @@ void handle_mouse() {
             switch (q_xterm_mouse_encoding) {
             case XTERM_MOUSE_ENCODING_X10:
                 for (i = 0; i < 6; i++) {
-                    utf8_buffer[i] = raw_buffer[i];
+                    utf8_buffer[i] = (unsigned char) raw_buffer[i];
                 }
                 break;
             case XTERM_MOUSE_ENCODING_UTF8:

@@ -592,14 +592,14 @@ static Q_BOOL line_buffer_char(const unsigned char ch) {
      * We've got a UTF-8 character, keep it
      */
     if (line_buffer_n < 80) {
-        line_buffer[line_buffer_n] = utf8_char;
+        line_buffer[line_buffer_n] = (wchar_t) utf8_char;
         line_buffer_n++;
-        print_character(utf8_char);
+        print_character((wchar_t) utf8_char);
         q_screen_dirty = Q_TRUE;
         if ((current_state == LOGIN) && (login_state == PASSWORD)) {
             rc = utf8_encode(L'X', utf8_buffer);
         } else {
-            rc = utf8_encode(utf8_char, utf8_buffer);
+            rc = utf8_encode((wchar_t) utf8_char, utf8_buffer);
         }
         utf8_buffer[rc] = 0;
         if (host_online == Q_TRUE) {
@@ -2067,11 +2067,13 @@ static void state_machine_keyboard_handler(const int keystroke) {
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-void host_process_data(unsigned char * input, const int input_n,
-                       int * remaining, unsigned char * output, int * output_n,
-                       const int output_max) {
+void host_process_data(unsigned char * input, const unsigned int input_n,
+                       int * remaining, unsigned char * output,
+                       unsigned int * output_n,
+                       const unsigned int output_max) {
+
     char notify_message[DIALOG_MESSAGE_SIZE];
-    int i;
+    unsigned int i;
 
     DLOG(("host_process_data() : host_online %s\n",
             (host_online == Q_TRUE ? "true" : "false")));

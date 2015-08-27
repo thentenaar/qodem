@@ -286,9 +286,10 @@ static void print_stderr() {
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-void script_process_data(unsigned char * input, const int input_n,
+void script_process_data(unsigned char * input, const unsigned int input_n,
                          int * remaining, unsigned char * output,
-                         int * output_n, const int output_max) {
+                         unsigned int * output_n,
+                         const unsigned int output_max) {
 
     char notify_message[DIALOG_MESSAGE_SIZE];
     int rc = 0;
@@ -568,7 +569,7 @@ void script_process_data(unsigned char * input, const int input_n,
                  */
                 continue;
             }
-            stderr_utf8_buffer[stderr_utf8_buffer_n] = utf8_char;
+            stderr_utf8_buffer[stderr_utf8_buffer_n] = (wchar_t) utf8_char;
             stderr_utf8_buffer_n++;
             if (stderr_utf8_buffer_n == Q_BUFFER_SIZE) {
                 break;
@@ -723,7 +724,7 @@ void script_process_data(unsigned char * input, const int input_n,
                 /*
                  * 8-bit emulations
                  */
-                output[*output_n] = (utf8_char & 0xFF);
+                output[*output_n] = (unsigned char) (utf8_char & 0xFF);
                 rc = 1;
                 break;
             case Q_EMUL_LINUX_UTF8:
@@ -731,7 +732,7 @@ void script_process_data(unsigned char * input, const int input_n,
                 /*
                  * UTF-8 emulations - re-encode
                  */
-                rc = utf8_encode(utf8_char, (char *) &output[*output_n]);
+                rc = utf8_encode((wchar_t) utf8_char, (char *) &output[*output_n]);
                 break;
             }
             *output_n += rc;

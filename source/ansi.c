@@ -74,7 +74,7 @@ static int saved_cursor_y;
 /**
  * Repeat character.
  */
-static unsigned char rep_character;
+static wchar_t rep_character;
 
 /**
  * If true, we saw the ANSI.SYS private mode byte '='.

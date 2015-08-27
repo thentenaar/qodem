@@ -216,7 +216,10 @@ void music_teardown() {
 void play_music(const struct q_music_struct * music,
                 const Q_BOOL interruptible) {
 
+#ifndef Q_PDCURSES_WIN32
     int keystroke;
+#endif
+
     static time_t ban_time = 0;
     time_t now;
     static Q_BOOL on_linux = Q_FALSE;

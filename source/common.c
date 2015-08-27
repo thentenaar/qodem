@@ -27,12 +27,12 @@
 #include <errno.h>
 #include <stdarg.h>
 #ifdef Q_PDCURSES_WIN32
-#include <tchar.h>
-#include <windows.h>
-#include <shlobj.h>
+#  include <tchar.h>
+#  include <windows.h>
+#  include <shlobj.h>
 #else
-#include <sys/poll.h>
-#include <unistd.h>
+#  include <sys/poll.h>
+#  include <unistd.h>
 #endif /* Q_PDCURSES_WIN32 */
 
 /**
@@ -329,7 +329,7 @@ char * get_home_directory() {
              * TCHAR is wchar_t, copy each byte.  This would be like a
              * Xwcs_to_strdup but no one else needs that function.
              */
-            int i;
+            unsigned int i;
             win32_docs_path =
                 (char *) Xmalloc(wcslen((wchar_t *) myDocsPath) + 1, __FILE__,
                                  __LINE__);
@@ -453,7 +453,7 @@ void shorten_string(char * string, const int length) {
         return;
     }
 
-    if (strlen(string) < length - 4) {
+    if (length > strlen(string) + 4) {
         return;
     }
 
@@ -477,6 +477,46 @@ void shorten_string(char * string, const int length) {
  */
 wchar_t * wmemmove(wchar_t * dest, const wchar_t * src, size_t n) {
     return (wchar_t *) memmove(dest, src, n * sizeof(wchar_t));
+}
+
+#endif
+
+#if defined(_MSC_VER)
+
+/**
+ * Wide-char equivalent of memset().  Visual C++ actually has a wmemset(),
+ * but it is not visible in C89-only compiles, so leave this declaration
+ * where it can see it.
+ *
+ * @param wcs the destination location
+ * @param wc the source wide-char to copy
+ * @param n the number of wide-chars to copy
+ * @return wcs
+ */
+wchar_t * wmemset(wchar_t * wcs, const wchar_t wc, size_t n) {
+    size_t i;
+    for (i = 0; i < n; i++) {
+        wcs[i] = wc;
+    }
+    return wcs;
+}
+
+/**
+ * Wide-char equivalent of memcpy().  Visual C++ actually has a wmemcpy(),
+ * but it is not visible in C89-only compiles, so leave this declaration
+ * where it can see it.
+ *
+ * @param dest the destination location
+ * @param src the source wide-chars to copy
+ * @param n the number of wide-chars to copy
+ * @return dest
+ */
+wchar_t * wmemcpy(wchar_t * dest, const wchar_t * src, size_t n) {
+    size_t i;
+    for (i = 0; i < n; i++) {
+        dest[i] = src[i];
+    }
+    return dest;
 }
 
 #endif

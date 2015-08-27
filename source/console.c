@@ -64,11 +64,11 @@ static Q_BOOL doorway_mixed_pgdn;
 
 /* Zmodem autostart buffer */
 static unsigned char zrqinit_buffer[32];
-static int zrqinit_buffer_n;
+static unsigned int zrqinit_buffer_n;
 
 /* Kermit autostart buffer */
 static char kermit_autostart_buffer[32];
-static int kermit_autostart_buffer_n;
+static unsigned int kermit_autostart_buffer_n;
 
 /* Quicklearn buffer */
 static wchar_t quicklearn_buffer[32];
@@ -2018,7 +2018,8 @@ void console_keyboard_handler(int keystroke, int flags) {
          */
         split_screen_buffer[split_screen_buffer_n] = keystroke;
         split_screen_buffer_n++;
-        screen_put_color_char(keystroke & 0xFF, Q_COLOR_CONSOLE_TEXT);
+        screen_put_color_char((wchar_t) (keystroke & 0xFF),
+                              Q_COLOR_CONSOLE_TEXT);
         split_screen_x++;
         if (split_screen_x == WIDTH) {
             split_screen_x = 0;
@@ -2368,7 +2369,7 @@ void console_refresh(Q_BOOL status_line) {
                 row++;
                 screen_move_yx(row, 0);
             }
-            screen_put_color_char(split_screen_buffer[i] & 0xFF,
+            screen_put_color_char((wchar_t) (split_screen_buffer[i] & 0xFF),
                                   Q_COLOR_CONSOLE_TEXT);
         }
         q_split_screen_dirty = Q_FALSE;
@@ -2555,12 +2556,13 @@ void console_refresh(Q_BOOL status_line) {
                  * time_string needs to be hours/minutes/seconds ONLINE
                  */
                 int hours, minutes, seconds;
-                double online_time;
+                time_t online_time;
                 time(&current_time);
-                online_time = difftime(current_time, q_status.connect_time);
-                hours = online_time / 3600;
-                minutes = ((int) online_time % 3600) / 60;
-                seconds = (int) online_time % 60;
+                online_time = (time_t) difftime(current_time,
+                                                q_status.connect_time);
+                hours   = (int)  (online_time / 3600);
+                minutes = (int) ((online_time % 3600) / 60);
+                seconds = (int)  (online_time % 60);
                 snprintf(time_string, sizeof(time_string), "%02u:%02u:%02u",
                          hours, minutes, seconds);
             } else {

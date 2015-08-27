@@ -5974,7 +5974,7 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
         /* Unicode code point */
         DLOG(("Fell off the bottom, assume UTF-8 CHAR: '%c' (0x%04x)\n",
                 from_modem, state.utf8_char));
-        *to_screen = state.utf8_char;
+        *to_screen = (wchar_t) state.utf8_char;
         state.rep_ch = *to_screen;
         clear_params();
         scan_state = SCAN_GROUND;

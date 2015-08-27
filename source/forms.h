@@ -111,7 +111,8 @@ extern int notify_prompt_form_long(char ** message, const char * prompt,
                                    const char * status_prompt,
                                    const Q_BOOL visible_cursor,
                                    const double timeout,
-                                   const char * allowed_chars, int lines);
+                                   const char * allowed_chars,
+                                   const unsigned int lines);
 
 /**
  * Ask the user for a location to save a file to.  This will be a dialog box

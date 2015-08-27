@@ -390,14 +390,14 @@ static struct zmodem_packet packet;
 
 /* Internal buffer used to collect a complete packet before processing it */
 static unsigned char packet_buffer[ZMODEM_MAX_BLOCK_SIZE];
-static int packet_buffer_n;
+static unsigned int packet_buffer_n;
 
 /*
  * Internal buffer used to queue a complete outbound packet so that the
  * top-level code can saturate the link.
  */
 static unsigned char outbound_packet[ZMODEM_MAX_BLOCK_SIZE];
-static int outbound_packet_n;
+static unsigned int outbound_packet_n;
 
 /* Return codes from parse_packet() */
 typedef enum {
@@ -874,10 +874,13 @@ static Q_BOOL check_timeout() {
  * @param output_max the maximum number of bytes that can be written to
  * output
  */
-static void hexify_string(const unsigned char * input, const int input_n,
-                          unsigned char * output, const int output_max) {
+static void hexify_string(const unsigned char * input,
+                          const unsigned int input_n,
+                          unsigned char * output,
+                          const unsigned int output_max) {
+
     char digits[] = "0123456789abcdefg";
-    int i;
+    unsigned int i;
 
     assert(output_max >= input_n * 2);
 
@@ -898,9 +901,12 @@ static void hexify_string(const unsigned char * input, const int input_n,
  * @return true if conversion was successful, false if input is not a valid
  * hex string
  */
-static Q_BOOL dehexify_string(const unsigned char * input, const int input_n,
-                              unsigned char * output, const int output_max) {
-    int i;
+static Q_BOOL dehexify_string(const unsigned char * input,
+                              const unsigned int input_n,
+                              unsigned char * output,
+                              const unsigned int output_max) {
+
+    unsigned int i;
 
     assert(output_max >= input_n / 2);
 
@@ -964,10 +970,11 @@ static Q_BOOL dehexify_string(const unsigned char * input, const int input_n,
  * @param crc_buffer_n the number of bytes that this function wrote to
  * crc_buffer
  */
-static Q_BOOL decode_zdata_bytes(unsigned char * input, int * input_n,
+static Q_BOOL decode_zdata_bytes(unsigned char * input,
+                                 unsigned int * input_n,
                                  unsigned char * output,
                                  unsigned int * output_n,
-                                 const int output_max,
+                                 const unsigned int output_max,
                                  unsigned char * crc_buffer,
                                  int * crc_buffer_n) {
 
@@ -1355,7 +1362,9 @@ static void setup_encode_byte_map() {
  * @param output_max the maximum size of the output buffer
  */
 static void encode_byte(const unsigned char ch, unsigned char * output,
-                        int * output_n, const int output_max) {
+                        unsigned int * output_n,
+                        const unsigned int output_max) {
+
     unsigned char new_ch = encode_byte_map[ch];
 
     /*
@@ -1390,16 +1399,17 @@ static void encode_byte(const unsigned char ch, unsigned char * output,
  * @param output_max the maximum size of the output buffer
  * @param crc_type ZCRCE, ZCRCG, ZCRCQ, or ZCRCW
  */
-static void encode_zdata_bytes(unsigned char * output, int * output_n,
-                               const int output_max,
+static void encode_zdata_bytes(unsigned char * output,
+                               unsigned int * output_n,
+                               const unsigned int output_max,
                                const unsigned char crc_type) {
 
-    int i;                      /* input iterator */
-    int j;                      /* CRC32 iterator */
+    unsigned int i;             /* input iterator */
+    unsigned int j;             /* CRC32 iterator */
     int crc_16;
     uint32_t crc_32;
     Q_BOOL doing_crc = Q_FALSE;
-    int crc_length = 0;
+    unsigned int crc_length = 0;
     unsigned char ch;
     unsigned char crc_buffer[4];
 
@@ -1446,10 +1456,10 @@ static void encode_zdata_bytes(unsigned char * output, int * output_n,
                     /*
                      * Little-endian
                      */
-                    crc_buffer[0] = crc_32 & 0xFF;
-                    crc_buffer[1] = (crc_32 >> 8) & 0xFF;
-                    crc_buffer[2] = (crc_32 >> 16) & 0xFF;
-                    crc_buffer[3] = (crc_32 >> 24) & 0xFF;
+                    crc_buffer[0] = (unsigned char) ( crc_32        & 0xFF);
+                    crc_buffer[1] = (unsigned char) ((crc_32 >>  8) & 0xFF);
+                    crc_buffer[2] = (unsigned char) ((crc_32 >> 16) & 0xFF);
+                    crc_buffer[3] = (unsigned char) ((crc_32 >> 24) & 0xFF);
 
                 } else {
                     /*
@@ -1465,8 +1475,8 @@ static void encode_zdata_bytes(unsigned char * output, int * output_n,
                     /*
                      * Big-endian
                      */
-                    crc_buffer[0] = (crc_16 >> 8) & 0xFF;
-                    crc_buffer[1] = crc_16 & 0xFF;
+                    crc_buffer[0] = (unsigned char) ((crc_16 >> 8) & 0xFF);
+                    crc_buffer[1] = (unsigned char) ( crc_16       & 0xFF);
                 }
 
                 doing_crc = Q_TRUE;
@@ -1520,8 +1530,10 @@ static void encode_zdata_bytes(unsigned char * output, int * output_n,
  * @param data_packet_max the maximum size of data_packet
  */
 static void build_packet(const int type, const long argument,
-                         unsigned char * data_packet, int * data_packet_n,
+                         unsigned char * data_packet,
+                         unsigned int * data_packet_n,
                          const int data_packet_max) {
+
     int crc_16;
     unsigned char crc_16_hex[4];
     uint32_t crc_32;
@@ -1770,8 +1782,8 @@ static void build_packet(const int type, const long argument,
          * Encode the argument field
          */
         for (i = 0; i < 5; i++) {
-            encode_byte((header[i] & 0xFF), data_packet, data_packet_n,
-                        data_packet_max);
+            encode_byte((unsigned char) (header[i] & 0xFF), data_packet,
+                        data_packet_n, data_packet_max);
         }
 
         if (packet.use_crc32 == Q_TRUE) {
@@ -1780,20 +1792,20 @@ static void build_packet(const int type, const long argument,
             /*
              * Little-endian
              */
-            encode_byte((crc_32 & 0xFF), data_packet, data_packet_n,
-                        data_packet_max);
-            encode_byte(((crc_32 >> 8) & 0xFF), data_packet, data_packet_n,
-                        data_packet_max);
-            encode_byte(((crc_32 >> 16) & 0xFF), data_packet, data_packet_n,
-                        data_packet_max);
-            encode_byte(((crc_32 >> 24) & 0xFF), data_packet, data_packet_n,
-                        data_packet_max);
+            encode_byte((unsigned char) ( crc_32        & 0xFF),
+                        data_packet, data_packet_n, data_packet_max);
+            encode_byte((unsigned char) ((crc_32 >>  8) & 0xFF),
+                        data_packet, data_packet_n, data_packet_max);
+            encode_byte((unsigned char) ((crc_32 >> 16) & 0xFF),
+                        data_packet, data_packet_n, data_packet_max);
+            encode_byte((unsigned char) ((crc_32 >> 24) & 0xFF),
+                        data_packet, data_packet_n, data_packet_max);
         } else {
             crc_16 = compute_crc16(0, header, 5);
-            encode_byte(((crc_16 >> 8) & 0xFF), data_packet, data_packet_n,
-                        data_packet_max);
-            encode_byte((crc_16 & 0xFF), data_packet, data_packet_n,
-                        data_packet_max);
+            encode_byte((unsigned char) ((crc_16 >> 8) & 0xFF),
+                        data_packet, data_packet_n, data_packet_max);
+            encode_byte((unsigned char) ( crc_16       & 0xFF),
+                        data_packet, data_packet_n, data_packet_max);
         }
 
         if (altered_encode_byte_map == Q_TRUE) {
@@ -1991,7 +2003,7 @@ static ZM_PARSE_PACKET parse_packet(const unsigned char * input,
         }
         packet.argument = ((hex_buffer[0] & 0xFF) << 24) |
                           ((hex_buffer[1] & 0xFF) << 16) |
-                          ((hex_buffer[2] & 0xFF) << 8) |
+                          ((hex_buffer[2] & 0xFF) <<  8) |
                            (hex_buffer[3] & 0xFF);
 
         memset(hex_buffer, 0, sizeof(hex_buffer));
@@ -2010,10 +2022,10 @@ static ZM_PARSE_PACKET parse_packet(const unsigned char * input,
          * Copy header to crc_header
          */
         crc_header[0] = packet.type;
-        crc_header[1] = (packet.argument >> 24) & 0xFF;
-        crc_header[2] = (packet.argument >> 16) & 0xFF;
-        crc_header[3] = (packet.argument >> 8) & 0xFF;
-        crc_header[4] = packet.argument & 0xFF;
+        crc_header[1] = (unsigned char) ((packet.argument >> 24) & 0xFF);
+        crc_header[2] = (unsigned char) ((packet.argument >> 16) & 0xFF);
+        crc_header[3] = (unsigned char) ((packet.argument >>  8) & 0xFF);
+        crc_header[4] = (unsigned char) ( packet.argument        & 0xFF);
 
         /*
          * More special-case junk: sz sends 0d 8a at the end of each hex
@@ -2295,8 +2307,9 @@ static ZM_PARSE_PACKET parse_packet(const unsigned char * input,
  * @return true if we are done reading input and are ready to send bytes to
  * the remote side
  */
-static Q_BOOL receive_zchallenge(unsigned char * output, int * output_n,
-                                 const int output_max) {
+static Q_BOOL receive_zchallenge(unsigned char * output,
+                                 unsigned int * output_n,
+                                 const unsigned int output_max) {
 
     uint32_t options;
     FILE * dev_random;
@@ -2348,8 +2361,9 @@ static Q_BOOL receive_zchallenge(unsigned char * output, int * output_n,
  * @return true if we are done reading input and are ready to send bytes to
  * the remote side
  */
-static Q_BOOL receive_zchallenge_wait(unsigned char * output, int * output_n,
-                                      const int output_max) {
+static Q_BOOL receive_zchallenge_wait(unsigned char * output,
+                                      unsigned int * output_n,
+                                      const unsigned int output_max) {
 
     ZM_PARSE_PACKET rc_pp;
     uint32_t options = 0;
@@ -2468,8 +2482,9 @@ static Q_BOOL receive_zchallenge_wait(unsigned char * output, int * output_n,
  * @return true if we are done reading input and are ready to send bytes to
  * the remote side
  */
-static Q_BOOL receive_zcrc(unsigned char * output, int * output_n,
-                           const int output_max) {
+static Q_BOOL receive_zcrc(unsigned char * output,
+                           unsigned int * output_n,
+                           const unsigned int output_max) {
 
     /*
      * Buffer for reading the file
@@ -2530,8 +2545,9 @@ static Q_BOOL receive_zcrc(unsigned char * output, int * output_n,
  * @return true if we are done reading input and are ready to send bytes to
  * the remote side
  */
-static Q_BOOL receive_zcrc_wait(unsigned char * output, int * output_n,
-                                const int output_max) {
+static Q_BOOL receive_zcrc_wait(unsigned char * output,
+                                unsigned int * output_n,
+                                const unsigned int output_max) {
 
     ZM_PARSE_PACKET rc_pp;
 
@@ -2706,8 +2722,9 @@ static Q_BOOL receive_zcrc_wait(unsigned char * output, int * output_n,
  * @return true if we are done reading input and are ready to send bytes to
  * the remote side
  */
-static Q_BOOL receive_zrinit(unsigned char * output, int * output_n,
-                             const int output_max) {
+static Q_BOOL receive_zrinit(unsigned char * output,
+                             unsigned int * output_n,
+                             const unsigned int output_max) {
 
     uint32_t options;
 
@@ -2736,8 +2753,9 @@ static Q_BOOL receive_zrinit(unsigned char * output, int * output_n,
  * @return true if we are done reading input and are ready to send bytes to
  * the remote side
  */
-static Q_BOOL receive_zrinit_wait(unsigned char * output, int * output_n,
-                                  const int output_max) {
+static Q_BOOL receive_zrinit_wait(unsigned char * output,
+                                  unsigned int * output_n,
+                                  const unsigned int output_max) {
 
     ZM_PARSE_PACKET rc_pp;
 
@@ -2908,8 +2926,9 @@ static Q_BOOL receive_zrinit_wait(unsigned char * output, int * output_n,
  * @return true if we are done reading input and are ready to send bytes to
  * the remote side
  */
-static Q_BOOL receive_zrpos(unsigned char * output, int * output_n,
-                            const int output_max) {
+static Q_BOOL receive_zrpos(unsigned char * output,
+                            unsigned int * output_n,
+                            const unsigned int output_max) {
 
     uint32_t options;
 
@@ -2934,8 +2953,9 @@ static Q_BOOL receive_zrpos(unsigned char * output, int * output_n,
  * @return true if we are done reading input and are ready to send bytes to
  * the remote side
  */
-static Q_BOOL receive_zrpos_wait(unsigned char * output, int * output_n,
-                                 const int output_max) {
+static Q_BOOL receive_zrpos_wait(unsigned char * output,
+                                 unsigned int * output_n,
+                                 const unsigned int output_max) {
 
     ZM_PARSE_PACKET rc_pp;
     int discard;
@@ -3096,8 +3116,9 @@ static Q_BOOL receive_zrpos_wait(unsigned char * output, int * output_n,
  * @return true if we are done reading input and are ready to send bytes to
  * the remote side
  */
-static Q_BOOL receive_zfile(unsigned char * output, int * output_n,
-                            const int output_max) {
+static Q_BOOL receive_zfile(unsigned char * output,
+                            unsigned int * output_n,
+                            const unsigned int output_max) {
 
     int filesleft;
     long totalbytesleft;
@@ -3279,8 +3300,9 @@ static Q_BOOL receive_zfile(unsigned char * output, int * output_n,
  * @return true if we are done reading input and are ready to send bytes to
  * the remote side
  */
-static Q_BOOL receive_zdata(unsigned char * output, int * output_n,
-                            const int output_max) {
+static Q_BOOL receive_zdata(unsigned char * output,
+                            unsigned int * output_n,
+                            const unsigned int output_max) {
 
     Q_BOOL end_of_packet = Q_FALSE;
     Q_BOOL acknowledge = Q_FALSE;
@@ -3289,7 +3311,7 @@ static Q_BOOL receive_zdata(unsigned char * output, int * output_n,
     int crc16;
     uint32_t crc32;
 
-    int i;
+    unsigned int i;
 
     DLOG(("receive_zdata(): DATA state=%d prior_state=%d packet.data_n=%d\n",
             status.state, status.prior_state, packet.data_n));
@@ -3299,8 +3321,8 @@ static Q_BOOL receive_zdata(unsigned char * output, int * output_n,
      */
     if (decode_zdata_bytes
         (packet_buffer, &packet_buffer_n, packet.data + packet.data_n,
-         &packet.data_n, sizeof(packet.data) - packet.data_n, packet.crc_buffer,
-         &packet.crc_buffer_n) == Q_FALSE) {
+         &packet.data_n, sizeof(packet.data) - packet.data_n,
+         packet.crc_buffer, &packet.crc_buffer_n) == Q_FALSE) {
 
         /*
          * Not enough data available, wait for more
@@ -3567,8 +3589,9 @@ static Q_BOOL receive_zdata(unsigned char * output, int * output_n,
  * @return true if we are done reading input and are ready to send bytes to
  * the remote side
  */
-static Q_BOOL receive_zskip(unsigned char * output, int * output_n,
-                            const int output_max) {
+static Q_BOOL receive_zskip(unsigned char * output,
+                            unsigned int * output_n,
+                            const unsigned int output_max) {
 
     uint32_t options = 0;
     struct utimbuf utime_buffer;
@@ -3630,9 +3653,9 @@ static Q_BOOL receive_zskip(unsigned char * output, int * output_n,
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-static void zmodem_receive(unsigned char * input, int input_n,
-                           unsigned char * output, int * output_n,
-                           const int output_max) {
+static void zmodem_receive(unsigned char * input, unsigned int input_n,
+                           unsigned char * output, unsigned int * output_n,
+                           const unsigned int output_max) {
 
     Q_BOOL done;
 
@@ -3646,7 +3669,7 @@ static void zmodem_receive(unsigned char * input, int input_n,
      * }
      */
 
-    int i;
+    unsigned int i;
     DLOG(("zmodem_receive() START packet_buffer_n = %d packet_buffer = ",
             packet_buffer_n));
     for (i = 0; i < packet_buffer_n; i++) {
@@ -3806,8 +3829,9 @@ static void zmodem_receive(unsigned char * input, int input_n,
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-static Q_BOOL send_zrqinit(unsigned char * output, int * output_n,
-                           const int output_max) {
+static Q_BOOL send_zrqinit(unsigned char * output,
+                           unsigned int * output_n,
+                           const unsigned int output_max) {
 
     uint32_t options;
 
@@ -3828,8 +3852,9 @@ static Q_BOOL send_zrqinit(unsigned char * output, int * output_n,
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-static Q_BOOL send_zrqinit_wait(unsigned char * output, int * output_n,
-                                const int output_max) {
+static Q_BOOL send_zrqinit_wait(unsigned char * output,
+                                unsigned int * output_n,
+                                const unsigned int output_max) {
 
     ZM_PARSE_PACKET rc_pp;
 
@@ -3965,8 +3990,9 @@ static Q_BOOL send_zrqinit_wait(unsigned char * output, int * output_n,
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-static Q_BOOL send_zsinit(unsigned char * output, int * output_n,
-                          const int output_max) {
+static Q_BOOL send_zsinit(unsigned char * output,
+                          unsigned int * output_n,
+                          const unsigned int output_max) {
 
     uint32_t options;
 
@@ -4025,8 +4051,9 @@ static Q_BOOL send_zsinit(unsigned char * output, int * output_n,
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-static Q_BOOL send_zsinit_wait(unsigned char * output, int * output_n,
-                               const int output_max) {
+static Q_BOOL send_zsinit_wait(unsigned char * output,
+                               unsigned int * output_n,
+                               const unsigned int output_max) {
 
     ZM_PARSE_PACKET rc_pp;
 
@@ -4116,8 +4143,9 @@ static Q_BOOL send_zsinit_wait(unsigned char * output, int * output_n,
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-static Q_BOOL send_zfile(unsigned char * output, int * output_n,
-                         const int output_max) {
+static Q_BOOL send_zfile(unsigned char * output,
+                         unsigned int * output_n,
+                         const unsigned int output_max) {
 
     uint32_t options;
 
@@ -4165,8 +4193,9 @@ static Q_BOOL send_zfile(unsigned char * output, int * output_n,
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-static Q_BOOL send_zfile_wait(unsigned char * output, int * output_n,
-                              const int output_max) {
+static Q_BOOL send_zfile_wait(unsigned char * output,
+                              unsigned int * output_n,
+                              const unsigned int output_max) {
 
     ZM_PARSE_PACKET rc_pp;
 
@@ -4368,8 +4397,9 @@ static Q_BOOL send_zfile_wait(unsigned char * output, int * output_n,
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-static Q_BOOL send_zdata(unsigned char * output, int * output_n,
-                         const int output_max) {
+static Q_BOOL send_zdata(unsigned char * output,
+                         unsigned int * output_n,
+                         const unsigned int output_max) {
 
     ZM_PARSE_PACKET rc_pp;
     uint32_t options = 0;
@@ -4903,8 +4933,9 @@ static Q_BOOL send_zdata(unsigned char * output, int * output_n,
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-static Q_BOOL send_zeof(unsigned char * output, int * output_n,
-                        const int output_max) {
+static Q_BOOL send_zeof(unsigned char * output,
+                        unsigned int * output_n,
+                        const unsigned int output_max) {
     uint32_t options;
 
     DLOG(("send_zeof()\n"));
@@ -4924,8 +4955,9 @@ static Q_BOOL send_zeof(unsigned char * output, int * output_n,
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-static Q_BOOL send_zeof_wait(unsigned char * output, int * output_n,
-                             const int output_max) {
+static Q_BOOL send_zeof_wait(unsigned char * output,
+                             unsigned int * output_n,
+                             const unsigned int output_max) {
 
     ZM_PARSE_PACKET rc_pp;
 
@@ -5040,8 +5072,9 @@ static Q_BOOL send_zeof_wait(unsigned char * output, int * output_n,
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-static Q_BOOL send_zfin(unsigned char * output, int * output_n,
-                        const int output_max) {
+static Q_BOOL send_zfin(unsigned char * output,
+                        unsigned int * output_n,
+                        const unsigned int output_max) {
 
     uint32_t options;
 
@@ -5062,8 +5095,9 @@ static Q_BOOL send_zfin(unsigned char * output, int * output_n,
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-static Q_BOOL send_zfin_wait(unsigned char * output, int * output_n,
-                             const int output_max) {
+static Q_BOOL send_zfin_wait(unsigned char * output,
+                             unsigned int * output_n,
+                             const unsigned int output_max) {
 
     ZM_PARSE_PACKET rc_pp;
 
@@ -5169,10 +5203,10 @@ static Q_BOOL send_zfin_wait(unsigned char * output, int * output_n,
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-static void zmodem_send(unsigned char * input, int input_n,
-                        unsigned char * output, int * output_n,
-                        const int output_max) {
-    int i;
+static void zmodem_send(unsigned char * input, unsigned int input_n,
+                        unsigned char * output, unsigned int * output_n,
+                        const unsigned int output_max) {
+    unsigned int i;
     Q_BOOL done;
     static int can_count = 0;
 
@@ -5373,10 +5407,11 @@ static void zmodem_send(unsigned char * input, int input_n,
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-void zmodem(unsigned char * input, const int input_n, unsigned char * output,
-            int * output_n, const int output_max) {
+void zmodem(unsigned char * input, const unsigned int input_n,
+            unsigned char * output, unsigned int * output_n,
+            const unsigned int output_max) {
 
-    int i;
+    unsigned int i;
 
     /*
      * Check my input arguments

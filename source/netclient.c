@@ -221,7 +221,7 @@ static int read_buffer_n = 0;
 
 /* Raw output buffer */
 static unsigned char write_buffer[Q_BUFFER_SIZE];
-static int write_buffer_n = 0;
+static unsigned int write_buffer_n = 0;
 
 /* Forward references needed by net_X() methods */
 static void rlogin_send_login(const int fd);
@@ -3042,7 +3042,7 @@ ssize_t telnet_read(const int fd, void * buf, size_t count) {
  */
 ssize_t telnet_write(const int fd, void * buf, size_t count) {
     unsigned char ch;
-    int i;
+    unsigned int i;
     int sent = 0;
     Q_BOOL flush = Q_FALSE;
 
@@ -3094,7 +3094,7 @@ write_flush:
      * See if we need to sync with the remote side now
      */
     if (flush == Q_TRUE) {
-        int j;
+        unsigned int j;
         DLOG(("telnet_write() : write to remote side %d bytes:\n",
                 write_buffer_n));
         for (j = 0; j < write_buffer_n; j++) {
@@ -3796,8 +3796,8 @@ static int ssh_setup_connection(int fd, const char * host, const char * port) {
     DLOG(("SSH connection established: fd = %d\n", fd));
 
     /* Set the network timeouts to mimic non-blocking behavior */
-    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_READTIMEOUT, 0.05);
-    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_WRITETIMEOUT, 0.05);
+    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_READTIMEOUT, 1);
+    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_WRITETIMEOUT, 1);
 
     /* All done, let's get to moving data! */
     return fd;
@@ -4339,8 +4339,8 @@ static int ssh_accept(int fd) {
 
     /* Set the network timeouts to mimic non-blocking behavior */
     DLOG(("Setting network timeouts to small values.\n"));
-    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_READTIMEOUT, 0.05);
-    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_WRITETIMEOUT, 0.05);
+    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_READTIMEOUT, 1);
+    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_WRITETIMEOUT, 1);
 
     DLOG(("SSH server session established: fd = %d\n", fd));
 

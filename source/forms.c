@@ -768,21 +768,23 @@ void notify_form_long(char ** message, const double timeout, const int lines) {
  * @return the keystroke the user selected, or ERR if the timeout was reached
  * before they hit anything.
  */
-int notify_prompt_form_long(char ** message, const char *prompt,
+int notify_prompt_form_long(char ** message, const char * prompt,
                             const char * status_prompt,
-                            const Q_BOOL visible_cursor, const double timeout,
-                            const char * allowed_chars, int lines) {
+                            const Q_BOOL visible_cursor,
+                            const double timeout,
+                            const char * allowed_chars,
+                            const unsigned int lines) {
 
     int title_left;
     void * form_window;
     int window_left;
     int window_top;
     int window_height;
-    int window_length = 0;
+    unsigned int window_length = 0;
     time_t current_time;
     time_t start_time;
     int keystroke;
-    int i;
+    unsigned int i;
     const char * title = prompt;
     window_height = 3 + lines - 1;
 

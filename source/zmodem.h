@@ -52,9 +52,9 @@ typedef enum {
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-extern void zmodem(unsigned char * input, const int input_n,
-                   unsigned char * output, int * output_n,
-                   const int output_max);
+extern void zmodem(unsigned char * input, const unsigned int input_n,
+                   unsigned char * output, unsigned int * output_n,
+                   const unsigned int output_max);
 
 /**
  * Setup for a new file transfer session.

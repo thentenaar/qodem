@@ -26,7 +26,7 @@
 #  include <unistd.h>
 #endif
 #ifdef _MSC_VER
-#  include <windows.h>			/* GetCurrentProcessId() */
+#  include <windows.h>          /* GetCurrentProcessId() */
 #endif
 #include <libgen.h>
 #include <stdlib.h>
@@ -210,13 +210,13 @@ static void print_phonebook_80(const char * dest) {
     char * full_filename;
     Q_BOOL lpr = Q_FALSE;
     struct q_phone_struct *entry;
-    int left_stop;
-    int i;
-    int entry_i;
-    int page = 1;
+    unsigned int left_stop;
+    unsigned int i;
+    unsigned int entry_i;
+    unsigned int page = 1;
     Q_BOOL page_header = Q_TRUE;
-    int lines_per_page = 60;
-    int lines = 0;
+    unsigned int lines_per_page = 60;
+    unsigned int lines = 0;
 
     if (strstr(dest, LPR_FILE_NAME) == dest) {
         /*
@@ -359,13 +359,13 @@ static void print_phonebook_132(const char * dest) {
     char * full_filename;
     Q_BOOL lpr = Q_FALSE;
     struct q_phone_struct *entry;
-    int left_stop;
-    int i;
-    int entry_i;
-    int page = 1;
+    unsigned int left_stop;
+    unsigned int i;
+    unsigned int entry_i;
+    unsigned int page = 1;
     Q_BOOL page_header = Q_TRUE;
-    int lines_per_page = 60;
-    int lines = 0;
+    unsigned int lines_per_page = 60;
+    unsigned int lines = 0;
 
     if (strstr(dest, LPR_FILE_NAME) == dest) {
         /*
@@ -1599,6 +1599,11 @@ static Q_BOOL prompt_ssh_password(const wchar_t * initial_username,
  */
 void do_dialer() {
 
+#ifdef Q_SSH_CRYPTLIB
+    wchar_t * ssh_username = NULL;
+    wchar_t * ssh_password = NULL;
+#endif
+
     if (q_status.current_username != NULL) {
         Xfree(q_status.current_username, __FILE__, __LINE__);
         q_status.current_username = NULL;
@@ -1610,8 +1615,6 @@ void do_dialer() {
     }
 
 #ifdef Q_SSH_CRYPTLIB
-    wchar_t * ssh_username = NULL;
-    wchar_t * ssh_password = NULL;
 
     /*
      * Make sure for SSH connections we have both the username and password
@@ -1917,7 +1920,7 @@ static Q_BOOL match_phonebook_entry(wchar_t * search_string,
                                     const struct q_phone_struct * entry) {
 
     wchar_t * field_string;
-    int i, j;
+    unsigned int i, j;
 
     /*
      * Force the search string to lowercase
@@ -2956,24 +2959,14 @@ static Q_BOOL kill_redialer_number() {
  */
 #ifdef Q_PDCURSES_WIN32
 
-#ifdef _MSC_VER
-
-/* VC has _snwprintf() that has the same function as POSIX swprintf() */
-#define my_swprintf _snwprintf
-#define my_swprintf2 _snwprintf
-#define my_swprintf3 _snwprintf
-#define my_swprintf4 _snwprintf
-
-#else
-
 /**
  * _snwprintf() has trouble with "%s" arguments.  Replace those calls
  * with a simple appender.
  */
-static void my_swprintf(wchar_t * str, int n, wchar_t * format,
+static void my_swprintf(wchar_t * str, unsigned int n, wchar_t * format,
                         const char * arg1) {
 
-    int i;
+    unsigned int i;
     for (i = 0; (i < strlen(arg1)) && (i < n); i++) {
         str[wcslen(str) + 1] = 0;
         str[wcslen(str)] = arg1[i];
@@ -2981,14 +2974,14 @@ static void my_swprintf(wchar_t * str, int n, wchar_t * format,
 }
 
 /**
- * Borland's swprintf and Visual C++'s swprintf have different arguments.
+ * Borland and Visual C++'s swprintf are non-conforming.
  */
 static void my_swprintf2(wchar_t * str, int n, wchar_t * format, int arg1,
                          const wchar_t * arg2) {
 
-#ifdef __BORLANDC__
+#if defined(__BORLANDC__) || defined(_MSC_VER)
     /*
-     * Borland's swprintf() doesn't take a length argument
+     * swprintf() doesn't take a length argument
      */
     swprintf(str, format, arg1, arg2);
 #else
@@ -2997,14 +2990,14 @@ static void my_swprintf2(wchar_t * str, int n, wchar_t * format, int arg1,
 }
 
 /**
- * Borland's swprintf and Visual C++'s swprintf have different arguments.
+ * Borland and Visual C++'s swprintf are non-conforming.
  */
 static void my_swprintf3(wchar_t * str, int n, wchar_t * format,
                          const wchar_t * arg1) {
 
-#ifdef __BORLANDC__
+#if defined(__BORLANDC__) || defined(_MSC_VER)
     /*
-     * Borland's swprintf() doesn't take a length argument
+     * swprintf() doesn't take a length argument
      */
     swprintf(str, format, arg1);
 #else
@@ -3013,20 +3006,18 @@ static void my_swprintf3(wchar_t * str, int n, wchar_t * format,
 }
 
 /**
- * Borland's swprintf and Visual C++'s swprintf have different arguments.
+ * Borland and Visual C++'s swprintf are non-conforming.
  */
 static void my_swprintf4(wchar_t * str, int n, wchar_t * format, int arg1) {
-#ifdef __BORLANDC__
+#if defined(__BORLANDC__) || defined(_MSC_VER)
     /*
-     * Borland's swprintf() doesn't take a length argument
+     * swprintf() doesn't take a length argument
      */
     swprintf(str, format, arg1);
 #else
     swprintf(str, n, format, arg1);
 #endif
 }
-
-#endif /* _MSC_VER */
 
 #else
 
@@ -7532,9 +7523,10 @@ void dialer_keyboard_handler(const int keystroke, const int flags) {
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-static void modem_data(unsigned char * input, int input_n, int * remaining,
-                       unsigned char * output, int * output_n,
-                       const int output_max) {
+static void modem_data(unsigned char * input, unsigned int input_n,
+                       int * remaining, unsigned char * output,
+                       unsigned int * output_n,
+                       const unsigned int output_max) {
     int i;
     Q_BOOL complete_line = Q_FALSE;
     int new_dce_baud;
@@ -7852,12 +7844,13 @@ static void modem_data(unsigned char * input, int input_n, int * remaining,
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-void dialer_process_data(unsigned char * input, const int input_n,
+void dialer_process_data(unsigned char * input, const unsigned int input_n,
                          int * remaining, unsigned char * output,
-                         int * output_n, const int output_max) {
+                         unsigned int * output_n,
+                         const unsigned int output_max) {
 
 
-    int i;
+    unsigned int i;
     DLOG(("DIALER: %d input bytes:  ", input_n));
     for (i = 0; i < input_n; i++) {
         DLOG2(("%02x ", input[i]));

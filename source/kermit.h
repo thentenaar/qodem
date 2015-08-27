@@ -44,8 +44,9 @@ extern "C" {
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-extern void kermit(unsigned char * input, int input_n, unsigned char * output,
-                   int * output_n, const int output_max);
+extern void kermit(unsigned char * input, unsigned int input_n,
+                   unsigned char * output, unsigned int * output_n,
+                   const int output_max);
 
 /**
  * Setup for a new file transfer session.

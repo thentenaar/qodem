@@ -185,20 +185,20 @@ typedef enum {
  */
 struct session_parameters {
     unsigned char MARK;
-    unsigned int MAXL;
-    unsigned int TIME;
-    unsigned int NPAD;
+    unsigned char MAXL;
+    unsigned char TIME;
+    unsigned char NPAD;
     unsigned char PADC;
     unsigned char EOL;
     unsigned char QCTL;
     unsigned char QBIN;
     unsigned char CHKT;
     unsigned char REPT;
-    unsigned int CAPAS;
-    unsigned int WINDO;
-    unsigned int MAXLX1;
-    unsigned int MAXLX2;
-    unsigned int WHATAMI;
+    unsigned char CAPAS;
+    unsigned char WINDO;
+    unsigned char MAXLX1;
+    unsigned char MAXLX2;
+    unsigned char WHATAMI;
     Q_BOOL attributes;
     Q_BOOL windowing;
     Q_BOOL long_packets;
@@ -625,7 +625,7 @@ static short compute_crc16(const unsigned char * ptr, int count) {
         crc = crc_16_tab[(crc ^ ch) & 0xFF] ^ (crc >> 8);
         crc &= 0xFFFF;
     }
-    return crc & 0xFFFF;
+    return (short) (crc & 0xFFFF);
 }
 
 #if 0
@@ -1342,14 +1342,14 @@ static Q_BOOL decode_data_field(PACKET_TYPE type, unsigned char * input,
                                 unsigned int * output_n,
                                 unsigned int * output_max) {
 
-    int i;
+    unsigned int i;
     unsigned int begin;
     unsigned int data_n = 0;
     unsigned char ch;
     Q_BOOL prefix_ctrl = Q_FALSE;
     Q_BOOL prefix_8bit = Q_FALSE;
     Q_BOOL prefix_rept = Q_FALSE;
-    int repeat_count = 1;
+    unsigned int repeat_count = 1;
     unsigned char output_ch = 0;
     Q_BOOL do_output_ch = Q_FALSE;
 
@@ -1741,7 +1741,7 @@ static Q_BOOL decode_data_field(PACKET_TYPE type, unsigned char * input,
 static int encode_one_byte(unsigned char ch, unsigned int repeat_count,
                            unsigned char * output) {
 
-    int i;
+    unsigned int i;
     int data_n = 0;
     unsigned char ch7bit = ch & 0x7F;
     Q_BOOL need_qbin = Q_FALSE;
@@ -1759,7 +1759,7 @@ static int encode_one_byte(unsigned char ch, unsigned int repeat_count,
 
         output[data_n] = session_parms.REPT;
         data_n++;
-        output[data_n] = kermit_tochar(repeat_count);
+        output[data_n] = kermit_tochar((unsigned char) repeat_count);
         data_n++;
         repeat_count = 1;
     }
@@ -1837,7 +1837,7 @@ static Q_BOOL encode_data_field(PACKET_TYPE type, unsigned char * input,
                                 unsigned char * output,
                                 unsigned int * output_n) {
 
-    int i;
+    unsigned int i;
     int rc;
     unsigned int begin = 0;
     unsigned int data_n = 0;
@@ -2069,8 +2069,8 @@ static Q_BOOL process_send_init() {
     unsigned char whatami;
     unsigned char id_length;
     unsigned char buffer[KERMIT_BLOCK_SIZE];
-    int j;
-    int capas_i = 9;
+    unsigned int j;
+    unsigned int capas_i = 9;
 
     DLOG(("process_send_init()\n"));
 
@@ -2391,7 +2391,7 @@ static Q_BOOL process_send_init() {
  * @return false if the filename is invalid or malformed
  */
 static Q_BOOL process_file_header() {
-    int i;
+    unsigned int i;
     Q_BOOL lower_filename = Q_TRUE;
 
     DLOG(("process_file_header()\n"));
@@ -2458,8 +2458,8 @@ static Q_BOOL process_file_header() {
  * @return false on malformed data
  */
 static Q_BOOL process_attributes() {
-    int i;
-    int j;
+    unsigned int i;
+    unsigned int j;
     int size_k = -1;
     int protection = -1;
     int kermit_protection = -1;
@@ -2891,7 +2891,7 @@ static Q_BOOL process_attributes() {
  * Process the Error packet.
  */
 static void process_error_packet() {
-    int i;
+    unsigned int i;
 
     DLOG(("process_error_packet()\n"));
 
@@ -2920,7 +2920,7 @@ static void process_error_packet() {
  * Create the File-Header packet.
  */
 static void send_file_header() {
-    int i;
+    unsigned int i;
     char ch;
     int last_period = -1;
 
@@ -2981,7 +2981,7 @@ static void send_file_header() {
  * Create the Attributes packet.
  */
 static void send_file_attributes() {
-    int i;
+    unsigned int i;
     char buffer[KERMIT_BLOCK_SIZE];
 
     output_packet.parsed_ok = Q_TRUE;
@@ -3020,7 +3020,7 @@ static void send_file_attributes() {
     DLOG(("send_file_attributes() - file size %s\n", buffer));
     output_packet.data[i] = '1';
     i++;
-    output_packet.data[i] = kermit_tochar(strlen(buffer));
+    output_packet.data[i] = kermit_tochar((unsigned char) strlen(buffer));
     i++;
     memcpy(output_packet.data + i, buffer, strlen(buffer));
     i += strlen(buffer);
@@ -3033,7 +3033,7 @@ static void send_file_attributes() {
     DLOG(("send_file_attributes() - file time %s\n", buffer));
     output_packet.data[i] = '#';
     i++;
-    output_packet.data[i] = kermit_tochar(strlen(buffer));
+    output_packet.data[i] = kermit_tochar((unsigned char) strlen(buffer));
     i++;
     memcpy(output_packet.data + i, buffer, strlen(buffer));
     i += strlen(buffer);
@@ -3045,7 +3045,7 @@ static void send_file_attributes() {
     DLOG(("send_file_attributes() - protection %s\n", buffer));
     output_packet.data[i] = ',';
     i++;
-    output_packet.data[i] = kermit_tochar(strlen(buffer));
+    output_packet.data[i] = kermit_tochar((unsigned char) strlen(buffer));
     i++;
     memcpy(output_packet.data + i, buffer, strlen(buffer));
     i += strlen(buffer);
@@ -4093,8 +4093,9 @@ static Q_BOOL decode_input_bytes(unsigned char * input,
         checksum2 = compute_checksum2(check_begin,
                                       data_length + data_check_diff);
         DLOG(("decode_input_bytes(): type 2 checksum: %c %c (%04x)\n",
-                kermit_tochar((checksum2 >> 6) & 0x3F),
-                kermit_tochar(checksum2 & 0x3F), checksum2));
+                kermit_tochar((unsigned char) ((checksum2 >> 6) & 0x3F)),
+                kermit_tochar((unsigned char) (checksum2 & 0x3F)),
+                checksum2));
         if (checksum2 ==
             ((kermit_unchar(check_begin[data_length + data_check_diff]) << 6) |
              kermit_unchar(check_begin[data_length + data_check_diff + 1]))
@@ -4123,13 +4124,15 @@ static Q_BOOL decode_input_bytes(unsigned char * input,
         checksum2 = compute_checksum2(check_begin,
                                       data_length + data_check_diff);
         DLOG(("decode_input_bytes(): type B checksum: %c %c (%04x)\n",
-                kermit_tochar(((checksum2 >> 6) & 0x3F) + 1),
-                kermit_tochar((checksum2 & 0x3F) + 1), checksum2));
+                kermit_tochar((unsigned char) (((checksum2 >> 6) & 0x3F) + 1)),
+                kermit_tochar((unsigned char) ((checksum2 & 0x3F) + 1)),
+                checksum2));
 
         if (checksum2 == (
             ((kermit_unchar
                 (check_begin[data_length + data_check_diff]) - 1) << 6) |
-                (kermit_unchar(check_begin[data_length + data_check_diff + 1]) - 1))) {
+                (kermit_unchar
+                    (check_begin[data_length + data_check_diff + 1]) - 1))) {
 
             DLOG(("decode_input_bytes(): type B checksum OK\n"));
 
@@ -4155,8 +4158,9 @@ static Q_BOOL decode_input_bytes(unsigned char * input,
     if (check_type == 3) {
         crc = compute_crc16(check_begin, data_length + data_check_diff);
         DLOG(("decode_input_bytes(): type 3 CRC16: %c %c %c (%04x)\n",
-                kermit_tochar((crc >> 12) & 0x0F),
-                kermit_tochar((crc >> 6) & 0x3F), kermit_tochar(crc & 0x3F),
+                kermit_tochar((unsigned char) ((crc >> 12) & 0x0F)),
+                kermit_tochar((unsigned char) ((crc >> 6) & 0x3F)),
+                kermit_tochar((unsigned char) (crc & 0x3F)),
                 crc));
 
         if (crc ==
@@ -4319,8 +4323,9 @@ static Q_BOOL decode_input_bytes(unsigned char * input,
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-static void encode_output_packet(unsigned char * output, int * output_n,
-                                 const int output_max) {
+static void encode_output_packet(unsigned char * output,
+                                 unsigned int * output_n,
+                                 const unsigned int output_max) {
 
     unsigned char checksum;
     short checksum2;
@@ -4357,7 +4362,7 @@ static void encode_output_packet(unsigned char * output, int * output_n,
     /*
      * SEQ
      */
-    output[2] = kermit_tochar(output_packet.seq);
+    output[2] = kermit_tochar((unsigned char) output_packet.seq);
 
     /*
      * TYPE
@@ -4414,8 +4419,8 @@ static void encode_output_packet(unsigned char * output, int * output_n,
         /*
          * LENX1 and LENX2
          */
-        output[4] = kermit_tochar((data_length + 3) / 95);
-        output[5] = kermit_tochar((data_length + 3) % 95);
+        output[4] = kermit_tochar((unsigned char) ((data_length + 3) / 95));
+        output[5] = kermit_tochar((unsigned char) ((data_length + 3) % 95));
         /*
          * HCHECK
          */
@@ -4423,9 +4428,9 @@ static void encode_output_packet(unsigned char * output, int * output_n,
             output[1] + output[2] + output[3] + output[4] + output[5];
         hcheck_computed =
             (hcheck_computed + ((hcheck_computed & 192) / 64)) & 63;
-        output[6] = kermit_tochar(hcheck_computed);
+        output[6] = kermit_tochar((unsigned char) hcheck_computed);
     } else {
-        output[1] = kermit_tochar(packet_length);
+        output[1] = kermit_tochar((unsigned char) packet_length);
     }
     DLOG(("encode_output_bytes(): long_packet %s packet_length %d data_length %d check_type %d status.check_type %d\n",
             (output_packet.long_packet == Q_TRUE ? "true" : "false"),
@@ -4452,13 +4457,14 @@ static void encode_output_packet(unsigned char * output, int * output_n,
                                       data_length + data_check_diff);
 
         DLOG(("encode_output_bytes(): type 2 checksum: %c %c (%04x)\n",
-                kermit_tochar((checksum2 >> 6) & 0x3F),
-                kermit_tochar(checksum2 & 0x3F), checksum2));
+                kermit_tochar((unsigned char) ((checksum2 >> 6) & 0x3F)),
+                kermit_tochar((unsigned char) (checksum2 & 0x3F)),
+                checksum2));
 
         check_begin[data_length + data_check_diff] =
-            kermit_tochar((checksum2 >> 6) & 0x3F);
+            kermit_tochar((unsigned char) ((checksum2 >> 6) & 0x3F));
         check_begin[data_length + data_check_diff + 1] =
-            kermit_tochar(checksum2 & 0x3F);
+            kermit_tochar((unsigned char) (checksum2 & 0x3F));
     }
 
     if (check_type == 12) {
@@ -4466,29 +4472,31 @@ static void encode_output_packet(unsigned char * output, int * output_n,
                                       data_length + data_check_diff);
 
         DLOG(("encode_output_bytes(): type B checksum: %c %c (%04x)\n",
-                kermit_tochar(((checksum2 >> 6) & 0x3F) + 1),
-                kermit_tochar((checksum2 & 0x3F) + 1), checksum2));
+                kermit_tochar((unsigned char) (((checksum2 >> 6) & 0x3F) + 1)),
+                kermit_tochar((unsigned char) ((checksum2 & 0x3F) + 1)),
+                checksum2));
 
         check_begin[data_length + data_check_diff] =
-            kermit_tochar(((checksum2 >> 6) & 0x3F) + 1);
+            kermit_tochar((unsigned char) (((checksum2 >> 6) & 0x3F) + 1));
         check_begin[data_length + data_check_diff + 1] =
-            kermit_tochar((checksum2 & 0x3F) + 1);
+            kermit_tochar((unsigned char) ((checksum2 & 0x3F) + 1));
     }
 
     if (check_type == 3) {
         crc = compute_crc16(check_begin, data_length + data_check_diff);
 
         DLOG(("encode_output_bytes(): type 3 CRC16: %c %c %c (%04x)\n",
-                kermit_tochar((crc >> 12) & 0x0F),
-                kermit_tochar((crc >> 6) & 0x3F), kermit_tochar(crc & 0x3F),
+                kermit_tochar((unsigned char) ((crc >> 12) & 0x0F)),
+                kermit_tochar((unsigned char) ((crc >> 6) & 0x3F)),
+                kermit_tochar((unsigned char) (crc & 0x3F)),
                 crc));
 
         check_begin[data_length + data_check_diff] =
-            kermit_tochar((crc >> 12) & 0x0F);
+            kermit_tochar((unsigned char) ((crc >> 12) & 0x0F));
         check_begin[data_length + data_check_diff + 1] =
-            kermit_tochar((crc >> 6) & 0x3F);
+            kermit_tochar((unsigned char) ((crc >> 6) & 0x3F));
         check_begin[data_length + data_check_diff + 2] =
-            kermit_tochar(crc & 0x3F);
+            kermit_tochar((unsigned char) (crc & 0x3F));
     }
 
     output[packet_length + 2] = session_parms.EOL;
@@ -5716,8 +5724,8 @@ static int find_output_slot() {
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-static void check_for_repeat(unsigned char * output, int * output_n,
-                             const int output_max) {
+static void check_for_repeat(unsigned char * output, unsigned int * output_n,
+                             const unsigned int output_max) {
 
     int i = -1;
     Q_BOOL resend = Q_FALSE;
@@ -5991,8 +5999,8 @@ static void save_input_packet() {
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-static void handle_timeout(unsigned char * output, int * output_n,
-                           const int output_max) {
+static void handle_timeout(unsigned char * output, unsigned int * output_n,
+                           const unsigned int output_max) {
 
     int i;
     Q_BOOL found_nak = Q_FALSE;
@@ -6136,8 +6144,9 @@ static void move_windows() {
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-void kermit(unsigned char * input, int input_n, unsigned char * output,
-            int * output_n, const int output_max) {
+void kermit(unsigned char * input, unsigned int input_n,
+            unsigned char * output, unsigned int * output_n,
+            const int output_max) {
 
     unsigned int discard = 0;
     Q_BOOL done = Q_FALSE;
@@ -6145,7 +6154,7 @@ void kermit(unsigned char * input, int input_n, unsigned char * output,
     Q_BOOL had_some_input = Q_TRUE;
     unsigned int free_space_needed = 0;
     static int ctrl_c_count = 0;
-    int i;
+    unsigned int i;
     unsigned int output_n_start;
 
     /*

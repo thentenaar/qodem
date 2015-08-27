@@ -196,7 +196,7 @@ static void avatar_set_color(const unsigned char from_modem) {
     if ((from_modem & 0x80) != 0) {
         attr |= Q_A_BLINK;
     }
-    q_current_color = attr | color_to_attr((fg << 3) | bg);
+    q_current_color = attr | color_to_attr((short) ((fg << 3) | bg));
 
     DLOG(("new color: %04x\n", (unsigned int) q_current_color));
 }

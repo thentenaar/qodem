@@ -113,7 +113,7 @@ static void insert_char(struct field * field, int keystroke) {
  * @param fieldset the fieldset
  * @param keystroke Q_KEY_*, see input.h.
  */
-void fieldset_keystroke(struct fieldset * fieldset, int keystroke) {
+void fieldset_keystroke(struct fieldset * fieldset, const int keystroke) {
     struct field * field = fieldset->active_field;
     assert(fieldset->active_field != NULL);
     assert(q_key_code_yes(keystroke) == 0);
@@ -505,7 +505,7 @@ char * field_get_char_value(struct field * field) {
         (char *) Xmalloc(sizeof(char) * (field->data_n + 1), __FILE__,
                          __LINE__);
     for (i = 0; i < field->data_n; i++) {
-        value[i] = field->data[i];
+        value[i] = (char) field->data[i];
     }
     value[field->data_n] = 0;
     return value;
@@ -545,7 +545,7 @@ void field_set_value(struct field * field, const wchar_t * value) {
  * @param value the new field value
  */
 void field_set_char_value(struct field * field, const char * value) {
-    int i;
+    unsigned int i;
     assert(strlen(value) <= Q_FIELD_SIZE);
 
     if (field->fixed == Q_TRUE) {

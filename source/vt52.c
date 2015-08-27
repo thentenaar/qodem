@@ -82,7 +82,7 @@ static void clear_state(wchar_t * to_screen) {
  * @param keep_char the character to save into q_emul_buffer
  * @param to_screen one of the Q_EMULATION_STATUS constants.  See emulation.h.
  */
-static void save_char(wchar_t keep_char, wchar_t * to_screen) {
+static void save_char(unsigned char keep_char, wchar_t * to_screen) {
     q_emul_buffer[q_emul_buffer_n] = keep_char;
     q_emul_buffer_n++;
     *to_screen = 1;

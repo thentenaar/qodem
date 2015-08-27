@@ -245,7 +245,7 @@ extern void erase_line(const int start, const int end,
  * have the A_PROTECT attribute set
  */
 extern void fill_line_with_character(const int start, const int end,
-                                     wchar_t character,
+                                     const wchar_t character,
                                      const Q_BOOL honor_protected);
 
 /**

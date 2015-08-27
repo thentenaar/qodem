@@ -191,9 +191,11 @@ extern void dialer_keyboard_handler(const int keystroke, const int flags);
  * @param output_max the maximum number of bytes this function may write to
  * output
  */
-extern void dialer_process_data(unsigned char * input, const int input_n,
+extern void dialer_process_data(unsigned char * input,
+                                const unsigned int input_n,
                                 int * remaining, unsigned char * output,
-                                int * output_n, const int output_max);
+                                unsigned int * output_n,
+                                const unsigned int output_max);
 
 /**
  * Set the global state based on a phonebook entry toggles.  This is used to
