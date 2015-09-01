@@ -792,10 +792,6 @@ static void cleanup_connection() {
 
     DLOG(("cleanup_connection()\n"));
 
-#ifndef Q_NO_SERIAL
-    assert(q_status.dial_method != Q_DIAL_METHOD_MODEM);
-#endif
-
     if ((q_program_state == Q_STATE_HOST) || (q_host_active == Q_TRUE)) {
         switch (q_host_type) {
         case Q_HOST_TYPE_SOCKET:
@@ -829,6 +825,10 @@ static void cleanup_connection() {
         }
 
     } else {
+
+#ifndef Q_NO_SERIAL
+        assert(q_status.dial_method != Q_DIAL_METHOD_MODEM);
+#endif
 
         switch (q_status.dial_method) {
         case Q_DIAL_METHOD_SOCKET:
@@ -963,8 +963,10 @@ static Q_BOOL is_readable(int fd) {
 
 #ifdef Q_SSH_CRYPTLIB
     /* SSH special case: see if we should read again anyway */
-    if ((q_status.dial_method == Q_DIAL_METHOD_SSH) &&
-        (net_is_connected() == Q_TRUE)
+    if (((q_status.dial_method == Q_DIAL_METHOD_SSH) &&
+            (net_is_connected() == Q_TRUE)) ||
+        (((q_program_state == Q_STATE_HOST) || (q_host_active == Q_TRUE)) &&
+            (q_host_type == Q_HOST_TYPE_SSHD))
     ) {
         if (fd == q_child_tty_fd) {
             if (ssh_maybe_readable() == Q_TRUE) {

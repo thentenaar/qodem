@@ -38,7 +38,7 @@
 /**
  * The name to pair with the next dlogprintf() call.
  */
-const char * dlogname = NULL;
+char * dlogname = NULL;
 
 /**
  * When true, emit the timestamp on the next dlogprintf() call.
@@ -481,7 +481,7 @@ wchar_t * wmemmove(wchar_t * dest, const wchar_t * src, size_t n) {
 
 #endif
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(_DEBUG)
 
 /**
  * Wide-char equivalent of memset().  Visual C++ actually has a wmemset(),

@@ -3476,10 +3476,10 @@ void console_info_refresh() {
 #  endif
 #endif
                           " "
-#if defined(__amd64)
+#if defined(__amd64) || defined(_WIN64)
                           "x86_64"
 #else
-#  if defined(__i386)
+#  if defined(__i386) || (defined(_WIN32) && !defined(_WIN64))
                           "i386"
 #  else
                           "unknown"

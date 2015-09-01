@@ -1616,11 +1616,15 @@ listen_bound_ok:
     listen_fd = fd;
 
     /*
-     * Make fd non-blocking.  Note do this LAST so that net_is_listening() is
-     * true inside set_nonblock().
+     * Note that fd comes out of this as a blocking socket.  On Linux, the
+     * accept()'d child socket will always be blocking too, but on Windows
+     * the accept()'d socket inherits the behavior of the listen()'ing
+     * socket, hence if we set non-blocking now then we will need to set
+     * blocking before cryptlib can do anything with it.  The better solution
+     * is just to leave it blocking all the way through, and set the
+     * accept()'d socket to non-blocking only at the end of net_accept() and
+     * only for non-ssh sockets.
      */
-    // set_nonblock(fd);
-
     return fd;
 }
 
@@ -1690,10 +1694,24 @@ static Q_BOOL has_connection() {
 int net_accept() {
     char notify_message[DIALOG_MESSAGE_SIZE];
     int fd = -1;
+#ifdef Q_PDCURSES_WIN32
+    /*
+     * Microsoft decided that sockaddr's would only support IPv4, despite
+     * being able to see other sane systems that use a single sockaddr that
+     * is big enough for both IPv4 and IPv6.  They introduced
+     * SOCKADDR_STORAGE in Windows Vista (!) meaning that IPv4/v6-agnostic
+     * code can only be written for Vista and above, despite XP having IPv6
+     * support.  Soo...  since I would like to support Win2k and XP, let's
+     * ASSUME that enough space for 4x sockaddr will be sufficient.
+     */
+    struct sockaddr remote_sockaddr[4];
+    struct sockaddr local_sockaddr[4];
+#else
     struct sockaddr remote_sockaddr;
-    socklen_t remote_sockaddr_length = sizeof(struct sockaddr);
     struct sockaddr local_sockaddr;
-    socklen_t local_sockaddr_length = sizeof(struct sockaddr);
+#endif
+    socklen_t remote_sockaddr_length;
+    socklen_t local_sockaddr_length;
     char local_port[NI_MAXSERV];
     int local_errno;
 
@@ -1701,7 +1719,19 @@ int net_accept() {
         return -1;
     }
 
+    remote_sockaddr_length = sizeof(remote_sockaddr);
+    local_sockaddr_length = sizeof(local_sockaddr);
+
+#ifdef Q_PDCURSES_WIN32
+    memset(&remote_sockaddr[0], 0, remote_sockaddr_length);
+    memset(&local_sockaddr[0], 0, local_sockaddr_length);
     fd = accept(listen_fd, &remote_sockaddr, &remote_sockaddr_length);
+#else
+    memset(&remote_sockaddr, 0, remote_sockaddr_length);
+    memset(&local_sockaddr, 0, local_sockaddr_length);
+    fd = accept(listen_fd, &remote_sockaddr, &remote_sockaddr_length);
+#endif
+
     local_errno = get_errno();
     if (fd < 0) {
 
@@ -1730,6 +1760,19 @@ int net_accept() {
     /*
      * We connected ok.
      */
+#ifdef Q_PDCURSES_WIN32
+    getpeername(fd, &remote_sockaddr[0], &remote_sockaddr_length);
+    getnameinfo(&remote_sockaddr[0], remote_sockaddr_length,
+                remote_host, sizeof(remote_host),
+                remote_port, sizeof(remote_port),
+                NI_NUMERICHOST | NI_NUMERICSERV);
+
+    getsockname(fd, &local_sockaddr[0], &local_sockaddr_length);
+    getnameinfo(&local_sockaddr[0], local_sockaddr_length,
+                local_host, sizeof(local_host),
+                local_port, sizeof(local_port),
+                NI_NUMERICHOST | NI_NUMERICSERV);
+#else
     getpeername(fd, &remote_sockaddr, &remote_sockaddr_length);
     getnameinfo(&remote_sockaddr, remote_sockaddr_length,
                 remote_host, sizeof(remote_host),
@@ -1741,7 +1784,7 @@ int net_accept() {
                 local_host, sizeof(local_host),
                 local_port, sizeof(local_port),
                 NI_NUMERICHOST | NI_NUMERICSERV);
-
+#endif
 
     DLOG(("net_accept() : connected.\n"));
     DLOG(("             Remote host is %s %s\n", remote_host, remote_port));
@@ -1804,18 +1847,17 @@ void net_close() {
     }
 #endif /* Q_SSH_CRYPTLIB */
 
-    DLOG(("net_close() : shutdown(q_child_tty_fd, SHUT_RDWR)\n"));
+    DLOG(("net_close() : shutdown(q_child_tty_fd, SHUT_WR)\n"));
 
     /*
      * All we do is shutdown().  read() will return 0 when the remote side
      * close()s.
      */
 #ifdef Q_PDCURSES_WIN32
-    shutdown(q_child_tty_fd, SD_BOTH);
+    shutdown(q_child_tty_fd, SD_SEND);
 #else
-    shutdown(q_child_tty_fd, SHUT_RDWR);
+    shutdown(q_child_tty_fd, SHUT_WR);
 #endif
-    connected = Q_FALSE;
 
 #ifdef Q_UPNP
     if (upnp_is_initted == Q_TRUE) {
@@ -2546,8 +2588,9 @@ ssize_t telnet_read(const int fd, void * buf, size_t count) {
 
     if ((read_buffer_n == 0) && (nvt.eof_msg == Q_TRUE)) {
         /*
-         * We are done, return the final EOF
+         * We are done, return the final EOF and do not permit further reads.
          */
+        connected = Q_FALSE;
         return 0;
     }
 
@@ -3433,10 +3476,9 @@ ssize_t rlogin_read(const int fd, void * buf, size_t count, Q_BOOL oob) {
     if (nvt.is_eof == Q_TRUE) {
         DLOG(("rlogin_read() : no read because EOF\n"));
         /*
-         * Let the caller know this is now closed
+         * Do nothing
          */
-        set_errno(EIO);
-        return -1;
+
     } else {
         if (oob == Q_TRUE) {
             /*
@@ -3521,20 +3563,10 @@ ssize_t rlogin_read(const int fd, void * buf, size_t count, Q_BOOL oob) {
                     get_strerror(get_errno())));
 
 
-#ifdef Q_PDCURSES_WIN32
-            if ((get_errno() == EAGAIN) || (get_errno() == WSAEWOULDBLOCK)) {
-#else
-            if (get_errno() == EAGAIN) {
-#endif
-                /*
-                 * NOP
-                 */
-            } else {
-                /*
-                 * EOF - Drop a connection close message
-                 */
-                nvt.is_eof = Q_TRUE;
-            }
+            /*
+             * EOF - Drop a connection close message
+             */
+            nvt.is_eof = Q_TRUE;
         } else {
             /*
              * More data came in
@@ -3545,14 +3577,16 @@ ssize_t rlogin_read(const int fd, void * buf, size_t count, Q_BOOL oob) {
 
     if ((read_buffer_n == 0) && (nvt.eof_msg == Q_TRUE)) {
         /*
-         * We are done, return the final EOF
+         * We are done, return the final EOF and do not permit further reads.
          */
+        connected = Q_FALSE;
         return 0;
     }
 
     if ((read_buffer_n == 0) && (nvt.is_eof == Q_TRUE)) {
         /*
-         * EOF - Drop "Connection closed."
+         * EOF - Drop "Connection closed."  Note that we don't check for host
+         * mode because we do not support rlogin host.
          */
         snprintf((char *) read_buffer, sizeof(read_buffer), "%s",
                  _("Connection closed.\r\n"));
@@ -3729,6 +3763,9 @@ static int ssh_setup_connection(int fd, const char * host, const char * port) {
     char buffer[64];
     int tcp_flag = 1;
 
+    /* Make sure we have a socket */
+    assert (fd != -1);
+
     /*
      * cryptlib needs the socket to be blocking.  We can do this now because
      * net_connect_finish() is done.
@@ -3736,9 +3773,6 @@ static int ssh_setup_connection(int fd, const char * host, const char * port) {
     set_blocking(fd);
 
     DLOG(("ssh_setup_connection(): user %ls\n", q_status.current_username));
-
-    /* Make sure we have a socket */
-    assert (fd != -1);
 
     /* Setup the crypt session */
     cryptStatus = cryptCreateSession(&cryptSession, cryptUser,
@@ -3755,6 +3789,8 @@ static int ssh_setup_connection(int fd, const char * host, const char * port) {
         DLOG(("ERROR cryptSetAttribute(CRYPT_SESSINFO_USERNAME)\n"));
         goto crypt_error;
     }
+
+    DLOG(("ssh_setup_connection(): setting password...\n"));
 
     sprintf(buffer, "%ls", q_status.current_password);
     cryptStatus = cryptSetAttributeString(cryptSession, CRYPT_SESSINFO_PASSWORD,
@@ -3796,8 +3832,8 @@ static int ssh_setup_connection(int fd, const char * host, const char * port) {
     DLOG(("SSH connection established: fd = %d\n", fd));
 
     /* Set the network timeouts to mimic non-blocking behavior */
-    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_READTIMEOUT, 1);
-    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_WRITETIMEOUT, 1);
+    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_READTIMEOUT, 0);
+    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_WRITETIMEOUT, 0);
 
     /* All done, let's get to moving data! */
     return fd;
@@ -3866,7 +3902,10 @@ ssize_t ssh_read(const int fd, void * buf, size_t count) {
 
     if (nvt.is_eof == Q_TRUE) {
         DLOG(("ssh_read() : no read because EOF\n"));
-        /* Return EOF */
+        /*
+         * We are done, return the final EOF and do not permit further reads.
+         */
+        connected = Q_FALSE;
         return 0;
     }
 
@@ -3877,7 +3916,9 @@ ssize_t ssh_read(const int fd, void * buf, size_t count) {
         emit_crypto_error(cryptStatus, cryptSession);
 
         /* cryptlib error */
-        if (cryptStatus == CRYPT_ERROR_COMPLETE) {
+        if ((cryptStatus == CRYPT_ERROR_COMPLETE) ||
+            (cryptStatus == CRYPT_ERROR_READ)
+        ) {
             DLOG(("EOF EOF EOF\n"));
 
             /* Remote end has closed connection */
@@ -4339,8 +4380,8 @@ static int ssh_accept(int fd) {
 
     /* Set the network timeouts to mimic non-blocking behavior */
     DLOG(("Setting network timeouts to small values.\n"));
-    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_READTIMEOUT, 1);
-    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_WRITETIMEOUT, 1);
+    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_READTIMEOUT, 0);
+    cryptSetAttribute(cryptSession, CRYPT_OPTION_NET_WRITETIMEOUT, 0);
 
     DLOG(("SSH server session established: fd = %d\n", fd));
 

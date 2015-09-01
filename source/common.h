@@ -130,27 +130,27 @@ extern "C" {
  * file that uses DLOG().  So all a source has to do is define DLOGNAME to
  * non-NULL and logging will be active for that translation unit.
  */
-#define DLOG(A)                 \
-do {                            \
-if (DLOGNAME != NULL) {         \
-    dlogtimestamp = Q_TRUE;     \
-    dlogname = DLOGNAME;        \
-    dlogprintf A;               \
-} else {                        \
-    /* Do nothing */            \
+#define DLOG(A)                         \
+do {                                    \
+if (DLOGNAME != NULL) {                 \
+    dlogtimestamp = Q_TRUE;             \
+    dlogname = (char *) DLOGNAME;       \
+    dlogprintf A;                       \
+} else {                                \
+    /* Do nothing */                    \
 }}  while (0);
 
 /*
  * Continue a previous DLOG message, i.e. do not emit the timestamp.
  */
-#define DLOG2(A)                \
-do {                            \
-if (DLOGNAME != NULL) {         \
-    dlogtimestamp = Q_FALSE;    \
-    dlogname = DLOGNAME;        \
-    dlogprintf A;               \
-} else {                        \
-    /* Do nothing */            \
+#define DLOG2(A)                        \
+do {                                    \
+if (DLOGNAME != NULL) {                 \
+    dlogtimestamp = Q_FALSE;            \
+    dlogname = (char *) DLOGNAME;       \
+    dlogprintf A;                       \
+} else {                                \
+    /* Do nothing */                    \
 }}  while (0);
 
 /* Globals ---------------------------------------------------------------- */
@@ -159,7 +159,7 @@ if (DLOGNAME != NULL) {         \
  * The name to pair with the next dlogprintf() call.  It needs to be exposed
  * so that DLOG/DLOG2 can set it.
  */
-extern const char * dlogname;
+extern char * dlogname;
 
 /**
  * When true, emit the timestamp on the next dlogprintf() call.  It needs to

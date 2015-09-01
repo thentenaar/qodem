@@ -615,7 +615,6 @@ void set_blocking(const int fd) {
      */
     WSAEventSelect(fd, NULL, 0);
     ioctlsocket(fd, FIONBIO, &non_block_mode);
-
 }
 
 #else

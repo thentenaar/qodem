@@ -531,6 +531,8 @@ static void host_stop() {
 #else
         close_connection();
 #endif
+    } else {
+        assert(q_status.online == Q_FALSE);
     }
 
     q_host_active = Q_FALSE;

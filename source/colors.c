@@ -852,13 +852,13 @@ void q_setup_colors() {
         }
 
         /*
-         * Special case: put black-on-black at 0x38 and 128 + 0x38
+         * Special case: put black-on-black at 0x38 and 64 + 0x38
          */
         init_pair(0x38                      , COLOR_BLACK    , COLOR_BLACK);
         init_pair(0x38 + q_color_bold_offset, COLOR_BLACK + 8, COLOR_BLACK);
 
         /*
-         * Special case: put white-on-black at 64 and 128
+         * Special case: put white-on-black at 64 and 64 + 64
          */
         init_pair(64                      , COLOR_WHITE    , COLOR_BLACK);
         init_pair(64 + q_color_bold_offset, COLOR_WHITE + 8, COLOR_BLACK);
