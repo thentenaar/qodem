@@ -1,6 +1,25 @@
 The Qodem Project Work Log
 ==========================
 
+September 3, 2015
+
+On that last commit a few days ago I reached a major milestone but
+didn't have time to write on it.  Under VC6 and Windows 7 (haven't
+tested XP), cryptlib appears to be fully functional: ssh client and
+host are working.  This is really big, because cryptlib was (let's be
+honest) a freaking bear to get even marginally working under Borland,
+and now that I have a working version I can either figure out how
+cryptlib broke under Borland or just ship a VC6 binary as the qodem
+release.  I will probably end up using VC6 as the release binary, but
+I do want to support Borland anyway even if it means that ssh is
+broken.
+
+I'm stubbing in support for the last third-party piece, miniupnpc.
+While I'm here we'll update to the latest version 1.9 which has some
+serious fixes compared to the old 1.4.  Once this is working on
+Windows and Linux I'll be back to my old ways of fixing bugs and
+testing.
+
 August 26, 2015
 
 I've got a VC6 qodem built with all of the same functionality

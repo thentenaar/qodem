@@ -97,6 +97,10 @@ Win32 port:
     Eliminate warnings
   Borland 5.5 build
     Eliminate warnings
+  Test on XP
+  Test on 2k
+  Test on 98
+  Test on 7
 
 OS X Build:
   App Icon

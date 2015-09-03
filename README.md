@@ -13,7 +13,8 @@ connections.
 
 The Qodem homepage, which includes an extensive archive of Qmodem(tm)
 releases, a getting started guide, and Qodem binary downloads, is at:
-http://qodem.sourceforge.net .
+http://qodem.sourceforge.net .  The Qodem source code is hosted at:
+https://github.com/klamonte/qodem .
 
 As for Qmodem(tm): Qmodem(tm) was last distributed by Mustang
 Software, Inc. (MSI).  Qmodem and QmodemPro were acquired by Quintus
@@ -109,18 +110,18 @@ WHY A CONSOLE-BASED TERMINAL EMULATOR?
 
 More seriously, Qodem has several advantages over the native console
 or the typical "local shell" X-based emulator.  But it also has an X11
-version (qodem-x11) so these same features are available to modern
-X11-based desktop users.
+version (qodem-x11) and supports Windows so these same features are
+available to modern GUI desktop users
 
-First, Qodem provides a lot of X-based emulator-isms to the text
+First, Qodem provides a lot of GUI-based emulator-isms to the text
 console: scrollback, screen dump, capture, keyboard macros, etc.
 These functions are very handy when you need to work a lot at the
 command line.
 
 Second, Qodem provides access to X/Y/Zmodem and Kermit upload and
-download protocols over almost any interactive network link (via local
-shell if nothing else).  This is extremely useful for quick-and-dirty
-file transfers when firewalls are blocking the standard protocols.
+download protocols over almost any interactive network link or local
+shell session.  This is extremely useful for quick-and-dirty file
+transfers when firewalls are blocking the standard protocols.
 
 Third, Qodem translates the character sets of the remote systems into
 Unicode in a manner similar to GNU screen.  This allows modern systems
@@ -216,13 +217,17 @@ appears to work normally.  The win32a build appears to work correctly.
 
 Serial port support is currently disabled for the Windows build.  If
 enough user demand arises, or a patch comes in, this may be
-implemented via TAPI.
+implemented.
 
-SDL sound is disabled for the Windows build.  Currently this only
-affects ANSI music.
+The Windows build uses Beep() rather than SDL for sounds.  This might
+not work on Windows Vista and 64-bit XP systems.
 
 Qodem manages its own known_hosts file for SSH connections.  This file
 is stored in the Documents\qodem\prefs directory.
+
+SSH connections (client or host) using cryptlib do not work when
+compiled with the Borland compiler, nor when compiled with the Visual
+C++ compiler and running on Windows 2000 or earlier.
 
 
 
