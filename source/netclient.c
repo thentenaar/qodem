@@ -445,7 +445,7 @@ static Q_BOOL upnp_init() {
 
     DLOG(("upnp_init() : upnpDiscover()\n"));
 
-    device_list = upnpDiscover(2000, NULL, NULL, 0);
+    device_list = upnpDiscover(2000, NULL, NULL, 0, 1, 2, NULL);
     if (device_list != NULL) {
 
         rc = UPNP_GetValidIGD(device_list, &upnp_urls, &upnp_igd_datas,
@@ -481,7 +481,7 @@ static Q_BOOL upnp_init() {
          * Grab the external interface
          */
         rc = UPNP_GetExternalIPAddress(upnp_urls.controlURL,
-                                       upnp_igd_datas.servicetype,
+                                       upnp_igd_datas.first.servicetype,
                                        upnp_external_address);
         if (rc != 0) {
             DLOG(("upnp_init(): failed to discover external IP address: %d\n",
@@ -517,7 +517,7 @@ static void upnp_teardown() {
                 local_host, upnp_local_port));
 
         UPNP_DeletePortMapping(upnp_urls.controlURL,
-                               upnp_igd_datas.servicetype,
+                               upnp_igd_datas.first.servicetype,
                                upnp_local_port, "TCP", NULL);
         upnp_forwarded = Q_FALSE;
     }
@@ -561,9 +561,9 @@ static Q_BOOL upnp_forward_port(int fd, int port) {
             upnp_local_port));
 
     rc = UPNP_AddPortMapping(upnp_urls.controlURL,
-                             upnp_igd_datas.servicetype,
+                             upnp_igd_datas.first.servicetype,
                              upnp_local_port, upnp_local_port, local_host,
-                             "qodem", "TCP", NULL);
+                             "qodem", "TCP", NULL, NULL);
 
     if (rc != 0) {
         DLOG(("upnp_forward_port(): port forward failed: %d\n", rc));

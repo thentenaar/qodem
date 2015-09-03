@@ -67,6 +67,10 @@ LDFLAGS =
 CRYPTLIB_DIR = lib/cryptlib
 CRYPTLIB_A = $(CRYPTLIB_DIR)/libcl.a
 
+# miniupnpc support
+MINIUPNPC_DIR = lib/upnp
+MINIUPNPC_A = $(MINIUPNPC_DIR)/libminiupnpc.a
+
 # Compiler
 CC = cc
 
@@ -77,11 +81,16 @@ CC = cc
 # LDLIBS = -lncursesw -lutil
 
 # Debug settings which include cryptlib support
-EXTRA_LIBS = $(CRYPTLIB_A)
-EXTRA_INC = $(CRYPTLIB_DIR)
-CFLAGS = -O0 -Wall -ggdb $(INC) -I$(EXTRA_INC) -DQ_SSH_CRYPTLIB -DCONFIG_PROFILE_SSH
-LDLIBS = -lncursesw -lutil $(CRYPTLIB_A) -lpthread
+# EXTRA_LIBS = $(CRYPTLIB_A)
+# EXTRA_INC = -I$(CRYPTLIB_DIR)
+# CFLAGS = -O0 -Wall -ggdb $(INC) $(EXTRA_INC) -DQ_SSH_CRYPTLIB -DCONFIG_PROFILE_SSH
+# LDLIBS = -lncursesw -lutil $(CRYPTLIB_A) -lpthread
 
+# Debug settings which include cryptlib and miniupnpc support
+EXTRA_LIBS = $(CRYPTLIB_A) $(MINIUPNPC_A)
+EXTRA_INC = -I$(CRYPTLIB_DIR) -I$(MINIUPNPC_DIR)
+CFLAGS = -O0 -Wall -ggdb $(INC) $(EXTRA_INC) -DQ_SSH_CRYPTLIB -DCONFIG_PROFILE_SSH -DQ_UPNP
+LDLIBS = -lncursesw -lutil $(CRYPTLIB_A) $(MINIUPNPC_A) -lpthread
 
 
 # ----------------------------------------------------------------------------
