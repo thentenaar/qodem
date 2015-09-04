@@ -82,8 +82,6 @@ Win32 port:
     open_serial_port
     configure_serial_port
     close_serial_port
-  cryptlib
-  UPnP
   Eliminate reasonable Borland warnings
   Fix mouse tracking to do mouse and not copy-to-clipboard
   Use Beep() and support bells and music

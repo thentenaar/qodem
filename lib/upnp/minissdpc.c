@@ -9,7 +9,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
+#if defined(__BORLANDC__) || defined(_MSC_VER)
+typedef int ssize_t;
+#endif
 #include <sys/types.h>
 #if defined(_WIN32) || defined(__amigaos__) || defined(__amigaos4__)
 #ifdef _WIN32

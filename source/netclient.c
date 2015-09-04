@@ -1725,7 +1725,7 @@ int net_accept() {
 #ifdef Q_PDCURSES_WIN32
     memset(&remote_sockaddr[0], 0, remote_sockaddr_length);
     memset(&local_sockaddr[0], 0, local_sockaddr_length);
-    fd = accept(listen_fd, &remote_sockaddr, &remote_sockaddr_length);
+    fd = accept(listen_fd, &remote_sockaddr[0], &remote_sockaddr_length);
 #else
     memset(&remote_sockaddr, 0, remote_sockaddr_length);
     memset(&local_sockaddr, 0, local_sockaddr_length);
