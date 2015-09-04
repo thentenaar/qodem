@@ -102,6 +102,9 @@ LDLIBS = -lncursesw -lutil $(CRYPTLIB_A) $(MINIUPNPC_A) -lpthread
 $(CRYPTLIB_A):
 	cd $(CRYPTLIB_DIR) && make
 
+$(MINIUPNPC_A):
+	cd $(MINIUPNPC_DIR) && make
+
 $(QODEM_OBJS_DIR):
 	-mkdir $(QODEM_OBJS_DIR)
 

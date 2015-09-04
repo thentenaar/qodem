@@ -532,6 +532,13 @@ static void host_stop() {
         close_connection();
 #endif
     } else {
+        /*
+         * TODO BUG:
+         *
+         * This assertion fired when using UPnP on a socket/telnet listener
+         * and doing a force hangup during the login.  Needs more time to
+         * fix.
+         */
         assert(q_status.online == Q_FALSE);
     }
 
@@ -652,7 +659,7 @@ static void do_login() {
          */
         if ((strcmp(login_username, get_option(Q_OPTION_HOST_USERNAME)) == 0) &&
             (strcmp(login_password, get_option(Q_OPTION_HOST_PASSWORD)) == 0)
-            ) {
+        ) {
             /*
              * Login OK, move to main menu
              */

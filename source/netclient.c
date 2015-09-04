@@ -445,7 +445,7 @@ static Q_BOOL upnp_init() {
 
     DLOG(("upnp_init() : upnpDiscover()\n"));
 
-    device_list = upnpDiscover(2000, NULL, NULL, 0, 1, 2, NULL);
+    device_list = upnpDiscover(2000, NULL, NULL, 0, 0, 2, NULL);
     if (device_list != NULL) {
 
         rc = UPNP_GetValidIGD(device_list, &upnp_urls, &upnp_igd_datas,
@@ -1859,11 +1859,6 @@ void net_close() {
     shutdown(q_child_tty_fd, SHUT_WR);
 #endif
 
-#ifdef Q_UPNP
-    if (upnp_is_initted == Q_TRUE) {
-        upnp_teardown();
-    }
-#endif
 }
 
 /**
@@ -1887,6 +1882,12 @@ void net_listen_close() {
 #endif
 
     listening = Q_FALSE;
+
+#ifdef Q_UPNP
+    if (upnp_is_initted == Q_TRUE) {
+        upnp_teardown();
+    }
+#endif
 }
 
 /* -------------------------------------------------------------------------- */

@@ -18,6 +18,11 @@ BUG: free kbytes on download menu broken on Borland
 
 BUG: reverse video vttest on Borland
 
+BUG: host mode chat inside message entry doesn't clear entry or return
+     to message editor
+
+BUG: host mode assertion failure when hanging up during login
+
 1.0.0
 -----
 
