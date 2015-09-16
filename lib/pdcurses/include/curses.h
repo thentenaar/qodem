@@ -378,7 +378,7 @@ PDCEX  int          COLORS;
 PDCEX  int          COLOR_PAIRS;
 PDCEX  int          TABSIZE;
 PDCEX  chtype       acs_map[];    /* alternate character set map */
-PDCEX  char         ttytype[];    /* terminal name/description */
+PDCEX  char         pdc_ttytype[];    /* terminal name/description */
 
 /*man-start**************************************************************
 

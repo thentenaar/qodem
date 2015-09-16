@@ -110,7 +110,7 @@ char *longname(void)
 {
     PDC_LOG(("longname() - called\n"));
 
-    return ttytype + 9; /* skip "pdcurses|" */
+    return pdc_ttytype + 9; /* skip "pdcurses|" */
 }
 
 chtype termattrs(void)

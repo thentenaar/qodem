@@ -128,9 +128,9 @@ if [ '$(CROSSCOMPILE)x' = '1x' ] ; then
 	CFLAGS="$* `./tools/ccopts.sh $CC $OSNAME` \
 			-DOSVERSION=`./tools/osversion.sh $OSNAME`" ;
 	if [ $SHARED -gt 0 ] ; then
-		make TARGET=$SLIBNAME OBJPATH=$SHARED_OBJ_PATH $CFLAGS $OSNAME ;
+		make -f makefile TARGET=$SLIBNAME OBJPATH=$SHARED_OBJ_PATH $CFLAGS $OSNAME ;
 	else
-		make $CFLAGS $OSNAME ;
+		make -f makefile $CFLAGS $OSNAME ;
 	fi ;
 fi
 
@@ -181,7 +181,7 @@ buildWithGcc()
 	OSNAME=$1
 	shift
 
-	make CC=gcc LD=gcc CFLAGS="$* $CFLAGS -DOSVERSION=$OSVERSION" $OSNAME
+	make -f makefile CC=gcc LD=gcc CFLAGS="$* $CFLAGS -DOSVERSION=$OSVERSION" $OSNAME
 	}
 
 buildWithNativeTools()
@@ -191,7 +191,7 @@ buildWithNativeTools()
 	shift
 	shift
 
-	make CC=$CC CFLAGS="$* $CFLAGS -DOSVERSION=$OSVERSION" $OSNAME
+	make -f makefile CC=$CC CFLAGS="$* $CFLAGS -DOSVERSION=$OSVERSION" $OSNAME
 	}
 
 buildWithGccShared()
@@ -201,7 +201,7 @@ buildWithGccShared()
 	shift
 	shift
 
-	make CC=gcc LD=gcc TARGET=$SLIBNAME OBJPATH=$SHARED_OBJ_PATH \
+	make -f makefile CC=gcc LD=gcc TARGET=$SLIBNAME OBJPATH=$SHARED_OBJ_PATH \
 		 CFLAGS="$* $CFLAGS -DOSVERSION=$OSVERSION" $OSNAME
 	}
 
@@ -214,7 +214,7 @@ buildWithNativeToolsShared()
 	shift
 	shift
 
-	make CC=$CC TARGET=$SLIBNAME OBJPATH=$SHARED_OBJ_PATH \
+	make -f makefile CC=$CC TARGET=$SLIBNAME OBJPATH=$SHARED_OBJ_PATH \
 		 CFLAGS="$* $CFLAGS -DOSVERSION=$OSVERSION" $OSNAME
 	}
 

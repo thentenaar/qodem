@@ -139,7 +139,7 @@ Q_BOOL prompt_listen_port(char ** port) {
 
     screen_win_draw_box(pick_window, 0, 0, window_length, window_height);
 
-    title = _("TCP Listen Port");
+    title = _("Choose TCP Listen Port");
     title_left = window_length - (strlen(title) + 2);
     if (title_left < 0) {
         title_left = 0;
@@ -3749,7 +3749,7 @@ Q_BOOL ask_host_type(Q_HOST_TYPE * type) {
     void * form_window;
     int window_left;
     int window_top;
-    int window_height = 10;
+    int window_height = 9;
     int window_length;
     int keystroke;
     int status_left_stop;
@@ -3763,6 +3763,13 @@ Q_BOOL ask_host_type(Q_HOST_TYPE * type) {
     title = _("Choose Host Mode Type");
     status_prompt = _(" LETTER-Select a Host Mode Type   ESC/`-Exit ");
     window_length = 25;
+
+#ifdef Q_NO_SERIAL
+    window_height -= 2;
+#endif
+#ifndef Q_SSH_CRYPTLIB
+    window_height -= 1;
+#endif
 
     /*
      * Use the cursor
@@ -3822,27 +3829,29 @@ Q_BOOL ask_host_type(Q_HOST_TYPE * type) {
     /*
      * Draw the menu
      */
-    i = 2;
+    i = 1;
 
 #ifndef Q_NO_SERIAL
-    screen_win_put_color_str_yx(form_window, i, 7, "1", Q_COLOR_MENU_COMMAND);
+    screen_win_put_color_str_yx(form_window, i, 2,  "1", Q_COLOR_MENU_COMMAND);
     screen_win_put_color_str(form_window, _(" - Modem"), Q_COLOR_MENU_TEXT);
     i++;
-    screen_win_put_color_str_yx(form_window, i, 7, "2", Q_COLOR_MENU_COMMAND);
+    screen_win_put_color_str_yx(form_window, i, 2,  "2", Q_COLOR_MENU_COMMAND);
     screen_win_put_color_str(form_window, _(" - Serial Port"),
                              Q_COLOR_MENU_TEXT);
     i++;
 #endif
 
-    screen_win_put_color_str_yx(form_window, i, 7, "3", Q_COLOR_MENU_COMMAND);
+    screen_win_put_color_str_yx(form_window, i, 2,  "3", Q_COLOR_MENU_COMMAND);
     screen_win_put_color_str(form_window, _(" - Socket"), Q_COLOR_MENU_TEXT);
     i++;
-    screen_win_put_color_str_yx(form_window, i, 7, "4", Q_COLOR_MENU_COMMAND);
+    screen_win_put_color_str_yx(form_window, i, 2,  "4", Q_COLOR_MENU_COMMAND);
     screen_win_put_color_str(form_window, _(" - telnetd"), Q_COLOR_MENU_TEXT);
     i++;
-    screen_win_put_color_str_yx(form_window, i, 7, "5", Q_COLOR_MENU_COMMAND);
+#ifdef Q_SSH_CRYPTLIB
+    screen_win_put_color_str_yx(form_window, i, 2,  "5", Q_COLOR_MENU_COMMAND);
     screen_win_put_color_str(form_window, _(" - sshd"), Q_COLOR_MENU_TEXT);
     i++;
+#endif
     i++;
 
     /*

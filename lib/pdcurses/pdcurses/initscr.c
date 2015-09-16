@@ -90,7 +90,7 @@ RCSID("$Id: initscr.c,v 1.114 2008/07/13 16:08:18 wmcbrine Exp $")
 
 #include <stdlib.h>
 
-char ttytype[128];
+char pdc_ttytype[128];
 
 SCREEN *SP = (SCREEN*)NULL;           /* curses variables */
 WINDOW *curscr = (WINDOW *)NULL;      /* the current screen image */
@@ -217,7 +217,7 @@ WINDOW *Xinitscr(int argc, char *argv[])
 
     def_shell_mode();
 
-    sprintf(ttytype, "pdcurses|PDCurses for %s", PDC_sysname());
+    sprintf(pdc_ttytype, "pdcurses|PDCurses for %s", PDC_sysname());
 
     return stdscr;
 }

@@ -28,6 +28,7 @@
 *.x86_64
 *.hex
 bin/qodem
+qodem-x11
 
 # Debug files
 *.dSYM/
@@ -36,3 +37,16 @@ bin/qodem
 *.c~
 *.h~
 *.md~
+*.spec~
+Makefile~
+
+# Build artifacts
+source/.deps/
+source/.dirstamp
+source/config.h
+source/stamp-h1
+autom4te.cache/
+config.status
+config.log
+Makefile
+Makefile.in

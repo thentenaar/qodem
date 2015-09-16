@@ -23,6 +23,8 @@ BUG: host mode chat inside message entry doesn't clear entry or return
 
 BUG: host mode assertion failure when hanging up during login
 
+BUG: x11 PDCurses is hosed (hangs) in Xt child process
+
 1.0.0
 -----
 
@@ -67,12 +69,7 @@ CryptLib support
 
 
 New autoconf build:
-  Basic working: default builds same as Makefile.generic
   make dist
-  --enable-sdl - looks for system libSDL
-  --enable-x11 - builds PDCurses X11
-  --enable-ssh - builds cryptlib
-  --enable-upnp - builds miniupnpc
 
 
 Win32 port:

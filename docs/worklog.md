@@ -1,6 +1,20 @@
 The Qodem Project Work Log
 ==========================
 
+September 16, 2015
+
+I brought in the old autoconf build, stripped down and cleaned up for
+the new directory structure.  Along the way I had to make a
+GNUmakefile for cryptlib to wrap its makefile, and a new Makefile for
+PDCurses.  Interestingly, I also finally have the answer for why I was
+getting the "relocation error" regarding ttytype[]: SDL pulls in
+ncurses at link time which has a name collision.
+
+So now I am staring at a bug I never got fixed before: the X11 process
+part (using libXt) of PDCurses hangs during its setup, so qodem-x11
+shows up as a blank white screen.  I guess it's time to learn enough
+Xt now to fix PDCurses.
+
 September 3, 2015
 
 On that last commit a few days ago I reached a major milestone but

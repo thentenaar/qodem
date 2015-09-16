@@ -18,6 +18,8 @@
 # This Makefile produces a barebones miniupnpc library for use with
 # qodem.
 
+all: default
+
 default: libminiupnpc
 
 # ----------------------------------------------------------------------------
