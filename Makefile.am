@@ -91,10 +91,12 @@ EXTRA_DIST = \
 @srcdir@/FILE_ID.DIZ \
 @srcdir@/README.md \
 @srcdir@/Doxyfile \
+@srcdir@/qodem.ide \
 @srcdir@/vc6qodem \
 @srcdir@/include \
 @srcdir@/lib/c \
 @srcdir@/lib/upnp \
-@srcdir@/lib/pdcurses
+@srcdir@/lib/pdcurses \
+@srcdir@/lib/cryptlib
 
 ACLOCAL_AMFLAGS =

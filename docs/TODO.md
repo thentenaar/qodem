@@ -23,8 +23,6 @@ BUG: host mode chat inside message entry doesn't clear entry or return
 
 BUG: host mode assertion failure when hanging up during login
 
-BUG: x11 PDCurses is hosed (hangs) in Xt child process
-
 1.0.0
 -----
 
@@ -102,6 +100,17 @@ Win32 port:
   Test on 98
   Test on 7
 
+
+Finish up modem support:
+  host.c:
+    MODEM answer:
+      send host_init_string
+      wait for RING
+      send answer_string
+      check DCD for online
+  Will need help from someone else with a modem
+
+
 OS X Build:
   App Icon
   dmg image
@@ -132,15 +141,6 @@ Fix all marked TODOs in code
 
 Doxygen docs
 
-
-Finish up modem support:
-  host.c:
-    MODEM answer:
-      send host_init_string
-      wait for RING
-      send answer_string
-      check DCD for online
-  Will need help from someone else with a modem
 
 
 FULL REGRESSION ON EVERY ITEM:

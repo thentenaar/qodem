@@ -628,7 +628,7 @@ honor.  These commands are stored in the qodemrc
 use PgUp/PgDn and Alt-X (M-X) in Emacs yet still have
 ALT-PgUp/ALT-PgDn, scrollback, capture, etc.
 
-Qodem includes a Compose Key function (Alt-\) for entering a raw
+Qodem includes a Compose Key function (Alt-\\) for entering a raw
 decimal byte value (0-255) or a 16-bit Unicode value (0-FFFF).
 
 Capture, screen dump, and saving scrollback can be saved in several
@@ -692,6 +692,9 @@ We'd like to thank the following individuals:
   library.  Both Mr. Williams and Mr. Dickey have answered numerous
   questions over the years in comp.terminals that were archived and
   greatly aided the development of Qodem's emulation layer.
+
+* Bjorn Larsson, William McBrine, and the many developers involved in
+  PDCurses who dedicated their work to the public domain.
 
 * Miquel van Smoorenburg and the many developers involved in minicom
   who licensed their work under the GNU General Public License.
