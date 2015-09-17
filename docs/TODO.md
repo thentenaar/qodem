@@ -50,7 +50,6 @@ Rework codepage/UTF-8 support:
     qodem_write()
   Add Unicode translate tables to print_character() and
     post_keystroke()
-  Rename "Compose Key" to "Alt Code"
   Documentation:
     help text
     man page
@@ -179,7 +178,7 @@ FULL REGRESSION ON EVERY ITEM:
     Mark / Space
     RTS/CTS
     XON/XOFF
-  Compose key
+  Alt Code key
     8-bit
     Unicode
   Edit options

@@ -1,4 +1,5 @@
 qodem (1.0beta-1) unstable; urgency=low
+
   * As of May 26, 2015 Qodem is dedicated to the public domain.
   * Numerous bug fixes
   * Switch code repository to github: https://github.com/klamonte/qodem
@@ -12,6 +13,7 @@ qodem (1.0beta-1) unstable; urgency=low
   * Merged Linux, Xterm, and VT100 emulations into a single vt100.c
   * Avatar ansi fallback exposed in qodemrc
   * SSH support switched to cryptlib
+  * Compose Key function renamed to Alt Code Key
 
  -- Kevin Lamonte <lamonte@users.sourceforge.net>  Wed,  1 Jul 2015 18:50:00 -0500
 

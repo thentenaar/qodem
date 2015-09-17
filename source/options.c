@@ -501,7 +501,7 @@ static struct option_struct options[] = {
 "### $REMOTEHOST will be replaced with the phonebook address,\n"
 "### $REMOTEPORT will be replaced with the phonebook port."},
 
-        {Q_OPTION_SSH_USER, NULL, "ssh",
+        {Q_OPTION_SSH_USER, NULL, "ssh_user",
          "ssh -e none -l $USERNAME -p $REMOTEPORT $REMOTEHOST", ""
 "### The ssh connection program when the phonebook username is set.\n"
 "###\n"
@@ -704,14 +704,6 @@ static struct option_struct options[] = {
 "### performance improvement in most cases, especially over TCP links.\n"
 "### 'false' means Kermit will not use streaming."},
 
-        {Q_OPTION_KERMIT_LONG_PACKETS, NULL, "kermit_long_packets", "true", ""
-"### Whether or not Kermit should use long packets.  On very noisy channels,\n"
-"### Kermit may need to use short packets to get through.\n"
-"### Value is 'true' or 'false'.\n"
-"###\n"
-"### 'true' means Kermit will use long packets, up to 1k.\n"
-"### 'false' means Kermit will use short packets, up to 96 bytes."},
-
         {Q_OPTION_KERMIT_UPLOADS_FORCE_BINARY, NULL,
          "kermit_uploads_force_binary", "true", ""
 "### Whether or not Kermit uploads will transfer files as 8-bit binary files.\n"
@@ -743,6 +735,14 @@ static struct option_struct options[] = {
 "###\n"
 "### 'true' means all Kermit uploads will use RESEND.\n"
 "### 'false' means Kermit uploads will use SEND."},
+
+         {Q_OPTION_KERMIT_LONG_PACKETS, NULL, "kermit_long_packets", "true", ""
+"### Whether or not Kermit should use long packets.  On very noisy channels,\n"
+"### Kermit may need to use short packets to get through.\n"
+"### Value is 'true' or 'false'.\n"
+"###\n"
+"### 'true' means Kermit will use long packets, up to 1k.\n"
+"### 'false' means Kermit will use short packets, up to 96 bytes."},
 
     {Q_OPTION_NULL, NULL, NULL, NULL}
 };

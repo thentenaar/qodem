@@ -720,13 +720,13 @@ void console_quicklearn_keyboard_handler(int keystroke, int flags) {
     case '\\':
         if (flags & KEY_FLAG_ALT) {
             /*
-             * Alt-\ Compose key
+             * Alt-\ Alt Code key
              */
             if ((q_status.emulation == Q_EMUL_LINUX_UTF8)
                 || (q_status.emulation == Q_EMUL_XTERM_UTF8)) {
-                new_keystroke = compose_key(Q_TRUE);
+                new_keystroke = alt_code_key(Q_TRUE);
             } else {
-                new_keystroke = compose_key(Q_FALSE);
+                new_keystroke = alt_code_key(Q_FALSE);
             }
             if (new_keystroke != -1) {
                 keystroke = new_keystroke;
@@ -1905,13 +1905,13 @@ void console_keyboard_handler(int keystroke, int flags) {
     case '\\':
         if (flags & KEY_FLAG_ALT) {
             /*
-             * Alt-\ Compose key
+             * Alt-\ Alt Code key
              */
             if ((q_status.emulation == Q_EMUL_LINUX_UTF8) ||
                 (q_status.emulation == Q_EMUL_XTERM_UTF8)) {
-                new_keystroke = compose_key(Q_TRUE);
+                new_keystroke = alt_code_key(Q_TRUE);
             } else {
-                new_keystroke = compose_key(Q_FALSE);
+                new_keystroke = alt_code_key(Q_FALSE);
             }
             if (new_keystroke != -1) {
                 keystroke = new_keystroke;
@@ -2716,7 +2716,7 @@ void console_refresh(Q_BOOL status_line) {
                                   Q_COLOR_STATUS);
 
         status_string =
-            _(" QuickLearn In Progress   Alt-\\-Compose Key   Alt-Q-Stop QuickLearn ");
+            _(" QuickLearn In Progress   Alt-\\-Alt Code Key   Alt-Q-Stop QuickLearn ");
         status_left_stop = WIDTH - strlen(status_string);
         if (status_left_stop <= 0) {
             status_left_stop = 0;
@@ -2922,11 +2922,11 @@ void console_menu_refresh() {
     screen_put_color_str(_("QuickLearn"), Q_COLOR_MENU_TEXT);
 
     /*
-     * \ Compose Key
+     * \ Alt Code Key
      */
     screen_put_color_str_yx(menu_top + during_row + 5, menu_left + 27,
                             _("Alt-\\  "), Q_COLOR_MENU_COMMAND);
-    screen_put_color_str(_("Compose Key"), Q_COLOR_MENU_TEXT);
+    screen_put_color_str(_("Alt Code Key"), Q_COLOR_MENU_TEXT);
     /*
      * S Split screen
      */

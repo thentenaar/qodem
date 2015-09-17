@@ -329,13 +329,13 @@ Q_BOOL prompt_listen_port(char ** port) {
 }
 
 /**
- * Display the compose key dialog.
+ * Display the alt code key dialog.
  *
  * @param utf8 if true, ask for a 16-bit value as four hex digits, otherwise
  * ask for an 8-bit value as a base-10 decimal number (0-255).
  * @return the value the user entered, or -1 if they cancelled
  */
-int compose_key(Q_BOOL utf8) {
+int alt_code_key(Q_BOOL utf8) {
     int message_left;
     void * form_window;
     int window_left;
@@ -353,12 +353,12 @@ int compose_key(Q_BOOL utf8) {
     char * title;
     char * status_prompt;
     if (utf8 == Q_TRUE) {
-        title = _("Compose Key (Unicode)");
+        title = _("Alt Code Key (Unicode)");
         status_prompt =
             _(" DIGIT/HEX-Hexadecimal Keycode   Del/Bksp-Clear   ESC/`-Exit ");
         window_length = 25;
     } else {
-        title = _("Compose Key");
+        title = _("Alt Code Key");
         status_prompt =
             _(" DIGIT-Decimal Keycode   Del/BkSp-Clear   ESC/`-Exit ");
         window_length = 19;
@@ -685,10 +685,10 @@ wchar_t * pick_find_string() {
 
         case '\\':
             /*
-             * Alt-\ Compose key
+             * Alt-\ Alt Code key
              */
             if (flags & KEY_FLAG_ALT) {
-                new_keystroke = compose_key(Q_TRUE);
+                new_keystroke = alt_code_key(Q_TRUE);
                 if (new_keystroke > 0) {
                     /*
                      * Pass normal keys to form driver

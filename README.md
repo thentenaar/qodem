@@ -545,7 +545,7 @@ Some functions are different in TERMINAL mode:
     Alt-,    ANSI Music             -
     Alt-;    Codepage               -
     Alt-:    Colors                 -
-    Alt-\    Compose Key            -
+    Alt-\    Alt Code Key           -
 ```
 
 The phone book stores an arbitrary number of entries, not the
@@ -628,7 +628,7 @@ honor.  These commands are stored in the qodemrc
 use PgUp/PgDn and Alt-X (M-X) in Emacs yet still have
 ALT-PgUp/ALT-PgDn, scrollback, capture, etc.
 
-Qodem includes a Compose Key function (Alt-\\) for entering a raw
+Qodem includes a Alt Code Key function (Alt-\\) for entering a raw
 decimal byte value (0-255) or a 16-bit Unicode value (0-FFFF).
 
 Capture, screen dump, and saving scrollback can be saved in several

@@ -2799,13 +2799,13 @@ void function_key_editor_keyboard_handler(const int keystroke,
 
     case '\\':
         /*
-         * Alt-\ Compose key
+         * Alt-\ Alt Code key
          */
         if (editing_key == Q_TRUE) {
             if (flags & KEY_FLAG_ALT) {
-                keystroke2 = compose_key(Q_TRUE);
+                keystroke2 = alt_code_key(Q_TRUE);
                 /*
-                 * compose_key() sets q_screen_dirty to true, which is the
+                 * alt_code_key() sets q_screen_dirty to true, which is the
                  * right thing to do everywhere EXCEPT here.
                  */
                 q_screen_dirty = Q_FALSE;

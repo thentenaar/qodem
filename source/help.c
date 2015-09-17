@@ -377,7 +377,7 @@ static void build_options_topic() {
 
     topic = find_topic(HELP_CONFIGURATION_KEY);
     assert(topic != NULL);
-    for (option = Q_OPTION_NULL; option < Q_OPTION_MAX; option++) {
+    for (option = Q_OPTION_NULL + 1; option < Q_OPTION_MAX; option++) {
         begin = get_option_key(option);
         if (begin == NULL) {
             continue;
@@ -1586,7 +1586,7 @@ char * raw_help_text = \
 "@BOLD{ALT-PgDn} may also work depending on the terminfo for the host\n"
 "terminal.\n"
 "\n"
-"@BOLD{Alt-\\} Compose Key\n"
+"@BOLD{Alt-\\} Alt Code Key\n"
 "This brings up a dialog to enter the 3-digit decimal value (0-255) for\n"
 "an 8-bit byte or a 4-digit hexadecimal value (0-ffff) for a 16-bit\n"
 "Unicode character (L_UTF8 and X_UTF8 only).  @BOLD{Alt-\\} also works in these\n"
@@ -2332,7 +2332,7 @@ char * raw_help_text = \
 "    @BOLD{Alt-K}    Send BREAK             Change COM Port\n"
 "    @BOLD{Alt-Y}    COM Parameters         -\n"
 "    @BOLD{Alt-,}    ANSI Music             -\n"
-"    @BOLD{Alt-\\}    Compose Key            -\n"
+"    @BOLD{Alt-\\}    Alt Code Key           -\n"
 "    @BOLD{Alt-;}    Codepage               -\n"
 "    @BOLD{Alt-:}    Colors                 -\n"
 "\n"
@@ -2416,7 +2416,7 @@ char * raw_help_text = \
 "MIXED\" allows one to use @BOLD{PgUp}/@BOLD{PgDn} and @BOLD{Alt-X} (M-X) in Emacs yet\n"
 "still have @BOLD{Alt-PgUp}/@BOLD{Alt-PgDn}, scrollback, capture, etc.\n"
 "\n"
-"Qodem includes a Compose Key function (@BOLD{Alt-\\}) for entering a raw\n"
+"Qodem includes a Alt Code Key function (@BOLD{Alt-\\}) for entering a raw\n"
 "decimal byte value (0-255) or a 16-bit Unicode value (0-FFFF).\n"
 "\n"
 "Capture, screen dump, and saving scrollback can be saved in several\n"
@@ -2612,7 +2612,7 @@ char * raw_help_text = \
 "\n"
 "A keyboard macro can have have any number of letters, numbers, punctuation,\n"
 "etc.  To add a high-bit or Unicode character, press @BOLD{Alt-\\} to bring up the\n"
-"Compose Key dialog.  Control characters can be added using the carat: @BOLD{^M}\n"
+"Alt Code Key dialog.  Control characters can be added using the carat: @BOLD{^M}\n"
 "(Control-M) is carriage return, @BOLD{^J} is line feed, etc.  To enter a bare\n"
 "carat, use two carats @BOLD{^^}.\n"
 "\n"

@@ -6472,11 +6472,11 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
 
         case '\\':
             /*
-             * Alt-\ Compose key
+             * Alt-\ Alt Code key
              */
             if (flags & KEY_FLAG_ALT) {
                 if (must_use_picklist == Q_FALSE) {
-                    new_keystroke = compose_key(Q_TRUE);
+                    new_keystroke = alt_code_key(Q_TRUE);
                     if (new_keystroke > 0) {
                         /*
                          * Pass normal keys to form driver

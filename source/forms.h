@@ -188,13 +188,13 @@ extern Q_BOOL comm_settings_form(const char * title, Q_BAUD_RATE * baud,
 #endif
 
 /**
- * Display the compose key dialog.
+ * Display the alt code key dialog.
  *
  * @param utf8 if true, ask for a 16-bit value as four hex digits, otherwise
  * ask for an 8-bit value as a base-10 decimal number (0-255).
  * @return the value the user entered, or -1 if they cancelled
  */
-extern int compose_key(Q_BOOL utf8);
+extern int alt_code_key(Q_BOOL utf8);
 
 /**
  * Display the "Find" or "Find Again" entry dialog.
