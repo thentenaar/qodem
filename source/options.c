@@ -518,7 +518,7 @@ static struct option_struct options[] = {
          "$HOME\\qodem\\prefs\\known_hosts", ""
 #else
         {Q_OPTION_SSH_KNOWNHOSTS, NULL, "knownhosts_file",
-         "$HOME/.ssh/known_hosts", ""
+         "$HOME/.qodem/known_hosts", ""
 #endif
 "### The location of the SSH known_hosts file.  The $HOME environment\n"
 "### variable will be substituted if specified."},

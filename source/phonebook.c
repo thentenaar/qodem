@@ -209,7 +209,7 @@ static void print_phonebook_80(const char * dest) {
     char * filename;
     char * full_filename;
     Q_BOOL lpr = Q_FALSE;
-    struct q_phone_struct *entry;
+    struct q_phone_struct * entry;
     unsigned int left_stop;
     unsigned int i;
     unsigned int entry_i;
@@ -358,7 +358,7 @@ static void print_phonebook_132(const char * dest) {
     char * filename;
     char * full_filename;
     Q_BOOL lpr = Q_FALSE;
-    struct q_phone_struct *entry;
+    struct q_phone_struct * entry;
     unsigned int left_stop;
     unsigned int i;
     unsigned int entry_i;
@@ -804,8 +804,8 @@ void load_phonebook(const Q_BOOL backup_version) {
     char line[PHONEBOOK_LINE_SIZE];
     char buffer[PHONEBOOK_LINE_SIZE];
     wchar_t value_wchar[PHONEBOOK_LINE_SIZE];
-    struct q_phone_struct *old_entry;
-    struct q_phone_struct *new_entry;
+    struct q_phone_struct * old_entry;
+    struct q_phone_struct * new_entry;
 
     enum SCAN_STATES {
         SCAN_STATE_NONE,        /* Between entries */
@@ -1329,7 +1329,7 @@ void load_phonebook(const Q_BOOL backup_version) {
 static void save_phonebook(const Q_BOOL backup_version) {
     FILE * file;
     char * filename;
-    struct q_phone_struct *entry;
+    struct q_phone_struct * entry;
     char notify_message[DIALOG_MESSAGE_SIZE];
     wchar_t * notes_line;
     int current_notes_idx;

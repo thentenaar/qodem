@@ -59,7 +59,6 @@ Rework codepage/UTF-8 support:
 
 
 CryptLib support
-  qodem knownhosts file
   Patches:
     env - send TERM and LANG
     window-change - send new window dimensions

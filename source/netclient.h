@@ -269,8 +269,8 @@ extern void ssh_resize_screen(const int lines, const int columns);
 extern Q_BOOL ssh_maybe_readable();
 
 /**
- * Get the ssh server key fingerprint as a hex-encoded MD5 hash of the server
- * key, the same as the key fingerprint exposed by most ssh clients.
+ * Get the ssh server key fingerprint as a hex-encoded SHA1 hash of the
+ * server key, the same as the key fingerprint exposed by most ssh clients.
  *
  * @return the key string
  */

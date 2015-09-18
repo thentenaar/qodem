@@ -3499,13 +3499,13 @@ void console_info_refresh() {
          */
         if (q_status.online == Q_TRUE) {
             int box_top = info_top + 10;
-            int box_left = info_left + 4;
+            int box_left = info_left + 2;
             int box_width;
             int box_height = 8;
             char * box_title = _(" Current Connection ");
             box_width = strlen(box_title) + 4;
             if (box_width < 40) {
-                box_width = 64;
+                box_width = 75;
             }
 #ifndef Q_NO_SERIAL
             if (q_status.dial_method != Q_DIAL_METHOD_MODEM) {

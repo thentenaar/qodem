@@ -1,6 +1,21 @@
 The Qodem Project Work Log
 ==========================
 
+September 17, 2015
+
+Just finished putting in known_hosts support.  I exposed a bug in
+cryptlib: when you ask for CRYPT_SESSINFO_SERVER_FINGERPRINT_SHA1 it
+gives you MD5, but when you set CRYPT_SESSINFO_SERVER_FINGERPRINT_SHA1
+to check it later it expects SHA1.  Yeah, annoying.  I've changed it
+in session/ssh2_cli.c and it seems to work OK without breaking the
+host SSH server code.
+
+I am very much looking forward to wrapping up the last couple cryptlib
+things and then never touching that library again.  Of course that's a
+fantasy: I'll need to retrofit my changes to its new version when it
+gets around to supporting ED22519, Salsa20, ChaCha20, and Poly1305 to
+talk to modern OpenSSH servers...sigh...
+
 September 16, 2015
 
 I brought in the old autoconf build, stripped down and cleaned up for

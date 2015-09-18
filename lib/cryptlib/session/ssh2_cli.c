@@ -45,8 +45,13 @@ static int processKeyFingerprint( INOUT SESSION_INFO *sessionInfoPtr,
 
 	REQUIRES( keyDataLength > 0 && keyDataLength < MAX_INTLENGTH_SHORT );
 
-	getHashAtomicParameters( CRYPT_ALGO_MD5, 0, &hashFunctionAtomic, 
+#if 0
+	getHashAtomicParameters( CRYPT_ALGO_MD5, 0, &hashFunctionAtomic,
 							 &hashSize );
+#else
+	getHashAtomicParameters( CRYPT_ALGO_SHA1, 0, &hashFunctionAtomic,
+							 &hashSize );
+#endif
 	hashFunctionAtomic( fingerPrint, CRYPT_MAX_HASHSIZE, 
 						keyData, keyDataLength );
 	if( attributeListPtr == NULL )

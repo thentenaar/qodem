@@ -3686,6 +3686,8 @@ extern "C" {
 #include <netinet/tcp.h>
 #endif
 
+#include "options.h"
+
 /**
  * Everything is done through the crypt session interface.
  */
@@ -3697,7 +3699,7 @@ static CRYPT_SESSION cryptSession;
 static int cryptUser = CRYPT_UNUSED;
 
 /**
- * The human-readable MD5 key for a ssh server.
+ * The human-readable SHA1 key for a ssh server.
  */
 static char * ssh_server_key = NULL;
 
@@ -3705,6 +3707,37 @@ static char * ssh_server_key = NULL;
  * The filename in the working directory to store a qodem ssh server key.
  */
 #define HOST_SSH_SERVER_KEY_FILENAME "ssh_server_key.p15"
+
+/**
+ * One entry in the known_hosts file.
+ */
+struct known_host_entry {
+    /**
+     * The hostname string.  This is usually the DNS name, but could be the
+     * IP address.
+     */
+    char * host;
+
+    /**
+     * The port number as a string.
+     */
+    char * port;
+
+    /**
+     * The host key fingerprint as a raw byte array.
+     */
+    char fingerprint[CRYPT_MAX_HASHSIZE + 1];
+
+    /**
+     * The length of the host key fingerprint.
+     */
+    int fingerprint_n;
+
+    /**
+     * The next entry in the list.
+     */
+    struct known_host_entry * next;
+};
 
 /**
  * Flag to indicate some more data MIGHT be ready to read.
@@ -3721,6 +3754,399 @@ static Q_BOOL maybe_readable = Q_FALSE;
  */
 Q_BOOL ssh_maybe_readable() {
     return maybe_readable;
+}
+
+/**
+ * Convert a raw SHA1 hash value to a human-readable ASCII string.
+ *
+ * @param sha1 the hash value
+ * @param dest the string to write
+ * @param n the maximum number of bytes to write to dest
+ */
+static void sha1_to_string(const char * sha1, char * dest, const int n) {
+    const int len = 20;
+    int i;
+    int j = 0;
+    if (n < len * 3 + 2) {
+        memset(dest, 0, n);
+    } else {
+        memset(dest, 0, len * 3 + 2);
+    }
+    for (i = 0; i < (len / 2) && (i < n); i++) {
+        sprintf(&dest[j++], "%x", (sha1[i] >> 4) & 0x0F);
+        sprintf(&dest[j++], "%x",  sha1[i]       & 0x0F);
+        sprintf(&dest[j++], ":");
+    }
+    for (; (i < len) & (i < n); i++) {
+        sprintf(&dest[j++], "%x", (sha1[i] >> 4) & 0x0F);
+        sprintf(&dest[j++], "%x",  sha1[i]       & 0x0F);
+        sprintf(&dest[j++], ":");
+    }
+    dest[j - 1] = 0;
+}
+
+/**
+ * Load all entries from the known_hosts file.
+ *
+ * @param known_hosts the list of known_host_entry's to create
+ */
+static void load_knownhosts(struct known_host_entry ** known_hosts) {
+    char * filename;
+    FILE * file;
+    char * begin;
+    char * end;
+    int i;
+    char ch;
+    /*
+     * Hostname is limited to the size of a phonebook entry host name, so use
+     * the same size here as the phonebook.
+     */
+    char line[PHONEBOOK_LINE_SIZE];
+    char buffer[PHONEBOOK_LINE_SIZE];
+    struct known_host_entry * old_entry;
+    struct known_host_entry * new_entry;
+
+    enum SCAN_STATES {
+        SCAN_STATE_NONE,        /* Between entries */
+        SCAN_STATE_ENTRY,       /* Scanning for single-line fields */
+        SCAN_STATE_NOTES        /* Reading the notes */
+    };
+
+    int scan_state;
+
+    DLOG(("load_knownhosts()\n"));
+
+    filename = get_option(Q_OPTION_SSH_KNOWNHOSTS);
+    file = fopen(filename, "r");
+    if (file == NULL) {
+        /* Error, just quietly bail out. */
+        DLOG(("Can't open %s for reading: %s\n", filename, strerror(errno)));
+        return;
+    }
+
+    old_entry = NULL;
+    new_entry = NULL;
+    scan_state = SCAN_STATE_NONE;
+    while (!feof(file)) {
+
+        if (fgets(line, sizeof(line), file) == NULL) {
+            /*
+             * This will cause the outer while's feof() check to fail and
+             * smoothly exit the while loop.
+             */
+            continue;
+        }
+        begin = line;
+
+        if (scan_state == SCAN_STATE_NONE) {
+            while ((strlen(line) > 0) && isspace(line[strlen(line) - 1])) {
+                /*
+                 * Trim trailing whitespace
+                 */
+                line[strlen(line) - 1] = '\0';
+            }
+            while (isspace(*begin)) {
+                /*
+                 * Trim leading whitespace
+                 */
+                begin++;
+            }
+
+            if ((strlen(begin) == 0) || (*begin == '#')) {
+                /*
+                 * Ignore blank lines and commented lines between entries
+                 */
+                continue;
+            }
+
+            if (strncmp(begin, "[entry]", sizeof("[entry]")) == 0) {
+                /*
+                 * Beginning of an entry found
+                 */
+                scan_state = SCAN_STATE_ENTRY;
+                new_entry = (struct known_host_entry *)
+                    Xmalloc(sizeof(struct known_host_entry),
+                    __FILE__, __LINE__);
+                memset(new_entry, 0, sizeof(struct known_host_entry));
+                if (*known_hosts == NULL) {
+                    *known_hosts = new_entry;
+                } else {
+                    old_entry->next = new_entry;
+                }
+                /*
+                 * Save entry
+                 */
+                old_entry = new_entry;
+                continue;
+            }
+        } /* if (scan_state == SCAN_STATE_NONE) */
+
+        if (scan_state == SCAN_STATE_ENTRY) {
+            while ((strlen(line) > 0) && isspace(line[strlen(line) - 1])) {
+                /*
+                 * Trim trailing whitespace
+                 */
+                line[strlen(line) - 1] = '\0';
+            }
+            while (isspace(*begin)) {
+                /*
+                 * Trim leading whitespace
+                 */
+                begin++;
+            }
+
+            if ((strlen(begin) == 0) || (*begin == '#')) {
+                /*
+                 * Ignore blank lines and commented lines between entries
+                 */
+                continue;
+            }
+
+            end = strchr(begin, '=');
+            if (end == NULL) {
+                /*
+                 * Ignore this line.
+                 */
+                continue;
+            }
+            memset(buffer, 0, sizeof(buffer));
+            strncpy(buffer, begin, end - begin);
+            begin = end + 1;
+
+            if (strncmp(buffer, "host", strlen("host")) == 0) {
+                /*
+                 * HOST
+                 */
+                new_entry->host = Xstrdup(begin, __FILE__, __LINE__);
+            } else if (strncmp(buffer, "port", strlen("port")) == 0) {
+                /*
+                 * PORT
+                 */
+                new_entry->port = Xstrdup(begin, __FILE__, __LINE__);
+            } else if (strncmp(buffer, "fingerprint",
+                               strlen("fingerprint")) == 0) {
+                /*
+                 * FINGERPRINT
+                 */
+                new_entry->fingerprint_n = strlen(begin) / 4;
+                for (i = 0; i < new_entry->fingerprint_n; i++) {
+                    ch = tolower(begin[i * 4 + 2]);
+                    if ((ch >= '0') && (ch <= '9')) {
+                        ch = ch - '0';
+                    } else if ((ch >= 'a') && (ch <= 'f')) {
+                        ch = ch - 'a' + 10;
+                    }
+                    new_entry->fingerprint[i] = ch * 16;
+                    ch = tolower(begin[i * 4 + 3]);
+                    if ((ch >= '0') && (ch <= '9')) {
+                        ch = ch - '0';
+                    } else if ((ch >= 'a') && (ch <= 'f')) {
+                        ch = ch - 'a' + 10;
+                    }
+                    new_entry->fingerprint[i] += ch;
+                }
+
+                /*
+                 * -------------------
+                 * ---- LAST ITEM ----
+                 * -------------------
+                 *
+                 * There are no more supported options, switch state.
+                 */
+                scan_state = SCAN_STATE_NONE;
+                DLOG(("Read known_hosts entry:\n", new_entry->host));
+                DLOG(("    host %s\n", new_entry->host));
+                DLOG(("    port %s\n", new_entry->port));
+                DLOG(("    fingerprint (%d) ", new_entry->fingerprint_n));
+                for (i = 0; i < new_entry->fingerprint_n; i++) {
+                    DLOG2(("\\x%02x", (new_entry->fingerprint[i] & 0xFF)));
+                }
+                DLOG2(("\n"));
+            }
+
+        } /* if (scan_state == SCAN_STATE_ENTRY) */
+
+    } /* while (!feof(file)) */
+
+}
+
+/**
+ * Save all entries in a known_hosts list to the known_hosts file.
+ *
+ * @param known_hosts the list of known_host_entry's to save
+ */
+static void save_knownhosts(struct known_host_entry * known_hosts) {
+    FILE * file;
+    char * filename;
+    struct known_host_entry * entry;
+    int i;
+
+    DLOG(("save_knownhosts()\n"));
+
+    filename = get_option(Q_OPTION_SSH_KNOWNHOSTS);
+    file = fopen(filename, "w");
+    if (file == NULL) {
+        /* Error, just quietly bail out. */
+        DLOG(("Can't open %s for writing: %s\n", filename, strerror(errno)));
+        return;
+    }
+
+    fprintf(file, "# Qodem Known Hosts File\n");
+    fprintf(file, "#\n");
+
+    for (entry = known_hosts; entry != NULL; entry = entry->next) {
+        fprintf(file, "[entry]\n");
+        fprintf(file, "host=%s\n", entry->host);
+        fprintf(file, "port=%s\n", entry->port);
+        fprintf(file, "fingerprint=");
+        for (i = 0; i < entry->fingerprint_n; i++) {
+            fprintf(file, "\\x%02x", (entry->fingerprint[i] & 0xFF));
+        }
+        fprintf(file, "\n\n");
+    }
+    fclose(file);
+}
+
+/**
+ * Free all entries in a known_hosts list.
+ *
+ * @param known_hosts the list of known_host_entry's to free
+ */
+static void free_knownhosts(struct known_host_entry * known_hosts) {
+    struct known_host_entry * next = NULL;
+
+    DLOG(("free_knownhosts()\n"));
+
+    while (known_hosts != NULL) {
+        next = known_hosts->next;
+        Xfree(known_hosts, __FILE__, __LINE__);
+        known_hosts = next;
+    }
+}
+
+/**
+ * Retrieve an entry from the known_hosts file.
+ *
+ * @param host the host's DNS name or IP address
+ * @param port the host's port
+ * @param fingerprint where to write the host fingerprint as a raw byte array
+ * @param fingerprint_n the number of bytes written to fingerprint
+ * @return true if the entry was found, false otherwise
+ */
+static Q_BOOL get_knownhost_entry(const char * host, const char * port,
+                                  char * fingerprint, int * fingerprint_n) {
+
+    struct known_host_entry * known_hosts = NULL;
+    int i;
+
+    DLOG(("get_knownhost_entry()\n"));
+
+    load_knownhosts(&known_hosts);
+
+    while (known_hosts != NULL) {
+        DLOG(("Scan known_hosts entry:\n", known_hosts->host));
+        DLOG(("    host '%s'\n", known_hosts->host));
+        DLOG(("    port '%s'\n", known_hosts->port));
+        if ((strcmp(known_hosts->host, host) == 0) &&
+            (strcmp(known_hosts->port, port) == 0)
+        ) {
+            /* Found a match, return it */
+            DLOG(("-- MATCH --\n"));
+            DLOG(("    fingerprint (%d) ", known_hosts->fingerprint_n));
+            for (i = 0; i < known_hosts->fingerprint_n; i++) {
+                DLOG2(("\\x%02x", (known_hosts->fingerprint[i] & 0xFF)));
+            }
+            DLOG2(("\n"));
+
+            memcpy(fingerprint, known_hosts->fingerprint,
+                known_hosts->fingerprint_n);
+            *fingerprint_n = known_hosts->fingerprint_n;
+            return Q_TRUE;
+        }
+        known_hosts = known_hosts->next;
+    }
+
+    free_knownhosts(known_hosts);
+    return Q_FALSE;
+}
+
+/**
+ * Create a new entry for the known_hosts file.
+ *
+ * @param host the host's DNS name or IP address
+ * @param port the host's port
+ * @param fingerprint the host fingerprint as a raw byte array
+ * @param fingerprint_n the number of bytes in fingerprint
+ */
+static void create_knownhost_entry(const char * host, const char * port,
+                                   char * fingerprint,
+                                   const int fingerprint_n) {
+
+    struct known_host_entry * known_hosts = NULL;
+    struct known_host_entry * entry = NULL;
+
+    DLOG(("create_knownhost_entry()\n"));
+
+    load_knownhosts(&known_hosts);
+    entry = (struct known_host_entry *) Xmalloc(sizeof(struct known_host_entry),
+                                                __FILE__, __LINE__);
+    memset(entry, 0, sizeof(struct known_host_entry));
+    entry->host = (char *) host;
+    entry->port = (char *) port;
+    memcpy(entry->fingerprint, fingerprint, fingerprint_n);
+    entry->fingerprint_n = fingerprint_n;
+    entry->next = known_hosts;
+    save_knownhosts(entry);
+    free_knownhosts(entry);
+}
+
+/**
+ * Delete an entry from the known_hosts file.
+ *
+ * @param host the host's DNS name or IP address
+ * @param port the host's port
+ */
+static void delete_knownhost_entry(const char * host, const char * port) {
+
+    struct known_host_entry * head = NULL;
+    struct known_host_entry * p = NULL;
+    struct known_host_entry * q = NULL;
+    load_knownhosts(&head);
+    p = head;
+
+    DLOG(("delete_knownhost_entry()\n"));
+
+    while (p != NULL) {
+        DLOG(("Scan known_hosts entry:\n", p->host));
+        DLOG(("    host '%s'\n", p->host));
+        DLOG(("    port '%s'\n", p->port));
+        if ((strcmp(p->host, host) == 0) &&
+            (strcmp(p->port, port) == 0)
+        ) {
+            /* Found a match, delete it */
+            DLOG(("-- MATCH --\n"));
+            if (q != NULL) {
+                /*
+                 * Deleting in the middle or the end.  Remove p from the
+                 * linked list.
+                 */
+                q->next = p->next;
+            } else {
+                /* Deleting at the head.  Just point the head to next. */
+                head = p->next;
+            }
+            Xfree(p, __FILE__, __LINE__);
+            save_knownhosts(head);
+            free_knownhosts(head);
+            return;
+        }
+        q = p;
+        p = p->next;
+    }
+    /* No match found, do nothing. */
+    DLOG(("delete_knownhost_entry() : no match found for host %s port %s\n",
+            host, port));
+
 }
 
 /**
@@ -3763,6 +4189,11 @@ static int ssh_setup_connection(int fd, const char * host, const char * port) {
     int cryptStatus;
     char buffer[64];
     int tcp_flag = 1;
+    Q_BOOL has_previous_fingerprint = Q_FALSE;
+    char * message_lines[10];
+    int keystroke;
+    char fingerprint[CRYPT_MAX_HASHSIZE + 1];
+    int fingerprint_n = 0;
 
     /* Make sure we have a socket */
     assert (fd != -1);
@@ -3782,6 +4213,26 @@ static int ssh_setup_connection(int fd, const char * host, const char * port) {
         DLOG(("ERROR cryptCreateSession()\n"));
         goto crypt_error;
     }
+
+    /*
+     * If we have the server fingerprint from a previous connection, set it
+     * now so that cryptlib can abort the connection if the fingerprint
+     * doesn't match.
+     */
+    if (get_knownhost_entry(host, port, fingerprint,
+                            &fingerprint_n) == Q_TRUE) {
+
+        cryptStatus = cryptSetAttributeString(cryptSession,
+            CRYPT_SESSINFO_SERVER_FINGERPRINT_SHA1,
+            fingerprint, fingerprint_n);
+
+        if (cryptStatusError(cryptStatus)) {
+            DLOG(("ERROR cryptSetAttribute(CRYPT_SESSINFO_SERVER_FINGERPRINT_SHA1)\n"));
+            goto crypt_error;
+        }
+        has_previous_fingerprint = Q_TRUE;
+    }
+
     /* Username and password need to be converted to char, not wchar_t */
     sprintf(buffer, "%ls", q_status.current_username);
     cryptStatus = cryptSetAttributeString(cryptSession, CRYPT_SESSINFO_USERNAME,
@@ -3830,6 +4281,44 @@ static int ssh_setup_connection(int fd, const char * host, const char * port) {
         goto crypt_error;
     }
 
+    /* Check the server fingerprint */
+    DLOG(("SSH server key fingerprint: %s\n", ssh_server_key_str()));
+
+    /*
+     * If we just got a new fingerprint, ask if the user wants to add it.
+     */
+    if (has_previous_fingerprint == Q_FALSE) {
+
+        sprintf(notify_message, _("Host key for %s:%s not found: "),
+            host, port);
+        message_lines[0] = notify_message;
+        message_lines[1] = (char *) ssh_server_key_str();
+        message_lines[2] = "";
+        message_lines[3] = _("   Add to known hosts?  [Y/n/z] ");
+        keystroke = tolower(notify_prompt_form_long(
+            message_lines, _("Host Key Not Found"),
+            _(" Y-Connect And Add Key   N-Connect   Z-Disconnect "),
+            Q_TRUE, 0.0, "YyNnZz\r", 4));
+        q_cursor_off();
+
+        if ((keystroke == 'y') || (keystroke == C_CR)) {
+            cryptStatus = cryptGetAttributeString(cryptSession,
+                CRYPT_SESSINFO_SERVER_FINGERPRINT_SHA1,
+                fingerprint, &fingerprint_n);
+            if (cryptStatusError(cryptStatus)) {
+                DLOG(("ERROR cryptGetAttribute(CRYPT_SESSINFO_SERVER_FINGERPRINT_SHA1)\n"));
+            } else {
+                create_knownhost_entry(host, port, fingerprint, fingerprint_n);
+            }
+        } else if (keystroke == 'n') {
+            /* Do nothing */
+        } else {
+            /* The user said disconnect */
+            return -1;
+        }
+    }
+
+    /* All good, connection is OK */
     DLOG(("SSH connection established: fd = %d\n", fd));
 
     /* Set the network timeouts to mimic non-blocking behavior */
@@ -3844,6 +4333,49 @@ crypt_error:
     /* Could not establish session */
     emit_crypto_error(cryptStatus, cryptSession);
 
+    if (cryptStatus == CRYPT_ERROR_WRONGKEY) {
+        char * host_server_key;
+        int n;
+
+        assert(has_previous_fingerprint == Q_TRUE);
+        assert(fingerprint_n > 0);
+
+        n = (fingerprint_n * 3 + 2);
+        host_server_key = (char *) Xmalloc(n * sizeof(char), __FILE__,
+                                           __LINE__);
+        sha1_to_string(fingerprint, host_server_key, n);
+
+        /*
+         * SSH server key fingerprint has changed!  Show the user the old and
+         * new and ask if they want to update the key.
+         */
+        sprintf(notify_message, _("Host key for %s:%s has changed! "),
+            host, port);
+        message_lines[0] = notify_message;
+        message_lines[1] = _("Connection will be terminated to avoid possible");
+        message_lines[2] = _("man-in-the-middle attack.");
+        message_lines[3] = "";
+        message_lines[4] = _("If you *KNOW* the server has been updated, then");
+        message_lines[5] = _("you may remove the saved key and connect again.");
+        message_lines[6] = _("The saved key for this server is:");
+        message_lines[7] = host_server_key;
+        message_lines[8] = "";
+        message_lines[9] = _("   Remove saved key from known hosts?  [y/N] ");
+        keystroke = tolower(notify_prompt_form_long(
+            message_lines,
+            _("Host Key Has Changed!"),
+            _(" Y-Remove Key   N-Keep Old Key "),
+            Q_TRUE, 0.0, "YyNnZz\r", 10));
+        q_cursor_off();
+
+        if (keystroke == 'y') {
+            /* Delete the old key */
+            delete_knownhost_entry(host, port);
+        }
+
+        Xfree(host_server_key, __FILE__, __LINE__);
+    }
+
     memset(errorMessage, 0, sizeof(errorMessage));
     cryptGetAttributeString(cryptSession, CRYPT_ATTRIBUTE_ERRORMESSAGE,
                             errorMessage, &errorMessage_n);
@@ -3853,6 +4385,7 @@ crypt_error:
         _("Error: %s"), errorMessage);
     snprintf(q_dialer_modem_message,
         sizeof(q_dialer_modem_message), "%s", notify_message);
+
     return -1;
 }
 
@@ -3940,7 +4473,10 @@ ssize_t ssh_read(const int fd, void * buf, size_t count) {
 #endif
             return -1;
         } else {
-            /* TODO: handle it somehow */
+            /* This will be an error */
+            emit_crypto_error(cryptStatus, cryptSession);
+            set_errno(EIO);
+            return -1;
         }
     }
 
@@ -4081,31 +4617,8 @@ void ssh_resize_screen(const int lines, const int columns) {
 }
 
 /**
- * Convert a raw 16-byte hash value to a human-readable ASCII string.
- *
- * @param md5 the hash value
- * @param dest the string to write
- */
-static void md5_to_string(const char * md5, char * dest) {
-    const int len = 16;
-    int i;
-    memset(dest, 0, len * 3 + 2);
-    for (i = 0; i < len / 2; i++) {
-        sprintf(dest + strlen(dest), "%x", (md5[i] >> 4) & 0x0F);
-        sprintf(dest + strlen(dest), "%x",  md5[i]       & 0x0F);
-        sprintf(dest + strlen(dest), ":");
-    }
-    for (; i < len; i++) {
-        sprintf(dest + strlen(dest), "%x", (md5[i] >> 4) & 0x0F);
-        sprintf(dest + strlen(dest), "%x",  md5[i]       & 0x0F);
-        sprintf(dest + strlen(dest), ":");
-    }
-    dest[strlen(dest) - 1] = 0;
-}
-
-/**
- * Get the ssh server key fingerprint as a hex-encoded MD5 hash of the server
- * key, the same as the key fingerprint exposed by most ssh clients.
+ * Get the ssh server key fingerprint as a hex-encoded SHA1 hash of the
+ * server key, the same as the key fingerprint exposed by most ssh clients.
  *
  * @return the key string
  */
@@ -4114,28 +4627,29 @@ const char * ssh_server_key_str() {
     int fingerprint_n;
     int cryptStatus;
     int i;
+    int n;
 
     if (ssh_server_key == NULL) {
-        cryptStatus =  cryptGetAttributeString(cryptSession,
+        cryptStatus = cryptGetAttributeString(cryptSession,
             CRYPT_SESSINFO_SERVER_FINGERPRINT_SHA1,
             fingerprint, &fingerprint_n);
 
         if (cryptStatusError(cryptStatus)) {
             /* cryptlib error */
             emit_crypto_error(cryptStatus, cryptSession);
-            sprintf(fingerprint, "%s", "UNKNOWN");
-            fingerprint_n = strlen("UNKNOWN");
+            ssh_server_key = Xstrdup("UNKNOWN", __FILE__, __LINE__);
+            return ssh_server_key;
         }
 
-        DLOG(("SSH server fingerprint: "));
+        DLOG(("SSH server fingerprint (%d): ", fingerprint_n));
         for (i = 0; i < fingerprint_n; i++) {
             DLOG2((" %02x", (((char *) fingerprint)[i] & 0xFF)));
         }
         DLOG2(("\n"));
 
-        ssh_server_key = (char *) Xmalloc((fingerprint_n * 3 + 2) *
-            sizeof(char), __FILE__, __LINE__);
-        md5_to_string(fingerprint, ssh_server_key);
+        n = (fingerprint_n * 3 + 2);
+        ssh_server_key = (char *) Xmalloc(n * sizeof(char), __FILE__, __LINE__);
+        sha1_to_string(fingerprint, ssh_server_key, n);
     }
     return ssh_server_key;
 }
@@ -4358,7 +4872,7 @@ static int ssh_accept(int fd) {
     }
 
 #if 0
-    /* Clear any messages from the client for the initial handshare */
+    /* Clear any messages from the client for the initial handshake */
     DLOG(("Pop data to initiate handshake...\n"));
     cryptStatus = cryptPopData(cryptSession, buffer, sizeof(buffer), &buffer_n);
     if (cryptStatusError(cryptStatus)) {

@@ -222,9 +222,6 @@ implemented.
 The Windows build uses Beep() rather than SDL for sounds.  This might
 not work on Windows Vista and 64-bit XP systems.
 
-Qodem manages its own known_hosts file for SSH connections.  This file
-is stored in the Documents\qodem\prefs directory.
-
 SSH connections (client or host) using cryptlib do not work when
 compiled with the Borland compiler, nor when compiled with the Visual
 C++ compiler and running on Windows 2000 or earlier.
@@ -343,6 +340,10 @@ The host mode SSH server does not care what username or password are
 passed through the ssh client.  After the ssh connection is
 established, the login sequence is identical to socket and telnet
 connections.
+
+Qodem manages its own known_hosts file for SSH connections.  This file
+is stored in the ~/.qodem directory (or Documents\qodem\prefs on
+Windows).
 
 
 
