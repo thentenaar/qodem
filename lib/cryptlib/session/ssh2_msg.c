@@ -315,6 +315,15 @@ int processChannelControlMessage( INOUT SESSION_INFO *sessionInfoPtr,
 				}
 			break;
 
+                case SSH_MSG_CHANNEL_SUCCESS:
+                        /* Nothing to see here, move along, move along:
+
+                                byte    SSH_MSG_CHANNEL_SUCCESS
+                                string  data
+                         */
+                        DEBUG_PRINT(( "Processing channel success message.\n" ));
+                        return( OK_SPECIAL );
+
 		default:
 			{
 			char stringBuffer[ 256 + 8 ];

@@ -1123,6 +1123,7 @@
   #define setSocketBlocking( socket ) \
 			{ \
 			unsigned long nonBlock = FALSE; \
+                        WSAEventSelect(socket, NULL, 0); \
 			ioctlsocket( socket, FIONBIO, &nonBlock ); \
 			}
 #elif defined( __AMX__ ) || defined( __BEOS__ )

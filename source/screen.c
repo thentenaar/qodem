@@ -1067,10 +1067,10 @@ void screen_setup() {
      * Size limits: 25-250 rows, 80-250 columns.  This is only in the Win32a
      * version.  The user can maximize the window beyond these limits.
      */
-    ttytype[0] = 25;
-    ttytype[1] = (unsigned char) 250;
-    ttytype[2] = 80;
-    ttytype[3] = (unsigned char) 250;
+    pdc_ttytype[0] = 25;
+    pdc_ttytype[1] = (unsigned char) 250;
+    pdc_ttytype[2] = 80;
+    pdc_ttytype[3] = (unsigned char) 250;
     initscr();
 
     /*

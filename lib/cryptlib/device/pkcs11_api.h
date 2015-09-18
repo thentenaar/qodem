@@ -23,7 +23,11 @@
 	#define CK_CALLBACK_FUNCTION( returnType, name ) \
 								  returnType (_far _pascal * name)
   #else
+
+#ifndef __BORLANDC__
 	#pragma pack( push, cryptoki, 1 )	/* Struct packing */
+#endif
+
 	#define CK_PTR	*					/* Pointer type */
 	#define CK_DEFINE_FUNCTION( returnType, name ) \
 								returnType __declspec( dllexport ) name

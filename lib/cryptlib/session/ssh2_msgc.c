@@ -21,7 +21,7 @@
 #ifdef USE_SSH
 
 // KAL
-#ifdef Q_PDCURSES_WIN32
+#ifdef Q_SSH_CRYPTLIB
 #include "emulation.h"
 #include "qodem.h"
 #endif
@@ -453,9 +453,9 @@ static int createSessionOpenRequest( INOUT SESSION_INFO *sessionInfoPtr,
 												CHANNEL_WRITE );
 	int packetOffset, status;
 
-        // KAL
-#ifdef Q_PDCURSES_WIN32
-        char buffer[32];
+	// KAL
+#ifdef Q_SSH_CRYPTLIB
+	char buffer[32];
 #endif
 
 	assert( isWritePtr( sessionInfoPtr, sizeof( SESSION_INFO ) ) );
@@ -553,14 +553,15 @@ static int createSessionOpenRequest( INOUT SESSION_INFO *sessionInfoPtr,
 								  SSH_MSG_CHANNEL_REQUEST );
 	if( cryptStatusError( status ) )
 		return( status );
-	writeUint32( stream, channelNo );
-        writeString32( stream, "pty-req", 7 );
-	sputc( stream, 0 );					/* No reply */
 
-        // KAL
-#ifdef Q_PDCURSES_WIN32
-        memset(buffer, 0, sizeof(buffer));
-        sprintf(buffer, "%s", emulation_term(q_status.emulation));
+	writeUint32( stream, channelNo );
+	writeString32( stream, "pty-req", 7 );
+	sputc( stream, 1 );
+
+	// KAL
+#ifdef Q_SSH_CRYPTLIB
+	memset(buffer, 0, sizeof(buffer));
+	sprintf(buffer, "%s", emulation_term(q_status.emulation));
 	writeString32( stream, buffer, strlen(buffer) );
 	writeUint32( stream, WIDTH );
 	writeUint32( stream, HEIGHT - STATUS_HEIGHT );
@@ -571,13 +572,40 @@ static int createSessionOpenRequest( INOUT SESSION_INFO *sessionInfoPtr,
 
 #endif
 
-        writeUint32( stream, 0 );
+	writeUint32( stream, 0 );
 	writeUint32( stream, 0 );			/* No graphics capabilities */
 	status = writeUint32( stream, 0 );	/* No special TTY modes */
 	if( cryptStatusOK( status ) )
 		status = wrapPacketSSH2( sessionInfoPtr, stream, 0, FALSE, TRUE );
 	if( cryptStatusError( status ) )
 		return( status );
+
+	// KAL
+#ifdef Q_SSH_CRYPTLIB
+	// Pass LANG through the environment.
+	//
+	// Note that TERM, LINES, and COLUMNS were already set by the pty-req
+	// message.
+	status = continuePacketStreamSSH( stream, SSH_MSG_CHANNEL_REQUEST,
+									  &packetOffset );
+	if( cryptStatusError( status ) )
+		return( status );
+
+	writeUint32( stream, channelNo );
+	writeString32( stream, "env", 3 );
+	sputc( stream, 1 );
+
+	writeString32( stream, "LANG", 4 );
+	memset(buffer, 0, sizeof(buffer));
+	sprintf(buffer, "%s", emulation_lang(q_status.emulation));
+	status = writeString32( stream, buffer, strlen(buffer) );
+	if( cryptStatusOK( status ) )
+		status = wrapPacketSSH2( sessionInfoPtr, stream, packetOffset,
+								 FALSE, TRUE );
+	if( cryptStatusError( status ) )
+		return( status );
+
+#endif
 
 	/*	...
 		byte	type = SSH_MSG_CHANNEL_REQUEST

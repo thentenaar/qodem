@@ -11,7 +11,7 @@
 
 // KAL
 #define USE_PROBLEMATIC_ALGORITHMS
-
+#define Q_SSH_CRYPTLIB
 
 /****************************************************************************
 *																			*
@@ -45,7 +45,7 @@
 #endif /* 0 */
 
 /* The following configuration options can be used for custom builds of
-   cryptlib to fit constrained environments.  Note that these builds 
+   cryptlib to fit constrained environments.  Note that these builds
    severely constrain the options available for cryptlib use, for example 
    removing certificate support and using CONFIG_USE_PSEUDOCERTIFICATES in 
    combination with CONFIG_PROFILE_SSL requires using a pre-encoded SSL/TLS 
@@ -222,7 +222,7 @@
 #endif /* Obscure algorithms */
 
 /* Problematic algorithms that can cause issues due to memory/code size (for
-   example AES-GCM uses eight times as much memory as straight AES, and 
+   example AES-GCM uses eight times as much memory as straight AES, and
    that's for the variant with the small lookup tables, and the ECC 
    algorithms have a sizeable code and memory footprint) or because the 
    cryptosystems are brittle and problematic (the ECC algorithms again) */
@@ -431,7 +431,7 @@
 #endif /* OpenPGP-specific algorithms */
 
 /* Envelopes require PKC algorithms (they can be done with symmetric 
-   algorithms only, but it's rather unikely that anyone will be doing 
+   algorithms only, but it's rather unikely that anyone will be doing
    this) */
 
 #if defined( USE_ENVELOPES ) && !defined( USE_PKC )
@@ -641,7 +641,7 @@
 	defined( __PALMOS__ ) || defined( __RTEMS__ ) || defined( __SMX__ ) || \
 	defined( __ThreadX__ ) || defined( __TKernel__ ) || defined( __UCOS__ ) || \
 	defined( __VDK__ ) || defined( __VxWorks__ ) || defined( __WIN32__ ) || \
-	defined( __WINCE__ ) || defined( __XMK__ ) 
+	defined( __WINCE__ ) || defined( __XMK__ )
   #define USE_THREADS
 #endif /* Non-Unix systems with threads */
 
@@ -702,7 +702,7 @@
   #define CONFIG_RANDSEED
 #endif /* USE_EMBEDDED_OS && !CONFIG_RANDSEED */
 
-/* Networking.  DNS SRV is very rarely used and somewhat risky to leave 
+/* Networking.  DNS SRV is very rarely used and somewhat risky to leave
    enabled by default because the high level of complexity of DNS packet 
    parsing combined with the primitiveness of some of the APIs (specifically
    the Unix ones) make it a bit risky to leave enabled by default, so we
@@ -825,10 +825,8 @@
 	/* Contexts */
 	#undef USE_DSA
 
-        // KAL
 	/* Certificates */
-        // #undef USE_CERTIFICATES
-	#define USE_CERTIFICATES
+        #undef USE_CERTIFICATES
 	#undef USE_CMSATTR
 
 	/* Envelopes */
@@ -843,11 +841,36 @@
 	/* Sessions */
 	#undef USE_SSL
 
-        // KAL
 	/* Internal data formats */
-        // #undef USE_INT_CMS
-        #define USE_INT_CMS
+        #undef USE_INT_CMS
 
+        // KAL - add the abilities needed by the SSH server
+        #define USE_PKCS15
+        #define USE_CERTIFICATES
+	#define USE_ENVELOPES
+        #define USE_INT_CMS
+        #define USE_SESSIONS
+
+	#define USE_SSL
+	// #define USE_TCP
+	// #define USE_ECDH
+	// #define USE_ECDSA
+        #define USE_ERRMSGS
+        /*
+        #define USE_KEYSETS
+        #define USE_FILES
+
+	#define USE_COMPRESSION
+        #define USE_ERRMSGS
+	#define USE_DES
+	#define USE_HMAC_MD5
+	#define USE_RIPEMD160
+	#define USE_HMAC_RIPEMD160
+	#define USE_HMAC_SHA2
+	#define USE_RC2
+	#define USE_RC5
+	#define USE_DH
+        */
 
 #endif /* CONFIG_PROFILE_SSH */
 
@@ -902,8 +925,8 @@
 *																			*
 ****************************************************************************/
 
-/* Unsafe or obsolete facilities that are disabled by default, except in the 
-   Win32 debug build under VC++ 6.0.  We have to be careful with the 
+/* Unsafe or obsolete facilities that are disabled by default, except in the
+   Win32 debug build under VC++ 6.0.  We have to be careful with the
    preprocessor checks because the high-level feature-checking defines and
    macros are only available if osspec.h is included, which it won't be at
    this level */

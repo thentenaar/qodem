@@ -320,10 +320,9 @@ the other bit settings (5, 6, 8) are possible if there is user demand.
 
 GNU Emacs may look wrong in ANSI emulation when Line Wrap is disabled.
 
-Internal telnet, rlogin, and ssh connections do not pass all of the
-environment options to the remote host, due to limitations of remote
-daemons and the ssh library used.  Specifically: telnet and rlogin do
-not set LANG; ssh does not set TERM, LANG, LINES, or COLUMNS.
+Internal telnet and rlogin connections do not pass the LANG
+environment variable to the remote host, due to limitations of remote
+daemons.
 
 The SSH server key fingerprint displayed in the Alt-I info screen is
 unique, but does not match the key fingerprints reported by ssh-keygen

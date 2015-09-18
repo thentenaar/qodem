@@ -501,10 +501,10 @@ static int processEnvelopeHeader( INOUT ENVELOPE_INFO *envelopeInfoPtr,
 				return( CRYPT_ERROR_MEMORY );
 			envelopeInfoPtr->flags |= ENVELOPE_ZSTREAMINITED;
 			*state = DEENVSTATE_CONTENT;
+			break;
 #else
 			return( CRYPT_ERROR_NOTAVAIL );
 #endif /* USE_COMPRESSION */
-			break;
 
 		case ACTION_SIGN:
 			envelopeInfoPtr->usage = ACTION_SIGN;
@@ -1641,9 +1641,11 @@ static int processPostamble( INOUT ENVELOPE_INFO *envelopeInfoPtr,
 *																			*
 ****************************************************************************/
 
+#ifdef USE_CMS
+
 STDC_NONNULL_ARG( ( 1 ) ) \
 void initCMSDeenveloping( INOUT ENVELOPE_INFO *envelopeInfoPtr )
-	{
+        {
 	assert( isWritePtr( envelopeInfoPtr, sizeof( ENVELOPE_INFO ) ) );
 
 	REQUIRES_V( envelopeInfoPtr->flags & ENVELOPE_ISDEENVELOPE );
@@ -1656,4 +1658,7 @@ void initCMSDeenveloping( INOUT ENVELOPE_INFO *envelopeInfoPtr )
 	/* Set up the processing state information */
 	envelopeInfoPtr->deenvState = DEENVSTATE_NONE;
 	}
+
+#endif /* USE_CMS */
+
 #endif /* USE_ENVELOPES */

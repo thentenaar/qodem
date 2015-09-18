@@ -79,8 +79,12 @@
 	   enough to rely on it so we only enable it for VS 2010 and up, for 
 	   which it's definitely present */
   #else
+#if 0
 	#define static_assert( expr, string ) \
 			{ enum { ASSERT_CONCAT( static_assert_, __COUNTER__ ) = 1 / ( !!( expr ) ) }; }
+#else
+	#define static_assert( expr, string )
+#endif
   #endif /* VC++ versions */
   #define static_assert_opt( expr, string ) \
 		  assert( expr )

@@ -229,6 +229,11 @@ extern void rlogin_resize_screen(const int lines, const int columns);
 #ifdef Q_SSH_CRYPTLIB
 
 /**
+ * If true, new screen dimensions need to be sent to the remote side.
+ */
+extern Q_BOOL ssh_send_window_change;
+
+/**
  * Read data from remote system to a buffer, via an 8-bit clean channel
  * through the ssh protocol.
  *

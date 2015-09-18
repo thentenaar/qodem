@@ -19,6 +19,13 @@
 
 #ifdef USE_SSH
 
+// KAL
+#ifdef Q_SSH_CRYPTLIB
+#include "common.h"     // Q_BOOL
+#include "qodem.h"      // WIDTH, HEIGHT, STATUS_HEIGHT
+#include "netclient.h"
+#endif
+
 /* Tables mapping SSHv2 algorithm names to cryptlib algorithm IDs, in 
    preferred algorithm order.  The algorithm is frequently not a real 
    cryptlib algorithm type but an SSH-specific pseudo-algorithm in the 
@@ -1109,6 +1116,38 @@ static int processBodyFunction( INOUT SESSION_INFO *sessionInfoPtr,
 
 /* Write data over the SSH link */
 
+// KAL
+static int sendWindowChange(INOUT SESSION_INFO *sessionInfoPtr) {
+
+    const long channelNo = getCurrentChannelNo( sessionInfoPtr,
+        CHANNEL_WRITE );
+    int packetOffset, status;
+    STREAM stream;
+
+    assert( isWritePtr( sessionInfoPtr, sizeof( SESSION_INFO ) ) );
+
+    REQUIRES( !( sessionInfoPtr->flags & SESSION_SENDCLOSED ) );
+
+    status = openPacketStreamSSH( &stream, sessionInfoPtr,
+        SSH_MSG_CHANNEL_REQUEST );
+    if( cryptStatusError( status ) )
+        return( status );
+
+    writeUint32( &stream, channelNo);
+    writeString32( &stream, "window-change", 13 );
+    sputc( &stream, 0 ); /* No reply */
+    writeUint32( &stream, WIDTH );
+    writeUint32( &stream, HEIGHT - STATUS_HEIGHT );
+    writeUint32( &stream, 0 );
+    status = writeUint32( &stream, 0 );
+    if( cryptStatusOK( status ) )
+        status = wrapPacketSSH2( sessionInfoPtr, &stream, 0,
+            FALSE, TRUE );
+    status = sendPacketSSH2( sessionInfoPtr, &stream, TRUE );
+    sMemDisconnect( &stream );
+    return( status );
+}
+
 CHECK_RETVAL_LENGTH STDC_NONNULL_ARG( ( 1 ) ) \
 static int preparePacketFunction( INOUT SESSION_INFO *sessionInfoPtr )
 	{
@@ -1123,6 +1162,17 @@ static int preparePacketFunction( INOUT SESSION_INFO *sessionInfoPtr )
 	REQUIRES( !( sessionInfoPtr->flags & SESSION_SENDCLOSED ) );
 	REQUIRES( dataLength > 0 && dataLength < sessionInfoPtr->sendBufPos && \
 			  dataLength < MAX_BUFFER_SIZE );
+
+#ifdef Q_SSH_CRYPTLIB
+        // KAL: insert a window-change message here if the window was
+        // resized.
+        if (ssh_send_window_change == Q_TRUE) {
+            ssh_send_window_change = Q_FALSE;
+            status = sendWindowChange(sessionInfoPtr);
+            if( cryptStatusError( status ) )
+		return( status );
+        }
+#endif
 
 	/* Wrap up the payload ready for sending:
 

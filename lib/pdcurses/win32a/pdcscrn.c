@@ -2155,11 +2155,11 @@ INLINE int set_up_window( void)
 
     get_default_sizes_from_registry( &n_default_columns, &n_default_rows, &xloc, &yloc,
                      &menu_shown);
-    if( ttytype[1])
-        PDC_set_resize_limits( (unsigned char)ttytype[0],
-                               (unsigned char)ttytype[1],
-                               (unsigned char)ttytype[2],
-                               (unsigned char)ttytype[3]);
+    if( pdc_ttytype[1])
+        PDC_set_resize_limits( (unsigned char)pdc_ttytype[0],
+                               (unsigned char)pdc_ttytype[1],
+                               (unsigned char)pdc_ttytype[2],
+                               (unsigned char)pdc_ttytype[3]);
     debug_printf( "Size %d x %d,  loc %d x %d;  menu %d\n",
                n_default_columns, n_default_rows, xloc, yloc, menu_shown);
     get_character_sizes( NULL, &PDC_cxChar, &PDC_cyChar);

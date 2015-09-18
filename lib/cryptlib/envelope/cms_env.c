@@ -1664,13 +1664,15 @@ static int emitPostamble( INOUT ENVELOPE_INFO *envelopeInfoPtr,
 *																			*
 ****************************************************************************/
 
+#ifdef USE_CMS
+
 STDC_NONNULL_ARG( ( 1 ) ) \
 void initCMSEnveloping( INOUT ENVELOPE_INFO *envelopeInfoPtr )
 	{
 	int algorithm, status;
 
 	assert( isWritePtr( envelopeInfoPtr, sizeof( ENVELOPE_INFO ) ) );
-	
+
 	REQUIRES_V( !( envelopeInfoPtr->flags & ENVELOPE_ISDEENVELOPE ) );
 
 	/* Set the access method pointers */
@@ -1681,22 +1683,22 @@ void initCMSEnveloping( INOUT ENVELOPE_INFO *envelopeInfoPtr )
 	/* Set up the processing state information */
 	envelopeInfoPtr->envState = ENVSTATE_NONE;
 
-	/* Remember the current default settings for use with the envelope. 
-	   We force the use of the CBC encryption mode because this is the 
-	   safest and most efficient encryption mode, and the only mode defined 
-	   for many CMS algorithms.  Since the CMS algorithms represent only a 
-	   subset of what's available we have to drop back to fixed values if 
+	/* Remember the current default settings for use with the envelope.
+	   We force the use of the CBC encryption mode because this is the
+	   safest and most efficient encryption mode, and the only mode defined
+	   for many CMS algorithms.  Since the CMS algorithms represent only a
+	   subset of what's available we have to drop back to fixed values if
 	   the caller has selected something exotic */
-	status = krnlSendMessage( envelopeInfoPtr->ownerHandle, 
-							  IMESSAGE_GETATTRIBUTE, &algorithm, 
+	status = krnlSendMessage( envelopeInfoPtr->ownerHandle,
+							  IMESSAGE_GETATTRIBUTE, &algorithm,
 							  CRYPT_OPTION_ENCR_HASH );
 	if( cryptStatusError( status ) || \
 		!checkAlgoID( algorithm, CRYPT_MODE_NONE ) )
 		envelopeInfoPtr->defaultHash = CRYPT_ALGO_SHA1;
 	else
 		envelopeInfoPtr->defaultHash = algorithm;	/* int vs.enum */
-	status = krnlSendMessage( envelopeInfoPtr->ownerHandle, 
-							  IMESSAGE_GETATTRIBUTE, &algorithm, 
+	status = krnlSendMessage( envelopeInfoPtr->ownerHandle,
+							  IMESSAGE_GETATTRIBUTE, &algorithm,
 							  CRYPT_OPTION_ENCR_ALGO );
 	if( cryptStatusError( status ) || \
 		!checkAlgoID( algorithm, ( algorithm == CRYPT_ALGO_RC4 ) ? \
@@ -1704,8 +1706,8 @@ void initCMSEnveloping( INOUT ENVELOPE_INFO *envelopeInfoPtr )
 		envelopeInfoPtr->defaultAlgo = CRYPT_ALGO_3DES;
 	else
 		envelopeInfoPtr->defaultAlgo = algorithm;	/* int vs.enum */
-	status = krnlSendMessage( envelopeInfoPtr->ownerHandle, 
-							  IMESSAGE_GETATTRIBUTE, &algorithm, 
+	status = krnlSendMessage( envelopeInfoPtr->ownerHandle,
+							  IMESSAGE_GETATTRIBUTE, &algorithm,
 							  CRYPT_OPTION_ENCR_MAC );
 	if( cryptStatusError( status ) || \
 		!checkAlgoID( algorithm, CRYPT_MODE_NONE ) )
@@ -1713,4 +1715,7 @@ void initCMSEnveloping( INOUT ENVELOPE_INFO *envelopeInfoPtr )
 	else
 		envelopeInfoPtr->defaultMAC = algorithm;	/* int vs.enum */
 	}
+
+#endif /* USE_CMS */
+
 #endif /* USE_ENVELOPES */

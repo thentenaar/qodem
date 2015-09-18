@@ -1,6 +1,31 @@
 The Qodem Project Work Log
 ==========================
 
+September 18, 2015
+
+NO MORE MUCKING WITH CRYPTLIB, YAY!
+
+...whew...
+
+All of the features I need are in for SSH now.
+
+This is actually a pretty important moment: all of the features that
+were present before the Great Refactoring are available again: UPnP,
+SDL, SSH, and X11.  But now it all runs on Windows with two different
+compilers, and on Linux has both the simple Makefile.generic and an
+autoconf configure script.
+
+Speaking of X11, I really need to deliver a positive shout out to
+William McBrine.  I reported the client hang bug for PDCurses back in
+2012, and within a few months there was a fix waiting in the thread
+(which is now in PDCurses CVS head).  It was all of a two-line fix,
+but now qodem lives again in glorious Terminus font X11 frame.  I
+really really appreciate William's work: thanks very much!
+
+I'll need to take a break for a bit due to real life intruding, but
+this is a nice place to be indeed.  From here on out I can focus more
+on my own code and less on infrastructure stuff.
+
 September 17, 2015
 
 Just finished putting in known_hosts support.  I exposed a bug in

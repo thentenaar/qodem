@@ -58,12 +58,6 @@ Rework codepage/UTF-8 support:
   Ship Unicode table for Wingdings
 
 
-CryptLib support
-  Patches:
-    env - send TERM and LANG
-    window-change - send new window dimensions
-
-
 New autoconf build:
   make dist
 

@@ -1276,7 +1276,7 @@ int preDispatchCheckAttributeAccess( IN_HANDLE const int objectHandle,
 		/* MESSAGE_SETATTRIBUTE */			/* MESSAGE_SETATTRIBUTE_S */
 		{ ACCESS_FLAG_W, ACCESS_FLAG_H_W }, { ACCESS_FLAG_W, ACCESS_FLAG_H_W },
 		/* MESSAGE_DELETEATTRIBUTE */
-		{ ACCESS_FLAG_D, ACCESS_FLAG_H_D }, 
+		{ ACCESS_FLAG_D, ACCESS_FLAG_H_D },
 		{ ACCESS_FLAG_x, ACCESS_FLAG_x },
 			{ ACCESS_FLAG_x, ACCESS_FLAG_x }
 		};
@@ -1320,8 +1320,8 @@ int preDispatchCheckAttributeAccess( IN_HANDLE const int objectHandle,
 	/* Make sure that this type of access is valid for this attribute */
 	if( !( attributeACL->access & accessType ) )
 		{
-		/* If it's an internal-only attribute being accessed through an 
-		   external message then it isn't visible to the user so we return 
+		/* If it's an internal-only attribute being accessed through an
+		   external message then it isn't visible to the user so we return
 		   an attribute value error */
 		if( !( attributeACL->access & ACCESS_MASK_EXTERNAL ) && \
 			!isInternalMessage )
@@ -1331,8 +1331,8 @@ int preDispatchCheckAttributeAccess( IN_HANDLE const int objectHandle,
 		return( CRYPT_ERROR_PERMISSION );
 		}
 
-	/* Inner precondition: The attribute is valid for this subtype and is 
-	   externally visible or it's an internal message, and this type of 
+	/* Inner precondition: The attribute is valid for this subtype and is
+	   externally visible or it's an internal message, and this type of
 	   access is allowed */
 	REQUIRES( isValidSubtype( attributeACL->subTypeA, subType ) || \
 			  isValidSubtype( attributeACL->subTypeB, subType ) || \
@@ -1341,7 +1341,7 @@ int preDispatchCheckAttributeAccess( IN_HANDLE const int objectHandle,
 			  isInternalMessage );
 	REQUIRES( attributeACL->access & accessType );
 
-	/* If it's a delete attribute message then there's no attribute data 
+	/* If it's a delete attribute message then there's no attribute data
 	   being communicated, so we can exit now */
 	if( localMessage == MESSAGE_DELETEATTRIBUTE )
 		{

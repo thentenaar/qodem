@@ -3686,6 +3686,7 @@ extern "C" {
 #include <netinet/tcp.h>
 #endif
 
+#include "input.h"
 #include "options.h"
 
 /**
@@ -3707,6 +3708,11 @@ static char * ssh_server_key = NULL;
  * The filename in the working directory to store a qodem ssh server key.
  */
 #define HOST_SSH_SERVER_KEY_FILENAME "ssh_server_key.p15"
+
+/**
+ * If true, new screen dimensions need to be sent to the remote side.
+ */
+Q_BOOL ssh_send_window_change = Q_FALSE;
 
 /**
  * One entry in the known_hosts file.
@@ -4407,6 +4413,8 @@ static void ssh_close() {
         Xfree(ssh_server_key, __FILE__, __LINE__);
         ssh_server_key = NULL;
     }
+
+    ssh_send_window_change = Q_FALSE;
 }
 
 /**
@@ -4613,7 +4621,11 @@ ssize_t ssh_write(const int fd, void * buf, size_t count) {
  * @param columns the number of screen columns
  */
 void ssh_resize_screen(const int lines, const int columns) {
-    /* TODO */
+    /*
+     * Set the flag here.  On the next call to ssh_write() cryptlib will see
+     * this and generate a window-change message.
+     */
+    ssh_send_window_change = Q_TRUE;
 }
 
 /**

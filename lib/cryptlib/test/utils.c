@@ -93,7 +93,9 @@ int remove( const char *pathname )
 
 #if defined( __WINDOWS__ ) && !defined( _WIN32_WCE ) 
 
+#ifndef __BORLANDC__
 #pragma comment( lib, "advapi32" )
+#endif
 
 static int checkFileAccessibleACL( const char *fileName )
 	{

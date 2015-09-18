@@ -1184,7 +1184,12 @@ typedef unsigned char		BYTE;
   #define isAlnum( ch )		isalnum( byteToInt( ch ) )
   #define isAlpha( ch )		isalpha( byteToInt( ch ) )
   #define isDigit( ch )		isdigit( byteToInt( ch ) )
+#ifdef __BORLANDC__
+  #define isPrint( ch ) \
+		  ( ( byteToInt( ch ) ) >= 0x20 && ( byteToInt( ch ) ) <= 0x7E )
+#else
   #define isPrint( ch )		isprint( byteToInt( ch ) )
+#endif
   #define isXDigit( ch )	isxdigit( byteToInt( ch ) )
   #define toLower( ch )		tolower( byteToInt( ch ) )
   #define toUpper( ch )		toupper( byteToInt( ch ) )
