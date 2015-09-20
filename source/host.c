@@ -555,7 +555,7 @@ static void host_stop() {
 static Q_BOOL line_buffer_char(const unsigned char ch) {
     uint32_t last_utf8_state;
     char utf8_buffer[6];
-    int rc = 0;
+    int rc;
 
     if ((ch == 0x08) || (ch == 0x7F)) {
         /*
@@ -1179,8 +1179,9 @@ static void display_message(const int n) {
 
     assert(all_messages != NULL);
     assert(all_messages_n > 0);
+    assert(n < all_messages_n);
 
-    message = all_messages[current_message];
+    message = all_messages[n];
 
     /*
      * Print message #
@@ -1409,11 +1410,11 @@ static void clear_filename() {
 
 /* Do download */
 static void download_file(Q_PROTOCOL protocol) {
-    struct file_info * upload_file_info = NULL;
-    char * filename = NULL;
+    struct file_info * upload_file_info;
+    char * filename;
     int rc;
     struct stat fstats;
-    int length = 0;
+    int length;
 
     if (local_login == Q_TRUE) {
         do_menu(EOL "Cannot download on local logon." EOL);
@@ -1557,7 +1558,6 @@ download_top:
         DLOG(("download_file(): TRANSFER\n"));
         file_state = FILENAME;
         goto download_top;
-        return;
     }
 
     /*
@@ -1801,7 +1801,6 @@ upload_top:
         DLOG(("upload_file(): TRANSFER\n"));
         file_state = FILENAME;
         goto upload_top;
-        return;
     }
 
     /*

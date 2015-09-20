@@ -75,10 +75,10 @@ MINIUPNPC_A = $(MINIUPNPC_DIR)/libminiupnpc.a
 CC = cc
 
 # Normal settings
-# EXTRA_LIBS =
-# EXTRA_INC =
-# CFLAGS = -O2 -Wall $(INC)
-# LDLIBS = -lncursesw -lutil
+EXTRA_LIBS =
+EXTRA_INC =
+CFLAGS = -O2 -Wall $(INC)
+LDLIBS = -lncursesw -lutil
 
 # Debug settings which include cryptlib support
 # EXTRA_LIBS = $(CRYPTLIB_A)
@@ -87,10 +87,10 @@ CC = cc
 # LDLIBS = -lncursesw -lutil $(CRYPTLIB_A) -lpthread
 
 # Debug settings which include cryptlib and miniupnpc support
-EXTRA_LIBS = $(CRYPTLIB_A) $(MINIUPNPC_A)
-EXTRA_INC = -I$(CRYPTLIB_DIR) -I$(MINIUPNPC_DIR)
-CFLAGS = -O0 -Wall -ggdb $(INC) $(EXTRA_INC) -DQ_SSH_CRYPTLIB -DCONFIG_PROFILE_SSH -DQ_UPNP
-LDLIBS = -lncursesw -lutil $(CRYPTLIB_A) $(MINIUPNPC_A) -lpthread
+# EXTRA_LIBS = $(CRYPTLIB_A) $(MINIUPNPC_A)
+# EXTRA_INC = -I$(CRYPTLIB_DIR) -I$(MINIUPNPC_DIR)
+# CFLAGS = -O0 -Wall -ggdb $(INC) $(EXTRA_INC) -DQ_SSH_CRYPTLIB -DCONFIG_PROFILE_SSH -DQ_UPNP
+# LDLIBS = -lncursesw -lutil $(CRYPTLIB_A) $(MINIUPNPC_A) -lpthread
 
 
 # ----------------------------------------------------------------------------
@@ -182,7 +182,7 @@ clean:
 
 qodem: $(QODEM_EXE)
 
-$(QODEM_EXE): $(QODEM_BIN_DIR) $(QODEM_OBJS) $(EXTRA_LIBS)
+$(QODEM_EXE): $(QODEM_BIN_DIR) $(QODEM_OBJS_DIR) $(QODEM_OBJS) $(EXTRA_LIBS)
 	$(CC) $(LDFLAGS) -o $(QODEM_EXE) $(QODEM_OBJS) $(LDLIBS)
 
 $(QODEM_OBJS_DIR)/%.o : $(QODEM_SRC_DIR)/%.c

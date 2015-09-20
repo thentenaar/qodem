@@ -96,7 +96,7 @@ void dlogprintf(const char * format, ...) {
  */
 wchar_t * Xwcsdup(const wchar_t * ptr, const char * file, const int line) {
 
-    wchar_t * local_ptr = NULL;
+    wchar_t * local_ptr;
 #if defined(Q_GC_BOEHM) && defined(HAVE_LIBGC)
     int length;
     int i;
@@ -164,7 +164,7 @@ wchar_t * Xwcsdup(const wchar_t * ptr, const char * file, const int line) {
 wchar_t * Xstring_to_wcsdup(const char * ptr, const char * file,
                             const int line) {
 
-    wchar_t * local_ptr = NULL;
+    wchar_t * local_ptr;
     int length;
 
 #if defined(Q_GC_BOEHM) && defined(HAVE_LIBGC)
@@ -219,7 +219,7 @@ wchar_t * Xstring_to_wcsdup(const char * ptr, const char * file,
  */
 char * Xstrdup(const char * ptr, const char * file, const int line) {
 
-    char * local_ptr = NULL;
+    char * local_ptr;
 #if defined(Q_GC_BOEHM) && defined(HAVE_LIBGC)
     int length;
     int i;

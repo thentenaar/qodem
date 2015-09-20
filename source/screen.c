@@ -151,7 +151,7 @@ attr_t vt100_check_reverse_color(const attr_t color, const Q_BOOL reverse) {
     short old_color = color_from_attr(color);
     short old_color_bg = (old_color & 0x07);
     short old_color_fg = (old_color & 0x38) >> 3;
-    short flip_color = 0x38;
+    short flip_color;
     Q_BOOL do_flip = Q_FALSE;
 
     switch (q_status.emulation) {

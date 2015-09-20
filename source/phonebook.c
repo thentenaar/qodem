@@ -208,7 +208,7 @@ static void print_phonebook_80(const char * dest) {
     FILE * file;
     char * filename;
     char * full_filename;
-    Q_BOOL lpr = Q_FALSE;
+    Q_BOOL lpr;
     struct q_phone_struct * entry;
     unsigned int left_stop;
     unsigned int i;
@@ -357,7 +357,7 @@ static void print_phonebook_132(const char * dest) {
     FILE * file;
     char * filename;
     char * full_filename;
-    Q_BOOL lpr = Q_FALSE;
+    Q_BOOL lpr;
     struct q_phone_struct * entry;
     unsigned int left_stop;
     unsigned int i;
@@ -577,7 +577,7 @@ static Q_DOORWAY doorway_from_string(const char * string) {
         return Q_DOORWAY_NEVER;
     }
 
-    return -1;
+    return Q_DOORWAY_NEVER;
 }
 
 /**
@@ -636,7 +636,7 @@ static Q_DIAL_METHOD method_from_string(const char *string) {
         return Q_DIAL_METHOD_COMMANDLINE;
     }
 
-    return -1;
+    return Q_DIAL_METHOD_SHELL;
 }
 
 /**
@@ -1440,7 +1440,7 @@ void create_phonebook() {
      * 2) Vertrauen - telnet BBS (home of synchronet)
      * 3) Electronic Chicken - dial-up BBS
      */
-    struct q_phone_struct * new_entry = NULL;
+    struct q_phone_struct * new_entry;
     struct q_phone_struct * old_entry = NULL;
 
     assert(q_phonebook.entries == NULL);
@@ -2349,7 +2349,7 @@ static char * pick_tag_string() {
             break;
 
         }
-    }
+    } /* for (;;) */
 
     /*
      * Should never get here.
@@ -2555,7 +2555,7 @@ static Q_BOOL prompt_ssh_password(const wchar_t * initial_username,
             break;
 
         }
-    }
+    } /* for (;;) */
 
     /*
      * Should never get here.
@@ -3184,7 +3184,7 @@ void phonebook_refresh() {
          i++, entry = entry->next) {
         wchar_t flag_tagged;
         wchar_t flag_notes;
-        int color;
+        Q_COLOR color;
 
         if ((entry == q_phonebook.selected_entry) &&
             (entry->tagged == Q_TRUE)
@@ -4084,7 +4084,7 @@ static Q_EMULATION pick_emulation() {
              */
             break;
         }
-    }
+    } /* for (;;) */
 
     /*
      * Should never get here.
@@ -4279,7 +4279,7 @@ static Q_CODEPAGE pick_codepage(Q_EMULATION emulation) {
              */
             break;
         }
-    }
+    } /* for (;;) */
 
     /*
      * Should never get here.
@@ -4410,7 +4410,7 @@ static Q_DIAL_METHOD pick_method() {
              */
             break;
         }
-    }
+    } /* for (;;) */
 
     /*
      * Should never get here.
@@ -4551,7 +4551,7 @@ static SORT_METHOD pick_sort() {
              */
             break;
         }
-    }
+    } /* for (;;) */
 
     /*
      * Should never get here.
@@ -4685,7 +4685,7 @@ static int delete_popup() {
              */
             break;
         }
-    }
+    } /* for (;;) */
 
     /*
      * Should never get here.
@@ -4836,7 +4836,7 @@ static Q_DOORWAY pick_doorway() {
              */
             break;
         }
-    }
+    } /* for (;;) */
 
     /*
      * Should never get here.
@@ -5180,7 +5180,7 @@ static void toggles_form(int * toggles) {
              */
             break;
         }
-    }
+    } /* for (;;) */
 
     /*
      * Should never get here.
@@ -5231,8 +5231,8 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
     struct fieldset * edit_form;
     struct field * port_field;
     void * form_window;
-    int color_active = Q_COLOR_WINDOW_FIELD_TEXT_HIGHLIGHTED;
-    int color_inactive = Q_COLOR_WINDOW_FIELD_HIGHLIGHTED;
+    Q_COLOR color_active = Q_COLOR_WINDOW_FIELD_TEXT_HIGHLIGHTED;
+    Q_COLOR color_inactive = Q_COLOR_WINDOW_FIELD_HIGHLIGHTED;
     int status_left_stop;
     char * status_string = NULL;
     int window_left;

@@ -99,7 +99,7 @@ Q_EMULATION emulation_from_string(const char * string) {
         return Q_EMUL_DEBUG;
     }
 
-    return -1;
+    return Q_EMUL_VT102;
 }
 
 /**
@@ -340,6 +340,7 @@ Q_CODEPAGE default_codepage(Q_EMULATION emulation) {
      * BUG: should never get here
      */
     abort();
+    return Q_CODEPAGE_CP437;
 }
 
 /* TTY emulation ------------------------------------------------------------ */

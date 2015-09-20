@@ -218,11 +218,11 @@ void play_music(const struct q_music_struct * music,
 
 #ifndef Q_PDCURSES_WIN32
     int keystroke;
+    static Q_BOOL on_linux = Q_FALSE;
 #endif
 
     static time_t ban_time = 0;
     time_t now;
-    static Q_BOOL on_linux = Q_FALSE;
 
     if (q_status.sound == Q_FALSE) {
         return;
@@ -1330,7 +1330,6 @@ music_done:
                                               __FILE__, __LINE__);
         memset(q, 0, sizeof(struct q_music_struct));
         p->next = q;
-        p = q;
     }
 
 music_done_2:

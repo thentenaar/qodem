@@ -789,7 +789,7 @@ void dial_success() {
  * @param number the phonebook entry to connect to
  */
 void dial_out(struct q_phone_struct * target) {
-    char * command = NULL;
+    char * command;
     Q_BOOL do_network_connect = Q_FALSE;
 
     /*

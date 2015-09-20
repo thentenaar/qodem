@@ -916,5 +916,5 @@ repeat_loop:
      * Should never get here.
      */
     abort();
-
+    return Q_EMUL_FSM_NO_CHAR_YET;
 }

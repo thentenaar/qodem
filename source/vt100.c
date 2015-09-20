@@ -2212,9 +2212,8 @@ static void sgr() {
     if (state.params_n < 0) {
         q_current_color = Q_A_NORMAL |
             scrollback_full_attr(Q_COLOR_CONSOLE_TEXT);
-        foreground = q_text_colors[Q_COLOR_CONSOLE_TEXT].fg;
-        background = q_text_colors[Q_COLOR_CONSOLE_TEXT].bg;
         DLOG2(("RESET\n"));
+        return;
 
     } else {
 
@@ -3185,7 +3184,7 @@ static void cbt() {
     int i;
     int j;
     int tab_i;
-    int tabs_to_move = 0;
+    int tabs_to_move;
 
     if (state.dec_private_mode_flag == Q_TRUE) {
         return;
@@ -3207,7 +3206,6 @@ static void cbt() {
     DLOG(("cbt(): %d\n", tabs_to_move));
 
     for (i = 0; i < tabs_to_move; i++) {
-        j = q_status.cursor_x;
         for (tab_i = 0; tab_i < state.tab_stops_n; tab_i++) {
             if (state.tab_stops[tab_i] >= q_status.cursor_x) {
                 break;
@@ -3228,7 +3226,7 @@ static void cbt() {
  */
 static void cht() {
     int i;
-    int tabs_to_move = 0;
+    int tabs_to_move;
 
     if (state.dec_private_mode_flag == Q_TRUE) {
         return;
@@ -6083,7 +6081,6 @@ wchar_t * vt100_keystroke(const int keystroke) {
         default:
             return L"\033OQ";
         }
-        return L"\033OQ";
 
     case Q_KEY_F(3):
         /* PF3 */

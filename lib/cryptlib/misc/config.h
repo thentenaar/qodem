@@ -11,7 +11,9 @@
 
 // KAL
 #define USE_PROBLEMATIC_ALGORITHMS
+#ifndef Q_SSH_CRYPTLIB
 #define Q_SSH_CRYPTLIB
+#endif
 
 /****************************************************************************
 *																			*

@@ -319,7 +319,7 @@ Q_BOOL prompt_listen_port(char ** port) {
             break;
 
         }
-    }
+    } /* for (;;) */
 
     /*
      * Should never get here.
@@ -537,9 +537,9 @@ int alt_code_key(Q_BOOL utf8) {
  * @return the string the user selected, or NULL if they cancelled.
  */
 wchar_t * pick_find_string() {
-    void * pick_window = NULL;
+    void * pick_window;
     struct field * field;
-    struct fieldset * pick_form = NULL;
+    struct fieldset * pick_form;
     wchar_t * return_string;
     int window_left;
     int window_top;
@@ -713,7 +713,7 @@ wchar_t * pick_find_string() {
             break;
 
         }
-    }
+    } /* for (;;) */
 
     /*
      * Should never get here.
@@ -1357,7 +1357,7 @@ save_form_top:
                 break;
             }
         }
-    }
+    } /* for (;;) */
 
     /*
      * Should never get here.
@@ -1470,9 +1470,9 @@ static void swap_file_info(struct file_info * file_list, int i, int j) {
 static Q_BOOL match_by_filename(const char * filename, struct stat * fstats,
                                 const char * filter) {
 #ifdef Q_PDCURSES_WIN32
-    BOOL rc = FALSE;
+    BOOL rc;
 #else
-    int rc = 0;
+    int rc;
 #endif
 
     /*
@@ -2262,7 +2262,10 @@ exit_view_directory:
                     q_keyboard_blocks = old_keyboard_blocks;
                     return return_file_info;
                 }
-                break;
+                /*
+                 * No break needed here: we either break'd in the if block or
+                 * return'd in the else.
+                 */
             default:
                 /*
                  * Handle the alpha-search case

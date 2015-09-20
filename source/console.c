@@ -825,7 +825,7 @@ void console_keyboard_handler(int keystroke, int flags) {
     char notify_message[DIALOG_MESSAGE_SIZE];
     char command_line[COMMAND_LINE_SIZE];
     int i;
-    struct file_info * batch_upload_file_list = NULL;
+    struct file_info * batch_upload_file_list;
     int new_keystroke;
     Q_HOST_TYPE host_type;
     char * port;

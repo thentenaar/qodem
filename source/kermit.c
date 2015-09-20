@@ -1708,8 +1708,6 @@ static Q_BOOL decode_data_field(PACKET_TYPE type, unsigned char * input,
                 data_n++;
             }
         }
-        repeat_count = 1;
-        do_output_ch = Q_FALSE;
     }
 
     /*
@@ -1743,11 +1741,11 @@ static int encode_one_byte(unsigned char ch, unsigned int repeat_count,
 
     unsigned int i;
     int data_n = 0;
-    unsigned char ch7bit = ch & 0x7F;
-    Q_BOOL need_qbin = Q_FALSE;
-    Q_BOOL need_qctl = Q_FALSE;
-    Q_BOOL ch_is_ctl = Q_FALSE;
-    unsigned char output_ch = ch;
+    unsigned char ch7bit;
+    Q_BOOL need_qbin;
+    Q_BOOL need_qctl;
+    Q_BOOL ch_is_ctl;
+    unsigned char output_ch;
 
     /*
      * Use the RLE encoding for repeat count, but only if there are at least
@@ -1846,7 +1844,7 @@ static Q_BOOL encode_data_field(PACKET_TYPE type, unsigned char * input,
     int repeat_count = 0;
     Q_BOOL first = Q_TRUE;
     Q_BOOL crlf = Q_FALSE;
-    unsigned int data_max = 0;
+    unsigned int data_max;
 
     DLOG(("encode_data_field() %d %s %d\n", type,
             packet_type_chars[type].description, input_n));
@@ -2460,15 +2458,15 @@ static Q_BOOL process_file_header() {
 static Q_BOOL process_attributes() {
     unsigned int i;
     unsigned int j;
-    int size_k = -1;
-    int protection = -1;
-    int kermit_protection = -1;
-    long size_bytes = -1;
+    int size_k;
+    int protection;
+    int kermit_protection;
+    long size_bytes;
     unsigned char length;
     unsigned char type;
     char buffer[KERMIT_BLOCK_SIZE];
     struct tm file_time;
-    Q_BOOL got_file_time = Q_FALSE;
+    Q_BOOL got_file_time;
 
     DLOG(("process_attributes()\n"));
 
@@ -3578,7 +3576,7 @@ static void ack_file_packet() {
  * Generate a NAK packet.
  */
 static void nak_packet() {
-    int i = -1;
+    int i;
     int seq = input_packet.seq;
     Q_BOOL found_right_nak = Q_FALSE;
     int seq_end_i;
@@ -3745,7 +3743,7 @@ static Q_BOOL decode_input_bytes(unsigned char * input,
 
     unsigned char * check_begin;
     unsigned int begin = 0;
-    unsigned int mark_begin = 0;
+    unsigned int mark_begin;
     unsigned char checksum;
     unsigned short checksum2;
     unsigned short crc;
@@ -4578,11 +4576,6 @@ static Q_BOOL receive_R() {
         error_packet("Wrong packet in sequence");
         return Q_TRUE;
     }
-
-    /*
-     * Process through the new state
-     */
-    return Q_FALSE;
 }
 
 /**
@@ -4644,11 +4637,6 @@ static Q_BOOL receive_RF() {
         error_packet("Wrong packet in sequence");
         return Q_TRUE;
     }
-
-    /*
-     * Process through the new state
-     */
-    return Q_FALSE;
 }
 
 
@@ -4801,11 +4789,6 @@ static Q_BOOL receive_RDW() {
         error_packet("Wrong packet in sequence");
         return Q_TRUE;
     }
-
-    /*
-     * Process through the new state
-     */
-    return Q_FALSE;
 }
 
 /**
@@ -4940,11 +4923,6 @@ static Q_BOOL send_S() {
         error_packet("Wrong packet in sequence");
         return Q_TRUE;
     }
-
-    /*
-     * Process through the new state
-     */
-    return Q_FALSE;
 }
 
 /**
@@ -5005,11 +4983,6 @@ static Q_BOOL send_SF() {
         error_packet("Wrong packet in sequence");
         return Q_TRUE;
     }
-
-    /*
-     * Process through the new state
-     */
-    return Q_FALSE;
 }
 
 /**
@@ -5089,11 +5062,6 @@ static Q_BOOL send_SA() {
         error_packet("Wrong packet in sequence");
         return Q_TRUE;
     }
-
-    /*
-     * Process through the new state
-     */
-    return Q_FALSE;
 }
 
 /**
@@ -5225,11 +5193,6 @@ static Q_BOOL send_SDW() {
         error_packet("Wrong packet in sequence");
         return Q_TRUE;
     }
-
-    /*
-     * Process through the new state
-     */
-    return Q_FALSE;
 }
 
 /**
@@ -5314,11 +5277,6 @@ static Q_BOOL send_SZ() {
         error_packet("Wrong packet in sequence");
         return Q_TRUE;
     }
-
-    /*
-     * Process through the new state
-     */
-    return Q_FALSE;
 }
 
 /**
@@ -5366,11 +5324,6 @@ static Q_BOOL send_SB() {
         error_packet("Wrong packet in sequence");
         return Q_TRUE;
     }
-
-    /*
-     * Process through the new state
-     */
-    return Q_FALSE;
 }
 
 /**
@@ -5451,8 +5404,8 @@ static Q_BOOL kermit_send() {
  * @return true if the sequence is 1 past the window
  */
 static Q_BOOL window_next_packet_seq(const int seq) {
-    int seq_end_i = -1;
-    int seq_end = -1;
+    int seq_end_i;
+    int seq_end;
 
     DLOG(("window_next_packet_seq() check SEQ %d\n", seq));
 
@@ -5502,9 +5455,9 @@ static Q_BOOL window_next_packet_seq(const int seq) {
  */
 static int find_input_slot() {
     int i;
-    int seq_end_i = -1;
-    int seq_end = -1;
-    int seq_end_ws = -1;
+    int seq_end_i;
+    int seq_end;
+    int seq_end_ws;
     Q_BOOL lost_packet = Q_FALSE;
 
     assert(input_packet.parsed_ok == Q_TRUE);
@@ -5727,7 +5680,7 @@ static int find_output_slot() {
 static void check_for_repeat(unsigned char * output, unsigned int * output_n,
                              const unsigned int output_max) {
 
-    int i = -1;
+    int i;
     Q_BOOL resend = Q_FALSE;
     Q_BOOL sequence_error = Q_FALSE;
 
@@ -6152,7 +6105,7 @@ void kermit(unsigned char * input, unsigned int input_n,
     Q_BOOL done = Q_FALSE;
     Q_BOOL toss_input_buffer = Q_FALSE;
     Q_BOOL had_some_input = Q_TRUE;
-    unsigned int free_space_needed = 0;
+    unsigned int free_space_needed;
     static int ctrl_c_count = 0;
     unsigned int i;
     unsigned int output_n_start;

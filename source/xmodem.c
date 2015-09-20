@@ -327,7 +327,6 @@ static void stats_increment_blocks(const unsigned char * input) {
     int bytes_left;
 
     old_block_size = q_transfer_stats.block_size;
-    new_block_size = old_block_size;
 
     /*
      * The block increment is in its own check because Xmodem-1k

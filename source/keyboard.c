@@ -3577,7 +3577,7 @@ void switch_current_keyboard(const char *filename) {
     /*
      * This filename of the appropriate keyboard
      */
-    char * keyboard_filename = NULL;
+    char * keyboard_filename;
 
     /*
      * The keyboard that needs to be loaded

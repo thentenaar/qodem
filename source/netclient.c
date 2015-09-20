@@ -527,10 +527,9 @@ static void upnp_teardown() {
  * Forward a port through a NAT using UPnP.
  *
  * @param fd a listening server socket descriptor
- * @param port the desired port number on the external gateway
  * @return true if the port was forwarded successfully
  */
-static Q_BOOL upnp_forward_port(int fd, int port) {
+static Q_BOOL upnp_forward_port(int fd) {
     struct sockaddr local_sockaddr;
     socklen_t local_sockaddr_length = sizeof(struct sockaddr);
     char my_local_host[NI_MAXHOST];
@@ -1014,7 +1013,6 @@ int net_connect_start(const char * host, const char * port) {
     /*
      * Loop through the results
      */
-    rc = 0;
     for (p = address; p != NULL; p = p->ai_next) {
         DLOG(("net_connect_start() : p %p\n", p));
 
@@ -1174,7 +1172,7 @@ Q_BOOL net_connect_finish() {
     int socket_errno;
     socklen_t socket_errno_length = sizeof(socket_errno);
     char notify_message[DIALOG_MESSAGE_SIZE];
-    int rc = 0;
+    int rc;
 
 #ifdef Q_PDCURSES_WIN32
     rc = getsockopt(q_child_tty_fd, SOL_SOCKET, SO_ERROR,
@@ -1488,7 +1486,7 @@ int net_listen(const char * port) {
                         /*
                          * Try to open this port on the NAT remote side.
                          */
-                        if (upnp_forward_port(fd, port_number) == Q_FALSE) {
+                        if (upnp_forward_port(fd) == Q_FALSE) {
                             upnp_tries--;
                             if (upnp_tries == 0) {
                                 /*
@@ -1693,7 +1691,7 @@ static Q_BOOL has_connection() {
  */
 int net_accept() {
     char notify_message[DIALOG_MESSAGE_SIZE];
-    int fd = -1;
+    int fd;
 #ifdef Q_PDCURSES_WIN32
     /*
      * Microsoft decided that sockaddr's would only support IPv4, despite
@@ -3458,7 +3456,7 @@ static void rlogin_send_login(const int fd) {
 ssize_t rlogin_read(const int fd, void * buf, size_t count, Q_BOOL oob) {
     unsigned char ch;
     int rc;
-    int total = 0;
+    int total;
     size_t max_read;
     int i;
 

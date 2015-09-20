@@ -382,7 +382,6 @@ struct zmodem_packet {
      * out during CRC check.
      */
     unsigned char crc_buffer[5];
-    int crc_buffer_n;
 };
 
 /* Needs to persist across calls to zmodem() */
@@ -967,16 +966,13 @@ static Q_BOOL dehexify_string(const unsigned char * input,
  * @param output_n the number of bytes that this function wrote to output
  * @param output_max the maximum size of the output buffer
  * @param crc_buffer a buffer to contain the CRC bytes
- * @param crc_buffer_n the number of bytes that this function wrote to
- * crc_buffer
  */
 static Q_BOOL decode_zdata_bytes(unsigned char * input,
                                  unsigned int * input_n,
                                  unsigned char * output,
                                  unsigned int * output_n,
                                  const unsigned int output_max,
-                                 unsigned char * crc_buffer,
-                                 int * crc_buffer_n) {
+                                 unsigned char * crc_buffer) {
 
     int i;                      /* input iterator */
     int j;                      /* for doing_crc case */
@@ -1273,7 +1269,7 @@ static unsigned char encode_byte_map[256];
  */
 static void setup_encode_byte_map() {
 
-    int ch = 0;
+    int ch;
 
     for (ch = 0; ch < 256; ch++) {
 
@@ -3110,15 +3106,10 @@ static Q_BOOL receive_zrpos_wait(unsigned char * output,
 /**
  * Receive:  ZFILE
  *
- * @param output a buffer to write bytes to send to the remote side
- * @param output_n the number of bytes that this function wrote to output
- * @param output_max the maximum size of the output buffer
  * @return true if we are done reading input and are ready to send bytes to
  * the remote side
  */
-static Q_BOOL receive_zfile(unsigned char * output,
-                            unsigned int * output_n,
-                            const unsigned int output_max) {
+static Q_BOOL receive_zfile() {
 
     int filesleft;
     long totalbytesleft;
@@ -3304,13 +3295,12 @@ static Q_BOOL receive_zdata(unsigned char * output,
                             unsigned int * output_n,
                             const unsigned int output_max) {
 
-    Q_BOOL end_of_packet = Q_FALSE;
-    Q_BOOL acknowledge = Q_FALSE;
+    Q_BOOL end_of_packet;
+    Q_BOOL acknowledge;
     Q_BOOL crc_ok = Q_FALSE;
     uint32_t options;
     int crc16;
     uint32_t crc32;
-
     unsigned int i;
 
     DLOG(("receive_zdata(): DATA state=%d prior_state=%d packet.data_n=%d\n",
@@ -3322,7 +3312,7 @@ static Q_BOOL receive_zdata(unsigned char * output,
     if (decode_zdata_bytes
         (packet_buffer, &packet_buffer_n, packet.data + packet.data_n,
          &packet.data_n, sizeof(packet.data) - packet.data_n,
-         packet.crc_buffer, &packet.crc_buffer_n) == Q_FALSE) {
+         packet.crc_buffer) == Q_FALSE) {
 
         /*
          * Not enough data available, wait for more
@@ -3463,13 +3453,11 @@ static Q_BOOL receive_zdata(unsigned char * output,
                 DLOG(("receive_zdata(): ZACK required\n"));
                 options = big_to_little_endian(status.file_position);
                 build_packet(P_ZACK, options, output, output_n, output_max);
-                acknowledge = Q_FALSE;
             }
 
             if (end_of_packet == Q_TRUE) {
                 DLOG(("receive_zdata(): PACKET EOF\n"));
                 status.state = ZRPOS_WAIT;
-                end_of_packet = Q_FALSE;
                 return Q_FALSE;
             }
         }
@@ -3747,7 +3735,7 @@ static void zmodem_receive(unsigned char * input, unsigned int input_n,
             break;
 
         case ZFILE:
-            done = receive_zfile(output, output_n, output_max);
+            done = receive_zfile();
             break;
 
         case ZSKIP:

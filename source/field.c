@@ -34,7 +34,7 @@
 static void field_render(struct field * field, void * window, Q_BOOL active) {
     int data_i;
     int i;
-    int color;
+    Q_COLOR color;
 
     if (active == Q_TRUE) {
         color = field->color_active;
