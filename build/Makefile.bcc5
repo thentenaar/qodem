@@ -1,0 +1,168 @@
+# qodem Makefile
+#
+# qodem - Qodem Terminal Emulator
+#
+# Written 2003-2015 by Kevin Lamonte
+#
+# To the extent possible under law, the author(s) have dedicated all
+# copyright and related and neighboring rights to this software to the
+# public domain worldwide. This software is distributed without any
+# warranty.
+#
+# You should have received a copy of the CC0 Public Domain Dedication
+# along with this software. If not, see
+# <http://creativecommons.org/publicdomain/zero/1.0/>.
+
+
+# This Makefile produces a ncurses-based qodem binary using the
+# minimum libraries needed.  'make clean' should be run first to
+# remove config.h, as the autoconf-based build options may produce
+# conflicts with this bare-bones build.
+
+default: qodem
+
+# Available defines are listed below.  If none are set, qodem is built
+# as: text-mode ncurses; using external 'ssh' binary; no sound; no
+# UPnP; serial port support enabled.
+#
+# Q_SSH_CRYPTLIB    - Use the cryptlib library to do ssh connections
+#                     rather than spawn the ssh binary through a pty.
+#                     You will need to add cryptlib.a to LDFLAGS.
+#
+# Q_UPNP            - Include support for miniupmpc-1.4.  You will need to
+#                     add -Iupmp/miniupnpc-1.4 to CFLAGS, and the following
+#                     to LDLIBS:
+#                          upnp/miniupnpc-1.4/libminiupnpc.a
+#
+# Q_SOUND_SDL       - Enable support for libSDL for sound (ANSI music and
+#                     beep()).  You will need to add "-lSDL -lm" to LBLIBS.
+#                     libSDL headers are assumed to be installed.
+#
+# Q_PDCURSES        - Use PDCurses instead of ncurses.  You will need to
+#                     add -Ix11/PDCurses-3.4 to CFLAGS, and the following
+#                     to LDLIBS:
+#                          x11/PDCurses-3.4/x11/libXCurses.a
+#                          -lXaw -lXmu -lXt -lX11 -lXpm
+#                          
+# Q_PDCURSES_WIN32  - Build for the Win32 PDCurses version.
+#
+# Q_GC_BOEHM        - Build for use with the Hans-Boehm garbage collector.
+#
+# Q_NO_SERIAL       - Remove code for serial port support.  This is required
+#                     for the Win32 build.
+#
+
+# ----------------------------------------------------------------------------
+# C compiler and linker options
+# ----------------------------------------------------------------------------
+
+QODEM_SRC_DIR = source
+QODEM_OBJS_DIR = objs
+QODEM_LIB_DIR = lib
+QODEM_EXE = qodem.exe
+
+# Compiler
+CC = bcc32
+
+INC = -IC:\BC5\INCLUDE -I$(QODEM_SRC_DIR) -Iinclude -Ilib\pdcurses\include -Isource
+EXTRA_LIBS =
+EXTRA_INC =
+CFLAGS1 = -P -O2 $(INC) $(EXTRA_INC)
+CFLAGS2 = -D_UNICODE -DQ_PDCURSES -DQ_PDCURSES_WIN32 -DQ_NO_SERIAL
+CFLAGS3 = -tW
+CFLAGS4 = -n$(QODEM_OBJS_DIR)
+LDFLAGS = -tW
+LDLIBS = $(QODEM_LIB_DIR)\pdcurses.lib $(QODEM_LIB_DIR)\libc.lib c:\bc5\lib\ws2_32.lib
+
+
+# ----------------------------------------------------------------------------
+# What's below this line should not require modifications
+# ----------------------------------------------------------------------------
+
+.SUFFIXES: .c .obj
+
+QODEM_SRC = \
+$(QODEM_SRC_DIR)/ansi.c \
+$(QODEM_SRC_DIR)/avatar.c \
+$(QODEM_SRC_DIR)/codepage.c \
+$(QODEM_SRC_DIR)/colors.c \
+$(QODEM_SRC_DIR)/common.c \
+$(QODEM_SRC_DIR)/console.c \
+$(QODEM_SRC_DIR)/dialer.c \
+$(QODEM_SRC_DIR)/emulation.c \
+$(QODEM_SRC_DIR)/field.c \
+$(QODEM_SRC_DIR)/forms.c \
+$(QODEM_SRC_DIR)/help.c \
+$(QODEM_SRC_DIR)/host.c \
+$(QODEM_SRC_DIR)/input.c \
+$(QODEM_SRC_DIR)/kermit.c \
+$(QODEM_SRC_DIR)/keyboard.c \
+$(QODEM_SRC_DIR)/modem.c \
+$(QODEM_SRC_DIR)/music.c \
+$(QODEM_SRC_DIR)/netclient.c\
+$(QODEM_SRC_DIR)/options.c \
+$(QODEM_SRC_DIR)/phonebook.c \
+$(QODEM_SRC_DIR)/protocols.c \
+$(QODEM_SRC_DIR)/qodem.c \
+$(QODEM_SRC_DIR)/screen.c \
+$(QODEM_SRC_DIR)/script.c \
+$(QODEM_SRC_DIR)/scrollback.c \
+$(QODEM_SRC_DIR)/states.c \
+$(QODEM_SRC_DIR)/translate.c \
+$(QODEM_SRC_DIR)/vt100.c \
+$(QODEM_SRC_DIR)/vt52.c \
+$(QODEM_SRC_DIR)/xmodem.c \
+$(QODEM_SRC_DIR)/zmodem.c
+
+QODEM_OBJS = \
+$(QODEM_OBJS_DIR)/ansi.obj \
+$(QODEM_OBJS_DIR)/avatar.obj \
+$(QODEM_OBJS_DIR)/codepage.obj \
+$(QODEM_OBJS_DIR)/colors.obj \
+$(QODEM_OBJS_DIR)/common.obj \
+$(QODEM_OBJS_DIR)/console.obj \
+$(QODEM_OBJS_DIR)/dialer.obj \
+$(QODEM_OBJS_DIR)/emulation.obj \
+$(QODEM_OBJS_DIR)/field.obj \
+$(QODEM_OBJS_DIR)/forms.obj \
+$(QODEM_OBJS_DIR)/help.obj \
+$(QODEM_OBJS_DIR)/host.obj \
+$(QODEM_OBJS_DIR)/input.obj \
+$(QODEM_OBJS_DIR)/kermit.obj \
+$(QODEM_OBJS_DIR)/keyboard.obj \
+$(QODEM_OBJS_DIR)/modem.obj \
+$(QODEM_OBJS_DIR)/music.obj \
+$(QODEM_OBJS_DIR)/netclient.obj \
+$(QODEM_OBJS_DIR)/options.obj \
+$(QODEM_OBJS_DIR)/phonebook.obj \
+$(QODEM_OBJS_DIR)/protocols.obj \
+$(QODEM_OBJS_DIR)/qodem.obj \
+$(QODEM_OBJS_DIR)/screen.obj \
+$(QODEM_OBJS_DIR)/script.obj \
+$(QODEM_OBJS_DIR)/scrollback.obj \
+$(QODEM_OBJS_DIR)/states.obj \
+$(QODEM_OBJS_DIR)/translate.obj \
+$(QODEM_OBJS_DIR)/vt100.obj \
+$(QODEM_OBJS_DIR)/vt52.obj \
+$(QODEM_OBJS_DIR)/xmodem.obj \
+$(QODEM_OBJS_DIR)/zmodem.obj
+
+clean:
+	-del $(QODEM_EXE) core $(QODEM_OBJS_DIR)\*.obj
+
+qodem: $(QODEM_EXE)
+
+$(QODEM_EXE): $(QODEM_OBJS) $(EXTRA_LIBS)
+	echo -e$(QODEM_EXE) > bcc32.rsp
+	echo $(LDFLAGS) >> bcc32.rsp
+	echo $(QODEM_OBJS_DIR)/*.obj >> bcc32.rsp
+	echo $(LDLIBS) >> bcc32.rsp
+	$(CC) @bcc32.rsp
+
+{$(QODEM_SRC_DIR)/}.c{$(QODEM_OBJS_DIR)/}.obj:
+	echo $(CFLAGS1) > bcc32.rsp
+	echo $(CFLAGS2) >> bcc32.rsp
+	echo $(CFLAGS3) >> bcc32.rsp
+	echo $(CFLAGS4) >> bcc32.rsp
+	echo -c $< >> bcc32.rsp
+	$(CC) @bcc32.rsp

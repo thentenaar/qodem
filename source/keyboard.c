@@ -1532,7 +1532,7 @@ static void copy_keyboard(struct emulation_keyboard * dest,
  * Save key C from the "keyboard"'s field B to file A.
  */
 #define SAVE_KEY_TO_FILE(A, B, C) \
-        fprintf(A, "%s=%ls\n", C, keyboard->B);
+        fprintf(A, "%s=%ls\n", C, keyboard->B == NULL ? L"" : keyboard->B);
 
 /*
  * Load key B from file A into a field in "keyboard".
