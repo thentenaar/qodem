@@ -69,7 +69,6 @@ Win32 port:
     open_serial_port
     configure_serial_port
     close_serial_port
-  Eliminate reasonable Borland warnings
   Fix mouse tracking to do mouse and not copy-to-clipboard
   Use Beep() and support bells and music
   InnoSetup Windows installer:
@@ -80,13 +79,6 @@ Win32 port:
       download
       upload dir
       scripts dir
-  Borland 5.02 makefile
-  Visual C++ build
-    Eliminate warnings
-  OpenWatcom build
-    Eliminate warnings
-  Borland 5.5 build
-    Eliminate warnings
   Test on XP
   Test on 2k
   Test on 98

@@ -14,16 +14,14 @@
 # <http://creativecommons.org/publicdomain/zero/1.0/>.
 
 
-# This Makefile produces a ncurses-based qodem binary using the
-# minimum libraries needed.  'make clean' should be run first to
-# remove config.h, as the autoconf-based build options may produce
-# conflicts with this bare-bones build.
+# This Makefile produces a Win32 PDCurses-based qodem binary using the
+# minimum libraries needed.
 
 default: qodem
 
 # Available defines are listed below.  If none are set, qodem is built
-# as: text-mode ncurses; using external 'ssh' binary; no sound; no
-# UPnP; serial port support enabled.
+# as: Win32 PDCurses; using external 'ssh' binary; no UPnP; serial
+# port support enabled.
 #
 # Q_SSH_CRYPTLIB    - Use the cryptlib library to do ssh connections
 #                     rather than spawn the ssh binary through a pty.
@@ -65,7 +63,7 @@ QODEM_EXE = qodem.exe
 CC = bcc32
 
 INC = -IC:\BC5\INCLUDE -I$(QODEM_SRC_DIR) -Iinclude -Ilib\pdcurses\include -Isource
-EXTRA_LIBS =
+EXTRA_LIBS = lib/libc.lib lib/pdcurses.lib
 EXTRA_INC =
 CFLAGS1 = -P -O2 $(INC) $(EXTRA_INC)
 CFLAGS2 = -D_UNICODE -DQ_PDCURSES -DQ_PDCURSES_WIN32 -DQ_NO_SERIAL
@@ -148,9 +146,25 @@ $(QODEM_OBJS_DIR)/xmodem.obj \
 $(QODEM_OBJS_DIR)/zmodem.obj
 
 clean:
-	-del $(QODEM_EXE) core $(QODEM_OBJS_DIR)\*.obj
+	-del $(QODEM_EXE)
+	-del $(QODEM_OBJS_DIR)\*.obj
+	cd lib\c
+        make -f Makefile.bcc5 clean
+	cd ..\pdcurses
+        make -f Makefile.bcc5 clean
+        cd ..\..
 
 qodem: $(QODEM_EXE)
+
+lib/libc.lib:
+	cd lib\c
+        make -f Makefile.bcc5
+        cd ..\..
+
+lib/pdcurses.lib:
+	cd lib\pdcurses
+        make -f Makefile.bcc5
+        cd ..\..
 
 $(QODEM_EXE): $(QODEM_OBJS) $(EXTRA_LIBS)
 	echo -e$(QODEM_EXE) > bcc32.rsp

@@ -1,0 +1,102 @@
+# qodem Makefile
+#
+# qodem - Qodem Terminal Emulator
+#
+# Written 2003-2015 by Kevin Lamonte
+#
+# To the extent possible under law, the author(s) have dedicated all
+# copyright and related and neighboring rights to this software to the
+# public domain worldwide. This software is distributed without any
+# warranty.
+#
+# You should have received a copy of the CC0 Public Domain Dedication
+# along with this software. If not, see
+# <http://creativecommons.org/publicdomain/zero/1.0/>.
+
+
+# This Makefile produces the libc.lib library used by the Win32 qodem
+# build.
+
+default: libc
+
+# ----------------------------------------------------------------------------
+# C compiler and linker options
+# ----------------------------------------------------------------------------
+
+LIBC_SRC_DIR = .
+LIBC_OBJS_DIR = objs
+LIBC_LIB = ..\libc.lib
+
+# Compiler
+CC = bcc32
+# Linker
+LD = tlink32
+
+INC = -IC:\BC5\INCLUDE -I..\include -I..\..\include
+EXTRA_LIBS =
+EXTRA_INC =
+CFLAGS1 = -O2 $(INC) $(EXTRA_INC)
+CFLAGS2 = -D_UNICODE
+CFLAGS3 = -tW
+CFLAGS4 = -n$(LIBC_OBJS_DIR)
+
+
+# ----------------------------------------------------------------------------
+# What's below this line should not require modifications
+# ----------------------------------------------------------------------------
+
+.SUFFIXES: .c .obj
+
+LIBC_SRC = \
+$(LIBC_SRC_DIR)/basename.c \
+$(LIBC_SRC_DIR)/dirname.c \
+$(LIBC_SRC_DIR)/fnmatch.c \
+$(LIBC_SRC_DIR)/getopt.c \
+$(LIBC_SRC_DIR)/snprintf.c \
+$(LIBC_SRC_DIR)/strptime.c \
+$(LIBC_SRC_DIR)/wspiapi.c \
+$(LIBC_SRC_DIR)/sys/time.c
+
+LIBC_OBJS = \
+$(LIBC_OBJS_DIR)/basename.obj \
+$(LIBC_OBJS_DIR)/dirname.obj \
+$(LIBC_OBJS_DIR)/fnmatch.obj \
+$(LIBC_OBJS_DIR)/getopt.obj \
+$(LIBC_OBJS_DIR)/snprintf.obj \
+$(LIBC_OBJS_DIR)/strptime.obj \
+$(LIBC_OBJS_DIR)/wspiapi.obj \
+$(LIBC_OBJS_DIR)/time.obj
+
+clean:
+	-del $(LIBC_LIB)
+	-del $(LIBC_OBJS_DIR)\*.obj
+
+libc: $(LIBC_LIB)
+
+$(LIBC_LIB): $(LIBC_OBJS) $(EXTRA_LIBS)
+	echo $(LIBC_LIB) ^^& > bcc32.rsp
+	echo +$(LIBC_OBJS_DIR)\basename.obj ^^& >> bcc32.rsp
+	echo +$(LIBC_OBJS_DIR)\dirname.obj ^^& >> bcc32.rsp
+	echo +$(LIBC_OBJS_DIR)\fnmatch.obj ^^& >> bcc32.rsp
+	echo +$(LIBC_OBJS_DIR)\getopt.obj ^^& >> bcc32.rsp
+	echo +$(LIBC_OBJS_DIR)\snprintf.obj ^^& >> bcc32.rsp
+	echo +$(LIBC_OBJS_DIR)\strptime.obj ^^& >> bcc32.rsp
+	echo +$(LIBC_OBJS_DIR)\wspiapi.obj ^^& >> bcc32.rsp
+	echo +$(LIBC_OBJS_DIR)\time.obj >> bcc32.rsp
+	tlib @bcc32.rsp
+
+{$(LIBC_SRC_DIR)/}.c{$(LIBC_OBJS_DIR)/}.obj:
+	echo $(CFLAGS1) > bcc32.rsp
+	echo $(CFLAGS2) >> bcc32.rsp
+	echo $(CFLAGS3) >> bcc32.rsp
+	echo $(CFLAGS4) >> bcc32.rsp
+	echo -c $< >> bcc32.rsp
+	$(CC) @bcc32.rsp
+
+{$(LIBC_SRC_DIR)/sys/}.c{$(LIBC_OBJS_DIR)/}.obj:
+	echo $(CFLAGS1) > bcc32.rsp
+	echo $(CFLAGS2) >> bcc32.rsp
+	echo $(CFLAGS3) >> bcc32.rsp
+	echo $(CFLAGS4) >> bcc32.rsp
+	echo -c $< >> bcc32.rsp
+	$(CC) @bcc32.rsp

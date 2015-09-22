@@ -1,0 +1,228 @@
+# qodem Makefile
+#
+# qodem - Qodem Terminal Emulator
+#
+# Written 2003-2015 by Kevin Lamonte
+#
+# To the extent possible under law, the author(s) have dedicated all
+# copyright and related and neighboring rights to this software to the
+# public domain worldwide. This software is distributed without any
+# warranty.
+#
+# You should have received a copy of the CC0 Public Domain Dedication
+# along with this software. If not, see
+# <http://creativecommons.org/publicdomain/zero/1.0/>.
+
+
+# This Makefile produces the pdcurses.lib library used by the Win32
+# qodem build.
+
+default: pdcurses
+
+# ----------------------------------------------------------------------------
+# C compiler and linker options
+# ----------------------------------------------------------------------------
+
+PDCURSES_SRC_DIR = pdcurses
+PDCURSES_OBJS_DIR = objs
+PDCURSES_LIB = ..\pdcurses.lib
+
+# Compiler
+CC = bcc32
+# Linker
+LD = tlink32
+
+INC = -IC:\BC5\INCLUDE -Iinclude -I..\include -I..\..\include
+EXTRA_LIBS =
+EXTRA_INC =
+CFLAGS1 = -O2 $(INC) $(EXTRA_INC)
+CFLAGS2 = -D_UNICODE -DPDC_WIDE
+CFLAGS3 = -tW
+CFLAGS4 = -n$(PDCURSES_OBJS_DIR)
+
+
+# ----------------------------------------------------------------------------
+# What's below this line should not require modifications
+# ----------------------------------------------------------------------------
+
+.SUFFIXES: .c .obj
+
+PDCURSES_SRC = \
+$(PDCURSES_SRC_DIR)/addch.c \
+$(PDCURSES_SRC_DIR)/addchstr.c \
+$(PDCURSES_SRC_DIR)/addstr.c \
+$(PDCURSES_SRC_DIR)/attr.c \
+$(PDCURSES_SRC_DIR)/beep.c \
+$(PDCURSES_SRC_DIR)/bkgd.c \
+$(PDCURSES_SRC_DIR)/border.c \
+$(PDCURSES_SRC_DIR)/clear.c \
+$(PDCURSES_SRC_DIR)/color.c \
+$(PDCURSES_SRC_DIR)/debug.c \
+$(PDCURSES_SRC_DIR)/delch.c \
+$(PDCURSES_SRC_DIR)/deleteln.c \
+$(PDCURSES_SRC_DIR)/deprec.c \
+$(PDCURSES_SRC_DIR)/getch.c \
+$(PDCURSES_SRC_DIR)/getstr.c \
+$(PDCURSES_SRC_DIR)/getyx.c \
+$(PDCURSES_SRC_DIR)/inch.c \
+$(PDCURSES_SRC_DIR)/inchstr.c \
+$(PDCURSES_SRC_DIR)/initscr.c \
+$(PDCURSES_SRC_DIR)/inopts.c \
+$(PDCURSES_SRC_DIR)/insch.c \
+$(PDCURSES_SRC_DIR)/insstr.c \
+$(PDCURSES_SRC_DIR)/instr.c \
+$(PDCURSES_SRC_DIR)/kernel.c \
+$(PDCURSES_SRC_DIR)/keyname.c \
+$(PDCURSES_SRC_DIR)/mouse.c \
+$(PDCURSES_SRC_DIR)/move.c \
+$(PDCURSES_SRC_DIR)/outopts.c \
+$(PDCURSES_SRC_DIR)/overlay.c \
+$(PDCURSES_SRC_DIR)/pad.c \
+$(PDCURSES_SRC_DIR)/panel.c \
+$(PDCURSES_SRC_DIR)/printw.c \
+$(PDCURSES_SRC_DIR)/refresh.c \
+$(PDCURSES_SRC_DIR)/scanw.c \
+$(PDCURSES_SRC_DIR)/scr_dump.c \
+$(PDCURSES_SRC_DIR)/scroll.c \
+$(PDCURSES_SRC_DIR)/slk.c \
+$(PDCURSES_SRC_DIR)/termattr.c \
+$(PDCURSES_SRC_DIR)/terminfo.c \
+$(PDCURSES_SRC_DIR)/touch.c \
+$(PDCURSES_SRC_DIR)/util.c \
+$(PDCURSES_SRC_DIR)/window.c \
+$(PDCURSES_SRC_DIR)/../win32a/pdcclip.c \
+$(PDCURSES_SRC_DIR)/../win32a/pdcdisp.c \
+$(PDCURSES_SRC_DIR)/../win32a/pdcgetsc.c \
+$(PDCURSES_SRC_DIR)/../win32a/pdckbd.c \
+$(PDCURSES_SRC_DIR)/../win32a/pdcscrn.c \
+$(PDCURSES_SRC_DIR)/../win32a/pdcsetsc.c \
+$(PDCURSES_SRC_DIR)/../win32a/pdcutil.c \
+$(PDCURSES_SRC_DIR)/../win32a/scr2html.c
+
+PDCURSES_OBJS = \
+$(PDCURSES_OBJS_DIR)/addch.obj \
+$(PDCURSES_OBJS_DIR)/addchstr.obj \
+$(PDCURSES_OBJS_DIR)/addstr.obj \
+$(PDCURSES_OBJS_DIR)/attr.obj \
+$(PDCURSES_OBJS_DIR)/beep.obj \
+$(PDCURSES_OBJS_DIR)/bkgd.obj \
+$(PDCURSES_OBJS_DIR)/border.obj \
+$(PDCURSES_OBJS_DIR)/clear.obj \
+$(PDCURSES_OBJS_DIR)/color.obj \
+$(PDCURSES_OBJS_DIR)/debug.obj \
+$(PDCURSES_OBJS_DIR)/delch.obj \
+$(PDCURSES_OBJS_DIR)/deleteln.obj \
+$(PDCURSES_OBJS_DIR)/deprec.obj \
+$(PDCURSES_OBJS_DIR)/getch.obj \
+$(PDCURSES_OBJS_DIR)/getstr.obj \
+$(PDCURSES_OBJS_DIR)/getyx.obj \
+$(PDCURSES_OBJS_DIR)/inch.obj \
+$(PDCURSES_OBJS_DIR)/inchstr.obj \
+$(PDCURSES_OBJS_DIR)/initscr.obj \
+$(PDCURSES_OBJS_DIR)/inopts.obj \
+$(PDCURSES_OBJS_DIR)/insch.obj \
+$(PDCURSES_OBJS_DIR)/insstr.obj \
+$(PDCURSES_OBJS_DIR)/instr.obj \
+$(PDCURSES_OBJS_DIR)/kernel.obj \
+$(PDCURSES_OBJS_DIR)/keyname.obj \
+$(PDCURSES_OBJS_DIR)/mouse.obj \
+$(PDCURSES_OBJS_DIR)/move.obj \
+$(PDCURSES_OBJS_DIR)/outopts.obj \
+$(PDCURSES_OBJS_DIR)/overlay.obj \
+$(PDCURSES_OBJS_DIR)/pad.obj \
+$(PDCURSES_OBJS_DIR)/panel.obj \
+$(PDCURSES_OBJS_DIR)/printw.obj \
+$(PDCURSES_OBJS_DIR)/refresh.obj \
+$(PDCURSES_OBJS_DIR)/scanw.obj \
+$(PDCURSES_OBJS_DIR)/scr_dump.obj \
+$(PDCURSES_OBJS_DIR)/scroll.obj \
+$(PDCURSES_OBJS_DIR)/slk.obj \
+$(PDCURSES_OBJS_DIR)/termattr.obj \
+$(PDCURSES_OBJS_DIR)/terminfo.obj \
+$(PDCURSES_OBJS_DIR)/touch.obj \
+$(PDCURSES_OBJS_DIR)/util.obj \
+$(PDCURSES_OBJS_DIR)/window.obj \
+$(PDCURSES_OBJS_DIR)/pdcclip.obj \
+$(PDCURSES_OBJS_DIR)/pdcdisp.obj \
+$(PDCURSES_OBJS_DIR)/pdcgetsc.obj \
+$(PDCURSES_OBJS_DIR)/pdckbd.obj \
+$(PDCURSES_OBJS_DIR)/pdcscrn.obj \
+$(PDCURSES_OBJS_DIR)/pdcsetsc.obj \
+$(PDCURSES_OBJS_DIR)/pdcutil.obj \
+$(PDCURSES_OBJS_DIR)/scr2html.obj
+
+clean:
+	-del $(PDCURSES_LIB)
+	-del $(PDCURSES_OBJS_DIR)\*.obj
+
+pdcurses: $(PDCURSES_LIB)
+
+$(PDCURSES_LIB): $(PDCURSES_OBJS) $(EXTRA_LIBS)
+	echo $(PDCURSES_LIB) ^^& > bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\addch.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\addchstr.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\addstr.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\attr.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\beep.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\bkgd.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\border.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\clear.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\color.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\debug.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\delch.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\deleteln.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\deprec.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\getch.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\getstr.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\getyx.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\inch.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\inchstr.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\initscr.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\inopts.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\insch.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\insstr.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\instr.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\kernel.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\keyname.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\mouse.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\move.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\outopts.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\overlay.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\pad.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\panel.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\printw.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\refresh.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\scanw.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\scr_dump.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\scroll.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\slk.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\termattr.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\terminfo.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\touch.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\util.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\window.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\pdcclip.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\pdcdisp.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\pdcgetsc.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\pdckbd.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\pdcscrn.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\pdcsetsc.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\pdcutil.obj ^^& >> bcc32.rsp
+	echo +$(PDCURSES_OBJS_DIR)\scr2html.obj >> bcc32.rsp
+	tlib @bcc32.rsp
+
+{$(PDCURSES_SRC_DIR)/}.c{$(PDCURSES_OBJS_DIR)/}.obj:
+	echo $(CFLAGS1) > bcc32.rsp
+	echo $(CFLAGS2) >> bcc32.rsp
+	echo $(CFLAGS3) >> bcc32.rsp
+	echo $(CFLAGS4) >> bcc32.rsp
+	echo -c $< >> bcc32.rsp
+	$(CC) @bcc32.rsp
+
+{$(PDCURSES_SRC_DIR)/../win32a/}.c{$(PDCURSES_OBJS_DIR)/}.obj:
+	echo $(CFLAGS1) > bcc32.rsp
+	echo $(CFLAGS2) >> bcc32.rsp
+	echo $(CFLAGS3) >> bcc32.rsp
+	echo $(CFLAGS4) >> bcc32.rsp
+	echo -c $< >> bcc32.rsp
+	$(CC) @bcc32.rsp

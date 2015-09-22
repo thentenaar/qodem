@@ -178,7 +178,7 @@ $(QODEM_OBJS_DIR)/xmodem.o \
 $(QODEM_OBJS_DIR)/zmodem.o
 
 clean:
-	-rm $(QODEM_EXE) core $(QODEM_OBJS) config.h
+	-rm $(QODEM_EXE) core $(QODEM_OBJS) $(QODEM_SRC_DIR)/config.h
 
 qodem: $(QODEM_EXE)
 

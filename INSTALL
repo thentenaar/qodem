@@ -10,7 +10,7 @@ the build/ subdirectory for the following compilers/platforms:
 |------------------|--------------------|----------------------------------|
 | Makefile name    | Compiler           | Target Platform                  |
 |------------------|--------------------|----------------------------------|
-| Makefile.bcc5    | Borland C++ 5.02   | Windows 95, 98, 2000             |
+| Makefile.bcc5    | Borland C++ 5.02   | Windows 95, 98, 2000, XP         |
 | Makefile.generic | cc                 | POSIX / Linux, text only         |
 |------------------|--------------------|----------------------------------|
 ```
@@ -58,17 +58,17 @@ no sound; no UPnP; serial port support enabled.
 
 Defines for different functionality are listed below:
 
-  * Q_LIBSSH2 - If set, use the libssh2 library to do ssh connections
-                rather than spawn the ssh binary through a pty.
+    Q_SSH_CRYPTLIB   - If set, use the cryptlib library to do ssh connections
+                       rather than spawn the ssh binary through a pty.
 
-  * Q_UPNP - If set, include support for miniupmpc-1.4.
+    Q_UPNP           - If set, include support for miniupmpc
 
-  * QODEM_USE_SDL - If set, enable support for libSDL for sound (ANSI
-                    music and beep()).
+    QODEM_USE_SDL    - If set, enable support for libSDL for sound (ANSI
+                       music and beep()).
 
-  * Q_PDCURSES - Use PDCurses instead of ncurses.
+    Q_PDCURSES       - Use PDCurses instead of ncurses.
                          
-  * Q_PDCURSES_WIN32 - Build the Win32 PDCurses version.
+    Q_PDCURSES_WIN32 - Build the Win32 PDCurses version.
 
-  * Q_NO_SERIAL - Remove code for serial port support.  This is
-                  required for the Win32 build.
+    Q_NO_SERIAL      - Remove code for serial port support.  This is
+                       required for the Win32 build.
