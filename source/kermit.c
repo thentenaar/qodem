@@ -2460,7 +2460,7 @@ static Q_BOOL process_attributes() {
     unsigned int j;
     int size_k;
     int protection;
-    int kermit_protection;
+    int kermit_protection = 0;
     long size_bytes;
     unsigned char length;
     unsigned char type;

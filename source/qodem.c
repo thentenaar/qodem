@@ -123,6 +123,11 @@ extern HANDLE q_child_process;
 extern HANDLE q_child_thread;
 extern HANDLE q_script_stdout;
 
+/**
+ * The serial port handle, stored in modem.c.
+ */
+extern HANDLE q_serial_handle;
+
 #endif
 
 /**
@@ -375,6 +380,11 @@ do_write:
                 rc = -1;
             }
 
+        } else if ((q_status.dial_method == Q_DIAL_METHOD_MODEM) ||
+                   (Q_SERIAL_OPEN)
+        ) {
+            /* TODO */
+            abort();
         } else {
             DLOG(("qodem_write() write() %d bytes to fd %d\n", data_n, fd));
             /* Everyone else */
@@ -531,6 +541,12 @@ static ssize_t qodem_read(const int fd, void * buf, size_t count) {
                 return -1;
             }
         }
+    } else if (((q_status.online == Q_TRUE) &&
+                (q_status.dial_method == Q_DIAL_METHOD_MODEM)) ||
+               (Q_SERIAL_OPEN)
+    ) {
+        /* TODO */
+        abort();
     }
 
 #endif /* Q_PDCURSES_WIN32 */
@@ -811,6 +827,17 @@ static void cleanup_connection() {
             qlog(_("Connection closed.\n"));
             break;
 #ifndef Q_NO_SERIAL
+#ifdef Q_PDCURSES_WIN32
+        case Q_HOST_TYPE_MODEM:
+            /* TODO */
+            abort();
+            break;
+
+        case Q_HOST_TYPE_SERIAL:
+            /* TODO */
+            abort();
+            break;
+#else
         case Q_HOST_TYPE_MODEM:
             /* TODO */
             abort();
@@ -821,6 +848,7 @@ static void cleanup_connection() {
             q_child_tty_fd = -1;
             qlog(_("Connection closed.\n"));
             break;
+#endif /* Q_PDCURSES_WIN32 */
 #endif
         }
 

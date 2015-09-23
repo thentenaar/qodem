@@ -3382,8 +3382,9 @@ void phonebook_refresh() {
                 my_swprintf(entry_buffer + wcslen(entry_buffer),
                             Q_MAX_LINE_LENGTH - wcslen(entry_buffer),
                             L"%6s", baud_string(entry->baud));
-                swprintf(entry_buffer + wcslen(entry_buffer),
-                         Q_MAX_LINE_LENGTH - wcslen(entry_buffer), L" ");
+                my_swprintf(entry_buffer + wcslen(entry_buffer),
+                         Q_MAX_LINE_LENGTH - wcslen(entry_buffer),
+                            L"%s", " ");
                 my_swprintf(entry_buffer + wcslen(entry_buffer),
                             Q_MAX_LINE_LENGTH - wcslen(entry_buffer),
                             L"%s", data_bits_string(entry->data_bits));
@@ -5223,9 +5224,9 @@ static void spawn_script_editor(const char * script_filename) {
 static void edit_phone_entry_form(struct q_phone_struct * entry) {
 
 #ifdef Q_NO_SERIAL
-    struct field *fields[13];
+    struct field * fields[13];
 #else
-    struct field *fields[14];
+    struct field * fields[14];
 #endif
 
     struct fieldset * edit_form;
@@ -6853,7 +6854,9 @@ void phonebook_keyboard_handler(const int keystroke, const int flags) {
         q_cursor_off();
         if (pick_string != NULL) {
 
-            entry = Xmalloc(sizeof(struct q_phone_struct), __FILE__, __LINE__);
+            entry = (struct q_phone_struct *) Xmalloc(
+                sizeof(struct q_phone_struct), __FILE__, __LINE__);
+
             /*
              * Set some defaults, the user may not like them
              */

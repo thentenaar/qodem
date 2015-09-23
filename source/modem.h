@@ -21,7 +21,12 @@
 /* Includes --------------------------------------------------------------- */
 
 #ifndef Q_NO_SERIAL
+
+#ifdef Q_PDCURSES_WIN32
+#include <windows.h>
+#else
 #include <termios.h>
+#endif
 
 #include "common.h"             /* Q_BOOL */
 
@@ -120,7 +125,10 @@ struct q_serial_port_struct {
     Q_STOP_BITS stop_bits;
     Q_PARITY parity;
 
-#ifndef Q_PDCURSES_WIN32
+#ifdef Q_PDCURSES_WIN32
+    DCB original_comm_state;    /* What was left on the port */
+    DCB qodem_comm_state;       /* What the user requests */
+#else
     struct termios original_termios;    /* What was left on the port */
     struct termios qodem_termios;       /* What the user requests */
 #endif
@@ -155,8 +163,13 @@ struct q_serial_port_struct {
 #define MODEM_DEFAULT_ANSWER_STRING     "ATA^M"
 
 #define MODEM_DEFAULT_NAME              L"The Modem"
+#ifdef Q_PDCURSES_WIN32
+#define MODEM_DEFAULT_DEVICE_NAME       "COM1"
+#define MODEM_DEFAULT_LOCK_DIR          "(N/A for Windows. /var/lock on POSIX.)"
+#else
 #define MODEM_DEFAULT_DEVICE_NAME       "/dev/ttyS0"
 #define MODEM_DEFAULT_LOCK_DIR          "/var/lock"
+#endif
 
 /* Globals ---------------------------------------------------------------- */
 
@@ -229,6 +242,11 @@ extern Q_BOOL query_serial_port();
  * work by sending the hangup string.
  */
 extern void hangup_modem();
+
+/**
+ * Send a BREAK to the serial port.
+ */
+extern void send_break();
 
 /**
  * Return a string for a Q_BAUD_RATE enum.

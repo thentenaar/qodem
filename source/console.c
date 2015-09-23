@@ -1478,26 +1478,7 @@ void console_keyboard_handler(int keystroke, int flags) {
              * Alt-K Send Break
              */
             if (Q_SERIAL_OPEN) {
-                /*
-                 * For linux, break value is in 'jiffies' -- apparently 1
-                 * jiffie = 1/100 seconds
-                 *
-                 * On all architectures:
-                 *
-                 * 0 means 0.25 secs <= duration <= 0.50 secs
-                 */
-                if (tcsendbreak(q_child_tty_fd, 0) < 0) {
-                    /*
-                     * Error
-                     */
-                    snprintf(notify_message, sizeof(notify_message),
-                             _("Error sending BREAK to \"%s\": %s"),
-                             q_modem_config.dev_name, strerror(errno));
-                    notify_form(notify_message, 0);
-                    q_cursor_on();
-                } else {
-                    qlog(_("Sent BREAK\n"));
-                }
+                send_break();
             }
             return;
         }

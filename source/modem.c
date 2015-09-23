@@ -22,19 +22,23 @@
  *        was modeled after minicom.  Thank you to the many people involved
  *        in minicom's development.
  */
+
+#include "qcurses.h"
 #include "common.h"
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#ifndef Q_PDCURSES_WIN32
 #include <fcntl.h>
+#include <pwd.h>
+#include <unistd.h>
+#include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
-#include <pwd.h>
-#include <signal.h>
 #include <libgen.h>
+#endif
 #include "qodem.h"
 #include "screen.h"
 #include "forms.h"
@@ -46,6 +50,15 @@
 
 #define MODEM_CONFIG_FILENAME   "modem.cfg"
 #define MODEM_CONFIG_LINE_SIZE  128
+
+#ifdef Q_PDCURSES_WIN32
+
+/**
+ * The serial port handle.
+ */
+HANDLE q_serial_handle = NULL;
+
+#endif
 
 /**
  * Whether we have changed the modem strings in the config screen.
@@ -661,7 +674,7 @@ void modem_config_refresh() {
     int values_column = 24;
     int i;
     char comm_settings_string[MODEM_CONFIG_LINE_SIZE];
-    int color;
+    Q_COLOR color;
 
     if (q_screen_dirty == Q_FALSE) {
         return;
@@ -1478,7 +1491,11 @@ static void send_modem_string(const char * string) {
     char ch;
     int i;
 
+#ifdef Q_PDCURSES_WIN32
+    assert(q_serial_handle != NULL);
+#else
     assert(q_child_tty_fd != -1);
+#endif
 
     for (i = 0; i < strlen(string); i++) {
         ch = string[i];
@@ -1486,7 +1503,11 @@ static void send_modem_string(const char * string) {
             /*
              * Pause 1/2 second
              */
+#ifdef Q_PDCURSES_WIN32
+            Sleep(500);
+#else
             usleep(500000);
+#endif
         } else if (ch == '^') {
             /*
              * Control char
@@ -1508,6 +1529,69 @@ static void send_modem_string(const char * string) {
         }
     }
 }
+
+#ifdef Q_PDCURSES_WIN32
+
+/**
+ * Try to hang up the modem, first by dropping DTR and then if that doesn't
+ * work by sending the hangup string.
+ */
+void hangup_modem() {
+    assert(q_serial_handle != NULL);
+    assert(Q_SERIAL_OPEN);
+
+    /* TODO */
+
+}
+
+/**
+ * Open the serial port.
+ *
+ * @return true if the port was successfully opened
+ */
+Q_BOOL open_serial_port() {
+    /* TODO */
+    return Q_FALSE;
+}
+
+/**
+ * Configure the serial port with the values in q_serial_port.
+ *
+ * @return true if the port was successfully re-configured
+ */
+Q_BOOL configure_serial_port() {
+    /* TODO */
+    return Q_FALSE;
+}
+/**
+ * Close the serial port.
+ *
+ * @return true if the serial port was able to be re-configured with its
+ * original terminal settings before it was closed
+ */
+Q_BOOL close_serial_port() {
+    /* TODO */
+    return Q_FALSE;
+}
+
+/**
+ * Query the serial port and set the values of q_serial_port.rs232.
+ *
+ * @return true if the RS-232 state was able to be read
+ */
+Q_BOOL query_serial_port() {
+    /* TODO */
+    return Q_FALSE;
+}
+
+/**
+ * Send a BREAK to the serial port.
+ */
+void send_break() {
+    /* TODO */
+}
+
+#else
 
 /**
  * Try to hang up the modem, first by dropping DTR and then if that doesn't
@@ -1638,7 +1722,7 @@ Q_BOOL open_serial_port() {
             _("Attention!"), notify_message,
             _(" Y-Proceed Without a Lock File   N-Do Not Open Serial Port "),
             Q_TRUE, 0.0, "YyNn\r"));
-        if ((keystroke == 'y') || (keystroke = C_CR)) {
+        if ((keystroke == 'y') || (keystroke == C_CR)) {
             memset(lock_filename, 0, sizeof(lock_filename));
         } else {
             return Q_FALSE;
@@ -1726,7 +1810,7 @@ Q_BOOL open_serial_port() {
                 _("Attention!"), notify_message,
                 _(" Y-Proceed Without a Lock File   N-Do Not Open Serial Port "),
                 Q_TRUE, 0.0, "YyNn\r"));
-            if ((keystroke == 'y') || (keystroke = C_CR)) {
+            if ((keystroke == 'y') || (keystroke == C_CR)) {
                 memset(lock_filename, 0, sizeof(lock_filename));
             } else {
                 return Q_FALSE;
@@ -2292,5 +2376,37 @@ Q_BOOL query_serial_port() {
      */
     return Q_TRUE;
 }
+
+/**
+ * Send a BREAK to the serial port.
+ */
+void send_break() {
+    char notify_message[DIALOG_MESSAGE_SIZE];
+
+    assert(q_child_tty_fd != -1);
+
+    /*
+     * For linux, break value is in 'jiffies' -- apparently 1
+     * jiffie = 1/100 seconds
+     *
+     * On all architectures:
+     *
+     * 0 means 0.25 secs <= duration <= 0.50 secs
+     */
+    if (tcsendbreak(q_child_tty_fd, 0) < 0) {
+        /*
+         * Error
+         */
+        snprintf(notify_message, sizeof(notify_message),
+                 _("Error sending BREAK to \"%s\": %s"),
+                 q_modem_config.dev_name, strerror(errno));
+                 notify_form(notify_message, 0);
+                 q_cursor_on();
+    } else {
+        qlog(_("Sent BREAK\n"));
+    }
+}
+
+#endif /* Q_PDCURSES_WIN32 */
 
 #endif /* Q_NO_SERIAL */
