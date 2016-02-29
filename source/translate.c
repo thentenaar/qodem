@@ -124,7 +124,7 @@ void load_translate_tables() {
         /*
          * Nix trailing whitespace
          */
-        while ((strlen(line) > 0) && isspace(line[strlen(line) - 1])) {
+        while ((strlen(line) > 0) && q_isspace(line[strlen(line) - 1])) {
             line[strlen(line) - 1] = 0;
         }
 
@@ -147,7 +147,7 @@ void load_translate_tables() {
         }
 
         key = line;
-        while ((strlen(key) > 0) && (isspace(*key))) {
+        while ((strlen(key) > 0) && (q_isspace(*key))) {
             key++;
         }
 
@@ -161,7 +161,7 @@ void load_translate_tables() {
 
         *value = 0;
         value++;
-        while ((strlen(value) > 0) && (isspace(*value))) {
+        while ((strlen(value) > 0) && (q_isspace(*value))) {
             value++;
         }
         if (*value == 0) {
@@ -179,7 +179,7 @@ void load_translate_tables() {
             continue;
         }
 
-        while ((strlen(key) > 0) && (isspace(key[strlen(key) - 1]))) {
+        while ((strlen(key) > 0) && (q_isspace(key[strlen(key) - 1]))) {
             key[strlen(key) - 1] = 0;
         }
 
@@ -674,7 +674,7 @@ void translate_table_editor_keyboard_handler(const int keystroke,
          */
         if (editing_entry == Q_TRUE) {
             if (!q_key_code_yes(keystroke)) {
-                if (isdigit(keystroke)) {
+                if (q_isdigit(keystroke)) {
                     /*
                      * Pass only digit keys to field
                      */

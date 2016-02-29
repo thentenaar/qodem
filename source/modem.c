@@ -18,9 +18,9 @@
 #ifndef Q_NO_SERIAL
 
 /*
- * NOTE:  Some of the code in open_serial_port() and configure_serial_port()
- *        was modeled after minicom.  Thank you to the many people involved
- *        in minicom's development.
+ * NOTE:  Some of the code in the non-Windows versions of open_serial_port()
+ *        and configure_serial_port() was modeled after minicom.  Thank you
+ *        to the many people involved in minicom's development.
  */
 
 #include "qcurses.h"
@@ -57,6 +57,11 @@
  * The serial port handle.
  */
 HANDLE q_serial_handle = NULL;
+
+/**
+ * The serial port overlapped structure, stored in modem.c.
+ */
+OVERLAPPED q_serial_overlapped;
 
 #endif
 
@@ -98,298 +103,6 @@ struct q_serial_port_struct q_serial_port;
  * Which row is being edited.  M_NONE means no rows are being edited.
  */
 static EDITOR_ROW highlighted_row = M_NONE;
-
-/**
- * Load the modem setting from the config file (modem.cfg).
- */
-void load_modem_config() {
-    FILE * file;
-    char * full_filename;
-    char line[MODEM_CONFIG_LINE_SIZE];
-    char * key;
-    char * value;
-    wchar_t value_wchar[MODEM_CONFIG_LINE_SIZE];
-
-    /*
-     * No leak
-     */
-    if (q_modem_config.name != NULL) {
-        Xfree(q_modem_config.name, __FILE__, __LINE__);
-        q_modem_config.name = NULL;
-    }
-    if (q_modem_config.dev_name != NULL) {
-        Xfree(q_modem_config.dev_name, __FILE__, __LINE__);
-        q_modem_config.dev_name = NULL;
-    }
-    if (q_modem_config.lock_dir != NULL) {
-        Xfree(q_modem_config.lock_dir, __FILE__, __LINE__);
-        q_modem_config.lock_dir = NULL;
-    }
-    if (q_modem_config.init_string != NULL) {
-        Xfree(q_modem_config.init_string, __FILE__, __LINE__);
-        q_modem_config.init_string = NULL;
-    }
-    if (q_modem_config.hangup_string != NULL) {
-        Xfree(q_modem_config.hangup_string, __FILE__, __LINE__);
-        q_modem_config.hangup_string = NULL;
-    }
-    if (q_modem_config.dial_string != NULL) {
-        Xfree(q_modem_config.dial_string, __FILE__, __LINE__);
-        q_modem_config.dial_string = NULL;
-    }
-
-    file = open_datadir_file(MODEM_CONFIG_FILENAME, &full_filename, "r");
-
-    if (file == NULL) {
-        /*
-         * If the file can't be opened, use the defaults.  Keep this in sync
-         * with create_modem_config_file().
-         */
-        q_modem_config.name = Xwcsdup(MODEM_DEFAULT_NAME, __FILE__, __LINE__);
-        q_modem_config.dev_name =
-            Xstrdup(MODEM_DEFAULT_DEVICE_NAME, __FILE__, __LINE__);
-        q_modem_config.lock_dir =
-            Xstrdup(MODEM_DEFAULT_LOCK_DIR, __FILE__, __LINE__);
-        q_modem_config.init_string =
-            Xstrdup(MODEM_DEFAULT_INIT_STRING, __FILE__, __LINE__);
-        q_modem_config.hangup_string =
-            Xstrdup(MODEM_DEFAULT_HANGUP_STRING, __FILE__, __LINE__);
-        q_modem_config.dial_string =
-            Xstrdup(MODEM_DEFAULT_DIAL_STRING, __FILE__, __LINE__);
-        q_modem_config.host_init_string =
-            Xstrdup(MODEM_DEFAULT_HOST_INIT_STRING, __FILE__, __LINE__);
-        q_modem_config.answer_string =
-            Xstrdup(MODEM_DEFAULT_ANSWER_STRING, __FILE__, __LINE__);
-
-        q_modem_config.xonxoff = Q_FALSE;
-        q_modem_config.rtscts = Q_TRUE;
-        q_modem_config.lock_dte_baud = Q_TRUE;
-        q_modem_config.default_baud = Q_BAUD_115200;
-        q_modem_config.default_data_bits = Q_DATA_BITS_8;
-        q_modem_config.default_parity = Q_PARITY_NONE;
-        q_modem_config.default_stop_bits = Q_STOP_BITS_1;
-
-        q_serial_port.xonxoff = q_modem_config.xonxoff;
-        q_serial_port.rtscts = q_modem_config.rtscts;
-        q_serial_port.baud = q_modem_config.default_baud;
-        q_serial_port.data_bits = q_modem_config.default_data_bits;
-        q_serial_port.parity = q_modem_config.default_parity;
-        q_serial_port.stop_bits = q_modem_config.default_stop_bits;
-        q_serial_port.dce_baud = 0;
-        q_serial_port.lock_dte_baud = q_modem_config.lock_dte_baud;
-
-        /*
-         * No leak
-         */
-        Xfree(full_filename, __FILE__, __LINE__);
-
-        /*
-         * Quietly exit.
-         */
-        return;
-    }
-
-    memset(line, 0, sizeof(line));
-    while (!feof(file)) {
-
-        if (fgets(line, sizeof(line), file) == NULL) {
-            /*
-             * This will cause the outer while's feof() check to fail and
-             * smoothly exit the while loop.
-             */
-            continue;
-        }
-        line[sizeof(line) - 1] = 0;
-
-        if ((strlen(line) == 0) || (line[0] == '#')) {
-            /*
-             * Empty or comment line.
-             */
-            continue;
-        }
-
-        /*
-         * Nix trailing whitespace.
-         */
-        while (isspace(line[strlen(line) - 1])) {
-            line[strlen(line) - 1] = 0;
-        }
-        key = line;
-        while ((strlen(key) > 0) && (isspace(*key))) {
-            key++;
-        }
-
-        value = strchr(key, '=');
-        if (value == NULL) {
-            /*
-             * Invalid line.
-             */
-            continue;
-        }
-
-        *value = 0;
-        value++;
-        while ((strlen(value) > 0) && (isspace(*value))) {
-            value++;
-        }
-        if (*value == 0) {
-            /*
-             * No data.
-             */
-            continue;
-        }
-
-        mbstowcs(value_wchar, value, strlen(value) + 1);
-
-        if (strncmp(key, "name", strlen("name")) == 0) {
-            q_modem_config.name = Xwcsdup(value_wchar, __FILE__, __LINE__);
-        } else if (strncmp(key, "dev_name", strlen("dev_name")) == 0) {
-            q_modem_config.dev_name = Xstrdup(value, __FILE__, __LINE__);
-        } else if (strncmp(key, "lock_dir", strlen("lock_dir")) == 0) {
-            q_modem_config.lock_dir = Xstrdup(value, __FILE__, __LINE__);
-        } else if (strncmp(key, "init_string", strlen("init_string")) == 0) {
-            q_modem_config.init_string = Xstrdup(value, __FILE__, __LINE__);
-        } else if (strncmp(key, "hangup_string",
-                           strlen("hangup_string")) == 0) {
-            q_modem_config.hangup_string = Xstrdup(value, __FILE__, __LINE__);
-        } else if (strncmp(key, "dial_string", strlen("dial_string")) == 0) {
-            q_modem_config.dial_string = Xstrdup(value, __FILE__, __LINE__);
-        } else if (strncmp(key, "host_init_string", strlen("host_init_string"))
-                   == 0) {
-            q_modem_config.host_init_string =
-                Xstrdup(value, __FILE__, __LINE__);
-        } else if (strncmp(key, "answer_string",
-                           strlen("answer_string")) == 0) {
-            q_modem_config.answer_string = Xstrdup(value, __FILE__, __LINE__);
-        } else if (strncmp(key, "baud", strlen("baud")) == 0) {
-            if (strcmp(value, "300") == 0) {
-                q_modem_config.default_baud = Q_BAUD_300;
-            } else if (strcmp(value, "1200") == 0) {
-                q_modem_config.default_baud = Q_BAUD_1200;
-            } else if (strcmp(value, "2400") == 0) {
-                q_modem_config.default_baud = Q_BAUD_2400;
-            } else if (strcmp(value, "4800") == 0) {
-                q_modem_config.default_baud = Q_BAUD_4800;
-            } else if (strcmp(value, "9600") == 0) {
-                q_modem_config.default_baud = Q_BAUD_9600;
-            } else if (strcmp(value, "19200") == 0) {
-                q_modem_config.default_baud = Q_BAUD_19200;
-            } else if (strcmp(value, "38400") == 0) {
-                q_modem_config.default_baud = Q_BAUD_38400;
-            } else if (strcmp(value, "57600") == 0) {
-                q_modem_config.default_baud = Q_BAUD_57600;
-            } else if (strcmp(value, "115200") == 0) {
-                q_modem_config.default_baud = Q_BAUD_115200;
-            } else if (strcmp(value, "230400") == 0) {
-                q_modem_config.default_baud = Q_BAUD_230400;
-            }
-
-        } else if (strncmp(key, "data_bits", strlen("data_bits")) == 0) {
-            if (strcmp(value, "8") == 0) {
-                q_modem_config.default_data_bits = Q_DATA_BITS_8;
-            } else if (strcmp(value, "7") == 0) {
-                q_modem_config.default_data_bits = Q_DATA_BITS_7;
-            } else if (strcmp(value, "6") == 0) {
-                q_modem_config.default_data_bits = Q_DATA_BITS_6;
-            } else if (strcmp(value, "5") == 0) {
-                q_modem_config.default_data_bits = Q_DATA_BITS_5;
-            }
-        } else if (strncmp(key, "parity", strlen("parity")) == 0) {
-            if (strcmp(value, "none") == 0) {
-                q_modem_config.default_parity = Q_PARITY_NONE;
-            } else if (strcmp(value, "even") == 0) {
-                q_modem_config.default_parity = Q_PARITY_EVEN;
-            } else if (strcmp(value, "odd") == 0) {
-                q_modem_config.default_parity = Q_PARITY_ODD;
-            } else if (strcmp(value, "mark") == 0) {
-                /*
-                 * Mark and space parity are only supported for 7-bit bytes.
-                 */
-                q_modem_config.default_parity = Q_PARITY_MARK;
-                q_modem_config.default_data_bits = Q_DATA_BITS_7;
-            } else if (strcmp(value, "space") == 0) {
-                /*
-                 * Mark and space parity are only supported for 7-bit bytes.
-                 */
-                q_modem_config.default_parity = Q_PARITY_SPACE;
-                q_modem_config.default_data_bits = Q_DATA_BITS_7;
-            }
-        } else if (strncmp(key, "stop_bits", strlen("stop_bits")) == 0) {
-            if (strcmp(value, "1") == 0) {
-                q_modem_config.default_stop_bits = Q_STOP_BITS_1;
-            } else if (strcmp(value, "2") == 0) {
-                q_modem_config.default_stop_bits = Q_STOP_BITS_2;
-            }
-        } else if (strncmp(key, "xonxoff", strlen("xonxoff")) == 0) {
-            if (strcmp(value, "true") == 0) {
-                q_modem_config.xonxoff = Q_TRUE;
-            } else {
-                q_modem_config.xonxoff = Q_FALSE;
-            }
-        } else if (strncmp(key, "rtscts", strlen("rtscts")) == 0) {
-            if (strcmp(value, "true") == 0) {
-                q_modem_config.rtscts = Q_TRUE;
-            } else {
-                q_modem_config.rtscts = Q_FALSE;
-            }
-        } else if (strncmp(key, "lock_dte_baud",
-                           strlen("lock_dte_baud")) == 0) {
-            if (strcmp(value, "true") == 0) {
-                q_modem_config.lock_dte_baud = Q_TRUE;
-            } else {
-                q_modem_config.lock_dte_baud = Q_FALSE;
-            }
-        }
-    }
-
-    /*
-     * Done reading, close file.
-     */
-    Xfree(full_filename, __FILE__, __LINE__);
-    fclose(file);
-
-    /*
-     * Change any NULLs to empty strings.
-     */
-    if (q_modem_config.name == NULL) {
-        q_modem_config.name = Xwcsdup(L"", __FILE__, __LINE__);
-    }
-    if (q_modem_config.dev_name == NULL) {
-        q_modem_config.dev_name = Xstrdup("", __FILE__, __LINE__);
-    }
-    if (q_modem_config.lock_dir == NULL) {
-        q_modem_config.lock_dir = Xstrdup("", __FILE__, __LINE__);
-    }
-    if (q_modem_config.init_string == NULL) {
-        q_modem_config.init_string = Xstrdup("", __FILE__, __LINE__);
-    }
-    if (q_modem_config.hangup_string == NULL) {
-        q_modem_config.hangup_string = Xstrdup("", __FILE__, __LINE__);
-    }
-    if (q_modem_config.dial_string == NULL) {
-        q_modem_config.dial_string = Xstrdup("", __FILE__, __LINE__);
-    }
-    if (q_modem_config.host_init_string == NULL) {
-        q_modem_config.host_init_string = Xstrdup("", __FILE__, __LINE__);
-    }
-    if (q_modem_config.answer_string == NULL) {
-        q_modem_config.answer_string = Xstrdup("", __FILE__, __LINE__);
-    }
-
-    q_serial_port.xonxoff = q_modem_config.xonxoff;
-    q_serial_port.rtscts = q_modem_config.rtscts;
-    q_serial_port.baud = q_modem_config.default_baud;
-    q_serial_port.data_bits = q_modem_config.default_data_bits;
-    q_serial_port.parity = q_modem_config.default_parity;
-    q_serial_port.stop_bits = q_modem_config.default_stop_bits;
-    q_serial_port.dce_baud = 0;
-    q_serial_port.lock_dte_baud = q_modem_config.lock_dte_baud;
-
-    /*
-     * Note that we have no outstanding changes to save.
-     */
-    saved_changes = Q_TRUE;
-}
 
 /**
  * Return a string for a Q_BAUD_RATE enum.
@@ -588,6 +301,303 @@ static void save_modem_config() {
 }
 
 /**
+ * Load the modem setting from the config file (modem.cfg).
+ */
+void load_modem_config() {
+    FILE * file;
+    char * full_filename;
+    char line[MODEM_CONFIG_LINE_SIZE];
+    char * key;
+    char * value;
+    wchar_t value_wchar[MODEM_CONFIG_LINE_SIZE];
+
+    /*
+     * No leak
+     */
+    if (q_modem_config.name != NULL) {
+        Xfree(q_modem_config.name, __FILE__, __LINE__);
+        q_modem_config.name = NULL;
+    }
+    if (q_modem_config.dev_name != NULL) {
+        Xfree(q_modem_config.dev_name, __FILE__, __LINE__);
+        q_modem_config.dev_name = NULL;
+    }
+    if (q_modem_config.lock_dir != NULL) {
+        Xfree(q_modem_config.lock_dir, __FILE__, __LINE__);
+        q_modem_config.lock_dir = NULL;
+    }
+    if (q_modem_config.init_string != NULL) {
+        Xfree(q_modem_config.init_string, __FILE__, __LINE__);
+        q_modem_config.init_string = NULL;
+    }
+    if (q_modem_config.hangup_string != NULL) {
+        Xfree(q_modem_config.hangup_string, __FILE__, __LINE__);
+        q_modem_config.hangup_string = NULL;
+    }
+    if (q_modem_config.dial_string != NULL) {
+        Xfree(q_modem_config.dial_string, __FILE__, __LINE__);
+        q_modem_config.dial_string = NULL;
+    }
+
+    file = open_datadir_file(MODEM_CONFIG_FILENAME, &full_filename, "r");
+
+    if (file == NULL) {
+        /*
+         * If the file can't be opened, use the defaults.  Keep this in sync
+         * with create_modem_config_file().
+         */
+        q_modem_config.name = Xwcsdup(MODEM_DEFAULT_NAME, __FILE__, __LINE__);
+        q_modem_config.dev_name =
+            Xstrdup(MODEM_DEFAULT_DEVICE_NAME, __FILE__, __LINE__);
+        q_modem_config.lock_dir =
+            Xstrdup(MODEM_DEFAULT_LOCK_DIR, __FILE__, __LINE__);
+        q_modem_config.init_string =
+            Xstrdup(MODEM_DEFAULT_INIT_STRING, __FILE__, __LINE__);
+        q_modem_config.hangup_string =
+            Xstrdup(MODEM_DEFAULT_HANGUP_STRING, __FILE__, __LINE__);
+        q_modem_config.dial_string =
+            Xstrdup(MODEM_DEFAULT_DIAL_STRING, __FILE__, __LINE__);
+        q_modem_config.host_init_string =
+            Xstrdup(MODEM_DEFAULT_HOST_INIT_STRING, __FILE__, __LINE__);
+        q_modem_config.answer_string =
+            Xstrdup(MODEM_DEFAULT_ANSWER_STRING, __FILE__, __LINE__);
+
+        q_modem_config.xonxoff = Q_FALSE;
+        q_modem_config.rtscts = Q_TRUE;
+        q_modem_config.lock_dte_baud = Q_TRUE;
+        q_modem_config.default_baud = Q_BAUD_115200;
+        q_modem_config.default_data_bits = Q_DATA_BITS_8;
+        q_modem_config.default_parity = Q_PARITY_NONE;
+        q_modem_config.default_stop_bits = Q_STOP_BITS_1;
+
+        q_serial_port.xonxoff = q_modem_config.xonxoff;
+        q_serial_port.rtscts = q_modem_config.rtscts;
+        q_serial_port.baud = q_modem_config.default_baud;
+        q_serial_port.data_bits = q_modem_config.default_data_bits;
+        q_serial_port.parity = q_modem_config.default_parity;
+        q_serial_port.stop_bits = q_modem_config.default_stop_bits;
+        q_serial_port.dce_baud = 0;
+        q_serial_port.lock_dte_baud = q_modem_config.lock_dte_baud;
+
+        /*
+         * No leak
+         */
+        Xfree(full_filename, __FILE__, __LINE__);
+
+        /*
+         * Try to save these values
+         */
+        save_modem_config();
+
+        /*
+         * Quietly exit.
+         */
+        return;
+    }
+
+    memset(line, 0, sizeof(line));
+    while (!feof(file)) {
+
+        if (fgets(line, sizeof(line), file) == NULL) {
+            /*
+             * This will cause the outer while's feof() check to fail and
+             * smoothly exit the while loop.
+             */
+            continue;
+        }
+        line[sizeof(line) - 1] = 0;
+
+        if ((strlen(line) == 0) || (line[0] == '#')) {
+            /*
+             * Empty or comment line.
+             */
+            continue;
+        }
+
+        /*
+         * Nix trailing whitespace.
+         */
+        while (q_isspace(line[strlen(line) - 1])) {
+            line[strlen(line) - 1] = 0;
+        }
+        key = line;
+        while ((strlen(key) > 0) && (q_isspace(*key))) {
+            key++;
+        }
+
+        value = strchr(key, '=');
+        if (value == NULL) {
+            /*
+             * Invalid line.
+             */
+            continue;
+        }
+
+        *value = 0;
+        value++;
+        while ((strlen(value) > 0) && (q_isspace(*value))) {
+            value++;
+        }
+        if (*value == 0) {
+            /*
+             * No data.
+             */
+            continue;
+        }
+
+        mbstowcs(value_wchar, value, strlen(value) + 1);
+
+        if (strncmp(key, "name", strlen("name")) == 0) {
+            q_modem_config.name = Xwcsdup(value_wchar, __FILE__, __LINE__);
+        } else if (strncmp(key, "dev_name", strlen("dev_name")) == 0) {
+            q_modem_config.dev_name = Xstrdup(value, __FILE__, __LINE__);
+        } else if (strncmp(key, "lock_dir", strlen("lock_dir")) == 0) {
+            q_modem_config.lock_dir = Xstrdup(value, __FILE__, __LINE__);
+        } else if (strncmp(key, "init_string", strlen("init_string")) == 0) {
+            q_modem_config.init_string = Xstrdup(value, __FILE__, __LINE__);
+        } else if (strncmp(key, "hangup_string",
+                           strlen("hangup_string")) == 0) {
+            q_modem_config.hangup_string = Xstrdup(value, __FILE__, __LINE__);
+        } else if (strncmp(key, "dial_string", strlen("dial_string")) == 0) {
+            q_modem_config.dial_string = Xstrdup(value, __FILE__, __LINE__);
+        } else if (strncmp(key, "host_init_string", strlen("host_init_string"))
+                   == 0) {
+            q_modem_config.host_init_string =
+                Xstrdup(value, __FILE__, __LINE__);
+        } else if (strncmp(key, "answer_string",
+                           strlen("answer_string")) == 0) {
+            q_modem_config.answer_string = Xstrdup(value, __FILE__, __LINE__);
+        } else if (strncmp(key, "baud", strlen("baud")) == 0) {
+            if (strcmp(value, "300") == 0) {
+                q_modem_config.default_baud = Q_BAUD_300;
+            } else if (strcmp(value, "1200") == 0) {
+                q_modem_config.default_baud = Q_BAUD_1200;
+            } else if (strcmp(value, "2400") == 0) {
+                q_modem_config.default_baud = Q_BAUD_2400;
+            } else if (strcmp(value, "4800") == 0) {
+                q_modem_config.default_baud = Q_BAUD_4800;
+            } else if (strcmp(value, "9600") == 0) {
+                q_modem_config.default_baud = Q_BAUD_9600;
+            } else if (strcmp(value, "19200") == 0) {
+                q_modem_config.default_baud = Q_BAUD_19200;
+            } else if (strcmp(value, "38400") == 0) {
+                q_modem_config.default_baud = Q_BAUD_38400;
+            } else if (strcmp(value, "57600") == 0) {
+                q_modem_config.default_baud = Q_BAUD_57600;
+            } else if (strcmp(value, "115200") == 0) {
+                q_modem_config.default_baud = Q_BAUD_115200;
+            } else if (strcmp(value, "230400") == 0) {
+                q_modem_config.default_baud = Q_BAUD_230400;
+            }
+
+        } else if (strncmp(key, "data_bits", strlen("data_bits")) == 0) {
+            if (strcmp(value, "8") == 0) {
+                q_modem_config.default_data_bits = Q_DATA_BITS_8;
+            } else if (strcmp(value, "7") == 0) {
+                q_modem_config.default_data_bits = Q_DATA_BITS_7;
+            } else if (strcmp(value, "6") == 0) {
+                q_modem_config.default_data_bits = Q_DATA_BITS_6;
+            } else if (strcmp(value, "5") == 0) {
+                q_modem_config.default_data_bits = Q_DATA_BITS_5;
+            }
+        } else if (strncmp(key, "parity", strlen("parity")) == 0) {
+            if (strcmp(value, "none") == 0) {
+                q_modem_config.default_parity = Q_PARITY_NONE;
+            } else if (strcmp(value, "even") == 0) {
+                q_modem_config.default_parity = Q_PARITY_EVEN;
+            } else if (strcmp(value, "odd") == 0) {
+                q_modem_config.default_parity = Q_PARITY_ODD;
+            } else if (strcmp(value, "mark") == 0) {
+                /*
+                 * Mark and space parity are only supported for 7-bit bytes.
+                 */
+                q_modem_config.default_parity = Q_PARITY_MARK;
+                q_modem_config.default_data_bits = Q_DATA_BITS_7;
+            } else if (strcmp(value, "space") == 0) {
+                /*
+                 * Mark and space parity are only supported for 7-bit bytes.
+                 */
+                q_modem_config.default_parity = Q_PARITY_SPACE;
+                q_modem_config.default_data_bits = Q_DATA_BITS_7;
+            }
+        } else if (strncmp(key, "stop_bits", strlen("stop_bits")) == 0) {
+            if (strcmp(value, "1") == 0) {
+                q_modem_config.default_stop_bits = Q_STOP_BITS_1;
+            } else if (strcmp(value, "2") == 0) {
+                q_modem_config.default_stop_bits = Q_STOP_BITS_2;
+            }
+        } else if (strncmp(key, "xonxoff", strlen("xonxoff")) == 0) {
+            if (strcmp(value, "true") == 0) {
+                q_modem_config.xonxoff = Q_TRUE;
+            } else {
+                q_modem_config.xonxoff = Q_FALSE;
+            }
+        } else if (strncmp(key, "rtscts", strlen("rtscts")) == 0) {
+            if (strcmp(value, "true") == 0) {
+                q_modem_config.rtscts = Q_TRUE;
+            } else {
+                q_modem_config.rtscts = Q_FALSE;
+            }
+        } else if (strncmp(key, "lock_dte_baud",
+                           strlen("lock_dte_baud")) == 0) {
+            if (strcmp(value, "true") == 0) {
+                q_modem_config.lock_dte_baud = Q_TRUE;
+            } else {
+                q_modem_config.lock_dte_baud = Q_FALSE;
+            }
+        }
+    }
+
+    /*
+     * Done reading, close file.
+     */
+    Xfree(full_filename, __FILE__, __LINE__);
+    fclose(file);
+
+    /*
+     * Change any NULLs to empty strings.
+     */
+    if (q_modem_config.name == NULL) {
+        q_modem_config.name = Xwcsdup(L"", __FILE__, __LINE__);
+    }
+    if (q_modem_config.dev_name == NULL) {
+        q_modem_config.dev_name = Xstrdup("", __FILE__, __LINE__);
+    }
+    if (q_modem_config.lock_dir == NULL) {
+        q_modem_config.lock_dir = Xstrdup("", __FILE__, __LINE__);
+    }
+    if (q_modem_config.init_string == NULL) {
+        q_modem_config.init_string = Xstrdup("", __FILE__, __LINE__);
+    }
+    if (q_modem_config.hangup_string == NULL) {
+        q_modem_config.hangup_string = Xstrdup("", __FILE__, __LINE__);
+    }
+    if (q_modem_config.dial_string == NULL) {
+        q_modem_config.dial_string = Xstrdup("", __FILE__, __LINE__);
+    }
+    if (q_modem_config.host_init_string == NULL) {
+        q_modem_config.host_init_string = Xstrdup("", __FILE__, __LINE__);
+    }
+    if (q_modem_config.answer_string == NULL) {
+        q_modem_config.answer_string = Xstrdup("", __FILE__, __LINE__);
+    }
+
+    q_serial_port.xonxoff       = q_modem_config.xonxoff;
+    q_serial_port.rtscts        = q_modem_config.rtscts;
+    q_serial_port.baud          = q_modem_config.default_baud;
+    q_serial_port.data_bits     = q_modem_config.default_data_bits;
+    q_serial_port.parity        = q_modem_config.default_parity;
+    q_serial_port.stop_bits     = q_modem_config.default_stop_bits;
+    q_serial_port.dce_baud      = 0;
+    q_serial_port.lock_dte_baud = q_modem_config.lock_dte_baud;
+
+    /*
+     * Note that we have no outstanding changes to save.
+     */
+    saved_changes = Q_TRUE;
+}
+
+/**
  * Create the config file for the modem (modem.cfg).
  */
 void create_modem_config_file() {
@@ -631,13 +641,13 @@ void create_modem_config_file() {
     q_modem_config.default_parity = Q_PARITY_NONE;
     q_modem_config.default_stop_bits = Q_STOP_BITS_1;
 
-    q_serial_port.xonxoff = q_modem_config.xonxoff;
-    q_serial_port.rtscts = q_modem_config.rtscts;
-    q_serial_port.baud = q_modem_config.default_baud;
-    q_serial_port.data_bits = q_modem_config.default_data_bits;
-    q_serial_port.parity = q_modem_config.default_parity;
-    q_serial_port.stop_bits = q_modem_config.default_stop_bits;
-    q_serial_port.dce_baud = 0;
+    q_serial_port.xonxoff       = q_modem_config.xonxoff;
+    q_serial_port.rtscts        = q_modem_config.rtscts;
+    q_serial_port.baud          = q_modem_config.default_baud;
+    q_serial_port.data_bits     = q_modem_config.default_data_bits;
+    q_serial_port.parity        = q_modem_config.default_parity;
+    q_serial_port.stop_bits     = q_modem_config.default_stop_bits;
+    q_serial_port.dce_baud      = 0;
     q_serial_port.lock_dte_baud = q_modem_config.lock_dte_baud;
 
     /*
@@ -1530,6 +1540,148 @@ static void send_modem_string(const char * string) {
     }
 }
 
+/*
+ * The functions read_serial_port() and flush_serial_port() are used solely
+ * to trash the init string from the modem.
+ */
+enum {
+    SERIAL_TIMEOUT,
+    SERIAL_ERROR,
+    SERIAL_OK
+};
+
+#define MAX_SERIAL_WRITE 128
+
+/**
+ * Read data from the serial port and put into buffer, starting at
+ * buffer[buffer_start] and reading no more than buffer[buffer_max].  The
+ * number of NEW bytes read is ADDED to buffer_n.
+ *
+ * @param buffer the buffer to write data to
+ * @param buffer_max the TOTAL SIZE of the buffer (e.g. sizeof(x))
+ * @param buffer_start the index into buffer to append data
+ * @param buffer_n the total number of bytes in the buffer (e.g. strlen(x))
+ * @param timeout how long to wait in the poll/select call
+ * @return status SERIAL_OK means bytes were read and appended to the buffer
+ * SERIAL_ERROR means an error occurred either in the poll or the read.
+ * SERIAL_TIMEOUT means NO bytes were read because the timeout expired.
+ */
+static int read_serial_port(unsigned char * buffer, const int buffer_max,
+                            const int buffer_start, int * buffer_n,
+                            const struct timeval * timeout) {
+    int rc;
+#ifdef Q_PDCURSES_WIN32
+    /* TODO */
+#else
+    struct timeval select_timeout;
+    fd_set readfds;
+    fd_set writefds;
+    fd_set exceptfds;
+#endif
+
+    assert(buffer != NULL);
+    assert(buffer_n != NULL);
+    assert(*buffer_n >= 0);
+    assert(timeout != NULL);
+    assert(buffer_start >= 0);
+    assert(buffer_max <= MAX_SERIAL_WRITE);
+    assert(buffer_max > buffer_start);
+
+#ifdef Q_PDCURSES_WIN32
+    /* TODO */
+    return SERIAL_TIMEOUT;
+
+
+#else
+
+    FD_ZERO(&readfds);
+    FD_ZERO(&writefds);
+    FD_ZERO(&exceptfds);
+    FD_SET(q_child_tty_fd, &readfds);
+
+    memcpy(&select_timeout, timeout, sizeof(struct timeval));
+    rc = select(q_child_tty_fd + 1, &readfds, &writefds, &exceptfds,
+                &select_timeout);
+
+    if (rc < 0) {
+        if (errno == EINTR) {
+            /*
+             * Interrupted by a signal.
+             */
+            return SERIAL_TIMEOUT;
+        }
+        return SERIAL_ERROR;
+    }
+    if (rc == 0) {
+        return SERIAL_TIMEOUT;
+    }
+
+    /*
+     * Read the data.
+     */
+    rc = read(q_child_tty_fd, buffer + buffer_start, buffer_max - (*buffer_n));
+    if (rc < 0) {
+        return SERIAL_ERROR;
+    }
+    if (rc == 0) {
+        /*
+         * Remote end closed connection, huh?
+         */
+        return SERIAL_ERROR;
+    }
+    (*buffer_n) += rc;
+
+#endif
+
+    /*
+     * All is well.
+     */
+    return SERIAL_OK;
+}
+
+/**
+ * Trash all data coming in from the serial port until timeout seconds have
+ * passed with no new data.
+ *
+ * @param timeout the number of seconds to wait before seeing no data
+ */
+static void flush_serial_port(const float timeout) {
+    unsigned char buffer[16];
+    int buffer_n;
+    int buffer_before;
+    int rc;
+
+    /*
+     * How long we will allow each poll/select to wait before seeing data.
+     */
+    struct timeval polling_timeout;
+
+    /*
+     * Set poll/select timeout.
+     */
+    polling_timeout.tv_sec = timeout;
+    polling_timeout.tv_usec = (unsigned long) (timeout * 1000000.0f) % 1000000;
+
+    buffer_n = 0;
+    buffer_before = buffer_n;
+    while ((rc = read_serial_port(buffer, sizeof(buffer), buffer_before,
+                &buffer_n, &polling_timeout)) != SERIAL_TIMEOUT) {
+        if (rc == SERIAL_ERROR) {
+            /*
+             * Not sure what to do here...
+             */
+            return;
+        }
+        buffer_n = 0;
+        buffer_before = buffer_n;
+    }
+
+    /*
+     * All OK.
+     */
+    return;
+}
+
 #ifdef Q_PDCURSES_WIN32
 
 /**
@@ -1550,8 +1702,44 @@ void hangup_modem() {
  * @return true if the port was successfully opened
  */
 Q_BOOL open_serial_port() {
-    /* TODO */
-    return Q_FALSE;
+    char notify_message[DIALOG_MESSAGE_SIZE];
+
+    assert(q_serial_handle == NULL);
+
+    /*
+     * We will be opening "COMx", not a generic i18n filename, so use the
+     * ANSI function rather than the wide-char version.
+     */
+    q_serial_handle = CreateFileA(q_modem_config.dev_name,
+        GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
+        FILE_FLAG_OVERLAPPED, NULL);
+
+    if (q_serial_handle == INVALID_HANDLE_VALUE) {
+        /*
+         * An error occurred opening the port.  Tell the user and bail out.
+         */
+        snprintf(notify_message, sizeof(notify_message),
+                 _("Error opening \"%s\": %s"), q_modem_config.dev_name,
+                 strerror(GetLastError()));
+        notify_form(notify_message, 0);
+        q_serial_handle = NULL;
+        return Q_FALSE;
+    }
+
+    /*
+     * Note that we've got the port open now.
+     */
+    q_status.serial_open = Q_TRUE;
+
+    /*
+     * Wait 150 milliseconds for the modem to see DTR.
+     */
+    Sleep(150);
+
+    /*
+     * Now set it up the way we want to.
+     */
+    return configure_serial_port();
 }
 
 /**
@@ -1560,9 +1748,211 @@ Q_BOOL open_serial_port() {
  * @return true if the port was successfully re-configured
  */
 Q_BOOL configure_serial_port() {
-    /* TODO */
-    return Q_FALSE;
+    char notify_message[DIALOG_MESSAGE_SIZE];
+    static Q_BOOL first = Q_TRUE;
+    DWORD new_speed = CBR_9600;
+    int new_dce_speed = 9600;
+    COMMTIMEOUTS comm_timeouts;
+
+    if (first == Q_TRUE) {
+        /*
+         * First time to open, get the original DCB
+         */
+        if (GetCommState(q_serial_handle,
+                         &q_serial_port.original_comm_state) == 0) {
+            snprintf(notify_message, sizeof(notify_message),
+                     _("Error reading terminal parameters from \"%s\": %s"),
+                     q_modem_config.dev_name, strerror(GetLastError()));
+            notify_form(notify_message, 0);
+            CloseHandle(q_serial_handle);
+            q_serial_handle = NULL;
+            q_status.serial_open = Q_FALSE;
+            return Q_FALSE;
+        }
+        memcpy(&q_serial_port.qodem_comm_state,
+               &q_serial_port.original_comm_state, sizeof(DCB));
+    }
+
+    /*
+     * Setup with our own parameters
+     */
+
+    /* Default to no hardware handshaking */
+    q_serial_port.qodem_comm_state.fOutxCtsFlow = FALSE;
+    q_serial_port.qodem_comm_state.fRtsControl = RTS_CONTROL_DISABLE;
+    if (q_serial_port.rtscts == Q_TRUE) {
+        /*
+         * Verify first that we have DSR up
+         */
+        if ((query_serial_port() == Q_TRUE) &&
+            (q_serial_port.rs232.DSR == Q_TRUE)) {
+            /*
+             * Looks good so far, enable hardware handshaking
+             */
+            q_serial_port.qodem_comm_state.fOutxCtsFlow = TRUE;
+            q_serial_port.qodem_comm_state.fRtsControl = RTS_CONTROL_HANDSHAKE;
+        }
+    }
+    if (q_serial_port.xonxoff == Q_TRUE) {
+        q_serial_port.qodem_comm_state.fInX = TRUE;
+        q_serial_port.qodem_comm_state.fOutX = TRUE;
+    } else {
+        q_serial_port.qodem_comm_state.fInX  = FALSE;
+        q_serial_port.qodem_comm_state.fOutX = FALSE;
+    }
+
+    /*
+     * Set speed
+     */
+    switch (q_serial_port.baud) {
+    case Q_BAUD_300:
+        new_speed = CBR_300;
+        new_dce_speed = 300;
+        break;
+    case Q_BAUD_1200:
+        new_speed = CBR_1200;
+        new_dce_speed = 1200;
+        break;
+    case Q_BAUD_2400:
+        new_speed = CBR_2400;
+        new_dce_speed = 2400;
+        break;
+    case Q_BAUD_4800:
+        new_speed = CBR_4800;
+        new_dce_speed = 4800;
+        break;
+    case Q_BAUD_9600:
+        new_speed = CBR_9600;
+        new_dce_speed = 9600;
+        break;
+    case Q_BAUD_19200:
+        new_speed = CBR_19200;
+        new_dce_speed = 19200;
+        break;
+    case Q_BAUD_38400:
+        new_speed = CBR_38400;
+        new_dce_speed = 38400;
+        break;
+    case Q_BAUD_57600:
+        new_speed = CBR_57600;
+        new_dce_speed = 57600;
+        break;
+    case Q_BAUD_115200:
+        new_speed = CBR_115200;
+        new_dce_speed = 115200;
+        break;
+
+    case Q_BAUD_230400:
+        /*
+         * 230400 doesn't have a constant.  However allegedly the device
+         * manufacturers in general are taking a raw int value now.  Maybe it
+         * will work, who knows?
+         */
+        new_speed = 230400;
+        new_dce_speed = 230400;
+        break;
+
+    }
+    q_serial_port.qodem_comm_state.BaudRate = new_speed;
+
+    /*
+     * Check bits
+     */
+    switch (q_serial_port.data_bits) {
+    case Q_DATA_BITS_8:
+        q_serial_port.qodem_comm_state.ByteSize = 8;
+        break;
+
+    case Q_DATA_BITS_7:
+        q_serial_port.qodem_comm_state.ByteSize = 7;
+        break;
+
+    case Q_DATA_BITS_6:
+        q_serial_port.qodem_comm_state.ByteSize = 6;
+        break;
+
+    case Q_DATA_BITS_5:
+        q_serial_port.qodem_comm_state.ByteSize = 5;
+        break;
+    }
+
+    switch (q_serial_port.stop_bits) {
+    case Q_STOP_BITS_1:
+        q_serial_port.qodem_comm_state.StopBits = ONESTOPBIT;
+        break;
+
+    case Q_STOP_BITS_2:
+        q_serial_port.qodem_comm_state.StopBits = TWOSTOPBITS;
+        break;
+    }
+
+    switch (q_serial_port.parity) {
+    case Q_PARITY_NONE:
+        q_serial_port.qodem_comm_state.Parity = NOPARITY;
+        break;
+    case Q_PARITY_EVEN:
+        q_serial_port.qodem_comm_state.Parity = EVENPARITY;
+        break;
+    case Q_PARITY_ODD:
+        q_serial_port.qodem_comm_state.Parity = ODDPARITY;
+        break;
+    case Q_PARITY_MARK:
+        q_serial_port.qodem_comm_state.Parity = MARKPARITY;
+        break;
+    case Q_PARITY_SPACE:
+        q_serial_port.qodem_comm_state.Parity = SPACEPARITY;
+        break;
+    }
+
+    if (SetCommState(q_serial_handle, &q_serial_port.qodem_comm_state) == 0) {
+        /*
+         * Uh-oh
+         */
+        snprintf(notify_message, sizeof(notify_message),
+                 _("Error setting terminal parameters for \"%s\": %s"),
+                 q_modem_config.dev_name, strerror(GetLastError()));
+        notify_form(notify_message, 0);
+        close_serial_port();
+        return Q_FALSE;
+    }
+
+    /*
+     * Set timeouts.
+     *
+     * TODO: verify that these are reasonable to achieve decent performance
+     * at 56k.
+     */
+    comm_timeouts.ReadIntervalTimeout = 3;
+    comm_timeouts.ReadTotalTimeoutMultiplier = 3;
+    comm_timeouts.ReadTotalTimeoutConstant = 2;
+    comm_timeouts.WriteTotalTimeoutMultiplier = 3;
+    comm_timeouts.WriteTotalTimeoutConstant = 2;
+    SetCommTimeouts(q_serial_handle, &comm_timeouts);
+
+    /*
+     * Set new DCE speed
+     */
+    q_serial_port.dce_baud = new_dce_speed;
+
+    if (first == Q_TRUE) {
+        /*
+         * Initialize modem
+         */
+        send_modem_string(q_modem_config.init_string);
+        first = Q_FALSE;
+    }
+
+    /*
+     * Clear whatever is there
+     */
+    flush_serial_port(0.5);
+
+    /*
+     * All OK
+     */
+    return Q_TRUE;
 }
+
 /**
  * Close the serial port.
  *
@@ -1570,8 +1960,29 @@ Q_BOOL configure_serial_port() {
  * original terminal settings before it was closed
  */
 Q_BOOL close_serial_port() {
-    /* TODO */
-    return Q_FALSE;
+    char notify_message[DIALOG_MESSAGE_SIZE];
+    Q_BOOL rc = Q_TRUE;
+
+    /*
+     * Put the original DCB back
+     */
+    if (SetCommState(q_serial_handle,
+                     &q_serial_port.original_comm_state) == 0) {
+        /*
+         * Uh-oh
+         */
+        snprintf(notify_message, sizeof(notify_message),
+            _("Error restoring original terminal parameters for \"%s\": %s"),
+            q_modem_config.dev_name, strerror(GetLastError()));
+        notify_form(notify_message, 0);
+        rc = Q_FALSE;
+    }
+
+    CloseHandle(q_serial_handle);
+    q_serial_handle = NULL;
+    q_status.serial_open = Q_FALSE;
+    q_status.online = Q_FALSE;
+    return rc;
 }
 
 /**
@@ -1689,7 +2100,7 @@ Q_BOOL open_serial_port() {
     int keystroke;
     pid_t other_pid = -1;
     char lockfile_data[64];
-    pid_t *lockfile_data_pid;
+    pid_t * lockfile_data_pid;
     int lockfile_fd;
     int rc;
     struct passwd *pw = NULL;
@@ -1855,135 +2266,6 @@ Q_BOOL open_serial_port() {
      * Now set it up the way we want to.
      */
     return configure_serial_port();
-}
-
-/*
- * The functions read_serial_port() and flush_serial_port() are used solely
- * to trash the init string from the modem.
- */
-enum {
-    SERIAL_TIMEOUT,
-    SERIAL_ERROR,
-    SERIAL_OK
-};
-
-#define MAX_SERIAL_WRITE 128
-
-/**
- * Read data from the serial port and put into buffer, starting at
- * buffer[buffer_start] and reading no more than buffer[buffer_max].  The
- * number of NEW bytes read is ADDED to buffer_n.
- *
- * @param buffer the buffer to write data to
- * @param buffer_max the TOTAL SIZE of the buffer (e.g. sizeof(x))
- * @param buffer_start the index into buffer to append data
- * @param buffer_n the total number of bytes in the buffer (e.g. strlen(x))
- * @param timeout how long to wait in the poll/select call
- * @return status SERIAL_OK means bytes were read and appended to the buffer
- * SERIAL_ERROR means an error occurred either in the poll or ...the read
- * SERIAL_TIMEOUT means NO bytes were read because the timeout expired.
- */
-static int read_serial_port(unsigned char * buffer, const int buffer_max,
-                            const int buffer_start, int * buffer_n,
-                            const struct timeval * timeout) {
-    int rc;
-    struct timeval select_timeout;
-    fd_set readfds;
-    fd_set writefds;
-    fd_set exceptfds;
-
-    assert(buffer != NULL);
-    assert(buffer_n != NULL);
-    assert(*buffer_n >= 0);
-    assert(timeout != NULL);
-    assert(buffer_start >= 0);
-    assert(buffer_max <= MAX_SERIAL_WRITE);
-    assert(buffer_max > buffer_start);
-
-    FD_ZERO(&readfds);
-    FD_ZERO(&writefds);
-    FD_ZERO(&exceptfds);
-    FD_SET(q_child_tty_fd, &readfds);
-
-    memcpy(&select_timeout, timeout, sizeof(struct timeval));
-    rc = select(q_child_tty_fd + 1, &readfds, &writefds, &exceptfds,
-                &select_timeout);
-
-    if (rc < 0) {
-        if (errno == EINTR) {
-            /*
-             * Interrupted by a signal.
-             */
-            return SERIAL_TIMEOUT;
-        }
-        return SERIAL_ERROR;
-    }
-    if (rc == 0) {
-        return SERIAL_TIMEOUT;
-    }
-
-    /*
-     * Read the data.
-     */
-    rc = read(q_child_tty_fd, buffer + buffer_start, buffer_max - (*buffer_n));
-    if (rc < 0) {
-        return SERIAL_ERROR;
-    }
-    if (rc == 0) {
-        /*
-         * Remote end closed connection, huh?
-         */
-        return SERIAL_ERROR;
-    }
-    (*buffer_n) += rc;
-
-    /*
-     * All is well.
-     */
-    return SERIAL_OK;
-}
-
-/**
- * Trash all data coming in from the serial port until timeout seconds have
- * passed with no new data.
- *
- * @param timeout the number of seconds to wait before seeing no data
- */
-static void flush_serial_port(const float timeout) {
-    unsigned char buffer[16];
-    int buffer_n;
-    int buffer_before;
-    int rc;
-
-    /*
-     * How long we will allow each poll/select to wait before seeing data.
-     */
-    struct timeval polling_timeout;
-
-    /*
-     * Set poll/select timeout.
-     */
-    polling_timeout.tv_sec = timeout;
-    polling_timeout.tv_usec = (unsigned long) (timeout * 1000000.0f) % 1000000;
-
-    buffer_n = 0;
-    buffer_before = buffer_n;
-    while ((rc = read_serial_port(buffer, sizeof(buffer), buffer_before,
-                &buffer_n, &polling_timeout)) != SERIAL_TIMEOUT) {
-        if (rc == SERIAL_ERROR) {
-            /*
-             * Not sure what to do here...
-             */
-            return;
-        }
-        buffer_n = 0;
-        buffer_before = buffer_n;
-    }
-
-    /*
-     * All OK.
-     */
-    return;
 }
 
 /**

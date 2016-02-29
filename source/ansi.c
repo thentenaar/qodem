@@ -153,7 +153,7 @@ static int ansi_ps(unsigned char ** count) {
     /*
      * First digit
      */
-    if (isdigit(**count)) {
+    if (q_isdigit(**count)) {
         ch[0] = **count;
         (*count)++;
     } else {
@@ -163,7 +163,7 @@ static int ansi_ps(unsigned char ** count) {
     /*
      * See if the second char is a digit
      */
-    if (isdigit(**count)) {
+    if (q_isdigit(**count)) {
         ch[1] = **count;
         (*count)++;
     }
@@ -171,7 +171,7 @@ static int ansi_ps(unsigned char ** count) {
     /*
      * See if the third char is a digit
      */
-    if (isdigit(**count)) {
+    if (q_isdigit(**count)) {
         ch[2] = **count;
         (*count)++;
     }
@@ -179,7 +179,7 @@ static int ansi_ps(unsigned char ** count) {
     /*
      * Error out from here on
      */
-    if (isdigit(**count)) {
+    if (q_isdigit(**count)) {
         return -1;
     }
 
@@ -1316,7 +1316,7 @@ Q_EMULATION_STATUS ansi(const unsigned char from_modem, wchar_t * to_screen) {
         /*
          * Looking for digit or code.
          */
-        if (isdigit(from_modem)) {
+        if (q_isdigit(from_modem)) {
             /*
              * Looks like a counter
              */
@@ -1591,7 +1591,7 @@ Q_EMULATION_STATUS ansi(const unsigned char from_modem, wchar_t * to_screen) {
         /*
          * Looking for digit, ';', or code
          */
-        if (isdigit(from_modem)) {
+        if (q_isdigit(from_modem)) {
             save_char(from_modem, to_screen);
             return Q_EMUL_FSM_NO_CHAR_YET;
         }
@@ -1897,7 +1897,7 @@ Q_EMULATION_STATUS ansi(const unsigned char from_modem, wchar_t * to_screen) {
         /*
          * We can see ONLY:  digit, ';', H, f, m
          */
-        if (isdigit(from_modem)) {
+        if (q_isdigit(from_modem)) {
             save_char(from_modem, to_screen);
             return Q_EMUL_FSM_NO_CHAR_YET;
         }
@@ -1943,7 +1943,7 @@ Q_EMULATION_STATUS ansi(const unsigned char from_modem, wchar_t * to_screen) {
         /*
          * We can see ONLY:  digit, ';', m
          */
-        if (isdigit(from_modem)) {
+        if (q_isdigit(from_modem)) {
             save_char(from_modem, to_screen);
             return Q_EMUL_FSM_NO_CHAR_YET;
         }

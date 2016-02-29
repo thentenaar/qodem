@@ -457,7 +457,7 @@ int alt_code_key(Q_BOOL utf8) {
                 current_place = 0;
             } else if (utf8 == Q_TRUE) {
 
-                if (isdigit(keystroke) ||
+                if (q_isdigit(keystroke) ||
                     ((tolower(keystroke) >= 'a') &&
                         (tolower(keystroke) <= 'f'))
                 ) {
@@ -468,7 +468,7 @@ int alt_code_key(Q_BOOL utf8) {
                         keycode = 0;
                         for (i = 0; i < 4; i++) {
                             keycode *= 16;
-                            if (isdigit(code[i])) {
+                            if (q_isdigit(code[i])) {
                                 keycode += (code[i] - '0');
                             } else {
                                 keycode += (tolower(code[i]) - 'a') + 10;
@@ -480,7 +480,7 @@ int alt_code_key(Q_BOOL utf8) {
 
             } else {
 
-                if (isdigit(keystroke)) {
+                if (q_isdigit(keystroke)) {
                     if ((current_place == 0) && (keystroke > '2')) {
                         /*
                          * Invalid key
@@ -2467,11 +2467,11 @@ struct file_info * batch_entry_window(const char * initial_directory,
             /*
              * Nix trailing whitespace
              */
-            while (isspace(bew_line[strlen(bew_line) - 1])) {
+            while (q_isspace(bew_line[strlen(bew_line) - 1])) {
                 bew_line[strlen(bew_line) - 1] = 0;
             }
             filename = bew_line;
-            while ((strlen(filename) > 0) && (isspace(*filename))) {
+            while ((strlen(filename) > 0) && (q_isspace(*filename))) {
                 filename++;
             }
 

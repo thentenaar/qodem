@@ -929,8 +929,13 @@ PDC_argv,  and will be used instead of GetCommandLine.
 static void get_app_name( TCHAR *buff, const bool include_args)
 {
     int i;
+#ifdef __BORLANDC__
+    int argc = PDC_argc;
+    char **argv = PDC_argv;
+#else
     int argc = (PDC_argc ? PDC_argc : __argc);
     char **argv = (PDC_argc ? PDC_argv : __argv);
+#endif
 
 #ifdef PDC_WIDE
     if( __wargv)

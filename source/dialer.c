@@ -129,15 +129,15 @@ char ** tokenize_command(const char * argv) {
      * Trim beginning whitespace
      */
     argv_start = 0;
-    while (isspace(argv[argv_start])) {
+    while (q_isspace(argv[argv_start])) {
         argv_start++;
     }
 
     for (i = 0, j = argv_start; j < n; i++) {
-        while ((j < n) && !isspace(argv[j])) {
+        while ((j < n) && !q_isspace(argv[j])) {
             j++;
         }
-        while ((j < n) && isspace(argv[j])) {
+        while ((j < n) && q_isspace(argv[j])) {
             j++;
         }
     }
@@ -148,10 +148,10 @@ char ** tokenize_command(const char * argv) {
     new_argv = (char **) Xmalloc(sizeof(char *) * (i + 1), __FILE__, __LINE__);
     for (i = 0, j = argv_start; j < n; i++) {
         new_argv[i] = old_argv + j;
-        while ((j < n) && !isspace(old_argv[j])) {
+        while ((j < n) && !q_isspace(old_argv[j])) {
             j++;
         }
-        while ((j < n) && isspace(old_argv[j])) {
+        while ((j < n) && q_isspace(old_argv[j])) {
             old_argv[j] = 0;
             j++;
         }

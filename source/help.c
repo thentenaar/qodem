@@ -235,6 +235,8 @@ static void convert_unicode(char * input, wchar_t * output) {
     char ch;
     wchar_t x = 0;
 
+    DLOG(("convert_unicode() input '%s'\n", input));
+
     state = NORMAL;
     input_i = 0;
     output_i = 0;
@@ -243,6 +245,8 @@ static void convert_unicode(char * input, wchar_t * output) {
     while (input_i < input_n) {
         ch = input[input_i];
         input_i++;
+        DLOG(("   state %d ch %lc\n", state, ch));
+
         switch (state) {
         case NORMAL:
             /*
@@ -276,7 +280,7 @@ static void convert_unicode(char * input, wchar_t * output) {
              */
             if (tolower(ch) == 'x') {
                 state = U_HEX;
-            } else if (isdigit(ch)) {
+            } else if ((ch >= '0') && (ch <= '9')) {
                 state = U_DIGITS;
                 x = ch - '0';
             } else {
@@ -293,7 +297,7 @@ static void convert_unicode(char * input, wchar_t * output) {
             /*
              * Looking for digits or ';'
              */
-            if (isdigit(ch)) {
+            if ((ch >= '0') && (ch <= '9')) {
                 x *= 10;
                 x += (ch - '0');
             } else if (ch == ';') {
@@ -311,7 +315,7 @@ static void convert_unicode(char * input, wchar_t * output) {
             /*
              * Looking for digits, [a-f] or ';'
              */
-            if (isdigit(ch)) {
+            if ((ch >= '0') && (ch <= '9')) {
                 x *= 16;
                 x += (ch - '0');
             } else if ((tolower(ch) >= 'a') && (tolower(ch) <= 'f')) {
@@ -330,6 +334,7 @@ static void convert_unicode(char * input, wchar_t * output) {
             break;
         }
     }
+    DLOG(("convert_unicode() output '%ls'\n", output));
 }
 
 /**
@@ -746,7 +751,7 @@ void setup_help() {
 
                 rc = sscanf(input + input_i + 6, "%[^,],%[^}]%*s", key, title);
 
-                DLOG(("%d key: \'%s\' Title: \'%s\'\n", rc, key, title));
+                DLOG2(("%d key: \'%s\' Title: \'%s\'\n", rc, key, title));
 
                 assert(rc == 2);
                 input_i = strchr(input + input_i, '}') - input;

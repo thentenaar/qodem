@@ -781,7 +781,7 @@ repeat_loop:
          * We are only going to support CSI Pn [ ; Pn ... ] m a.k.a. ANSI
          * Select Graphics Rendition.  We can see only a digit or 'm'.
          */
-        if (isdigit(from_modem)) {
+        if (q_isdigit(from_modem)) {
             /*
              * Save the position for the counter.
              */
@@ -808,7 +808,7 @@ repeat_loop:
          * Following through on the SGR code, we are now looking only for a
          * digit, semicolon, or 'm'.
          */
-        if ((isdigit(from_modem)) || (from_modem == ';')) {
+        if ((q_isdigit(from_modem)) || (from_modem == ';')) {
             scan_state = SCAN_CSI_PARAM;
             return Q_EMUL_FSM_NO_CHAR_YET;
         }

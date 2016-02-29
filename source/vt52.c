@@ -515,7 +515,7 @@ vt52_start:
          * We are only going to support CSI Pn [ ; Pn ... ] m a.k.a. ANSI
          * Select Graphics Rendition.  We can see only a digit or 'm'.
          */
-        if (isdigit(from_modem2)) {
+        if (q_isdigit(from_modem2)) {
             /*
              * Save the position for the counter.
              */
@@ -559,7 +559,7 @@ vt52_start:
          * digit, semicolon, or 'm'
          *
          */
-        if ((isdigit(from_modem2)) || (from_modem2 == ';')) {
+        if ((q_isdigit(from_modem2)) || (from_modem2 == ';')) {
             save_char(from_modem2, to_screen);
             scan_state = SCAN_CSI_PARAM;
             return Q_EMUL_FSM_NO_CHAR_YET;

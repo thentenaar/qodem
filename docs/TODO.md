@@ -58,6 +58,10 @@ Rework codepage/UTF-8 support:
   Ship Unicode table for Wingdings
 
 
+music.c:
+  Fix Borland warnings - looks like bugs in DIGITAL_MUSIC_FREQ handling
+
+
 New autoconf build:
   make dist
 

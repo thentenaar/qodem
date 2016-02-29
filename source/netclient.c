@@ -3843,13 +3843,13 @@ static void load_knownhosts(struct known_host_entry ** known_hosts) {
         begin = line;
 
         if (scan_state == SCAN_STATE_NONE) {
-            while ((strlen(line) > 0) && isspace(line[strlen(line) - 1])) {
+            while ((strlen(line) > 0) && q_isspace(line[strlen(line) - 1])) {
                 /*
                  * Trim trailing whitespace
                  */
                 line[strlen(line) - 1] = '\0';
             }
-            while (isspace(*begin)) {
+            while (q_isspace(*begin)) {
                 /*
                  * Trim leading whitespace
                  */
@@ -3886,13 +3886,13 @@ static void load_knownhosts(struct known_host_entry ** known_hosts) {
         } /* if (scan_state == SCAN_STATE_NONE) */
 
         if (scan_state == SCAN_STATE_ENTRY) {
-            while ((strlen(line) > 0) && isspace(line[strlen(line) - 1])) {
+            while ((strlen(line) > 0) && q_isspace(line[strlen(line) - 1])) {
                 /*
                  * Trim trailing whitespace
                  */
                 line[strlen(line) - 1] = '\0';
             }
-            while (isspace(*begin)) {
+            while (q_isspace(*begin)) {
                 /*
                  * Trim leading whitespace
                  */

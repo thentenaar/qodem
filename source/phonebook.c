@@ -816,6 +816,8 @@ void load_phonebook(const Q_BOOL backup_version) {
     int scan_state;
     int notes_length = 0;
 
+    DLOG(("load_phonebook()\n"));
+
     if (backup_version == Q_FALSE) {
         filename = q_phonebook.filename;
     } else {
@@ -885,19 +887,23 @@ void load_phonebook(const Q_BOOL backup_version) {
         }
         begin = line;
 
+        DLOG(("  scan_state = %d\n", scan_state));
+
         if (scan_state == SCAN_STATE_NONE) {
-            while ((strlen(line) > 0) && isspace(line[strlen(line) - 1])) {
+            while ((strlen(line) > 0) && q_isspace(line[strlen(line) - 1])) {
                 /*
                  * Trim trailing whitespace
                  */
                 line[strlen(line) - 1] = '\0';
             }
-            while (isspace(*begin)) {
+            while (q_isspace(*begin)) {
                 /*
                  * Trim leading whitespace
                  */
                 begin++;
             }
+            DLOG(("    line = '%s'\n", line));
+            DLOG(("    begin = '%s'\n", begin));
 
             if ((strlen(begin) == 0) || (*begin == '#')) {
                 /*
@@ -906,7 +912,7 @@ void load_phonebook(const Q_BOOL backup_version) {
                 continue;
             }
 
-            if (strncmp(begin, "[entry]", sizeof("[entry]")) == 0) {
+            if (strncmp(begin, "[entry]", strlen("[entry]")) == 0) {
                 /*
                  * Beginning of an entry found
                  */
@@ -996,13 +1002,13 @@ void load_phonebook(const Q_BOOL backup_version) {
         }
 
         if (scan_state == SCAN_STATE_ENTRY) {
-            while ((strlen(line) > 0) && isspace(line[strlen(line) - 1])) {
+            while ((strlen(line) > 0) && q_isspace(line[strlen(line) - 1])) {
                 /*
                  * Trim trailing whitespace
                  */
                 line[strlen(line) - 1] = '\0';
             }
-            while (isspace(*begin)) {
+            while (q_isspace(*begin)) {
                 /*
                  * Trim leading whitespace
                  */
@@ -1270,7 +1276,7 @@ void load_phonebook(const Q_BOOL backup_version) {
         } /* (scan_state == SCAN_STATE_ENTRY) */
 
         if (scan_state == SCAN_STATE_NOTES) {
-            while ((strlen(line) > 0) && isspace(line[strlen(line) - 1])) {
+            while ((strlen(line) > 0) && q_isspace(line[strlen(line) - 1])) {
                 /*
                  * Trim trailing whitespace
                  */
@@ -2040,7 +2046,7 @@ static void tag_multiple(const char * tag_string) {
 
             }
 
-            if (isdigit(search_tokens[i][0])) {
+            if (q_isdigit(search_tokens[i][0])) {
                 /*
                  * Entry number selection
                  */
@@ -2142,7 +2148,7 @@ static void edit_attached_note(struct q_phone_struct * entry) {
             continue;
         }
 
-        while ((strlen(line) > 0) && isspace(line[strlen(line) - 1])) {
+        while ((strlen(line) > 0) && q_isspace(line[strlen(line) - 1])) {
             /*
              * Trim trailing whitespace
              */
@@ -7575,7 +7581,7 @@ static void modem_data(unsigned char * input, unsigned int input_n,
             input[i] = 0;
         }
     }
-    while ((*remaining > 0) && ((begin[0] == 0) || isspace(begin[0]))) {
+    while ((*remaining > 0) && ((begin[0] == 0) || q_isspace(begin[0]))) {
         begin++;
         *remaining -= 1;
         if (*remaining == 0) {

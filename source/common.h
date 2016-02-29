@@ -73,6 +73,7 @@ extern "C" {
 /* Exit codes */
 #define EXIT_ERROR_SETLOCALE            12
 #define EXIT_ERROR_SELECT_FAILED        20
+#define EXIT_ERROR_SERIAL_FAILED        21
 #define EXIT_ERROR_COMMANDLINE          30
 #define EXIT_HELP                       1
 #define EXIT_VERSION                    2
@@ -152,6 +153,17 @@ if (DLOGNAME != NULL) {                 \
 } else {                                \
     /* Do nothing */                    \
 }}  while (0);
+
+/*
+ * A whitespace check that only looks for space, carriage return, and
+ * newline.  This is used by qodem's file readers.
+ */
+#define q_isspace(x) ((x == ' ') || (x == '\r') || (x == '\n'))
+
+/*
+ * A digit check that only looks for '0' through '9' (i.e. ignores locale).
+ */
+#define q_isdigit(x) ((x >= '0') && (x <= '9'))
 
 /* Globals ---------------------------------------------------------------- */
 

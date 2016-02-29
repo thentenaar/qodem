@@ -432,7 +432,7 @@ static void set_q_color(struct q_text_color_struct * color, const char * line) {
     *end = 0;
     color->fg = color_from_string(color->fg, begin);
     begin = end + 1;
-    while ((*begin != 0) && (isspace(*begin))) {
+    while ((*begin != 0) && (q_isspace(*begin))) {
         begin++;
     }
     if (*begin == 0) {
@@ -447,7 +447,7 @@ static void set_q_color(struct q_text_color_struct * color, const char * line) {
     *end = 0;
     color->bg = color_from_string(color->bg, begin);
     begin = end + 1;
-    while ((*begin != 0) && (isspace(*begin))) {
+    while ((*begin != 0) && (q_isspace(*begin))) {
         begin++;
     }
     if (*begin == 0) {
@@ -505,11 +505,11 @@ void load_colors() {
         /*
          * Nix trailing whitespace
          */
-        while ((strlen(line) > 0) && (isspace(line[strlen(line) - 1]))) {
+        while ((strlen(line) > 0) && (q_isspace(line[strlen(line) - 1]))) {
             line[strlen(line) - 1] = 0;
         }
         key = line;
-        while ((strlen(key) > 0) && (isspace(*key))) {
+        while ((strlen(key) > 0) && (q_isspace(*key))) {
             key++;
         }
 
@@ -523,7 +523,7 @@ void load_colors() {
 
         *value = 0;
         value++;
-        while ((strlen(value) > 0) && (isspace(*value))) {
+        while ((strlen(value) > 0) && (q_isspace(*value))) {
             value++;
         }
         if (*value == 0) {

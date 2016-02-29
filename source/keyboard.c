@@ -1587,13 +1587,13 @@ static void load_keybindings_from_file(const char * filename,
         }
         begin = line;
 
-        while ((strlen(line) > 0) && isspace(line[strlen(line) - 1])) {
+        while ((strlen(line) > 0) && q_isspace(line[strlen(line) - 1])) {
             /*
              * Trim trailing whitespace
              */
             line[strlen(line) - 1] = '\0';
         }
-        while (isspace(*begin)) {
+        while (q_isspace(*begin)) {
             /*
              * Trim leading whitespace
              */

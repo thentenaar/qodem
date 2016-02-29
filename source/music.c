@@ -576,7 +576,7 @@ music_top:
         /*
          * Skip whitespace
          */
-        if (isspace(buffer[i])) {
+        if (q_isspace(buffer[i])) {
             continue;
         }
 
@@ -665,7 +665,7 @@ music_top:
                 state = MUSIC_SOUND;
             }
 
-            if (isdigit(buffer[i])) {
+            if (q_isdigit(buffer[i])) {
                 /*
                  * This is an integer sequence of:
                  * Freq; Duration; Cycles; CycleDelay; Variation
@@ -898,7 +898,7 @@ music_top:
                 break;
             }
 
-            if (isdigit(buffer[i])) {
+            if (q_isdigit(buffer[i])) {
                 /*
                  * This is an integer sequence of:
                  * Freq; Duration; Cycles; CycleDelay; Variation

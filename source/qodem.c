@@ -128,6 +128,11 @@ extern HANDLE q_script_stdout;
  */
 extern HANDLE q_serial_handle;
 
+/**
+ * The serial port overlapped structure, stored in modem.c.
+ */
+extern OVERLAPPED q_serial_overlapped;
+
 #endif
 
 /**
@@ -287,7 +292,7 @@ int qodem_write(const int fd, char * data, const int data_n, Q_BOOL sync) {
         }
     }
 
-#ifndef Q_NO_SERIAL
+#if !defined(Q_NO_SERIAL) && !defined(Q_PDCURSES_WIN32)
     /* Mark/space parity */
     if (Q_SERIAL_OPEN && (q_serial_port.parity == Q_PARITY_MARK)) {
         /* Outgoing data as MARK parity:  set the 8th bit */
@@ -372,19 +377,40 @@ do_write:
                 /* Force this sucker to flush */
                 FlushFileBuffers(q_child_stdin);
             } else {
+                DWORD error = GetLastError();
+
                 /* Error in write */
                 snprintf(notify_message, sizeof(notify_message),
-                    _("Call to WriteFile() failed: %d (%s)"), GetLastError(),
-                    strerror(GetLastError()));
+                    _("Call to WriteFile() failed: %d (%s)"), error,
+                    strerror(error));
                 notify_form(notify_message, 0);
                 rc = -1;
             }
-
+#ifndef Q_NO_SERIAL
         } else if ((q_status.dial_method == Q_DIAL_METHOD_MODEM) ||
                    (Q_SERIAL_OPEN)
         ) {
-            /* TODO */
-            abort();
+            DWORD bytes_written = 0;
+            assert(q_serial_handle != NULL);
+            if (WriteFile(q_serial_handle, data + begin, data_n, &bytes_written,
+                    NULL) == TRUE) {
+
+                rc = bytes_written;
+                DLOG(("qodem_write() WriteFile() %d bytes written\n",
+                        bytes_written));
+
+                /* Force this sucker to flush */
+                FlushFileBuffers(q_serial_handle);
+            } else {
+                DWORD error = GetLastError();
+                /* Error in write */
+                snprintf(notify_message, sizeof(notify_message),
+                    _("Call to WriteFile() failed: %d (%s)"), error,
+                    strerror(error));
+                notify_form(notify_message, 0);
+                rc = -1;
+            }
+#endif
         } else {
             DLOG(("qodem_write() write() %d bytes to fd %d\n", data_n, fd));
             /* Everyone else */
@@ -541,12 +567,31 @@ static ssize_t qodem_read(const int fd, void * buf, size_t count) {
                 return -1;
             }
         }
+#ifndef Q_NO_SERIAL
     } else if (((q_status.online == Q_TRUE) &&
                 (q_status.dial_method == Q_DIAL_METHOD_MODEM)) ||
                (Q_SERIAL_OPEN)
     ) {
-        /* TODO */
-        abort();
+        assert(q_serial_handle != NULL);
+        if (ReadFile(q_serial_handle, buf, count, &bytes_read, NULL) == TRUE) {
+            if (bytes_read == 0) {
+                /*
+                 * Turn this into EAGAIN, as serial ports don't really do
+                 * EOF.
+                 */
+                errno = EAGAIN;
+                return -1;
+            }
+            return bytes_read;
+        } else {
+            /* Error in read */
+            snprintf(notify_message, sizeof(notify_message),
+                _("Call to ReadFile() failed: %d (%s)"), GetLastError(),
+                strerror(GetLastError()));
+            notify_form(notify_message, 0);
+            return -1;
+        }
+#endif
     }
 
 #endif /* Q_PDCURSES_WIN32 */
@@ -611,7 +656,7 @@ static char * usage_string() {
 static char * version_string() {
     return _(""
 "qodem version 1.0beta\n"
-"Written 2003-2015 by Kevin Lamonte\n"
+"Written 2003-2016 by Kevin Lamonte\n"
 "\n"
 "To the extent possible under law, the author(s) have dedicated all\n"
 "copyright and related and neighboring rights to this software to the\n"
@@ -830,17 +875,18 @@ static void cleanup_connection() {
 #ifdef Q_PDCURSES_WIN32
         case Q_HOST_TYPE_MODEM:
             /* TODO */
-            abort();
+            assert(1 == 0);
             break;
 
         case Q_HOST_TYPE_SERIAL:
-            /* TODO */
-            abort();
+            CloseHandle(q_serial_handle);
+            q_serial_handle = NULL;
+            qlog(_("Connection closed.\n"));
             break;
 #else
         case Q_HOST_TYPE_MODEM:
             /* TODO */
-            abort();
+            assert(1 == 0);
             break;
 
         case Q_HOST_TYPE_SERIAL:
@@ -1260,7 +1306,7 @@ static void process_incoming_data() {
 
             time(&data_time);
 
-#ifndef Q_NO_SERIAL
+#if !defined(Q_NO_SERIAL) && !defined(Q_PDCURSES_WIN32)
             /* Mark/space parity */
             if (Q_SERIAL_OPEN && (q_serial_port.parity == Q_PARITY_MARK)) {
                 /* Incoming data as MARK parity:  strip the 8th bit */
@@ -1528,6 +1574,7 @@ no_data:
             q_transfer_buffer_raw_n, Q_FALSE);
 
         if (rc < 0) {
+            int error;
 
             switch (get_errno()) {
 
@@ -1548,13 +1595,38 @@ no_data:
                 break;
 #endif
             default:
+#ifdef Q_PDCURSES_WIN32
+                if (q_serial_handle != NULL) {
+                    DWORD serial_error = GetLastError();
+                    DLOG(("Call to write() failed: %d %s\n",
+                            serial_error, strerror(serial_error)));
+
+                    /* Uh-oh, error */
+                    snprintf(notify_message, sizeof(notify_message),
+                        _("Call to write() failed: %s"),
+                        strerror(serial_error));
+                    notify_form(notify_message, 0);
+                } else {
+                    error = get_errno();
+                    DLOG(("Call to write() failed: %d %s\n", error,
+                            get_strerror(error)));
+
+                    /* Uh-oh, error */
+                    snprintf(notify_message, sizeof(notify_message),
+                        _("Call to write() failed: %s"), get_strerror(error));
+                    notify_form(notify_message, 0);
+                }
+#else
+                error = get_errno();
+
                 DLOG(("Call to write() failed: %d %s\n",
-                        get_errno(), get_strerror(get_errno())));
+                        error, get_strerror(error)));
 
                 /* Uh-oh, error */
                 snprintf(notify_message, sizeof(notify_message),
-                    _("Call to write() failed: %s"), strerror(errno));
+                    _("Call to write() failed: %s"), get_strerror(error));
                 notify_form(notify_message, 0);
+#endif
                 return;
             }
         } else {
@@ -1590,8 +1662,12 @@ static void data_handler() {
     int hours, minutes, seconds;
     time_t connect_time;
 #endif
+
 #ifdef Q_PDCURSES_WIN32
     Q_BOOL check_net_data = Q_FALSE;
+#ifndef Q_NO_SERIAL
+    DWORD serial_event_mask = 0;
+#endif
 #endif
 
     /* Flush curses */
@@ -1813,12 +1889,93 @@ static void data_handler() {
 
     } else {
 
-        /* Go straight to timeout case */
-        if (have_data == Q_FALSE) {
+#ifndef Q_NO_SERIAL
+        if (q_serial_handle != NULL) {
+            /*
+             * Use Win32 overlapped I/O to see if we have an empty buffer to
+             * write to, data to read, or a ring indication.
+             */
             DWORD millis = listen_timeout.tv_sec * 1000 +
                 listen_timeout.tv_usec / 1000;
-            Sleep(millis);
+            DWORD comm_mask = EV_RXCHAR | EV_RING;
+            if (q_transfer_buffer_raw_n > 0) {
+                /*
+                 * See when the buffer is empty for more data to write to it.
+                 */
+                comm_mask |= EV_TXEMPTY;
+            }
+            if (!SetCommMask(q_serial_handle, comm_mask)) {
+                DLOG(("Call to SetCommMask() failed: %d %s\n",
+                        get_errno(), get_strerror(get_errno())));
+
+                snprintf(notify_message, sizeof(notify_message),
+                    _("Call to SetCommMask() failed: %d %s"),
+                    get_errno(), get_strerror(get_errno()));
+                notify_form(notify_message, 0);
+                exit(EXIT_ERROR_SERIAL_FAILED);
+            }
+            if (!WaitCommEvent(q_serial_handle, &serial_event_mask,
+                    &q_serial_overlapped)) {
+                if (GetLastError() == ERROR_IO_PENDING) {
+                    /*
+                     * We don't have an event ready immediately.  Wait until
+                     * we do.
+                     */
+                    DWORD wait_rc = WaitForSingleObject(q_serial_handle,
+                        millis);
+                    if (wait_rc == WAIT_FAILED) {
+                        DLOG(("Call to WaitForSingleObject() failed: %d %s\n",
+                                get_errno(), get_strerror(get_errno())));
+
+                        snprintf(notify_message, sizeof(notify_message),
+                            _("Call to WaitForSingleObject() failed: %d %s"),
+                            get_errno(), get_strerror(get_errno()));
+                        notify_form(notify_message, 0);
+                        exit(EXIT_ERROR_SERIAL_FAILED);
+                    } else if (wait_rc == WAIT_TIMEOUT) {
+                        /*
+                         * There is no data to process.  Go to the timeout
+                         * case at the bottom of the normal POSIX select()
+                         * code.
+                         */
+                        rc = 0;
+                    } else {
+                        /*
+                         * This is either WAIT_ABANDONED or WAIT_OBJECT_0.
+                         * Treat it the same way, as though some data came
+                         * in.
+                         */
+                        rc = 1;
+                    }
+
+                } else {
+                    /*
+                     * Something strange happened.  Bail out.
+                     */
+                    DLOG(("Call to WaitCommEvent() failed: %d %s\n",
+                            get_errno(), get_strerror(get_errno())));
+
+                    snprintf(notify_message, sizeof(notify_message),
+                        _("Call to WaitCommEvent() failed: %d %s"),
+                        get_errno(), get_strerror(get_errno()));
+                    notify_form(notify_message, 0);
+                    exit(EXIT_ERROR_SERIAL_FAILED);
+                }
+            } else {
+                /*
+                 * Data is ready somewhere on the serial port.  This is
+                 * equivalent to select() returning > 0.
+                 */
+                rc = 1;
+            }
         }
+#endif
+
+        /*
+         * There is no data to process.  We are either on the console or not
+         * connected.  Go to the timeout case at the bottom of the normal
+         * POSIX select() code.
+         */
         rc = 0;
     }
 
@@ -2035,6 +2192,12 @@ static void data_handler() {
          */
         if (((q_child_tty_fd > 0) && (is_readable(q_child_tty_fd))) ||
             ((q_child_tty_fd > 0) && (FD_ISSET(q_child_tty_fd, &writefds))) ||
+#ifdef Q_PDCURSES_WIN32
+            ((q_serial_handle != NULL) &&
+                (serial_event_mask & EV_RXCHAR != 0)) ||
+            ((q_serial_handle != NULL) &&
+                (serial_event_mask & EV_TXEMPTY != 0)) ||
+#endif
             (q_program_state == Q_STATE_SCRIPT_EXECUTE) ||
             (q_program_state == Q_STATE_HOST)
         ) {
@@ -2302,7 +2465,9 @@ static void reset_global_state() {
     q_status.remote_address         = NULL;
     q_status.remote_port            = NULL;
     q_status.remote_phonebook_name  = NULL;
-#ifndef Q_NO_SERIAL
+#ifdef Q_NO_SERIAL
+    q_status.dial_method            = Q_DIAL_METHOD_TELNET;
+#else
     q_status.dial_method            = Q_DIAL_METHOD_MODEM;
 #endif /* Q_NO_SERIAL */
     q_status.idle_timeout           = 0;
@@ -2332,8 +2497,6 @@ int qodem_main(int argc, char * const argv[]) {
     wchar_t value_wchar[128];
     char * username;
 #endif
-
-    DLOG(("QODEM: START\n"));
 
     /* Internationalization */
     if (setlocale(LC_ALL, "") == NULL) {
@@ -2765,6 +2928,9 @@ int qodem_main(int argc, char * const argv[]) {
 
     /* Exit */
     exit(q_exitrc);
+
+    /* Should never get here. */
+    return (q_exitrc);
 }
 
 /**
@@ -2775,7 +2941,7 @@ int qodem_main(int argc, char * const argv[]) {
  * @return the final program return code
  */
 int main(int argc, char * const argv[]) {
-        return qodem_main(argc, argv);
+    return qodem_main(argc, argv);
 }
 
 #ifdef Q_PDCURSES_WIN32

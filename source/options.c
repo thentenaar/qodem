@@ -1165,7 +1165,7 @@ static Q_BOOL save_options(const char * filename) {
  */
 static void set_option(struct option_struct * option, char * value) {
     char * new_value = value;
-    while (((isspace(new_value[0])) || (new_value[0] == '='))
+    while (((q_isspace(new_value[0])) || (new_value[0] == '='))
            && (strlen(new_value) > 0)) {
         new_value++;
     }
@@ -1264,10 +1264,10 @@ static void load_options_from_file(const char * filename) {
          * Trim whitespace from line
          */
         while ((strlen(line_begin) > 0)
-               && isspace(line_begin[strlen(line_begin) - 1])) {
+               && q_isspace(line_begin[strlen(line_begin) - 1])) {
             line_begin[strlen(line_begin) - 1] = '\0';
         }
-        while ((isspace(*line_begin)) && (strlen(line_begin) > 0)) {
+        while ((q_isspace(*line_begin)) && (strlen(line_begin) > 0)) {
             line_begin++;
         }
 
@@ -1285,7 +1285,7 @@ static void load_options_from_file(const char * filename) {
         while (current_option->option != Q_OPTION_NULL) {
             if (strstr(line, current_option->name) == line) {
                 if ((line[strlen(current_option->name)] == '=') ||
-                    (isspace(line[strlen(current_option->name)]))) {
+                    (q_isspace(line[strlen(current_option->name)]))) {
 
                     /*
                      * Valid option
@@ -1547,12 +1547,12 @@ void load_options() {
 
         fgets(lang_value, sizeof(lang_value) - 1, stdin);
         if (strlen(lang_value) > 0) {
-            while (isspace(lang_value[strlen(lang_value) - 1])) {
+            while (q_isspace(lang_value[strlen(lang_value) - 1])) {
                 lang_value[strlen(lang_value) - 1] = 0;
             }
         }
         begin = lang_value;
-        while ((strlen(begin) > 0) && (isspace(*begin))) {
+        while ((strlen(begin) > 0) && (q_isspace(*begin))) {
             begin++;
         }
         if (strlen(begin) > 0) {
@@ -1577,12 +1577,12 @@ void load_options() {
 
         fgets(lang_value, sizeof(lang_value) - 1, stdin);
         if (strlen(lang_value) > 0) {
-            while (isspace(lang_value[strlen(lang_value) - 1])) {
+            while (q_isspace(lang_value[strlen(lang_value) - 1])) {
                 lang_value[strlen(lang_value) - 1] = 0;
             }
         }
         begin = lang_value;
-        while ((strlen(begin) > 0) && (isspace(*begin))) {
+        while ((strlen(begin) > 0) && (q_isspace(*begin))) {
             begin++;
         }
         if (strlen(begin) > 0) {

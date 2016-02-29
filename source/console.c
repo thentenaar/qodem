@@ -2233,7 +2233,7 @@ void console_refresh(Q_BOOL status_line) {
         }
 
         new_scrollback_line();
-        sprintf(header_string, _("Written 2003-2015 by %s"), Q_AUTHOR);
+        sprintf(header_string, _("Written 2003-2016 by %s"), Q_AUTHOR);
         q_scrollback_last->length = strlen(header_string);
         for (i = 0; i < q_scrollback_last->length; i++) {
             q_scrollback_last->chars[i] =
