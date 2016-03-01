@@ -1,6 +1,17 @@
 The Qodem Project Work Log
 ==========================
 
+March 1, 2016
+
+I was able to communicate at 19200 between a Win2k VM and a Linux
+server using a USB-to-serial adapter on the Windows side and a true
+serial port on the Linux machine.  I proceeded to send a file over
+Zmodem at about 95% efficiency, using essentially no CPU on the Win2k
+side.  Neat, really neat. :-)
+
+Still have some serial port details to clean up, but this is a rather
+huge milestone.
+
 September 18, 2015
 
 NO MORE MUCKING WITH CRYPTLIB, YAY!

@@ -58,11 +58,6 @@
  */
 HANDLE q_serial_handle = NULL;
 
-/**
- * The serial port overlapped structure, stored in modem.c.
- */
-OVERLAPPED q_serial_overlapped;
-
 #endif
 
 /**

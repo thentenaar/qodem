@@ -67,12 +67,11 @@ New autoconf build:
 
 
 Win32 port:
-  Serial port support:
-    Remove Q_NO_SERIAL
-    tcsendbreak
-    open_serial_port
-    configure_serial_port
-    close_serial_port
+  Wrap up serial port support:
+    send_break
+    query_serial_port
+    hangup_modem
+    read_serial_port
   Fix mouse tracking to do mouse and not copy-to-clipboard
   Use Beep() and support bells and music
   InnoSetup Windows installer:

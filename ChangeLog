@@ -14,8 +14,9 @@ qodem (1.0beta-1) unstable; urgency=low
   * Avatar ansi fallback exposed in qodemrc
   * SSH support switched to cryptlib
   * Compose Key function renamed to Alt Code Key
+  * Win32 serial port support
 
- -- Kevin Lamonte <lamonte@users.sourceforge.net>  Wed,  1 Jul 2015 18:50:00 -0500
+ -- Kevin Lamonte <lamonte@users.sourceforge.net>  Mon,  4 Jul 2016 18:50:00 -0500
 
 qodem (1.0alpha-1) unstable; urgency=low
 
