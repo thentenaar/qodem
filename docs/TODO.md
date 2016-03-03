@@ -67,6 +67,7 @@ New autoconf build:
 
 
 Win32 port:
+  Fix font handling: neither terminus nor clacon are working correctly.
   Wrap up serial port support:
     send_break
     query_serial_port
@@ -74,14 +75,6 @@ Win32 port:
     read_serial_port
   Fix mouse tracking to do mouse and not copy-to-clipboard
   Use Beep() and support bells and music
-  InnoSetup Windows installer:
-    Install Classic Console font + qodem executable
-    Custom directories:
-      working dir
-      host dir
-      download
-      upload dir
-      scripts dir
   Test on XP
   Test on 2k
   Test on 98

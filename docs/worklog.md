@@ -1,6 +1,11 @@
 The Qodem Project Work Log
 ==========================
 
+March 3, 2016
+
+I just stubbed in the InnoSetup install.  Very quick and easy, I like
+it.
+
 March 1, 2016
 
 I was able to communicate at 19200 between a Win2k VM and a Linux

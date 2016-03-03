@@ -40,11 +40,11 @@ the public domain.
 
 Qodem incorporates or links to software that is copyrighted and
 licensed under BSD-like or GPL-like terms.  The CREDITS file describes
-those pieces and their respective licenses.  The only qodem source
+those pieces and their respective licenses.  The only Qodem source
 file with such code is codepage.c, containing a UTF-8 decoding
 function; all other such code is in the lib directory.
 
-The effective license for the combined qodem executable differs
+The effective license for the combined Qodem executable differs
 depending on whether or not it was linked to cryptlib:
 
   * WITHOUT CRYPTLIB, the combined license terms are effectively the
@@ -53,7 +53,7 @@ depending on whether or not it was linked to cryptlib:
 
   * WITH CRYPTLIB, the combined license terms are effectively the same
     as the GPLv3 license: attribution in the source, source for both
-    cryptlib and qodem IS required to be shared (even if somehow
+    cryptlib and Qodem IS required to be shared (even if somehow
     modified into a SaaS style architecture), and there is no
     warranty.
 
@@ -71,8 +71,8 @@ Qodem is designed to help the following kinds of people:
 
 * Windows and X11 desktop users who want the same functions listed
   above in a keyboard-driven interface.  Qodem has both an X11 version
-  that almost exactly matches its text console version, and a Win32
-  version that supports everything except serial ports.
+  that almost exactly matches its text console version and a
+  fully-supported Win32 version.
 
 * Users of telnet/ssh BBSes who would like to use BBS-era features
   such as: a phone book, Avatar and ANSI emulations, file transfers,
@@ -187,7 +187,7 @@ due to the environments.  This section describes those differences.
 X11 BUILD
 
 The X11 build is activated by passing --enable-x11 to configure.  Due
-to how the curses libraries are linked, a single qodem binary cannot
+to how the curses libraries are linked, a single Qodem binary cannot
 currently support both interfaces.  The X11 binary is built as
 'qodem-x11', and its man page is accessed by 'man qodem-x11'.
 
@@ -196,7 +196,7 @@ independently of the normal 'qodem' package.
 
 When spawning other processes such as editors (Alt-L, Alt-N, Alt-V,
 and editing files in the phone book), the mail reader (Alt-M), or
-shelling to the OS (Alt-R), qodem spawns them inside a separate
+shelling to the OS (Alt-R), Qodem spawns them inside a separate
 X11-based terminal window, and displays the message "Waiting On X11
 Terminal To Exit..." until the other terminal closes.  The default
 terminal program is 'x-terminal-emulator'; this can be changed in
@@ -206,7 +206,7 @@ WIN32 BUILD
 
 When spawning other processes such as editors (Alt-L, Alt-N, Alt-V,
 and editing files in the phone book), the mail reader (Alt-M), or
-shelling to the OS (Alt-R), qodem waits for the program to exit.
+shelling to the OS (Alt-R), Qodem waits for the program to exit.
 
 Quicklearn scripts are written in Perl.  Strawberry Perl for Windows
 is available at http://strawberryperl.com .
@@ -214,10 +214,6 @@ is available at http://strawberryperl.com .
 The left ALT key does not produce all combinations correctly in the
 PDCurses-3.4 build due to Windows conventions.  The right Alt key
 appears to work normally.  The win32a build appears to work correctly.
-
-Serial port support is currently disabled for the Windows build.  If
-enough user demand arises, or a patch comes in, this may be
-implemented.
 
 The Windows build uses Beep() rather than SDL for sounds.  This might
 not work on Windows Vista and 64-bit XP systems.
@@ -332,7 +328,7 @@ The ssh library used by the host mode SSH server (cryptlib) has a
 known issue accepting connections from ssh clients that request DH
 keys larger than 4096 bits.  See
 http://article.gmane.org/gmane.comp.encryption.cryptlib/2793 for some
-discussion regarding this.  ssh clients to a qodem host can pass the
+discussion regarding this.  ssh clients to a Qodem host can pass the
 '-m hmac-md5' command line argument to work around this.
 
 The host mode SSH server does not care what username or password are
@@ -487,7 +483,7 @@ Qodem will listen for mouse events and send them to the remote side
 using the same wire protocol as xterm's X10, UTF8, or SGR encoding.
 It supports the X10-, normal-, button-, and any-event-tracking modes.
 This is only available for XTERM and X_UTF8 emulations.  Note that
-ncurses will not report any-event mouse events to qodem unles TERM is
+ncurses will not report any-event mouse events to Qodem unles TERM is
 "xterm-1003"; similarly button-event tracking requires TERM to be
 "xterm-1002".
 
@@ -496,7 +492,7 @@ through the curses terminal library.  CTRL-Home, CTRL-End, CTRL-PgUp,
 CTRL-PgDn, Shift-Tab, and ALT-Up have been given new key combinations.
 
 The F2, F4 and F10 function keys are often co-opted by modern desktop
-environments and unavailable for qodem.  F2 and F10 are still
+environments and unavailable for Qodem.  F2 and F10 are still
 supported, but also have additional keys depending on function.  Most
 of the time space bar can be used for F2 and the Enter key for F10.
 The status bar will show the alternate keystrokes.  Since F4 is
@@ -617,7 +613,7 @@ files to prevent overwrite when appropriate.
 Qodem always prompts for a filename for capture, screen dump, saved
 scrollback, and session log.  (Qmodem only prompts if the files do not
 already exist.)  Exception: if session log is specified on a phone
-book entry toggle, qodem will not prompt for the filename but use the
+book entry toggle, Qodem will not prompt for the filename but use the
 default session log filename specified in qodemrc.
 
 Qodem supports two kinds of DOORWAY mode: "Doorway FULL" and "Doorway
@@ -710,4 +706,3 @@ We'd like to thank the following individuals:
 
 * Peter Gutmann for developing cryptlib and licensing it under an open
   source compatible license.
-
