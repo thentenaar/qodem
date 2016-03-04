@@ -15,6 +15,7 @@ qodem (1.0beta-1) unstable; urgency=low
   * SSH support switched to cryptlib
   * Compose Key function renamed to Alt Code Key
   * Win32 serial port support
+  * Windows graphical installer
 
  -- Kevin Lamonte <lamonte@users.sourceforge.net>  Mon,  4 Jul 2016 18:50:00 -0500
 
