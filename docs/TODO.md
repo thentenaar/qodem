@@ -67,17 +67,7 @@ New autoconf build:
 
 
 Win32 port:
-  Wrap up serial port support:
-    send_break
-    query_serial_port
-    hangup_modem
-    read_serial_port
   Fix mouse tracking to do mouse and not copy-to-clipboard
-  Use Beep() and support bells and music
-  Test on XP
-  Test on 2k
-  Test on 98
-  Test on 7
 
 
 Finish up modem support:
@@ -263,6 +253,7 @@ Release:
     common.h
     colors.c
     qodem.c
+    build/win32/qodem-isetup.iss
     build/win32/resources.rc
     build/debian/qodem/debian/changelog
     build/debian/qodem/debian/control
@@ -275,6 +266,13 @@ Release:
     qodem.c --version
     console.c terminal header
   .tar.gz Source
+  Windows:
+    dos2unix: CREDITS FILE_ID.DIZ ChangeLog README.md
+    Redo build
+    Test on Windows 2000
+    Test on Windows XP
+    Test on Windows 98
+    Test on Windows 7
   Binary builds:
     Fedora i386
     Fedora x86_64

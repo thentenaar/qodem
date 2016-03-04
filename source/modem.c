@@ -1547,6 +1547,8 @@ enum {
 
 #define MAX_SERIAL_WRITE 128
 
+#ifndef Q_PDCURSES_WIN32
+
 /**
  * Read data from the serial port and put into buffer, starting at
  * buffer[buffer_start] and reading no more than buffer[buffer_max].  The
@@ -1565,14 +1567,10 @@ static int read_serial_port(unsigned char * buffer, const int buffer_max,
                             const int buffer_start, int * buffer_n,
                             const struct timeval * timeout) {
     int rc;
-#ifdef Q_PDCURSES_WIN32
-    /* TODO */
-#else
     struct timeval select_timeout;
     fd_set readfds;
     fd_set writefds;
     fd_set exceptfds;
-#endif
 
     assert(buffer != NULL);
     assert(buffer_n != NULL);
@@ -1581,13 +1579,6 @@ static int read_serial_port(unsigned char * buffer, const int buffer_max,
     assert(buffer_start >= 0);
     assert(buffer_max <= MAX_SERIAL_WRITE);
     assert(buffer_max > buffer_start);
-
-#ifdef Q_PDCURSES_WIN32
-    /* TODO */
-    return SERIAL_TIMEOUT;
-
-
-#else
 
     FD_ZERO(&readfds);
     FD_ZERO(&writefds);
@@ -1625,8 +1616,6 @@ static int read_serial_port(unsigned char * buffer, const int buffer_max,
         return SERIAL_ERROR;
     }
     (*buffer_n) += rc;
-
-#endif
 
     /*
      * All is well.
@@ -1677,18 +1666,86 @@ static void flush_serial_port(const float timeout) {
     return;
 }
 
+#endif /* Q_PDCURSES_WIN32 */
+
 #ifdef Q_PDCURSES_WIN32
+
+/**
+ * Trash all data coming in from the serial port until timeout seconds have
+ * passed with no new data.
+ *
+ * @param timeout the number of seconds to wait before seeing no data
+ */
+static void flush_serial_port(const float timeout) {
+    assert(q_serial_handle != NULL);
+    assert(Q_SERIAL_OPEN);
+
+    PurgeComm(q_serial_handle, PURGE_RXABORT | PURGE_RXCLEAR |
+        PURGE_TXABORT | PURGE_TXCLEAR);
+}
 
 /**
  * Try to hang up the modem, first by dropping DTR and then if that doesn't
  * work by sending the hangup string.
  */
 void hangup_modem() {
+    DWORD pins = 0;
+    BOOL rc;
+    Q_BOOL do_hangup_string = Q_TRUE;
+
     assert(q_serial_handle != NULL);
     assert(Q_SERIAL_OPEN);
 
-    /* TODO */
+    /*
+     * First, drop DTR.  Most modems will hangup with this.
+     */
+    rc = EscapeCommFunction(q_serial_handle, CLRDTR);
+    if (rc == FALSE) {
+        /*
+         * Uh-oh
+         */
+        goto hangup_modem_last_chance;
+    }
+    Sleep(1000);
 
+    /*
+     * See if CD is still there.
+     */
+    rc = GetCommModemStatus(q_serial_handle, &pins);
+    if (rc == FALSE) {
+        /*
+         * Uh-oh
+         */
+        goto hangup_modem_restore_dtr;
+    }
+    if ((pins & MS_RLSD_ON) == 0) {
+        /*
+         * DCD went down, we're done.
+         */
+        do_hangup_string = Q_FALSE;
+    }
+
+hangup_modem_restore_dtr:
+    rc = EscapeCommFunction(q_serial_handle, SETDTR);
+    if (rc == FALSE) {
+        /*
+         * Uh-oh
+         */
+        goto hangup_modem_last_chance;
+    }
+
+hangup_modem_last_chance:
+    /*
+     * Finally, if we're still online send the remote string.
+     */
+    if (do_hangup_string == Q_TRUE) {
+        send_modem_string(q_modem_config.hangup_string);
+    }
+
+    /*
+     * Update global status: we are offline.
+     */
+    q_status.online = Q_FALSE;
 }
 
 /**
@@ -1958,6 +2015,8 @@ Q_BOOL close_serial_port() {
     char notify_message[DIALOG_MESSAGE_SIZE];
     Q_BOOL rc = Q_TRUE;
 
+    assert(q_serial_handle != NULL);
+
     /*
      * Put the original DCB back
      */
@@ -1986,15 +2045,70 @@ Q_BOOL close_serial_port() {
  * @return true if the RS-232 state was able to be read
  */
 Q_BOOL query_serial_port() {
-    /* TODO */
-    return Q_FALSE;
+    BOOL rc;
+    DWORD pins;
+
+    assert(q_serial_handle != NULL);
+    assert(Q_SERIAL_OPEN);
+
+    /*
+     * Clear the existing pins
+     */
+    q_serial_port.rs232.LE = Q_FALSE;
+    q_serial_port.rs232.DTR = Q_FALSE;
+    q_serial_port.rs232.RTS = Q_FALSE;
+    q_serial_port.rs232.ST = Q_FALSE;
+    q_serial_port.rs232.SR = Q_FALSE;
+    q_serial_port.rs232.CTS = Q_FALSE;
+    q_serial_port.rs232.DCD = Q_FALSE;
+    q_serial_port.rs232.RI = Q_FALSE;
+    q_serial_port.rs232.DSR = Q_FALSE;
+
+    rc = GetCommModemStatus(q_serial_handle, &pins);
+    if (rc == FALSE) {
+        /*
+         * Uh-oh
+         */
+        return Q_FALSE;
+    }
+
+    /*
+     * Unsupported in Windows Comm API:
+     *     LE
+     *     DTR
+     *     RTS
+     *     ST
+     *     SR
+     */
+
+    if ((pins & MS_CTS_ON) == 0) {
+        q_serial_port.rs232.CTS = Q_TRUE;
+    }
+    if ((pins & MS_RLSD_ON) == 0) {
+        q_serial_port.rs232.DCD = Q_TRUE;
+    }
+    if ((pins & MS_RING_ON) == 0) {
+        q_serial_port.rs232.RI = Q_TRUE;
+    }
+    if ((pins & MS_DSR_ON) == 0) {
+        q_serial_port.rs232.DSR = Q_TRUE;
+    }
+
+
+
+    return Q_TRUE;
 }
 
 /**
  * Send a BREAK to the serial port.
  */
 void send_break() {
-    /* TODO */
+    assert(q_serial_handle != NULL);
+    assert(Q_SERIAL_OPEN);
+
+    SetCommBreak(q_serial_handle);
+    Sleep(300);
+    ClearCommBreak(q_serial_handle);
 }
 
 #else

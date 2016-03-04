@@ -77,15 +77,15 @@ typedef enum {
  * The pins on a 9-pin RS-232 connector.
  */
 struct rs232_pins {
-    Q_BOOL LE;
-    Q_BOOL DTR;
-    Q_BOOL RTS;
-    Q_BOOL ST;
-    Q_BOOL SR;
-    Q_BOOL CTS;
-    Q_BOOL DCD;
-    Q_BOOL RI;
-    Q_BOOL DSR;
+    Q_BOOL LE;          /* Line Enable. (Not the same as DSR.) */
+    Q_BOOL DTR;         /* Data Terminal Ready */
+    Q_BOOL RTS;         /* Ready To Send */
+    Q_BOOL ST;          /* Secondary TXD (Transmit) */
+    Q_BOOL SR;          /* Secondary RXD (Receive) */
+    Q_BOOL CTS;         /* Clear To Send */
+    Q_BOOL DCD;         /* Data Carrier Detect */
+    Q_BOOL RI;          /* Ring Indicator */
+    Q_BOOL DSR;         /* Data Set Ready */
 };
 
 /**
