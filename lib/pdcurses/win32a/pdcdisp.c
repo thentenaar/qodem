@@ -252,7 +252,7 @@ void PDC_gotoyx(int row, int col)
 }
 
 // 29 gets me 22, why is that?
-int PDC_font_size = 29;
+int PDC_font_size = 18;
 TCHAR PDC_font_name[80];
 
 static LOGFONT PDC_get_logical_font( const attr_t font_attrib)
@@ -264,7 +264,7 @@ static LOGFONT PDC_get_logical_font( const attr_t font_attrib)
 #ifdef PDC_WIDE
     if( !*PDC_font_name) {
         // _tcscpy( PDC_font_name, _T("Courier New"));
-        _tcscpy( PDC_font_name, _T("Classic Console"));
+        _tcscpy( PDC_font_name, _T("VGA"));
     }
     _tcscpy( lf.lfFaceName, PDC_font_name );
 #else

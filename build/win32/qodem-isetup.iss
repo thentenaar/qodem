@@ -39,10 +39,7 @@ Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescrip
 [Files]
 Source: "E:\qodem2k\git\qodem\bin\qodem.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
-Source: "E:\qodem2k\git\qodem\misc\fonts\clacon.ttf"; DestDir: "{fonts}"; FontInstall: "Classic Console"; Flags: onlyifdoesntexist uninsneveruninstall
-Source: "E:\qodem2k\git\qodem\misc\fonts\terminus-ttf-4.39\TerminusTTF-4.39.ttf"; DestDir: "{fonts}"; FontInstall: "Terminus"; Flags: onlyifdoesntexist uninsneveruninstall
-Source: "E:\qodem2k\git\qodem\misc\fonts\terminus-ttf-4.39\TerminusTTF-Bold-4.39.ttf"; DestDir: "{fonts}"; FontInstall: "Terminus Bold"; Flags: onlyifdoesntexist uninsneveruninstall
-Source: "E:\qodem2k\git\qodem\misc\fonts\terminus-ttf-4.39\TerminusTTF-Italic-4.39.ttf"; DestDir: "{fonts}"; FontInstall: "Terminus Italic"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "E:\qodem2k\git\qodem\misc\fonts\VGAMedium.ttf"; DestDir: "{fonts}"; FontInstall: "VGA"; Flags: onlyifdoesntexist uninsneveruninstall
 Source: "E:\qodem2k\git\qodem\README.md"; DestDir: "{app}"; Flags: isreadme
 
 [Icons]

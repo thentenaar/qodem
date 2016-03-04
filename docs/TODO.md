@@ -67,7 +67,6 @@ New autoconf build:
 
 
 Win32 port:
-  Fix font handling: neither terminus nor clacon are working correctly.
   Wrap up serial port support:
     send_break
     query_serial_port
