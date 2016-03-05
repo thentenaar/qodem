@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2015 by Kevin Lamonte
+ * Written 2003-2016 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -1244,6 +1244,7 @@ void protocol_menu_refresh() {
     int i;
 #ifdef Q_PDCURSES_WIN32
     unsigned long free_kbytes = 0;
+    ULARGE_INTEGER free_bytes_available;
 #else
     unsigned long long free_kbytes = 0;
     struct statvfs buf;
@@ -1284,19 +1285,48 @@ void protocol_menu_refresh() {
 
     memset(size_string, 0, sizeof(size_string));
     if (q_program_state == Q_STATE_DOWNLOAD_MENU) {
-#ifndef Q_PDCURSES_WIN32
+#ifdef Q_PDCURSES_WIN32
+        if (GetDiskFreeSpaceExA(get_option(Q_OPTION_DOWNLOAD_DIR),
+                &free_bytes_available, NULL, NULL) == FALSE) {
+            DWORD error = GetLastError();
+            sprintf(size_string, _("Unknown (Error %d)"), error);
+        } else {
+            /*
+             * Note that this numeric string is NOT localized.  The comma and
+             * the 'k' for kilobytes are English units.
+             */
+            char comma_string[sizeof(size_string)];
+            int comma_string_i;
+            int comma_string_n;
+            memset(size_string, 0, sizeof(size_string));
+            free_kbytes = free_bytes_available.QuadPart / 1024L;
+            sprintf(comma_string, "%lu", free_kbytes);
+            comma_string_n = strlen(comma_string);
+            for (comma_string_i = 0; comma_string_i < comma_string_n;
+                 comma_string_i++) {
+                size_string[strlen(size_string)] = comma_string[comma_string_i];
+                if (((comma_string_n - comma_string_i) % 3 == 1) &&
+                    (comma_string_i != comma_string_n - 1)
+                ) {
+                    size_string[strlen(size_string)] = ',';
+                }
+            }
+            size_string[strlen(size_string)] = ' ';
+            size_string[strlen(size_string)] = 'k';
+        }
+#else
         statvfs(get_option(Q_OPTION_DOWNLOAD_DIR), &buf);
         free_kbytes =
             (unsigned long long) buf.f_bavail *
             (unsigned long long) buf.f_bsize / 1024LL;
-        sprintf(size_string, _("Free Space  %'-Lu k"), free_kbytes);
+        sprintf(size_string, _("%'-Lu k"), free_kbytes);
 #endif
     }
 
-    if (strlen(message) > strlen(size_string)) {
+    if (strlen(message) > strlen(size_string) + 12) {
         window_length = strlen(message);
     } else {
-        window_length = strlen(size_string);
+        window_length = strlen(size_string) + 12;
     }
 
     /*
@@ -1345,7 +1375,7 @@ void protocol_menu_refresh() {
     if (q_program_state == Q_STATE_DOWNLOAD_MENU) {
         screen_put_color_str_yx(window_top + 1, window_left + 2,
                                 _("Free Space"), Q_COLOR_MENU_COMMAND);
-        screen_put_color_printf(Q_COLOR_MENU_TEXT, "  %'-lu k", free_kbytes);
+        screen_put_color_printf(Q_COLOR_MENU_TEXT, "  %s", size_string);
         i++;
     }
     screen_put_color_str_yx(window_top + i, window_left + 2, "A",

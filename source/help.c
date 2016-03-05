@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2015 by Kevin Lamonte
+ * Written 2003-2016 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -53,10 +53,21 @@ static char * HELP_CODEPAGE_KEY = "CODEPAGE";
 static char * HELP_CONFIGURATION_KEY = "CONFIGURATION";
 static char * HELP_FUNCTION_KEYS_KEY = "FUNCTION_KEYS";
 
+#if __WCHAR_MAX__ > 0x10000
 /*
- * We use the Private Use Area Plane of Unicode to flag bold text.
+ * 32-bit wchar_t: we use the Private Use Area Plane of Unicode to flag bold
+ * text.
  */
 #define HELP_BOLD 0x100000
+#else
+/*
+ * 16-bit wchar_t: we use the last available high bit to flag bold text.
+ * This means that we cannot use Unicode code points above 0x8000.  So far,
+ * we do not: they are used for arrow forms and suchlike in the 0x2000-0x2FFF
+ * range.
+ */
+#define HELP_BOLD 0x8000
+#endif
 
 /*
  * A hyperlink to another help topic.
@@ -2092,7 +2103,7 @@ char * raw_help_text = \
 "\n"
 "@TOPIC{REFERENCE_97_COPYRIGHT,Reference - Copyright}\n"
 "@BOLD{Qodem Terminal Emulator}\n"
-"Written 2003-2015 by Kevin Lamonte\n"
+"Written 2003-2016 by Kevin Lamonte\n"
 "\n"
 "To the extent possible under law, the author(s) have dedicated all\n"
 "copyright and related and neighboring rights to this software to the\n"

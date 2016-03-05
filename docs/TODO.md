@@ -12,10 +12,6 @@ Bug on xterm: A_REVERSE + DECSCNM + A_BOLD
 
 BUG: uploads are jerky to local synchronet.  Timing?
 
-BUG: no bold text in help system on Borland
-
-BUG: free kbytes on download menu broken on Borland
-
 BUG: host mode chat inside message entry doesn't clear entry or return
      to message editor
 

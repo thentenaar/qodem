@@ -252,7 +252,7 @@ void PDC_gotoyx(int row, int col)
 }
 
 // 29 gets me 22, why is that?
-int PDC_font_size = 18;
+int PDC_font_size = 16;
 TCHAR PDC_font_name[80];
 
 static LOGFONT PDC_get_logical_font( const attr_t font_attrib)
