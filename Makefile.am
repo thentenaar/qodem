@@ -99,4 +99,9 @@ EXTRA_DIST = \
 @srcdir@/lib/pdcurses \
 @srcdir@/lib/cryptlib
 
+dist-hook:
+	rm -rf `find $(distdir)/lib -type f -name "*.o"`
+	rm -rf `find $(distdir)/lib -type f -name "*.obj"`
+	rm -rf `find $(distdir)/lib/cryptlib -type d -name "*-obj"`
+
 ACLOCAL_AMFLAGS =

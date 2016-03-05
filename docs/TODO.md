@@ -16,8 +16,6 @@ BUG: no bold text in help system on Borland
 
 BUG: free kbytes on download menu broken on Borland
 
-BUG: reverse video vttest on Borland
-
 BUG: host mode chat inside message entry doesn't clear entry or return
      to message editor
 
@@ -60,10 +58,6 @@ Rework codepage/UTF-8 support:
 
 music.c:
   Fix Borland warnings - looks like bugs in DIGITAL_MUSIC_FREQ handling
-
-
-New autoconf build:
-  make dist
 
 
 Win32 port:

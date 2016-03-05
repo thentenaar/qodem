@@ -2368,7 +2368,8 @@ void fill_line_with_character(const int start, const int end,
              * Most other consoles erase with the current color
              * a.k.a. back-color erase (bce).
              */
-            q_scrollback_current->colors[i] = (q_current_color & ~Q_A_PROTECT);
+            q_scrollback_current->colors[i] =
+                color_to_attr(color_from_attr(q_current_color));
             break;
         }
     }
@@ -2402,7 +2403,7 @@ void fill_line_with_character(const int start, const int end,
                  * a.k.a. back-color erase (bce).
                  */
                 q_scrollback_current->colors[i] =
-                    (q_current_color & ~Q_A_PROTECT);
+                    color_to_attr(color_from_attr(q_current_color));
                 break;
             }
 

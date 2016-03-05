@@ -1,6 +1,35 @@
 The Qodem Project Work Log
 ==========================
 
+March 4, 2016
+
+The Windows build is starting to feel a lot more solid now.  I found a
+nice font that works now (UniVGA converted to VGAMedium.ttf for use in
+ReactOS), it looks awesome.  Added a quick sync script to do the
+unix2dos conversions for the README.md, ChangeLog, etc., and a cleaner
+Windows-only README file at the end of the install.  I resynced all
+the code, recompiled everything on VC6, and immediately ssh'd to a
+Linux box with CryptLib working and everything.  I also finally found
+the reverse video bug on Borland XTERM emulation: turns out the 16-bit
+chtype makes an expression like "(q_current_color & ~Q_A_PROTECT)"
+become 0 (because A_PROTECT is A_NORMAL which is define'd as
+(chtype)0), which inverts to black-on-black.  Something I put in to
+honor "back color erase" a long time ago.  Well, fixed now.
+
+I was also pretty surprised when I finally got into it how generally
+simple Windows serial port programming is compared to termios.  It's a
+lot less "flexible", but for handling PC-to-modem and PC-to-PC
+situations it seems more than adequate.  There will be some work to
+test what's there, especially as I don't have a real phone line
+anymore (though I do have a modem), but it's all stubbed in anyway.
+
+I am so tempted just to call it soon and release 1.0beta, buuuuttt...
+I need to get the translate tables re-worked, and find and fix a few
+more of the Windows and host mode bugs.  I'm hoping to do it soon
+though, maybe this July 4th.
+
+Time to commit what I've got and get to bed.
+
 March 3, 2016
 
 I just stubbed in the InnoSetup install.  Very quick and easy, I like
