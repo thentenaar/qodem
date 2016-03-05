@@ -28,6 +28,15 @@ for $10.1 million (with 11% to plaintiffs legal fees).
 
 
 
+OBLIGATORY SCREENSHOTS
+----------------------
+
+![Zmodem upload showing single file and batch progress bars](/misc/screenshots/zmodem_upload1.gif?raw=true "Zmodem upload showing single file and batch progress bars")
+
+![TradeWars 2002](/misc/screenshots/tradewars1.gif?raw=true "TradeWars 2002")
+
+
+
 COPYRIGHT STATUS
 ----------------
 
