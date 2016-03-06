@@ -878,6 +878,70 @@ static wchar_t map_character(const unsigned char vt100_char) {
 }
 
 /**
+ * DECRC - Restore cursor.  This actually restores a lot more state than the
+ * cursor position.
+ */
+static void decrc() {
+    DLOG(("decrc(): state.saved_cursor_y=%d state.saved_cursor_x=%d\n",
+            state.saved_cursor_y, state.saved_cursor_x));
+
+    if (state.saved_cursor_x != -1) {
+        cursor_position(state.saved_cursor_y, state.saved_cursor_x);
+        q_current_color         = state.saved_attributes;
+        q_status.origin_mode    = state.saved_origin_mode;
+        state.g0_charset        = state.saved_g0_charset;
+        state.g1_charset        = state.saved_g1_charset;
+
+        if (q_status.emulation == Q_EMUL_VT220) {
+            state.g2_charset        = state.saved_g2_charset;
+            state.g3_charset        = state.saved_g3_charset;
+            state.lockshift_gl      = state.saved_lockshift_gl;
+            state.lockshift_gr      = state.saved_lockshift_gr;
+            q_status.line_wrap      = state.saved_linewrap;
+            state.gr_charset        = state.saved_gr_charset;
+        }
+
+    } else {
+        /* DECRC called but DECSC was never called.  Load default values. */
+        cursor_position(0, 0);
+        q_current_color         = Q_A_NORMAL |
+                                  scrollback_full_attr(Q_COLOR_CONSOLE_TEXT);
+        q_status.origin_mode    = Q_FALSE;
+        state.g0_charset        = CHARSET_US;
+        state.g1_charset        = CHARSET_DRAWING;
+        state.g2_charset        = CHARSET_US;
+        state.g3_charset        = CHARSET_US;
+        state.gr_charset        = CHARSET_DEC_SUPPLEMENTAL;
+        state.lockshift_gl      = LOCKSHIFT_NONE;
+        state.lockshift_gr      = LOCKSHIFT_NONE;
+    }
+
+}
+
+/**
+ * DECSC - Save cursor.  This actually saves a lot more state than the cursor
+ * position.
+ */
+static void decsc() {
+    state.saved_cursor_x            = q_status.cursor_x;
+    state.saved_cursor_y            = q_status.cursor_y;
+    state.saved_attributes          = q_current_color;
+    state.saved_origin_mode         = q_status.origin_mode;
+    state.saved_g0_charset          = state.g0_charset;
+    state.saved_g1_charset          = state.g1_charset;
+    state.saved_g2_charset          = state.g2_charset;
+    state.saved_g3_charset          = state.g3_charset;
+    state.saved_gr_charset          = state.gr_charset;
+    state.saved_lockshift_gl        = state.lockshift_gl;
+    state.saved_lockshift_gr        = state.lockshift_gr;
+    state.saved_linewrap            = q_status.line_wrap;
+
+    DLOG(("decsc(): state.saved_cursor_y=%d state.saved_cursor_x=%d\n",
+            state.saved_cursor_y, state.saved_cursor_x));
+
+}
+
+/**
  * Set or unset a toggle.
  *
  * @param value true for set ('h'), false for reset ('l').
@@ -1268,6 +1332,82 @@ static void set_toggle(const Q_BOOL value) {
             }
             break;
 
+        case 1047:
+            if ((state.dec_private_mode_flag == Q_TRUE) &&
+                ((q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8))
+            ) {
+                if (value == Q_TRUE) {
+                    /*
+                     * Use Alternate Screen Buffer.
+                     *
+                     * Since we do not have a second screen buffer, just
+                     * clear the screen to save what was on the "normal"
+                     * screen buffer into the scrollback.
+                     */
+                    cursor_formfeed();
+                } else {
+                    /*
+                     * Use Normal Screen Buffer, clearing screen first if in
+                     * the Alternate Screen.
+                     *
+                     * Since we do not have a second screen buffer, just
+                     * clear the screen to save what was on the "alternate"
+                     * screen buffer into the scrollback.
+                     */
+                    cursor_formfeed();
+                }
+            }
+            break;
+
+        case 1048:
+            if ((state.dec_private_mode_flag == Q_TRUE) &&
+                ((q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8))
+            ) {
+                if (value == Q_TRUE) {
+                    /*
+                     * Save cursor as DECSC.
+                     */
+                    decsc();
+                } else {
+                    /*
+                     * Restore cursor as in DECRC.
+                     */
+                    decrc();
+                }
+            }
+            break;
+
+        case 1049:
+            if ((q_status.emulation == Q_EMUL_XTERM) ||
+                (q_status.emulation == Q_EMUL_XTERM_UTF8)
+            ) {
+                if (value == Q_TRUE) {
+                    /*
+                     * Save cursor as DECSC, and use Alternate Screen Buffer.
+                     *
+                     * Since we do not have a second screen buffer, just
+                     * clear the screen to save what was on the "normal"
+                     * screen buffer into the scrollback.
+                     */
+                    decsc();
+                    cursor_formfeed();
+                } else {
+                    /*
+                     * Use Normal Screen Buffer, clearing screen first if in
+                     * the Alternate Screen, and restore cursor as in DECRC.
+                     *
+                     * Since we do not have a second screen buffer, just
+                     * clear the screen to save what was on the "alternate"
+                     * screen buffer into the scrollback.
+                     */
+                    cursor_formfeed();
+                    decrc();
+                }
+            }
+            break;
+
         default:
             break;
 
@@ -1339,70 +1479,6 @@ static void printer_functions() {
         break;
 
     } /* switch (i) */
-
-}
-
-/**
- * DECRC - Restore cursor.  This actually restores a lot more state than the
- * cursor position.
- */
-static void decrc() {
-    DLOG(("decrc(): state.saved_cursor_y=%d state.saved_cursor_x=%d\n",
-            state.saved_cursor_y, state.saved_cursor_x));
-
-    if (state.saved_cursor_x != -1) {
-        cursor_position(state.saved_cursor_y, state.saved_cursor_x);
-        q_current_color         = state.saved_attributes;
-        q_status.origin_mode    = state.saved_origin_mode;
-        state.g0_charset        = state.saved_g0_charset;
-        state.g1_charset        = state.saved_g1_charset;
-
-        if (q_status.emulation == Q_EMUL_VT220) {
-            state.g2_charset        = state.saved_g2_charset;
-            state.g3_charset        = state.saved_g3_charset;
-            state.lockshift_gl      = state.saved_lockshift_gl;
-            state.lockshift_gr      = state.saved_lockshift_gr;
-            q_status.line_wrap      = state.saved_linewrap;
-            state.gr_charset        = state.saved_gr_charset;
-        }
-
-    } else {
-        /* DECRC called but DECSC was never called.  Load default values. */
-        cursor_position(0, 0);
-        q_current_color         = Q_A_NORMAL |
-                                  scrollback_full_attr(Q_COLOR_CONSOLE_TEXT);
-        q_status.origin_mode    = Q_FALSE;
-        state.g0_charset        = CHARSET_US;
-        state.g1_charset        = CHARSET_DRAWING;
-        state.g2_charset        = CHARSET_US;
-        state.g3_charset        = CHARSET_US;
-        state.gr_charset        = CHARSET_DEC_SUPPLEMENTAL;
-        state.lockshift_gl      = LOCKSHIFT_NONE;
-        state.lockshift_gr      = LOCKSHIFT_NONE;
-    }
-
-}
-
-/**
- * DECSC - Save cursor.  This actually saves a lot more state than the cursor
- * position.
- */
-static void decsc() {
-    state.saved_cursor_x            = q_status.cursor_x;
-    state.saved_cursor_y            = q_status.cursor_y;
-    state.saved_attributes          = q_current_color;
-    state.saved_origin_mode         = q_status.origin_mode;
-    state.saved_g0_charset          = state.g0_charset;
-    state.saved_g1_charset          = state.g1_charset;
-    state.saved_g2_charset          = state.g2_charset;
-    state.saved_g3_charset          = state.g3_charset;
-    state.saved_gr_charset          = state.gr_charset;
-    state.saved_lockshift_gl        = state.lockshift_gl;
-    state.saved_lockshift_gr        = state.lockshift_gr;
-    state.saved_linewrap            = q_status.line_wrap;
-
-    DLOG(("decsc(): state.saved_cursor_y=%d state.saved_cursor_x=%d\n",
-            state.saved_cursor_y, state.saved_cursor_x));
 
 }
 

@@ -1,6 +1,25 @@
 The Qodem Project Work Log
 ==========================
 
+March 6, 2016
+
+More bug fixes.  Now I know why mouse motion events aren't working in
+PDCurses: turns out PDCurses doesn't support them in the first place.
+That eliminated two of the Windows issues I was counting (drag to
+select and no motion).  XTERM now clears the screen and does DECRC/SC
+for alternate screen selection, which is somewhat better but not quite
+as nice as a true xterm.  My list is now down to two things: modem
+support for host mode, and the new translate tables design.  The
+latter will be saved to do later in April (my wife will be working an
+evening job so I can dedicate several 4-hour chunks to it).  Modem
+host mode will probably come in sometime in the next couple weeks: I
+can simulate the modem using my other PC and a null modem cable.
+
+I like yesterday's Windows release so much that I am going to put it
+out as a "beta preview".  (God I sound like Google.  Whatever.)  This
+is really a nice spot function wise, just need to keep finding and
+banging on bugs.
+
 March 4, 2016
 
 The Windows build is starting to feel a lot more solid now.  I found a

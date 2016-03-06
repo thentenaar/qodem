@@ -16,16 +16,24 @@ releases, a getting started guide, and Qodem binary downloads, is at:
 http://qodem.sourceforge.net .  The Qodem source code is hosted at:
 https://github.com/klamonte/qodem .
 
-As for Qmodem(tm): Qmodem(tm) was last distributed by Mustang
-Software, Inc. (MSI).  Qmodem and QmodemPro were acquired by Quintus
-when it purchased MSI, and their current copyright status is
-abandonware.  Quintus went bankrupt shortly after the MSI acquisition
-and members of both companies' Boards of Directors were involved in a
-class-action lawsuit from Quintus shareholders.  The lawsuit
-(C-00-4263 VRW in the Northern District of California, US District
-Chief Judge Vaughn R Walker presiding) was settled on December 5, 2006
-for $10.1 million (with 11% to plaintiffs legal fees).
+As for Qmodem(tm): Qmodem(tm) was originally written by John Friel III
+in 1984, eventually being acquired by Mustang Software, Inc. (MSI) in
+1991 and distributed until 2000.  Qmodem and QmodemPro were acquired
+by Quintus when it purchased MSI, and their current copyright status
+is abandonware.  Quintus went bankrupt shortly after the MSI
+acquisition and members of both companies' Boards of Directors were
+involved in a class-action lawsuit from Quintus shareholders.  The
+lawsuit (C-00-4263 VRW in the Northern District of California, US
+District Chief Judge Vaughn R Walker presiding) was settled on
+December 5, 2006 for $10.1 million (with 11% to plaintiffs legal
+fees).
 
+A Windows installer for the impending 1.0beta release is now available
+[here](http://qodem.sf.net/qodem-1.0beta-preview-setup.exe).  This
+release is close to the 1.0beta feature-wise.  It is supported on
+Windows 2000 and above.  Since this build uses cryptlib, the source
+must also be provided: that is
+[here](http://qodem.sf.net/qodem-1.0beta.tar.gz).
 
 
 OBLIGATORY SCREENSHOTS
@@ -231,8 +239,7 @@ The Windows build uses Beep() rather than SDL for sounds.  This might
 not work on Windows Vista and 64-bit XP systems.
 
 SSH connections (client or host) using cryptlib do not work when
-compiled with the Borland compiler, nor when compiled with the Visual
-C++ compiler and running on Windows 2000 or earlier.
+compiled with the Borland compiler.
 
 Mouse motion events do not work due to limitation in the PDCurses
 mouse API.  Mouse clicks however do work.

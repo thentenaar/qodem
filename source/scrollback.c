@@ -2496,10 +2496,6 @@ void erase_screen(const int start_row, const int start_col, const int end_row,
         q_scrollback_current->double_height = 0;
 
         /*
-         * TODO: what does erase do to reverse_color?
-         */
-
-        /*
          * Note: we don't add a line when (i == end_row) because if end_row
          * is the last line in scrollback new_scrollback_line() will make the
          * total screen one line larger than it really is.  This causes lots

@@ -15,11 +15,22 @@ BUG: host mode chat inside message entry doesn't clear entry or return
 
 BUG: host mode assertion failure when hanging up during login
 
+BUG: Windows A_BLINK blinks only once
+
 1.0.0
 -----
 
-Detect xterm alternate screen and clear scrollback to retain what was
-seen before.
+Put top ten BBS/Internet site list in phonebook by default:
+    Local shell with X_UTF8
+    Vertrauen
+    rainmaker.wunderground.com
+    PTT (make sure win32a is updated to use fallback font)
+    mono.org
+    OSUNY
+    sdf.org
+    g00r00's mystic bbs
+    ... who else? ...
+
 
 Rework codepage/UTF-8 support:
   Multiple translate tables:
@@ -222,7 +233,7 @@ Release:
   Eliminate DEBUG_*, // comments
   Update ChangeLog
   #define RELEASE common.h
-  Update Telnet BBS List
+  Update Telnet BBS List --> put into setup
   Check dates on web pages:
     index.html screenshots.html getting_started.html
   Sync up text in help.c and man pages and README

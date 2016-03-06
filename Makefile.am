@@ -94,6 +94,9 @@ EXTRA_DIST = \
 @srcdir@/qodem.ide \
 @srcdir@/vc6qodem \
 @srcdir@/include \
+@srcdir@/misc/fonts \
+@srcdir@/misc/screenshots \
+@srcdir@/misc/convert_ibbs.pl \
 @srcdir@/lib/c \
 @srcdir@/lib/upnp \
 @srcdir@/lib/pdcurses \
