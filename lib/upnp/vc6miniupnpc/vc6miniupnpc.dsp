@@ -63,8 +63,8 @@ LIB32=link.exe -lib
 # PROP Output_Dir "Debug"
 # PROP Intermediate_Dir "objs"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ  /c
-# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I "..\..\..\include" /D "_DEBUG" /D "WIN32" /D "_UNICODE" /D "_LIB" /D "MINIUPNP_STATICLIB" /YX /FD /GZ  /c
+# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I "..\..\..\include" /D "_DEBUG" /D "WIN32" /D "_UNICODE" /D "_LIB" /D "MINIUPNP_STATICLIB" /D "STATIC_LIB" /YX /FD /GZ /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -86,62 +86,62 @@ LIB32=link.exe -lib
 # Begin Source File
 
 SOURCE=..\connecthostport.c
-# ADD CPP /G3 /MT /D "_UNICODE"
+# ADD CPP /G3 /MT
 # End Source File
 # Begin Source File
 
 SOURCE=..\igd_desc_parse.c
-# ADD CPP /G3 /MT /D "_UNICODE"
+# ADD CPP /G3 /MT
 # End Source File
 # Begin Source File
 
 SOURCE=..\minisoap.c
-# ADD CPP /G3 /MT /D "_UNICODE"
+# ADD CPP /G3 /MT
 # End Source File
 # Begin Source File
 
 SOURCE=..\minissdpc.c
-# ADD CPP /G3 /MT /D "_UNICODE"
+# ADD CPP /G3 /MT
 # End Source File
 # Begin Source File
 
 SOURCE=..\miniupnpc.c
-# ADD CPP /G3 /MT /D "_UNICODE"
+# ADD CPP /G3 /MT
 # End Source File
 # Begin Source File
 
 SOURCE=..\miniwget.c
-# ADD CPP /G3 /MT /D "_UNICODE"
+# ADD CPP /G3 /MT
 # End Source File
 # Begin Source File
 
 SOURCE=..\minixml.c
-# ADD CPP /G3 /MT /D "_UNICODE"
+# ADD CPP /G3 /MT
 # End Source File
 # Begin Source File
 
 SOURCE=..\portlistingparse.c
-# ADD CPP /G3 /MT /D "_UNICODE"
+# ADD CPP /G3 /MT
 # End Source File
 # Begin Source File
 
 SOURCE=..\receivedata.c
-# ADD CPP /G3 /MT /D "_UNICODE"
+# ADD CPP /G3 /MT
 # End Source File
 # Begin Source File
 
 SOURCE=..\upnpcommands.c
-# ADD CPP /G3 /MT /D "_UNICODE"
+# ADD CPP /G3 /MT
 # End Source File
 # Begin Source File
 
 SOURCE=..\upnperrors.c
-# ADD CPP /G3 /MT /D "_UNICODE"
+# ADD CPP /G3 /MT
 # End Source File
 # Begin Source File
 
 SOURCE=..\upnpreplyparse.c
-# ADD CPP /G3 /MT /D "_UNICODE"
+# ADD CPP /G3 /MT
 # End Source File
 # End Group
 # Begin Group "Header Files"

@@ -70,7 +70,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /G3 /W3 /Gm /GX /ZI /Od /I "../include" /I "../lib/pdcurses/include" /I "../lib/cryptlib" /D "_DEBUG" /D "Q_PDCURSES" /D "Q_PDCURSES_WIN32" /D "Q_NO_SERIAL" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "Q_SSH_CRYPTLIB" /D "STATIC" /YX /FD /Zm1000 /GZ /c
+# ADD CPP /nologo /G3 /MTd /W3 /Gm /GX /ZI /Od /I "../include" /I "../lib/pdcurses/include" /I "../lib/cryptlib" /I "../lib/upnp" /D "_DEBUG" /D "Q_PDCURSES" /D "Q_PDCURSES_WIN32" /D "Q_UPNP" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "Q_SSH_CRYPTLIB" /D "STATIC_LIB" /D "MINIUPNP_STATICLIB" /YX /FD /Zm1000 /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -81,6 +81,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib netapi32.lib shlwapi.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
+# SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
 
@@ -362,11 +363,15 @@ SOURCE=..\lib\pdcurses\vc6pdcurses\Debug\vc6pdcurses.lib
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\cryptlib\Release\crypt32static.lib
+SOURCE=..\lib\upnp\vc6miniupnpc\Debug\vc6miniupnpc.lib
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\c\vc6libc\Release\vc6libc.lib
+SOURCE=..\lib\cryptlib\Debug\crypt32static.lib
+# End Source File
+# Begin Source File
+
+SOURCE=..\lib\c\vc6libc\Debug\vc6libc.lib
 # End Source File
 # End Target
 # End Project

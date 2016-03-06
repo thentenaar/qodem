@@ -1328,15 +1328,15 @@ SOURCE=.\zlib\inftrees.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\zlib\match686.asm
+# End Source File
+# Begin Source File
+
 SOURCE=.\zlib\trees.c
 # End Source File
 # Begin Source File
 
 SOURCE=.\zlib\zutil.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\match686.obj
 # End Source File
 # End Group
 # Begin Source File
