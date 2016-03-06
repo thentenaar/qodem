@@ -1115,7 +1115,7 @@ void screen_setup() {
      */
     mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
     mouseinterval(0);
-#ifdef PDCURSES
+#ifdef Q_PDCURSES
     /*
      * For the win32a version, putting this last makes it work.  No idea why
      * yet.

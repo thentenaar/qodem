@@ -10,8 +10,6 @@ Bug on xterm/ncurses: A_BOLD and ACS_VLINE
 Bug on xterm: -fbx/+fbx doesn't seem to do anything
 Bug on xterm: A_REVERSE + DECSCNM + A_BOLD
 
-BUG: uploads are jerky to local synchronet.  Timing?
-
 BUG: host mode chat inside message entry doesn't clear entry or return
      to message editor
 
@@ -54,10 +52,6 @@ Rework codepage/UTF-8 support:
 
 music.c:
   Fix Borland warnings - looks like bugs in DIGITAL_MUSIC_FREQ handling
-
-
-Win32 port:
-  Fix mouse tracking to do mouse and not copy-to-clipboard
 
 
 Finish up modem support:

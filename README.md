@@ -211,6 +211,9 @@ Terminal To Exit..." until the other terminal closes.  The default
 terminal program is 'x-terminal-emulator'; this can be changed in
 qodemrc.
 
+Mouse motion events do not work due to limitation in the PDCurses
+mouse API.  Mouse clicks however do work.
+
 WIN32 BUILD
 
 When spawning other processes such as editors (Alt-L, Alt-N, Alt-V,
@@ -230,6 +233,9 @@ not work on Windows Vista and 64-bit XP systems.
 SSH connections (client or host) using cryptlib do not work when
 compiled with the Borland compiler, nor when compiled with the Visual
 C++ compiler and running on Windows 2000 or earlier.
+
+Mouse motion events do not work due to limitation in the PDCurses
+mouse API.  Mouse clicks however do work.
 
 
 
