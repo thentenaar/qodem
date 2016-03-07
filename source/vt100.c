@@ -1380,8 +1380,9 @@ static void set_toggle(const Q_BOOL value) {
             break;
 
         case 1049:
-            if ((q_status.emulation == Q_EMUL_XTERM) ||
-                (q_status.emulation == Q_EMUL_XTERM_UTF8)
+            if ((state.dec_private_mode_flag == Q_TRUE) &&
+                ((q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8))
             ) {
                 if (value == Q_TRUE) {
                     /*
