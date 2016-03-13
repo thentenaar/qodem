@@ -15,8 +15,6 @@ BUG: host mode chat inside message entry doesn't clear entry or return
 
 BUG: host mode assertion failure when hanging up during login
 
-BUG: Windows A_BLINK blinks only once
-
 1.0.0
 -----
 

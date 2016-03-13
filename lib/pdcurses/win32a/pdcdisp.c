@@ -238,7 +238,9 @@ void PDC_gotoyx(int row, int col)
                /* ...then draw the new (assuming it's actually visible).    */
                /* This used to require some logic.  Now the redraw_cursor() */
                /* function figures out what cursor should be drawn, if any. */
-    PDC_blink_state = 1;
+    // KAL: Don't reset blink state on gotoxy().  qodem calls gotoxy() about
+    // 50 times a second in terminal mode.
+    // PDC_blink_state = 1;
     if( SP->visibility)
     {
         extern HWND PDC_hWnd;

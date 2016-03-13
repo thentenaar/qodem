@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /G3 /MT /W3 /GX /O2 /I "../lib/cryptlib" /I "../include" /I "../lib/pdcurses/include" /D "NDEBUG" /D "Q_PDCURSES" /D "Q_PDCURSES_WIN32" /D "Q_NO_SERIAL" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "Q_SSH_CRYPTLIB" /D "STATIC_LIB" /YX /FD /Zm1000 /c
+# ADD CPP /nologo /G3 /MT /W3 /GX /O2 /I "../lib/cryptlib" /I "../include" /I "../lib/pdcurses/include" /D "NDEBUG" /D "Q_PDCURSES" /D "Q_PDCURSES_WIN32" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "Q_SSH_CRYPTLIB" /D "STATIC_LIB" /YX /FD /Zm1000 /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -359,19 +359,19 @@ SOURCE=..\source\zmodem.h
 # End Group
 # Begin Source File
 
-SOURCE=..\lib\pdcurses\vc6pdcurses\Debug\vc6pdcurses.lib
+SOURCE=..\lib\c\vc6libc\Release\vc6libc.lib
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\upnp\vc6miniupnpc\Debug\vc6miniupnpc.lib
+SOURCE=..\lib\upnp\vc6miniupnpc\Release\vc6miniupnpc.lib
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\cryptlib\Debug\crypt32static.lib
+SOURCE=..\lib\pdcurses\vc6pdcurses\Release\vc6pdcurses.lib
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\c\vc6libc\Debug\vc6libc.lib
+SOURCE=..\lib\cryptlib\Release\crypt32static.lib
 # End Source File
 # End Target
 # End Project

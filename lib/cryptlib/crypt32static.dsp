@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "./objs"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /G3 /MT /W3 /GX /O2 /I "." /I "../../source" /I "../../include" /I "../pdcurses/include" /D "NDEBUG" /D "WIN32" /D "_LIB" /D "STATIC_LIB" /D "Q_SSH_CRYPTLIB" /D "Q_PDCURSES_WIN32" /D "Q_NO_SERIAL" /D "_UNICODE" /D "NO_ASM" /YX /FD /c
+# ADD CPP /nologo /G3 /MT /W3 /GX /O2 /I "." /I "../../source" /I "../../include" /I "../pdcurses/include" /D "NDEBUG" /D "WIN32" /D "_LIB" /D "STATIC_LIB" /D "Q_SSH_CRYPTLIB" /D "Q_PDCURSES_WIN32" /D "_UNICODE" /D "NO_ASM" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -64,7 +64,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir "./objs"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /G3 /MTd /W3 /Gm /GX /ZI /Od /I "." /I "../../source" /I "../../include" /I "../pdcurses/include" /D "_DEBUG" /D "WIN32" /D "_LIB" /D "STATIC_LIB" /D "Q_SSH_CRYPTLIB" /D "Q_PDCURSES_WIN32" /D "Q_NO_SERIAL" /D "_UNICODE" /D "NO_ASM" /YX /FD /GZ /c
+# ADD CPP /nologo /G3 /MTd /W3 /Gm /GX /ZI /Od /I "." /I "../../source" /I "../../include" /I "../pdcurses/include" /D "_DEBUG" /D "WIN32" /D "_LIB" /D "STATIC_LIB" /D "Q_SSH_CRYPTLIB" /D "Q_PDCURSES_WIN32" /D "_UNICODE" /D "NO_ASM" /YX /FD /GZ /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
