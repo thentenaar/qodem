@@ -2268,7 +2268,7 @@ static void telnet_send_environment(const int fd) {
     /*
      * TERM
      */
-    response[response_n] = 3;   /* "USERVAR" */
+    response[response_n] = 0;   /* "VAR" */
     response_n++;
     snprintf(response + response_n, sizeof(response) - response_n, "TERM");
     response_n += 4;
@@ -2281,10 +2281,28 @@ static void telnet_send_environment(const int fd) {
     /*
      * LANG
      */
-    response[response_n] = 3;   /* "USERVAR" */
+    response[response_n] = 0;   /* "VAR" */
     response_n++;
+#if 1
+    /* Normal case: try to pass LANG even though no one will listen to it. */
     snprintf(response + response_n, sizeof(response) - response_n, "LANG");
     response_n += 4;
+#else
+    /*
+     * Testing case: pass the LANG data through a variable that
+     * netkit-telnetd will actually honor.  As of netkit-0.17 those variables
+     * are:
+     *
+     *   TERM
+     *   DISPLAY
+     *   USER
+     *   LOGNAME
+     *   POSIXLY_CORRECT
+     *
+     */
+    snprintf(response + response_n, sizeof(response) - response_n, "POSIXLY_CORRECT");
+    response_n += 15;
+#endif
     response[response_n] = 1;   /* "VALUE" */
     response_n++;
     snprintf(response + response_n, sizeof(response) - response_n,

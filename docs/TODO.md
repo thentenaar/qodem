@@ -20,6 +20,8 @@ BUG: Windows A_BLINK blinks only once
 1.0.0
 -----
 
+Documentation: more rlogin and ssh notes
+
 Put top ten BBS/Internet site list in phonebook by default:
     Local shell with X_UTF8
     Vertrauen
