@@ -906,7 +906,7 @@ static void help_handler(char * topic_key) {
     int topic_stack_n = 0;
     Q_BOOL popped = Q_FALSE;
     char * status_prompt = NULL;
-    wchar_t * title = NULL;
+    wchar_t title[128];
 
     /*
      * Save the cursor
@@ -1004,7 +1004,17 @@ reload:
 
     status_prompt =
         _(" ^V-Select Link   Enter-Next Topic   B-Prior Topic   F1-Help Index   ESC/`-Exit ");
-    title = topic->title;
+
+    memset(title, 0, sizeof(title));
+#if defined(__BORLANDC__) || defined(_MSC_VER)
+    /*
+     * swprintf() doesn't take a length argument
+     */
+    swprintf(title, L" %ls - %ls ", _(L"Help"), topic->title);
+#else
+    swprintf(title, sizeof(title) / sizeof(wchar_t), L" %ls - %ls ",
+             _(L"Help"), topic->title);
+#endif
 
     /*
      * Window will be centered on the screen
@@ -1038,14 +1048,14 @@ reload:
              * Place title
              */
             message_left =
-                window_length - (wcslen(title) + 2) - strlen(_("Help -"));
+                window_length - (wcslen(title) + 2);
             if (message_left < 0) {
                 message_left = 0;
             } else {
                 message_left /= 2;
             }
-            screen_put_color_printf_yx(0, message_left, Q_COLOR_HELP_BORDER,
-                                       " %s %ls ", _("Help -"), title);
+            screen_put_color_wcs_yx(0, message_left, title,
+                                    Q_COLOR_HELP_BORDER);
 
             /*
              * Put up the status line
