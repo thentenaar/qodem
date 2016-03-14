@@ -4,12 +4,6 @@ Qodem TODO List
 NEW FUNCTIONALITY
 -----------------
 
-Bug on telnetd: set LANG
-Wishlist on ncurses: expose double-width / double-height
-Bug on xterm/ncurses: A_BOLD and ACS_VLINE
-Bug on xterm: -fbx/+fbx doesn't seem to do anything
-Bug on xterm: A_REVERSE + DECSCNM + A_BOLD
-
 BUG: host mode chat inside message entry doesn't clear entry or return
      to message editor
 
@@ -384,12 +378,30 @@ True native (not PDCurses) port to X11:
   ReGIS graphics
   Tektronix
 
+
 SPINOFFS
 --------
 
 Drop-in replacement for lrzsz that does better error checking
 
 Linux/ncurses port of HS/Link 1.21
+
+
+
+BUGS IN OTHER PROGRAMS
+----------------------
+
+Bug on telnetd: set LANG
+
+Wishlist on ncurses: expose double-width / double-height
+
+Bug on xterm/ncurses: A_BOLD and ACS_VLINE
+
+Bug on xterm: -fbx/+fbx doesn't seem to do anything
+
+Bug on xterm: A_REVERSE + DECSCNM + A_BOLD
+
+
 
 QUESTIONS TO ASK OUT THERE
 --------------------------

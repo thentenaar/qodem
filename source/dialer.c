@@ -26,9 +26,9 @@
 #  ifdef __APPLE__
 #    include <util.h>
 #  else
-#    ifdef __FreeBSD__
+#    ifdef BSD
 #      include <sys/types.h>
-#      include <libutil.h>
+#      include <util.h>
 #    else
 #      include <pty.h>
 #    endif

@@ -39,7 +39,8 @@
 #    include "curses.h"
 #    include "term.h"
 #  else
-#    if defined(__FreeBSD__) || defined(__APPLE__) || defined(__HAIKU__)
+#    if defined(BSD) || defined(__APPLE__) || defined(__HAIKU__)
+#      define _XOPEN_SOURCE_EXTENDED
 #      include <curses.h>
 #    else
 #      define _GNU_SOURCE

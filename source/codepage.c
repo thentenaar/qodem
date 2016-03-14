@@ -637,7 +637,7 @@ void codepage_refresh() {
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
 
-    screen_put_color_printf(Q_COLOR_MENU_TEXT, "  ISO-8859-1");
+    screen_put_color_printf(Q_COLOR_MENU_TEXT, _("  ISO-8859-1"));
 
     if (codepage_dec == Q_TRUE) {
         screen_put_color_str_yx(window_top + 5, window_left + 7, "C",
@@ -646,7 +646,7 @@ void codepage_refresh() {
         screen_put_color_str_yx(window_top + 5, window_left + 7, "C",
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
-    screen_put_color_printf(Q_COLOR_MENU_TEXT, "  DEC VT10x/VT220");
+    screen_put_color_printf(Q_COLOR_MENU_TEXT, _("  DEC VT100/VT220"));
     i = 6;
 
     if (codepage_cp720 == Q_TRUE) {
