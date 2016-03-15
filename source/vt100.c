@@ -3345,7 +3345,8 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
     uint32_t last_utf8_state;
     unsigned char from_modem = from_modem1;
 
-    DLOG(("STATE: %d CHAR: 0x%02x '%c'\n", scan_state, from_modem, from_modem));
+    DLOG(("STATE: %d CHAR: 0x%02x '%c' UTF-8: %d\n", scan_state, from_modem,
+            from_modem, state.utf8_state));
 
     /* Special case for VT10x: 7-bit characters only */
     if ((q_status.emulation == Q_EMUL_VT100) ||

@@ -12,20 +12,6 @@ BUG: host mode assertion failure when hanging up during login
 1.0.0
 -----
 
-Documentation: more rlogin and ssh notes
-
-Put top ten BBS/Internet site list in phonebook by default:
-    Local shell with X_UTF8
-    Vertrauen
-    rainmaker.wunderground.com
-    PTT (make sure win32a is updated to use fallback font)
-    mono.org
-    OSUNY
-    sdf.org
-    g00r00's mystic bbs
-    ... who else? ...
-
-
 Rework codepage/UTF-8 support:
   Multiple translate tables:
     8-bit table

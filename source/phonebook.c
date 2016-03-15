@@ -1442,7 +1442,7 @@ void create_phonebook() {
     /*
      * We will create the following entries:
      *
-     * 1) A local shell using L_UTF8 emulation
+     * 1) A local shell using X_UTF8 emulation
      * 2) Vertrauen - telnet BBS (home of synchronet)
      * 3) Electronic Chicken - dial-up BBS
      */
@@ -1472,7 +1472,7 @@ void create_phonebook() {
     new_entry->notes            = NULL;
     new_entry->tagged           = Q_FALSE;
     new_entry->doorway          = Q_DOORWAY_CONFIG;
-    new_entry->emulation        = Q_EMUL_LINUX_UTF8;
+    new_entry->emulation        = Q_EMUL_XTERM_UTF8;
     new_entry->codepage         = default_codepage(new_entry->emulation);
 #ifndef Q_NO_SERIAL
     new_entry->use_modem_cfg    = Q_TRUE;
@@ -1495,6 +1495,8 @@ void create_phonebook() {
     new_entry->next             = NULL;
     q_phonebook.entry_count++;
 
+    /* Vertrauen - home of Synchronet -------------------------------------- */
+    
     old_entry = new_entry;
     new_entry =
         (struct q_phone_struct *) Xmalloc(sizeof(struct q_phone_struct),
@@ -1506,7 +1508,8 @@ void create_phonebook() {
         old_entry->next = new_entry;
         new_entry->prev = old_entry;
     }
-    new_entry->name             = Xwcsdup(L"Vertrauen BBS", __FILE__, __LINE__);
+    new_entry->name             = Xwcsdup(L"Vertrauen BBS - The home of Synchronet",
+        __FILE__, __LINE__);
     new_entry->method           = Q_DIAL_METHOD_TELNET;
     new_entry->address          = Xstrdup("vert.synchro.net",
         __FILE__, __LINE__);
@@ -1539,6 +1542,287 @@ void create_phonebook() {
     new_entry->next             = NULL;
     q_phonebook.entry_count++;
 
+    /* SDF.org ------------------------------------------------------------- */
+    
+    old_entry = new_entry;
+    new_entry =
+        (struct q_phone_struct *) Xmalloc(sizeof(struct q_phone_struct),
+                                          __FILE__, __LINE__);
+    if (q_phonebook.entry_count == 0) {
+        q_phonebook.entries = new_entry;
+        new_entry->prev = NULL;
+    } else {
+        old_entry->next = new_entry;
+        new_entry->prev = old_entry;
+    }
+    new_entry->name             = Xwcsdup(L"SDF.org - Free public access Unix systems",
+        __FILE__, __LINE__);
+    new_entry->method           = Q_DIAL_METHOD_SSH;
+    new_entry->address          = Xstrdup("sdf.org", __FILE__, __LINE__);
+    new_entry->port             = Xstrdup("22", __FILE__, __LINE__);
+    new_entry->username         = Xwcsdup(L"new", __FILE__, __LINE__);
+    new_entry->password         = Xwcsdup(L"", __FILE__, __LINE__);
+    new_entry->notes            = NULL;
+    new_entry->tagged           = Q_FALSE;
+    new_entry->doorway          = Q_DOORWAY_CONFIG;
+    new_entry->emulation        = Q_EMUL_XTERM_UTF8;
+    new_entry->codepage         = default_codepage(new_entry->emulation);
+#ifndef Q_NO_SERIAL
+    new_entry->use_modem_cfg    = Q_TRUE;
+    new_entry->baud             = Q_BAUD_115200;
+    new_entry->data_bits        = Q_DATA_BITS_8;
+    new_entry->parity           = Q_PARITY_NONE;
+    new_entry->stop_bits        = Q_STOP_BITS_1;
+    new_entry->xonxoff          = Q_FALSE;
+    new_entry->rtscts           = Q_TRUE;
+    new_entry->lock_dte_baud    = Q_TRUE;
+#endif
+    new_entry->script_filename  = Xstrdup("", __FILE__, __LINE__);
+    new_entry->capture_filename = Xstrdup("", __FILE__, __LINE__);
+    new_entry->keybindings_filename     = Xstrdup("", __FILE__, __LINE__);
+    new_entry->use_default_toggles      = Q_TRUE;
+    new_entry->toggles          = 0;
+    new_entry->last_call        = 0;
+    new_entry->times_on         = 0;
+    new_entry->quicklearn       = Q_FALSE;
+    new_entry->next             = NULL;
+    q_phonebook.entry_count++;
+
+    /* rainmaker.wunderground.com ------------------------------------------ */
+    
+    old_entry = new_entry;
+    new_entry =
+        (struct q_phone_struct *) Xmalloc(sizeof(struct q_phone_struct),
+                                          __FILE__, __LINE__);
+    if (q_phonebook.entry_count == 0) {
+        q_phonebook.entries = new_entry;
+        new_entry->prev = NULL;
+    } else {
+        old_entry->next = new_entry;
+        new_entry->prev = old_entry;
+    }
+    new_entry->name             = Xwcsdup(L"The Weather Underground",
+        __FILE__, __LINE__);
+    new_entry->method           = Q_DIAL_METHOD_TELNET;
+    new_entry->address          = Xstrdup("rainmaker.wunderground.com",
+        __FILE__, __LINE__);
+    new_entry->port             = Xstrdup("23", __FILE__, __LINE__);
+    new_entry->username         = Xwcsdup(L"", __FILE__, __LINE__);
+    new_entry->password         = Xwcsdup(L"", __FILE__, __LINE__);
+    new_entry->notes            = NULL;
+    new_entry->tagged           = Q_FALSE;
+    new_entry->doorway          = Q_DOORWAY_CONFIG;
+    new_entry->emulation        = Q_EMUL_VT102;
+    new_entry->codepage         = default_codepage(new_entry->emulation);
+#ifndef Q_NO_SERIAL
+    new_entry->use_modem_cfg    = Q_TRUE;
+    new_entry->baud             = Q_BAUD_115200;
+    new_entry->data_bits        = Q_DATA_BITS_8;
+    new_entry->parity           = Q_PARITY_NONE;
+    new_entry->stop_bits        = Q_STOP_BITS_1;
+    new_entry->xonxoff          = Q_FALSE;
+    new_entry->rtscts           = Q_TRUE;
+    new_entry->lock_dte_baud    = Q_TRUE;
+#endif
+    new_entry->script_filename  = Xstrdup("", __FILE__, __LINE__);
+    new_entry->capture_filename = Xstrdup("", __FILE__, __LINE__);
+    new_entry->keybindings_filename     = Xstrdup("", __FILE__, __LINE__);
+    new_entry->use_default_toggles      = Q_TRUE;
+    new_entry->toggles          = 0;
+    new_entry->last_call        = 0;
+    new_entry->times_on         = 0;
+    new_entry->quicklearn       = Q_FALSE;
+    new_entry->next             = NULL;
+    q_phonebook.entry_count++;
+
+    /* Zapto.org - Enthral BBS --------------------------------------------- */
+    
+    old_entry = new_entry;
+    new_entry =
+        (struct q_phone_struct *) Xmalloc(sizeof(struct q_phone_struct),
+                                          __FILE__, __LINE__);
+    if (q_phonebook.entry_count == 0) {
+        q_phonebook.entries = new_entry;
+        new_entry->prev = NULL;
+    } else {
+        old_entry->next = new_entry;
+        new_entry->prev = old_entry;
+    }
+    new_entry->name             = Xwcsdup(L"htc.zapto.org - Home of Enthral BBS",
+        __FILE__, __LINE__);
+    new_entry->method           = Q_DIAL_METHOD_TELNET;
+    new_entry->address          = Xstrdup("htc.zapto.org", __FILE__, __LINE__);
+    new_entry->port             = Xstrdup("23", __FILE__, __LINE__);
+    new_entry->username         = Xwcsdup(L"", __FILE__, __LINE__);
+    new_entry->password         = Xwcsdup(L"", __FILE__, __LINE__);
+    new_entry->notes            = NULL;
+    new_entry->tagged           = Q_FALSE;
+    new_entry->doorway          = Q_DOORWAY_CONFIG;
+    new_entry->emulation        = Q_EMUL_XTERM_UTF8;
+    new_entry->codepage         = default_codepage(new_entry->emulation);
+#ifndef Q_NO_SERIAL
+    new_entry->use_modem_cfg    = Q_TRUE;
+    new_entry->baud             = Q_BAUD_115200;
+    new_entry->data_bits        = Q_DATA_BITS_8;
+    new_entry->parity           = Q_PARITY_NONE;
+    new_entry->stop_bits        = Q_STOP_BITS_1;
+    new_entry->xonxoff          = Q_FALSE;
+    new_entry->rtscts           = Q_TRUE;
+    new_entry->lock_dte_baud    = Q_TRUE;
+#endif
+    new_entry->script_filename  = Xstrdup("", __FILE__, __LINE__);
+    new_entry->capture_filename = Xstrdup("", __FILE__, __LINE__);
+    new_entry->keybindings_filename     = Xstrdup("", __FILE__, __LINE__);
+    new_entry->use_default_toggles      = Q_TRUE;
+    new_entry->toggles          = 0;
+    new_entry->last_call        = 0;
+    new_entry->times_on         = 0;
+    new_entry->quicklearn       = Q_FALSE;
+    new_entry->next             = NULL;
+    q_phonebook.entry_count++;
+
+    /* OSUNY - THE Phreak BBS ---------------------------------------------- */
+    
+    old_entry = new_entry;
+    new_entry =
+        (struct q_phone_struct *) Xmalloc(sizeof(struct q_phone_struct),
+                                          __FILE__, __LINE__);
+    if (q_phonebook.entry_count == 0) {
+        q_phonebook.entries = new_entry;
+        new_entry->prev = NULL;
+    } else {
+        old_entry->next = new_entry;
+        new_entry->prev = old_entry;
+    }
+    new_entry->name             = Xwcsdup(L"osuny.co.uk - OSUNY U.K. BBS",
+        __FILE__, __LINE__);
+    new_entry->method           = Q_DIAL_METHOD_SSH;
+    new_entry->address          = Xstrdup("ssh.osuny.co.uk",
+        __FILE__, __LINE__);
+    new_entry->port             = Xstrdup("22", __FILE__, __LINE__);
+    new_entry->username         = Xwcsdup(L"bbs", __FILE__, __LINE__);
+    new_entry->password         = Xwcsdup(L"bbs", __FILE__, __LINE__);
+    new_entry->notes            = NULL;
+    new_entry->tagged           = Q_FALSE;
+    new_entry->doorway          = Q_DOORWAY_CONFIG;
+    new_entry->emulation        = Q_EMUL_XTERM_UTF8;
+    new_entry->codepage         = default_codepage(new_entry->emulation);
+#ifndef Q_NO_SERIAL
+    new_entry->use_modem_cfg    = Q_TRUE;
+    new_entry->baud             = Q_BAUD_115200;
+    new_entry->data_bits        = Q_DATA_BITS_8;
+    new_entry->parity           = Q_PARITY_NONE;
+    new_entry->stop_bits        = Q_STOP_BITS_1;
+    new_entry->xonxoff          = Q_FALSE;
+    new_entry->rtscts           = Q_TRUE;
+    new_entry->lock_dte_baud    = Q_TRUE;
+#endif
+    new_entry->script_filename  = Xstrdup("", __FILE__, __LINE__);
+    new_entry->capture_filename = Xstrdup("", __FILE__, __LINE__);
+    new_entry->keybindings_filename     = Xstrdup("", __FILE__, __LINE__);
+    new_entry->use_default_toggles      = Q_TRUE;
+    new_entry->toggles          = 0;
+    new_entry->last_call        = 0;
+    new_entry->times_on         = 0;
+    new_entry->quicklearn       = Q_FALSE;
+    new_entry->next             = NULL;
+    q_phonebook.entry_count++;
+
+    /* mono.org - Monochrome BBS ------------------------------------------- */
+    
+    old_entry = new_entry;
+    new_entry =
+        (struct q_phone_struct *) Xmalloc(sizeof(struct q_phone_struct),
+                                          __FILE__, __LINE__);
+    if (q_phonebook.entry_count == 0) {
+        q_phonebook.entries = new_entry;
+        new_entry->prev = NULL;
+    } else {
+        old_entry->next = new_entry;
+        new_entry->prev = old_entry;
+    }
+    new_entry->name             = Xwcsdup(L"mono.org - Monochrome BBS",
+        __FILE__, __LINE__);
+    new_entry->method           = Q_DIAL_METHOD_TELNET;
+    new_entry->address          = Xstrdup("mono.org", __FILE__, __LINE__);
+    new_entry->port             = Xstrdup("23", __FILE__, __LINE__);
+    new_entry->username         = Xwcsdup(L"", __FILE__, __LINE__);
+    new_entry->password         = Xwcsdup(L"", __FILE__, __LINE__);
+    new_entry->notes            = NULL;
+    new_entry->tagged           = Q_FALSE;
+    new_entry->doorway          = Q_DOORWAY_CONFIG;
+    new_entry->emulation        = Q_EMUL_XTERM_UTF8;
+    new_entry->codepage         = default_codepage(new_entry->emulation);
+#ifndef Q_NO_SERIAL
+    new_entry->use_modem_cfg    = Q_TRUE;
+    new_entry->baud             = Q_BAUD_115200;
+    new_entry->data_bits        = Q_DATA_BITS_8;
+    new_entry->parity           = Q_PARITY_NONE;
+    new_entry->stop_bits        = Q_STOP_BITS_1;
+    new_entry->xonxoff          = Q_FALSE;
+    new_entry->rtscts           = Q_TRUE;
+    new_entry->lock_dte_baud    = Q_TRUE;
+#endif
+    new_entry->script_filename  = Xstrdup("", __FILE__, __LINE__);
+    new_entry->capture_filename = Xstrdup("", __FILE__, __LINE__);
+    new_entry->keybindings_filename     = Xstrdup("", __FILE__, __LINE__);
+    new_entry->use_default_toggles      = Q_TRUE;
+    new_entry->toggles          = 0;
+    new_entry->last_call        = 0;
+    new_entry->times_on         = 0;
+    new_entry->quicklearn       = Q_FALSE;
+    new_entry->next             = NULL;
+    q_phonebook.entry_count++;
+
+    /* Electronic Chicken BBS (Telnet) ------------------------------------- */
+    
+    old_entry = new_entry;
+    new_entry =
+        (struct q_phone_struct *) Xmalloc(sizeof(struct q_phone_struct),
+                                          __FILE__, __LINE__);
+    if (q_phonebook.entry_count == 0) {
+        q_phonebook.entries = new_entry;
+        new_entry->prev = NULL;
+    } else {
+        old_entry->next = new_entry;
+        new_entry->prev = old_entry;
+    }
+    new_entry->name             = Xwcsdup(L"Electronic Chicken BBS (Telnet)",
+        __FILE__, __LINE__);
+    new_entry->method           = Q_DIAL_METHOD_TELNET;
+    new_entry->address          = Xstrdup("bbs.electronicchicken.com",
+        __FILE__, __LINE__);
+    new_entry->port             = Xstrdup("23", __FILE__, __LINE__);
+    new_entry->username         = Xwcsdup(L"", __FILE__, __LINE__);
+    new_entry->password         = Xwcsdup(L"", __FILE__, __LINE__);
+    new_entry->notes            = NULL;
+    new_entry->tagged           = Q_FALSE;
+    new_entry->doorway          = Q_DOORWAY_CONFIG;
+    new_entry->emulation        = Q_EMUL_ANSI;
+    new_entry->codepage         = default_codepage(new_entry->emulation);
+#ifndef Q_NO_SERIAL
+    new_entry->use_modem_cfg    = Q_TRUE;
+    new_entry->baud             = Q_BAUD_115200;
+    new_entry->data_bits        = Q_DATA_BITS_8;
+    new_entry->parity           = Q_PARITY_NONE;
+    new_entry->stop_bits        = Q_STOP_BITS_1;
+    new_entry->xonxoff          = Q_FALSE;
+    new_entry->rtscts           = Q_TRUE;
+    new_entry->lock_dte_baud    = Q_TRUE;
+#endif
+    new_entry->script_filename  = Xstrdup("", __FILE__, __LINE__);
+    new_entry->capture_filename = Xstrdup("", __FILE__, __LINE__);
+    new_entry->keybindings_filename     = Xstrdup("", __FILE__, __LINE__);
+    new_entry->use_default_toggles      = Q_TRUE;
+    new_entry->toggles          = 0;
+    new_entry->last_call        = 0;
+    new_entry->times_on         = 0;
+    new_entry->quicklearn       = Q_FALSE;
+    new_entry->next             = NULL;
+    q_phonebook.entry_count++;
+
+    /* Electronic Chicken BBS (Dialup) ------------------------------------- */
+    
 #ifndef Q_NO_SERIAL
     old_entry = new_entry;
     new_entry =
@@ -1551,7 +1835,7 @@ void create_phonebook() {
         old_entry->next = new_entry;
         new_entry->prev = old_entry;
     }
-    new_entry->name             = Xwcsdup(L"Electronic Chicken BBS",
+    new_entry->name             = Xwcsdup(L"Electronic Chicken BBS (Dialup)",
         __FILE__, __LINE__);
     new_entry->method           = Q_DIAL_METHOD_MODEM;
     new_entry->address          = Xstrdup("1-416-273-7230", __FILE__, __LINE__);

@@ -1,4 +1,4 @@
-.TH qodem 1 "July 1, 2015"
+.TH qodem 1 "July 4, 2016"
 
 .SH NAME
 qodem \- Qodem Terminal Emulator
@@ -75,6 +75,62 @@ Qodem requires the following characteristics of its shell/terminal:
 	XTerm*metaSendsEscape:   true
 .br
 	UXTerm*metaSendsEscape:  true
+
+.SH CONNECTION METHODS
+
+Qodem supports the following connection methods:
+
+.TP
+.B
+MODEM
+Calls the remote system by dialing a phone number.
+.TP
+.B
+LOCAL
+Spawns a local shell in a pseudo-tty.
+.TP
+.B
+RLOGIN
+Connects to the remote system using the rlogin protocol.  Qodem can
+either spawn an executable to connect (e.g. 'rlogin') or use its own
+networking code.  Its own networking code will only run successfully
+if Qodem is running as root, due to the need to bind to a privileged
+port.  See the
+.B rlogin
+and
+.B use_external_rlogin
+options in
+.B qodemrc.
+.TP
+.B
+SSH
+Connects to the remote system using the ssh protocol.  Qodem can
+either spawn an executable to connect (e.g. 'ssh') or use its own
+networking code.  See the
+.B ssh
+and
+.B use_external_ssh
+options in
+.B qodemrc.
+.TP
+.B
+TELNET
+Connects to the remote system using the telnet protocol.  Qodem can
+either spawn an executable to connect (e.g. 'telnet') or use its own
+networking code.  See the
+.B telnet
+and
+.B use_external_telnet
+options in
+.B qodemrc.
+.TP
+.B
+SOCKET
+Connects to the remote system using a raw TCP socket.
+.TP
+.B
+CMDLINE
+Spawns the command line in a pseudo-tty.
 
 .SH EMULATIONS
 
@@ -194,15 +250,15 @@ extra\-long packets, RESEND/REGET, or server mode.
 .SH INTERFACE
 .B Phone Book
 .br
-When qodem first starts up, by default it will start in the phone
+When Qodem first starts up, by default it will start in the phone
 book.  The menu on the bottom half of the screen lists the various
 actions available.  When editing a phone book entry, the status line
 will change to show options for each field.  Connecting to a system or
-leaving the phone book puts qodem in Terminal Mode.
+leaving the phone book puts Qodem in Terminal Mode.
 
 .B Terminal Mode
 .br
-Terminal Mode is the main qodem terminal emulator interface.
+Terminal Mode is the main Qodem terminal emulator interface.
 .B Alt\-Z
 will bring up a help menu.  While in Terminal Mode the following
 actions are supported:
@@ -283,7 +339,7 @@ European), CP1251 (Cyrillic), CP1252 (Western European), KOI8_R
 .TP
 .B Alt\-/ Scroll Back
 This selects the scrollback buffer.  When viewing the buffer, "S"
-saves to file and "C" clears the scrollback buffer.  By default qodem
+saves to file and "C" clears the scrollback buffer.  By default Qodem
 supports up to 20000 lines of scrollback; this can be changed by
 editing scrollback_max in scrollback.c.  Three scrollback save formats
 are supported: "normal", "html", and "ask".  "normal" saves UTF\-8
@@ -306,7 +362,7 @@ This spawns the mail reader, by default
 .BR mm "."
 .TP
 .B Alt\-X Exit Qodem
-This prompts to exit qodem.  When not connected, Ctrl\-C will also
+This prompts to exit Qodem.  When not connected, Ctrl\-C will also
 bring up the exit prompt.
 .TP
 .B Alt\-A Translate Table
@@ -366,7 +422,7 @@ This selects whether ASCII NUL (0) will be displayed as a blank/space
 or stripped.
 .TP
 .B Alt\-5 Host Mode
-This switches qodem into Host Mode.
+This switches Qodem into Host Mode.
 .TP
 .B Alt\-6 Batch Entry Window
 This brings up the list of upload files used by Ymodem, Zmodem, and
@@ -386,8 +442,8 @@ non\-serial/modem remote host, this does nothing.
 .TP
 .B Alt\-B Beeps & Bells
 This toggles beep support on or off.  When beep support is on, beeps
-from the remote host will be played by qodem.  In LINUX emulation,
-qodem supports setting the tone and duration of the beep as specified
+from the remote host will be played by Qodem.  In LINUX emulation,
+Qodem supports setting the tone and duration of the beep as specified
 in
 .BR console\-codes "(4)."
 .TP
@@ -395,7 +451,7 @@ in
 This toggles between half and full duplex.
 .TP
 .B Alt\-I Qodem Information
-This displays the qodem splash screen which includes the version and
+This displays the Qodem splash screen which includes the version and
 build date.
 .TP
 .B Alt\-U Scrollback Record
@@ -572,8 +628,8 @@ present, by default (editable in the options file) use
 This is a timeout value in milliseconds used by the ncurses
 .BR get_wch() " and " wget_wch()
 functions to determine if a user pressed bare ESCAPE.  On some systems
-pressing ESCAPE may require up to a full second before qodem can
-process it.  For qodem backtick (`) can be used instead of ESCAPE.
+pressing ESCAPE may require up to a full second before Qodem can
+process it.  For Qodem backtick (`) can be used instead of ESCAPE.
 
 .SH FILES
 .TP
@@ -590,11 +646,11 @@ timeout has passed.
 
 .SH HOMEPAGE
 .PP
-The qodem homepage is at <http://qodem.sourceforge.net>.  The code
+The Qodem homepage is at <http://qodem.sourceforge.net>.  The code
 repository is hosted at <https://github.com/klamonte/qodem>.
 
 .SH PUBLIC DOMAIN NOTICE
-Written 2003-2015 by Kevin Lamonte
+Written 2003-2016 by Kevin Lamonte
 .PP
 To the extent possible under law, the author(s) have dedicated all
 copyright and related and neighboring rights to this software to the
