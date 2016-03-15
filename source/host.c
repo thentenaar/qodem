@@ -60,6 +60,9 @@ static const char * DLOGNAME = NULL;
  */
 typedef enum {
     LISTENING,
+    MODEM_LISTENING_FOR_RING,
+    MODEM_LISTENING_FOR_CONNECT,
+    MODEM_CONNECTED,
     LOGIN,
     MAIN_MENU,
     ENTER_MESSAGE,
@@ -459,9 +462,20 @@ void host_start(Q_HOST_TYPE type, const char * port) {
 
 #ifndef Q_NO_SERIAL
     case Q_HOST_TYPE_MODEM:
-        /*
-         * TODO
-         */
+        DLOG(("host_start() MODEM\n"));
+        if (!Q_SERIAL_OPEN) {
+            if (open_serial_port() == Q_FALSE) {
+                /*
+                 * notify_form() just turned off the cursor
+                 */
+                q_cursor_on();
+                /*
+                 * Return to TERMINAL mode
+                 */
+                switch_state(Q_STATE_CONSOLE);
+                return;
+            }
+        }
         break;
     case Q_HOST_TYPE_SERIAL:
 
@@ -514,18 +528,23 @@ static void host_stop() {
         break;
 #ifndef Q_NO_SERIAL
     case Q_HOST_TYPE_MODEM:
+        /* Fall through... */
     case Q_HOST_TYPE_SERIAL:
+        /* No listening socket to worry about. */
         break;
 #endif
     }
     if (host_online == Q_TRUE) {
+        // TODO: serial port/modem uses q_serial_handle here
         assert(q_child_tty_fd != -1);
         assert(q_status.online == Q_TRUE);
 #ifndef Q_NO_SERIAL
         if (!Q_SERIAL_OPEN) {
             close_connection();
         } else {
-            hangup_modem();
+            if (q_host_type == Q_HOST_TYPE_MODEM) {
+                hangup_modem();
+            }
             close_serial_port();
         }
 #else
@@ -2062,6 +2081,296 @@ static void state_machine_keyboard_handler(const int keystroke) {
     return;
 }
 
+#ifndef Q_NO_SERIAL
+
+/**
+ * The modem response line to look at when answering a call.
+ */
+static char host_modem_message[DIALOG_MESSAGE_SIZE];
+
+/**
+ * Process raw bytes to and from the modem during a MODEM connection attempt.
+ * This is analogous to console_process_incoming_data().
+ *
+ * @param input the bytes from the remote side
+ * @param input_n the number of bytes in input_n
+ * @param remaining the number of un-processed bytes that should be sent
+ * through a future invocation of protocol_process_data()
+ * @param output a buffer to contain the bytes to send to the remote side
+ * @param output_n the number of bytes that this function wrote to output
+ * @param output_max the maximum number of bytes this function may write to
+ * output
+ */
+static void host_modem_data(unsigned char * input, unsigned int input_n,
+                            int * remaining, unsigned char * output,
+                            unsigned int * output_n,
+                            const unsigned int output_max) {
+    int i;
+    Q_BOOL complete_line = Q_FALSE;
+    int new_dce_baud;
+    char * begin = (char *) input;
+
+    DLOG(("host_modem_data()\n"));
+
+    /*
+     * Break up whatever is coming in into separate lines
+     */
+    for (i = 0; i < input_n; i++) {
+        if (input[i] == '\n') {
+            /*
+             * Ignore line feeds
+             */
+            input[i] = 0;
+        }
+    }
+    while ((*remaining > 0) && ((begin[0] == 0) || q_isspace(begin[0]))) {
+        begin++;
+        *remaining -= 1;
+        if (*remaining == 0) {
+            return;
+        }
+    }
+
+    DLOG(("host_modem_data() %d input after stripping leading whitespace: ",
+            input_n));
+    for (i = 0; i < *remaining; i++) {
+        DLOG2(("%02x ", begin[i]));
+    }
+    DLOG2((" | \""));
+    for (i = 0; i < *remaining; i++) {
+        DLOG2(("%c", begin[i]));
+    }
+    DLOG2(("\"\n"));
+
+    for (i = 0; i < *remaining; i++) {
+        if (begin[i] == '\r') {
+            /*
+             * Break on carriage return
+             */
+            complete_line = Q_TRUE;
+            begin[i] = 0;
+
+            /*
+             * Clear answer line
+             */
+            memset(host_modem_message, 0, sizeof(host_modem_message));
+
+            /*
+             * Copy what is here to it
+             */
+            snprintf(host_modem_message, sizeof(host_modem_message),
+                     "%s", begin);
+
+            /*
+             * Stop looking for a line terminator
+             */
+            break;
+        }
+    }
+
+    DLOG(("host_modem_data() %d input after looking for CR: ", *remaining));
+    for (i = 0; i < *remaining; i++) {
+        DLOG2(("%02x ", begin[i]));
+    }
+    DLOG2((" | \""));
+    for (i = 0; i < *remaining; i++) {
+        DLOG2(("%c", begin[i]));
+    }
+    DLOG2(("\"\n"));
+
+    DLOG(("host_modem_data() host_modem_message = \"%s\"\n",
+            host_modem_message));
+
+    switch (current_state) {
+
+    case LISTENING:
+        DLOG(("host_modem_data() LISTENING\n"));
+
+        /*
+         * Serial port is now open, send command to begin listening for RING.
+         */
+
+        snprintf((char *) output, output_max, "%s",
+                 q_modem_config.host_init_string);
+        *output_n = strlen((char *) output);
+
+        /*
+         * Clear modem message
+         */
+        memset(host_modem_message, 0, sizeof(host_modem_message));
+
+        /*
+         * Toss the input seen so far
+         */
+        *remaining -= strlen(begin);
+
+        /*
+         * New state
+         */
+        current_state = MODEM_LISTENING_FOR_RING;
+        break;
+
+    case MODEM_LISTENING_FOR_RING:
+        DLOG(("host_modem_data() MODEM_LISTENING_FOR_RING\n"));
+
+        if (complete_line == Q_TRUE) {
+            /*
+             * Expect OK
+             */
+            if (strcasecmp(host_modem_message, "at") == 0) {
+                /*
+                 * Modem echo is on, just discard this part
+                 */
+
+                /*
+                 * Clear modem message
+                 */
+                memset(host_modem_message, 0, sizeof(host_modem_message));
+
+                /*
+                 * Toss the input seen so far
+                 */
+                *remaining -= strlen(begin);
+            }
+
+            /*
+             * Expect RING
+             */
+            if (strcasecmp(host_modem_message, "ring") == 0) {
+                DLOG(("host_modem_data() MODEM_LISTENING_FOR_RING ** RING **\n"));
+                /*
+                 * Got RING.  Send the answer string.
+                 */
+                snprintf((char *) output, output_max, "%s",
+                         q_modem_config.answer_string);
+                *output_n = strlen((char *) output);
+
+                /*
+                 * Clear modem message
+                 */
+                memset(host_modem_message, 0, sizeof(host_modem_message));
+
+                /*
+                 * Toss the input seen so far
+                 */
+                *remaining -= strlen(begin);
+
+                /*
+                 * New state
+                 */
+                current_state = MODEM_LISTENING_FOR_CONNECT;
+            }
+        }
+
+        break;
+
+    case MODEM_LISTENING_FOR_CONNECT:
+        DLOG(("host_modem_data() MODEM_LISTENING_FOR_CONNECT\n"));
+
+        if (complete_line == Q_TRUE) {
+            DLOG(("host_modem_data() MODEM_LISTENING_FOR_CONNECT line came in: %s\n",
+                    host_modem_message));
+
+            /*
+             * Expect CONNECT, NO CARRIER, ERROR, BUSY, or VOICE
+             */
+            if ((strstr(host_modem_message, "NO DIALTONE") != NULL) ||
+                (strstr(host_modem_message, "BUSY") != NULL) ||
+                (strstr(host_modem_message, "NO CARRIER") != NULL) ||
+                (strstr(host_modem_message, "ERROR") != NULL) ||
+                (strstr(host_modem_message, "VOICE") != 0)) {
+
+                DLOG(("host_modem_data() MODEM_LISTENING_FOR_CONNECT fail\n"));
+
+                /*
+                 * Uh-oh, restart the answerer.
+                 */
+                // TODO
+
+            }
+            if ((strstr(host_modem_message, q_modem_config.answer_string) !=
+                    NULL)) {
+                /*
+                 * Modem echo is on, just discard this part.  But keep it on
+                 * the display.
+                 */
+
+                /*
+                 * Toss the input seen so far
+                 */
+                *remaining -= strlen(begin);
+            }
+
+            if (strstr(host_modem_message, "CONNECT") != NULL) {
+                /*
+                 * Yippee, connect!
+                 */
+                DLOG(("host_modem_data() *** CONNECT ***\n"));
+
+                /*
+                 * Find baud
+                 */
+                DLOG(("host_modem_message \'%s\'", host_modem_message));
+
+                if (sscanf(host_modem_message, "CONNECT %d",
+                        &new_dce_baud) == 1) {
+
+                    q_serial_port.dce_baud = new_dce_baud;
+
+                    if (q_serial_port.lock_dte_baud == Q_FALSE) {
+                        /*
+                         * Change DTE baud rate
+                         */
+                        if (q_serial_port.dce_baud <= 300) {
+                            q_serial_port.baud = Q_BAUD_300;
+                        } else if (q_serial_port.dce_baud <= 1200) {
+                            q_serial_port.baud = Q_BAUD_1200;
+                        } else if (q_serial_port.dce_baud <= 2400) {
+                            q_serial_port.baud = Q_BAUD_2400;
+                        } else if (q_serial_port.dce_baud <= 4800) {
+                            q_serial_port.baud = Q_BAUD_4800;
+                        } else if (q_serial_port.dce_baud <= 9600) {
+                            q_serial_port.baud = Q_BAUD_9600;
+                        } else if (q_serial_port.dce_baud <= 19200) {
+                            q_serial_port.baud = Q_BAUD_19200;
+                        } else if (q_serial_port.dce_baud <= 38400) {
+                            q_serial_port.baud = Q_BAUD_38400;
+                        } else if (q_serial_port.dce_baud <= 57600) {
+                            q_serial_port.baud = Q_BAUD_57600;
+                        } else if (q_serial_port.dce_baud <= 115200) {
+                            q_serial_port.baud = Q_BAUD_115200;
+                        } else {
+                            q_serial_port.baud = Q_BAUD_115200;
+                        }
+                        configure_serial_port();
+                    }
+                }
+
+                qlog(_("CONNECTION ESTABLISHED: %s baud\n"),
+                    q_serial_port.dce_baud);
+
+                /*
+                 * Change online here so that my caller knows to move to
+                 * login.
+                 */
+                host_online = Q_TRUE;
+                current_state = MODEM_CONNECTED;
+            }
+
+        }
+        break;
+
+    default:
+        /*
+         * BUG
+         */
+        assert(1 == 0);
+    }
+
+}
+
+#endif /* Q_NO_SERIAL */
+
 /**
  * Process raw bytes from the remote side through the host micro-BBS.  See
  * also console_process_incoming_data().
@@ -2165,9 +2474,25 @@ void host_process_data(unsigned char * input, const unsigned int input_n,
         return;
 #ifndef Q_NO_SERIAL
     case Q_HOST_TYPE_MODEM:
-        /*
-         * TODO
-         */
+        if ((host_online == Q_FALSE) && (local_login == Q_FALSE)) {
+            host_modem_data(input, input_n, remaining,
+                            output, output_n, output_max);
+            if (host_online == Q_TRUE) {
+                /*
+                 * We've got a connection!
+                 */
+                DLOG(("HOST ONLINE\n"));
+                snprintf(notify_message, sizeof(notify_message) - 1,
+                    _("Incoming connection on modem...\r\n"));
+                host_write(notify_message, strlen(notify_message));
+
+                q_status.online = Q_TRUE;
+                q_screen_dirty = Q_TRUE;
+                assert(current_state == MODEM_CONNECTED);
+                current_state = LOGIN;
+                do_login();
+            }
+        }
         return;
     case Q_HOST_TYPE_SERIAL:
         if ((host_online == Q_FALSE) && (local_login == Q_FALSE)) {
