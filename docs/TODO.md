@@ -47,12 +47,14 @@ music.c:
 
 Finish up modem support:
   host.c:
-    MODEM answer:
-      send host_init_string
-      wait for RING
-      send answer_string
-      check DCD for online
-  Will need help from someone else with a modem
+    add qlog()'s:
+      new connection
+      successful login
+      disconnection
+      hangup
+      enter/leave chat
+    test modem answer
+      will need help from someone else with a modem
 
 
 OS X Build:

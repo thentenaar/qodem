@@ -389,7 +389,7 @@ do_write:
             }
 #ifndef Q_NO_SERIAL
         } else if ((q_status.dial_method == Q_DIAL_METHOD_MODEM) ||
-                   (Q_SERIAL_OPEN)
+                   Q_SERIAL_OPEN
         ) {
             DWORD bytes_written = 0;
             OVERLAPPED serial_overlapped;
@@ -606,7 +606,7 @@ static ssize_t qodem_read(const int fd, void * buf, size_t count) {
 #ifndef Q_NO_SERIAL
     } else if (((q_status.online == Q_TRUE) &&
                 (q_status.dial_method == Q_DIAL_METHOD_MODEM)) ||
-               (Q_SERIAL_OPEN)
+               Q_SERIAL_OPEN
     ) {
         OVERLAPPED serial_overlapped;
         HANDLE serial_event = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -1305,7 +1305,7 @@ static void process_incoming_data() {
                     goto no_data;
 
 #if defined(Q_PDCURSES_WIN32) && !defined(Q_NO_SERIAL)
-                } else if ((error == EAGAIN) && (Q_SERIAL_OPEN)) {
+                } else if ((error == EAGAIN) && Q_SERIAL_OPEN) {
                     /*
                      * We called qodem_read() for the serial port, but there
                      * was no data waiting to be read.
