@@ -57,6 +57,9 @@ Finish up modem support:
       will need help from someone else with a modem
 
 
+Big5 support
+
+
 OS X Build:
   App Icon
   dmg image

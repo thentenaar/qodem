@@ -1,6 +1,21 @@
 The Qodem Project Work Log
 ==========================
 
+March 14, 2016
+
+We are getting somewhere finally.  I fixed several minor bugs,
+including the blinking text not working in Windows bug.  The help text
+title is working, the Windows build is now in Release mode so it
+doesn't assert a debug warning on ReactOS, I've updated some
+documentation, and the initial phonebook entries now include several
+interesting systems.
+
+I discovered that Big-5 encoding can hose the UTF-8 decoder making
+ptt.cc a no-go for Qodem at the moment.  (...sigh...) Well, I can't in
+good faith release 1.0 without supporting the largest BBS in human
+history now can I?  So basic/obsolete Big5 to Unicode will be coming
+in.
+
 March 6, 2016
 
 More bug fixes.  Now I know why mouse motion events aren't working in

@@ -1443,8 +1443,14 @@ void create_phonebook() {
      * We will create the following entries:
      *
      * 1) A local shell using X_UTF8 emulation
-     * 2) Vertrauen - telnet BBS (home of synchronet)
-     * 3) Electronic Chicken - dial-up BBS
+     * 2) Vertrauen - Home of Synchronet
+     * 3) SDF.org - Unix shell accounts
+     * 4) rainmaker.wunderground.com - get the weather
+     * 5) Zapto - Home of Ethral BBS
+     * 6) OSUNY - the resurrected phreaking BBS
+     * 7) Mono - a big U.K. BBS
+     * 8) Electronic Chicken - BBS telnet
+     * 9) Electronic Chicken - BBS dial-up
      */
     struct q_phone_struct * new_entry;
     struct q_phone_struct * old_entry = NULL;
@@ -1496,7 +1502,7 @@ void create_phonebook() {
     q_phonebook.entry_count++;
 
     /* Vertrauen - home of Synchronet -------------------------------------- */
-    
+
     old_entry = new_entry;
     new_entry =
         (struct q_phone_struct *) Xmalloc(sizeof(struct q_phone_struct),
@@ -1543,7 +1549,7 @@ void create_phonebook() {
     q_phonebook.entry_count++;
 
     /* SDF.org ------------------------------------------------------------- */
-    
+
     old_entry = new_entry;
     new_entry =
         (struct q_phone_struct *) Xmalloc(sizeof(struct q_phone_struct),
@@ -1589,7 +1595,7 @@ void create_phonebook() {
     q_phonebook.entry_count++;
 
     /* rainmaker.wunderground.com ------------------------------------------ */
-    
+
     old_entry = new_entry;
     new_entry =
         (struct q_phone_struct *) Xmalloc(sizeof(struct q_phone_struct),
@@ -1636,7 +1642,7 @@ void create_phonebook() {
     q_phonebook.entry_count++;
 
     /* Zapto.org - Enthral BBS --------------------------------------------- */
-    
+
     old_entry = new_entry;
     new_entry =
         (struct q_phone_struct *) Xmalloc(sizeof(struct q_phone_struct),
@@ -1682,7 +1688,7 @@ void create_phonebook() {
     q_phonebook.entry_count++;
 
     /* OSUNY - THE Phreak BBS ---------------------------------------------- */
-    
+
     old_entry = new_entry;
     new_entry =
         (struct q_phone_struct *) Xmalloc(sizeof(struct q_phone_struct),
@@ -1729,7 +1735,7 @@ void create_phonebook() {
     q_phonebook.entry_count++;
 
     /* mono.org - Monochrome BBS ------------------------------------------- */
-    
+
     old_entry = new_entry;
     new_entry =
         (struct q_phone_struct *) Xmalloc(sizeof(struct q_phone_struct),
@@ -1775,7 +1781,7 @@ void create_phonebook() {
     q_phonebook.entry_count++;
 
     /* Electronic Chicken BBS (Telnet) ------------------------------------- */
-    
+
     old_entry = new_entry;
     new_entry =
         (struct q_phone_struct *) Xmalloc(sizeof(struct q_phone_struct),
@@ -1822,7 +1828,7 @@ void create_phonebook() {
     q_phonebook.entry_count++;
 
     /* Electronic Chicken BBS (Dialup) ------------------------------------- */
-    
+
 #ifndef Q_NO_SERIAL
     old_entry = new_entry;
     new_entry =
