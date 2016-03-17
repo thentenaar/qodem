@@ -7967,6 +7967,9 @@ static void modem_data(unsigned char * input, unsigned int input_n,
                  * Toss the input seen so far
                  */
                 *remaining -= strlen(begin);
+                if (*remaining < 0) {
+                    *remaining = 0;
+                }
             }
 
             /*
@@ -7992,6 +7995,9 @@ static void modem_data(unsigned char * input, unsigned int input_n,
                  * Toss the input seen so far
                  */
                 *remaining -= strlen(begin);
+                if (*remaining < 0) {
+                    *remaining = 0;
+                }
 
                 /*
                  * New state
@@ -8024,7 +8030,14 @@ static void modem_data(unsigned char * input, unsigned int input_n,
                  */
                 q_dial_state = Q_DIAL_LINE_BUSY;
                 time(&q_dialer_cycle_start_time);
-                close_serial_port();
+
+                /*
+                 * Toss the input seen so far
+                 */
+                *remaining -= strlen(begin);
+                if (*remaining < 0) {
+                    *remaining = 0;
+                }
             }
             if ((strstr(q_dialer_modem_message, q_modem_config.dial_string) !=
                  NULL) ||
@@ -8039,6 +8052,9 @@ static void modem_data(unsigned char * input, unsigned int input_n,
                  * Toss the input seen so far
                  */
                 *remaining -= strlen(begin);
+                if (*remaining < 0) {
+                    *remaining = 0;
+                }
             }
 
             if (strstr(q_dialer_modem_message, "CONNECT") != NULL) {

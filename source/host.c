@@ -519,48 +519,50 @@ static void host_stop() {
      */
     switch (q_host_type) {
     case Q_HOST_TYPE_SOCKET:
-    case Q_HOST_TYPE_TELNETD:
-#ifdef Q_SSH_CRYPTLIB
-    case Q_HOST_TYPE_SSHD:
-#endif
+        if (host_online == Q_TRUE) {
+            assert(q_child_tty_fd != -1);
+            assert(q_status.online == Q_TRUE);
+            close_connection();
+        }
         net_listen_close();
         listen_fd = -1;
         break;
+    case Q_HOST_TYPE_TELNETD:
+        if (host_online == Q_TRUE) {
+            assert(q_child_tty_fd != -1);
+            assert(q_status.online == Q_TRUE);
+            close_connection();
+        }
+        net_listen_close();
+        listen_fd = -1;
+        break;
+#ifdef Q_SSH_CRYPTLIB
+    case Q_HOST_TYPE_SSHD:
+        if (host_online == Q_TRUE) {
+            assert(q_child_tty_fd != -1);
+            assert(q_status.online == Q_TRUE);
+            close_connection();
+        }
+        net_listen_close();
+        listen_fd = -1;
+        break;
+#endif
 #ifndef Q_NO_SERIAL
     case Q_HOST_TYPE_MODEM:
-        /* Fall through... */
+        if (Q_SERIAL_OPEN) {
+            hangup_modem();
+            close_serial_port();
+        }
+        break;
     case Q_HOST_TYPE_SERIAL:
-        /* No listening socket to worry about. */
+        if (Q_SERIAL_OPEN) {
+            close_serial_port();
+        }
         break;
 #endif
     }
-    if (host_online == Q_TRUE) {
-        // TODO: serial port/modem uses q_serial_handle here
-        assert(q_child_tty_fd != -1);
-        assert(q_status.online == Q_TRUE);
-#ifndef Q_NO_SERIAL
-        if (!Q_SERIAL_OPEN) {
-            close_connection();
-        } else {
-            if (q_host_type == Q_HOST_TYPE_MODEM) {
-                hangup_modem();
-            }
-            close_serial_port();
-        }
-#else
-        close_connection();
-#endif
-    } else {
-        /*
-         * TODO BUG:
-         *
-         * This assertion fired when using UPnP on a socket/telnet listener
-         * and doing a force hangup during the login.  Needs more time to
-         * fix.
-         */
-        assert(q_status.online == Q_FALSE);
-    }
 
+    host_online = Q_FALSE;
     q_host_active = Q_FALSE;
 }
 
@@ -1960,7 +1962,7 @@ static void page_sysop() {
 
 /* Chat mode: enter each line in the line editor until the sysop kills it */
 static void chat() {
-    char *eol_msg = EOL;
+    char * eol_msg = EOL;
     host_write(eol_msg, strlen(eol_msg));
     reset_line_buffer();
     do_line_buffer = Q_TRUE;
@@ -2109,8 +2111,9 @@ static void host_modem_data(unsigned char * input, unsigned int input_n,
     Q_BOOL complete_line = Q_FALSE;
     int new_dce_baud;
     char * begin = (char *) input;
+    char * eol_msg = EOL;
 
-    DLOG(("host_modem_data()\n"));
+    DLOG(("host_modem_data() input_n %d remaining %d\n", input_n, *remaining));
 
     /*
      * Break up whatever is coming in into separate lines
@@ -2181,18 +2184,41 @@ static void host_modem_data(unsigned char * input, unsigned int input_n,
     DLOG(("host_modem_data() host_modem_message = \"%s\"\n",
             host_modem_message));
 
+    if (complete_line == Q_TRUE) {
+        DLOG(("   write to console '%s'\n", host_modem_message));
+        host_write(host_modem_message, strlen(host_modem_message));
+        host_write(eol_msg, strlen(eol_msg));
+    }
+
     switch (current_state) {
 
     case LISTENING:
         DLOG(("host_modem_data() LISTENING\n"));
+        if (strlen(q_modem_config.host_init_string) > output_max - *output_n) {
+            /*
+             * No room for the message, wait for another cycle.
+             */
+            break;
+        }
 
         /*
          * Serial port is now open, send command to begin listening for RING.
          */
-
-        snprintf((char *) output, output_max, "%s",
-                 q_modem_config.host_init_string);
-        *output_n = strlen((char *) output);
+        for (i = 0; i < strlen(q_modem_config.host_init_string); i++) {
+            if (q_modem_config.host_init_string[i] != '^') {
+                output[(*output_n)] = q_modem_config.host_init_string[i];
+                (*output_n)++;
+            } else {
+                i++;
+                if (i == strlen(q_modem_config.host_init_string)) {
+                    output[(*output_n)] = '^';
+                    (*output_n)++;
+                } else {
+                    output[(*output_n)] = q_modem_config.host_init_string[i] - 64;
+                    (*output_n)++;
+                }
+            }
+        }
 
         /*
          * Clear modem message
@@ -2203,6 +2229,9 @@ static void host_modem_data(unsigned char * input, unsigned int input_n,
          * Toss the input seen so far
          */
         *remaining -= strlen(begin);
+        if (*remaining < 0) {
+            *remaining = 0;
+        }
 
         /*
          * New state
@@ -2215,9 +2244,13 @@ static void host_modem_data(unsigned char * input, unsigned int input_n,
 
         if (complete_line == Q_TRUE) {
             /*
-             * Expect OK
+             * Check to see if the modem echo is inside the answer string,
+             * e.g. match "ATE1Q0V1M1H0S0=0" inside of "ATE1Q0V1M1H0S0=0^M".
              */
-            if (strcasecmp(host_modem_message, "at") == 0) {
+            if ((strstr(q_modem_config.host_init_string, host_modem_message) !=
+                    NULL) ||
+                (strncasecmp(host_modem_message, "ok", 2) == 0)
+            ) {
                 /*
                  * Modem echo is on, just discard this part
                  */
@@ -2231,19 +2264,43 @@ static void host_modem_data(unsigned char * input, unsigned int input_n,
                  * Toss the input seen so far
                  */
                 *remaining -= strlen(begin);
+                if (*remaining < 0) {
+                    *remaining = 0;
+                }
             }
 
             /*
              * Expect RING
              */
             if (strcasecmp(host_modem_message, "ring") == 0) {
-                DLOG(("host_modem_data() MODEM_LISTENING_FOR_RING ** RING **\n"));
+                DLOG(("host_modem_data() MODEM_LISTENING_FOR_RING * RING *\n"));
                 /*
                  * Got RING.  Send the answer string.
                  */
-                snprintf((char *) output, output_max, "%s",
-                         q_modem_config.answer_string);
-                *output_n = strlen((char *) output);
+                if (strlen(q_modem_config.answer_string) >
+                                output_max - *output_n) {
+                    /*
+                     * No room for the message, wait for another cycle.
+                     */
+                    break;
+                }
+                for (i = 0; i < strlen(q_modem_config.answer_string);
+                     i++) {
+                    if (q_modem_config.answer_string[i] != '^') {
+                        output[(*output_n)] = q_modem_config.answer_string[i];
+                        (*output_n)++;
+                    } else {
+                        i++;
+                        if (i == strlen(q_modem_config.answer_string)) {
+                            output[(*output_n)] = '^';
+                            (*output_n)++;
+                        } else {
+                            output[(*output_n)] =
+                                q_modem_config.answer_string[i] - 64;
+                            (*output_n)++;
+                        }
+                    }
+                }
 
                 /*
                  * Clear modem message
@@ -2254,6 +2311,9 @@ static void host_modem_data(unsigned char * input, unsigned int input_n,
                  * Toss the input seen so far
                  */
                 *remaining -= strlen(begin);
+                if (*remaining < 0) {
+                    *remaining = 0;
+                }
 
                 /*
                  * New state
@@ -2268,7 +2328,7 @@ static void host_modem_data(unsigned char * input, unsigned int input_n,
         DLOG(("host_modem_data() MODEM_LISTENING_FOR_CONNECT\n"));
 
         if (complete_line == Q_TRUE) {
-            DLOG(("host_modem_data() MODEM_LISTENING_FOR_CONNECT line came in: %s\n",
+            DLOG(("host_modem_data() MODEM_LISTENING_FOR_CONNECT line: %s\n",
                     host_modem_message));
 
             /*
@@ -2285,11 +2345,25 @@ static void host_modem_data(unsigned char * input, unsigned int input_n,
                 /*
                  * Uh-oh, restart the answerer.
                  */
-                // TODO
+                current_state = LISTENING;
 
+                /*
+                 * Toss the input seen so far
+                 */
+                *remaining -= strlen(begin);
+                if (*remaining < 0) {
+                    *remaining = 0;
+                }
             }
-            if ((strstr(host_modem_message, q_modem_config.answer_string) !=
-                    NULL)) {
+
+            /*
+             * Check to see if the modem echo is inside the answer string,
+             * e.g. match "ATA" inside of "ATA^M".
+             */
+            if ((strstr(q_modem_config.answer_string, host_modem_message) !=
+                    NULL) ||
+                (strstr(host_modem_message, "OK") != NULL)
+            ) {
                 /*
                  * Modem echo is on, just discard this part.  But keep it on
                  * the display.
@@ -2299,6 +2373,9 @@ static void host_modem_data(unsigned char * input, unsigned int input_n,
                  * Toss the input seen so far
                  */
                 *remaining -= strlen(begin);
+                if (*remaining < 0) {
+                    *remaining = 0;
+                }
             }
 
             if (strstr(host_modem_message, "CONNECT") != NULL) {
@@ -2573,7 +2650,9 @@ void host_keyboard_handler(const int keystroke, const int flags) {
     /*
      * Had better be listening at this point
      */
-    assert(current_state == LISTENING);
+    assert((current_state == LISTENING) ||
+        (current_state == MODEM_LISTENING_FOR_RING) ||
+        (current_state == MODEM_LISTENING_FOR_CONNECT));
 
     switch (keystroke) {
     case 'L':

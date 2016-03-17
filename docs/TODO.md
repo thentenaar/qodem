@@ -50,10 +50,11 @@ Finish up modem support:
     add qlog()'s:
       new connection
       successful login
+      unsuccessful login
       disconnection
       hangup
       enter/leave chat
-    test modem answer
+    test rest of modem answer
       will need help from someone else with a modem
 
 
