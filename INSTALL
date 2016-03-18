@@ -10,7 +10,7 @@ the build/ subdirectory for the following compilers/platforms:
 |------------------|--------------------|----------------------------------|
 | Makefile name    | Compiler           | Target Platform                  |
 |------------------|--------------------|----------------------------------|
-| Makefile.bcc5    | Borland C++ 5.02   | Windows 95, 98, 2000, XP         |
+| Makefile.bcc5    | Borland C++ 5.02   | Windows 2000, XP, 7              |
 | Makefile.generic | cc                 | POSIX / Linux, text only         |
 |------------------|--------------------|----------------------------------|
 ```
@@ -26,10 +26,8 @@ $ make -f build/Makefile.generic
 Autoconf
 --------
 
-Qodem is commonly installed using the GNU autoconf system.  It's full
-install lays down only three files: qodem, the qodem.1 man page, and
-the qodem.mo localization file.  The following is the standard
-autoconf installation:
+Qodem is commonly installed using the GNU autoconf system.  The
+following is the standard autoconf installation:
 
   1. Type `./configure' to configure the package for your system.
 
@@ -53,8 +51,8 @@ autoconf installation:
 Pre-Processor Defines
 ---------------------
 
-The default build is: text-mode ncurses; use an external 'ssh' binary;
-no sound; no UPnP; serial port support enabled.
+The default build is: text-mode ncurses; use cryptlib for ssh support;
+use SDL sounds; use UPnP; serial port support enabled.
 
 Defines for different functionality are listed below:
 
@@ -70,5 +68,4 @@ Defines for different functionality are listed below:
                          
     Q_PDCURSES_WIN32 - Build the Win32 PDCurses version.
 
-    Q_NO_SERIAL      - Remove code for serial port support.  This is
-                       required for the Win32 build.
+    Q_NO_SERIAL      - Remove code for serial port support.

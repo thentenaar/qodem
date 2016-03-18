@@ -115,8 +115,25 @@ Qodem is designed to help the following kinds of people:
 BUILDING QODEM
 --------------
 
-For now, use build/Makefile.generic.  Eventually this will be a
-configure && make.
+Qodem can be built in several ways:
+
+* An autoconf build is available: use `configure ; make` .
+
+* A very simple barebones build is also provided via `make -f
+  build/Makefile.generic`.
+
+* Windows systems can use pre-made project files for Visual C++ 6 (in
+  the vc6qodem, vc6libc, etc. directories) or Borland C++ 5 (files
+  endine in .ide) to create a binary.  There is also a command-line
+  make file for Borland C++ 5.
+
+* Debian packages for `qodem` and `qodem-x11` are available in the
+  build/deb directory.
+
+* RPM spec files for `qodem` and `qodem-x11` are available in the
+  build/rpm directory.
+
+The INSTALL file has some additional details.
 
 
 
