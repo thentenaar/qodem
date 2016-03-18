@@ -963,8 +963,9 @@ static void cleanup_connection() {
 #ifndef Q_NO_SERIAL
 #ifdef Q_PDCURSES_WIN32
         case Q_HOST_TYPE_MODEM:
-            /* TODO */
-            assert(1 == 0);
+            CloseHandle(q_serial_handle);
+            q_serial_handle = NULL;
+            qlog(_("Connection closed.\n"));
             break;
 
         case Q_HOST_TYPE_SERIAL:
@@ -974,8 +975,9 @@ static void cleanup_connection() {
             break;
 #else
         case Q_HOST_TYPE_MODEM:
-            /* TODO */
-            assert(1 == 0);
+            close(q_child_tty_fd);
+            q_child_tty_fd = -1;
+            qlog(_("Connection closed.\n"));
             break;
 
         case Q_HOST_TYPE_SERIAL:

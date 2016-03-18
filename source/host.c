@@ -507,12 +507,16 @@ void host_start(Q_HOST_TYPE type, const char * port) {
     q_host_type = type;
 
     DLOG(("host_start() q_host_type %u %u\n", q_host_type, type));
+
+    qlog(_("Starting host mode.\n"));
 }
 
 /**
  * Kill host mode.
  */
 static void host_stop() {
+
+    qlog(_("Leaving host mode.\n"));
 
     /*
      * Kill the listening socket
@@ -687,6 +691,7 @@ static void do_login() {
             login_state = LOGIN_INIT;
             current_state = MAIN_MENU;
             main_menu();
+            qlog(_("Host mode LOGIN from user %s\n"), login_username);
         } else {
             /*
              * Login failed, back to LOGIN_INIT
@@ -694,6 +699,7 @@ static void do_login() {
             do_menu(EOL "Login incorrect" EOL);
             login_state = LOGIN_INIT;
             do_login();
+            qlog(_("INCORRECT LOGIN, username %s\n"), login_username);
         }
         return;
     }
@@ -1884,10 +1890,12 @@ static void hangup(char *msg) {
         }
     } else {
         assert(local_login == Q_TRUE);
+        qlog(_("Host mode local login end.\n"));
     }
 
     reset_host();
     do_menu(_(EOL "Waiting for next call..." EOL));
+    qlog(_("Host mode waiting for next call...\n"));
 }
 
 /* Hangup the nice way */
@@ -2423,7 +2431,7 @@ static void host_modem_data(unsigned char * input, unsigned int input_n,
                     }
                 }
 
-                qlog(_("CONNECTION ESTABLISHED: %s baud\n"),
+                qlog(_("Host mode connection established at %s baud.\n"),
                     q_serial_port.dce_baud);
 
                 /*
@@ -2540,6 +2548,11 @@ void host_process_data(unsigned char * input, const unsigned int input_n,
                 net_ip_address(), net_port());
             host_write(notify_message, strlen(notify_message));
 
+            snprintf(notify_message, sizeof(notify_message) - 1,
+                _("Incoming connection established from %s port %s\n"),
+                net_ip_address(), net_port());
+            qlog(notify_message);
+
             host_online = Q_TRUE;
             q_status.online = Q_TRUE;
             q_screen_dirty = Q_TRUE;
@@ -2563,6 +2576,10 @@ void host_process_data(unsigned char * input, const unsigned int input_n,
                     _("Incoming connection on modem...\r\n"));
                 host_write(notify_message, strlen(notify_message));
 
+                snprintf(notify_message, sizeof(notify_message) - 1,
+                    _("Incoming connection on modem...\n"));
+                qlog(notify_message);
+
                 q_status.online = Q_TRUE;
                 q_screen_dirty = Q_TRUE;
                 assert(current_state == MODEM_CONNECTED);
@@ -2580,6 +2597,10 @@ void host_process_data(unsigned char * input, const unsigned int input_n,
             snprintf(notify_message, sizeof(notify_message) - 1,
                      _("Incoming connection on serial port...\r\n"));
             host_write(notify_message, strlen(notify_message));
+
+            snprintf(notify_message, sizeof(notify_message) - 1,
+                     _("Incoming connection on serial port...\n"));
+            qlog(notify_message);
 
             host_online = Q_TRUE;
             q_status.online = Q_TRUE;
@@ -2623,6 +2644,7 @@ void host_keyboard_handler(const int keystroke, const int flags) {
                     "------------------------" EOL);
                 current_state = CHAT;
                 chat();
+                qlog(_("Entering sysop chat.\n"));
             } else {
                 do_menu(EOL
                     "------------------------" EOL
@@ -2631,6 +2653,7 @@ void host_keyboard_handler(const int keystroke, const int flags) {
                 current_state = MAIN_MENU;
                 do_line_buffer = Q_FALSE;
                 main_menu();
+                qlog(_("Leaving sysop chat.\n"));
             }
             return;
         }
@@ -2663,6 +2686,7 @@ void host_keyboard_handler(const int keystroke, const int flags) {
         local_login = Q_TRUE;
         current_state = MAIN_MENU;
         main_menu();
+        qlog(_("Host mode local login begins.\n"));
         break;
 
     case '`':
