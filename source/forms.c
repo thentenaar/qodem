@@ -24,16 +24,13 @@
 #include <stdlib.h>
 #include <libgen.h>
 #if defined(Q_PDCURSES_WIN32) && !defined(__BORLANDC__)
-#  include <windows.h>
-#  include <shlwapi.h>
 #  define S_ISDIR(x) ((x & _S_IFDIR))
 #  define S_ISCHR(x) ((x & _S_IFCHR))
 #  define S_ISFIFO(x) ((x & _S_IFIFO))
 #  define S_IRUSR _S_IREAD
 #  define S_IWUSR _S_IWRITE
-#else
-#  include <fnmatch.h>
 #endif
+#include <fnmatch.h>
 #include <assert.h>
 #include "console.h"
 #include "qodem.h"
@@ -1469,11 +1466,8 @@ static void swap_file_info(struct file_info * file_list, int i, int j) {
  */
 static Q_BOOL match_by_filename(const char * filename, struct stat * fstats,
                                 const char * filter) {
-#ifdef Q_PDCURSES_WIN32
-    BOOL rc;
-#else
+
     int rc;
-#endif
 
     /*
      * Directories always "match" the filename filter
@@ -1489,19 +1483,15 @@ static Q_BOOL match_by_filename(const char * filename, struct stat * fstats,
         return Q_TRUE;
     }
 
-#if defined(Q_PDCURSES_WIN32) && !defined(__BORLANDC__)
-
-    /*
-     * Check the filename itself
-     */
-    rc = PathMatchSpec(filename, filter);
-    if (rc == TRUE) {
+#ifdef Q_PDCURSES_WIN32
+    if (strcasecmp(filename, "qodemrc.txt") == 0) {
         /*
-         * Match
+         * Special case: never match the qodemrc file, so that pressing 'L'
+         * in the phonebook doesn't select the qodemrc.txt file.
          */
-        return Q_TRUE;
+        return Q_FALSE;
     }
-#else
+#endif
 
     /*
      * Check the filename itself
@@ -1519,8 +1509,6 @@ static Q_BOOL match_by_filename(const char * filename, struct stat * fstats,
          */
         return Q_TRUE;
     }
-
-#endif /* defined(Q_PDCURSES_WIN32) && !defined(__BORLANDC__) */
 
     /*
      * Did not match

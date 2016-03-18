@@ -38,7 +38,7 @@ This version is built for text consoles using ncurses.
 
 
 %build
-%configure --disable-sdl
+%configure --disable-sdl --disable-ssh
 make %{?_smp_mflags}
 
 
@@ -63,7 +63,7 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Mon Jul 04 2016 Kevin Lamonte <lamonte at, users.sourceforge.net> - 1.0beta-1
+* Wed Apr 27 2016 Kevin Lamonte <lamonte at, users.sourceforge.net> - 1.0beta-1
 * Sat May 19 2012 Kevin Lamonte <lamonte at, users.sourceforge.net> - 1.0alpha-1
 * Sun Nov 30 2008 Jeff Gustafson <jeffgus at, fedoraproject.org> - 0.1.2-1
 - Initial package creation

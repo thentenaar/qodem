@@ -1,0 +1,2 @@
+?package(qodem-x11):needs="x11" section="Applications/Network/Communication" \
+  title="qodem-x11" command="/usr/bin/qodem-x11"

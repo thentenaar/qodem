@@ -106,5 +106,8 @@ dist-hook:
 	rm -rf `find $(distdir)/lib -type f -name "*.o"`
 	rm -rf `find $(distdir)/lib -type f -name "*.obj"`
 	rm -rf `find $(distdir)/lib/cryptlib -type d -name "*-obj"`
+	rm -f $(distdir)/lib/upnp/libminiupnpc.a
+	rm -f $(distdir)/lib/cryptlib/libcl.a
+	rm -f $(distdir)/lib/cryptlib/tools/endian
 
 ACLOCAL_AMFLAGS =

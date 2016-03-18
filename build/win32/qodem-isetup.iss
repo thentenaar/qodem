@@ -33,17 +33,18 @@ InfoAfterFile=E:\qodem2k\git\qodem\build\win32\README-Windows.rtf
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}";
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 0,6.1
 
 [Files]
 Source: "E:\qodem2k\git\qodem\bin\qodem.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 Source: "E:\qodem2k\git\qodem\misc\fonts\VGAMedium.ttf"; DestDir: "{fonts}"; FontInstall: "VGA"; Flags: onlyifdoesntexist uninsneveruninstall
-Source: "E:\qodem2k\git\qodem\README.md"; DestDir: "{app}"; DestName: "README.txt" ; Flags: isreadme
+Source: "E:\qodem2k\git\qodem\README.md"; DestDir: "{app}"; DestName: "README.txt"
 Source: "E:\qodem2k\git\qodem\ChangeLog"; DestDir: "{app}"; DestName: "ChangeLog.txt"
 Source: "E:\qodem2k\git\qodem\CREDITS"; DestDir: "{app}"; DestName: "CREDITS.txt"
 Source: "E:\qodem2k\git\qodem\FILE_ID.DIZ"; DestDir: "{app}";
+Source: "E:\qodem2k\git\qodem\misc\ibbs0316.txt"; DestDir: "{userdocs}\qodem\prefs"
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

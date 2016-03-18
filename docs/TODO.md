@@ -7,10 +7,24 @@ NEW FUNCTIONALITY
 BUG: host mode chat inside message entry doesn't clear entry or return
      to message editor
 
-BUG: host mode assertion failure when hanging up during login
+BUG: host mode not restarting
 
 1.0.0
 -----
+
+Release 1.0beta on Wednesday April 27, 2016
+
+Documentation sweep:
+  qodem.1 / qodem-x11.1
+  README.md
+  INSTALL
+  help.c
+
+
+Web site updates:
+  Update getting started guide
+  Eliminate user's guide
+
 
 Rework codepage/UTF-8 support:
   Multiple translate tables:
@@ -41,23 +55,6 @@ Rework codepage/UTF-8 support:
   Ship Unicode table for Wingdings
 
 
-music.c:
-  Fix Borland warnings - looks like bugs in DIGITAL_MUSIC_FREQ handling
-
-
-Finish up modem support:
-  host.c:
-    add qlog()'s:
-      new connection
-      successful login
-      unsuccessful login
-      disconnection
-      hangup
-      enter/leave chat
-    test rest of modem answer
-      will need help from someone else with a modem
-
-
 Big5 support
 
 
@@ -71,26 +68,12 @@ OpenBSD build
 
 NetBSD build
 
-Minix3 build
-
-Haiku build
-
 RPM build
   Contact Fedora maintainer to sync up qodem.spec and also add
   qodem-x11.spec
 
-Debian build
-  Pass lintian
-  Apply for Debian maintainer position, or seek willing maintainer
-  qodem
-  qodem-x11
-
 
 Fix all marked TODOs in code
-
-
-Doxygen docs
-
 
 
 FULL REGRESSION ON EVERY ITEM:
@@ -157,6 +140,12 @@ FULL REGRESSION ON EVERY ITEM:
     Zmodem
     Kermit
   Script
+  Host mode
+    socket
+    ssh
+    telnet
+    serial
+    modem
   Phonebook:
     Find
     Find Again
@@ -192,27 +181,6 @@ FULL REGRESSION ON EVERY ITEM:
     --play-exit
     --dial
     --username
-
-Qodem support BBS:
-  BBS with:
-    www, ftp, telnet, ssh
-    x/y/zmodem, kermit
-    long filenames (?)
-  File boards:
-    Qodem Releases
-    Qodem Scripting
-    Qmodem(tm)
-    Other Communication Programs
-    Offline Mail Readers
-    Terminal Emulation
-    File Transfer Protocols
-    Linux
-    DOS
-  Message bases:
-    Qodem Support
-  Link to Fidonet
-  Link to DOVE-Net
-  Regular BBS ad announcement
 
 
 Release:
@@ -278,6 +246,7 @@ Encrypted phonebook
 Refactor:
   Move Q_STATE_DIALER from phonebook.c to dialer.c
   Rationalize use of globals vs q_status
+  Change connection methods to objects with functions
 
 Full recognition of XTERM sequences
 
@@ -288,8 +257,7 @@ Direct proxy support:
 
 Use puttygen'd keys for ssh
 
-Kermit:
-  Locking shift
+Kermit locking shift
 
 Send Wake-On-LAN packet to phonebook entry
 
@@ -335,6 +303,7 @@ Multi-line customizable status display
 Encrypted telnet
 
 True telnet NVT ASCII console (linemode option)
+  Send the other telnet commands (IP, GA, ...)
 
 Intellisense-style completion window:
   Alt-Space?
@@ -342,15 +311,12 @@ Intellisense-style completion window:
 Parse current command line, figure out what's going on, pop up what?
   Man page?  Alternate arguments?
 
-Copy and paste?
-
 .qwk downloads -> ~/mmail/down
   Detect in zmodem, ymodem, and kermit
 
 IEMSI login and mail transfer
 
 Other emulations:
-  SCOANSI
   Wyse50
   Wyse60
   IBM 3270
@@ -369,6 +335,31 @@ True native (not PDCurses) port to X11:
   Sixel graphics
   ReGIS graphics
   Tektronix
+
+
+
+Qodem support BBS:
+  BBS with:
+    www, ftp, telnet, ssh
+    x/y/zmodem, kermit
+    long filenames (?)
+  File boards:
+    Qodem Releases
+    Qodem Scripting
+    Qmodem(tm)
+    Other Communication Programs
+    Offline Mail Readers
+    Terminal Emulation
+    File Transfer Protocols
+    Linux
+    DOS
+  Message bases:
+    Qodem Support
+  Link to Fidonet
+  Link to DOVE-Net
+  Regular BBS ad announcement
+
+
 
 
 SPINOFFS

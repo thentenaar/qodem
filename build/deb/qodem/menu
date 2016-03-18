@@ -1,0 +1,6 @@
+?package(qodem):needs="text" section="Applications/Network/Communication" \
+  title="qodem" command="/usr/bin/qodem" \
+  hints="Terminal"
+?package(qodem):needs="x11" section="Applications/Network/Communication" \
+  title="qodem (X11)" command="/usr/bin/xqodem" \
+  hints="Terminal"

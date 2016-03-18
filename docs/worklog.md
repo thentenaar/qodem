@@ -1,6 +1,28 @@
 The Qodem Project Work Log
 ==========================
 
+March 18, 2016
+
+Resurrected the debian builds.  Still need to test the RPM builds
+though, not sure if I want to use CentOS, Fedora, or other for that.
+I also added the Telnet BBS guide to the Windows install, though it
+only works for the installing user.
+
+I am getting very close to 1.0beta indeed.  I feel like I am now
+gathering all these pieces strewn across thirteen years of work:
+builds, features, documentation, icons, and ... well, "feelings" I
+suppose.  It's time to abandon features that I never really needed and
+tie up the remaining loose ends.
+
+1.0beta now has its final deadline: Qodem's 13th birthday, April 27,
+2016.
+
+March 17, 2016
+
+I think host mode can answer the phone now.  I can't verify this
+because I don't have a phone line, but the structure is all there and
+maybe it will work.
+
 March 14, 2016
 
 We are getting somewhere finally.  I fixed several minor bugs,

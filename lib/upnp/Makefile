@@ -97,6 +97,10 @@ $(MINIUPNPC_OBJS_DIR)/upnpreplyparse.o
 clean:
 	-rm $(MINIUPNPC_LIB) core $(MINIUPNPC_OBJS)
 
+distclean: clean
+
+install:
+
 libminiupnpc: $(MINIUPNPC_LIB)
 
 $(MINIUPNPC_LIB): $(MINIUPNPC_BIN_DIR) $(MINIUPNPC_OBJS_DIR) $(MINIUPNPC_OBJS) $(EXTRA_LIBS)

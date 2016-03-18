@@ -916,6 +916,7 @@ music_top:
                  * See: http://www.textfiles.com/artscene/ansimusic/information/dybczak.txt
                  */
                 state = MUSIC_DIGITAL_DURATION;
+                break;
             }
 
             /*
@@ -939,7 +940,7 @@ music_top:
                 /*
                  * Syntax error, bail out
                  */
-                goto music_done;
+                goto music_abort;
             }
 
             state = MUSIC_NONE;
@@ -982,7 +983,7 @@ music_top:
                 /*
                  * Syntax error, bail out
                  */
-                goto music_done;
+                goto music_abort;
             }
 
             state = MUSIC_NONE;
@@ -1009,7 +1010,7 @@ music_top:
                 /*
                  * Syntax error, bail out
                  */
-                goto music_done;
+                goto music_abort;
             }
 
             state = MUSIC_NONE;
@@ -1070,7 +1071,7 @@ music_top:
                 /*
                  * Syntax error, bail out
                  */
-                goto music_done;
+                goto music_abort;
             }
 
             state = MUSIC_NONE;
@@ -1096,7 +1097,7 @@ music_top:
                 /*
                  * Syntax error, bail out
                  */
-                goto music_done;
+                goto music_abort;
             }
             break;
 
@@ -1121,7 +1122,7 @@ music_top:
                 /*
                  * Syntax error, bail out
                  */
-                goto music_done;
+                goto music_abort;
             }
             break;
 
@@ -1145,7 +1146,7 @@ music_top:
                 /*
                  * Syntax error, bail out
                  */
-                goto music_done;
+                goto music_abort;
             }
             break;
 
@@ -1170,7 +1171,7 @@ music_top:
                 /*
                  * Syntax error, bail out
                  */
-                goto music_done;
+                goto music_abort;
             }
             break;
 
@@ -1192,7 +1193,7 @@ music_top:
                 /*
                  * Syntax error, bail out
                  */
-                goto music_done_2;
+                goto music_abort;
             }
 
             if (i == buffer_n) {
@@ -1211,22 +1212,22 @@ music_top:
                  * Check arguments for validity
                  */
                 if (digital_freq <= 0) {
-                    goto music_done_2;
+                    goto music_abort;
                 }
                 if (digital_duration <= 0) {
-                    goto music_done_2;
+                    goto music_abort;
                 }
                 /*
                  * Max of three seconds per note
                  */
                 if (digital_duration > 3000) {
-                    goto music_done_2;
+                    goto music_abort;
                 }
                 if (digital_cycles <= 0) {
-                    goto music_done_2;
+                    goto music_abort;
                 }
                 if (digital_cycledelay < 0) {
-                    goto music_done_2;
+                    goto music_abort;
                 }
 
                 DLOG(("ANSI Music style 2: ARGS OK\n"));
@@ -1296,7 +1297,6 @@ music_top:
                     digital_cycles--;
                 }
 
-                state = MUSIC_SOUND;
                 goto music_done_2;
             }
             break;
@@ -1338,6 +1338,8 @@ music_done_2:
      * Play the sequence
      */
     play_music(&music, interruptible);
+
+music_abort:
 
     /*
      * Cleanup memory
