@@ -124,7 +124,7 @@ Qodem can be built in several ways:
 
 * Windows systems can use pre-made project files for Visual C++ 6 (in
   the vc6qodem, vc6libc, etc. directories) or Borland C++ 5 (files
-  endine in .ide) to create a binary.  There is also a command-line
+  ending in .ide) to create a binary.  There is also a command-line
   make file for Borland C++ 5.
 
 * Debian packages for `qodem` and `qodem-x11` are available in the
