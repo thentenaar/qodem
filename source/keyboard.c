@@ -2240,7 +2240,7 @@ void initialize_keyboard() {
         /*
          * New terminal
          */
-#if defined(__CYGWIN__) || defined(Q_PDCURSES)
+#if defined(__CYGWIN__) || defined(Q_PDCURSES) || defined(Q_NO_NEWTERM)
         fake_screen = NULL;
 #else
         fake_screen =

@@ -7,6 +7,9 @@ dnl Checks for programs
 AC_PROG_CC
 AC_PROG_INSTALL
 
+dnl Set Q_NO_NEWTERM by default so that Arch Linux works out of the box.
+CFLAGS="$CFLAGS -DQ_NO_NEWTERM"
+
 dnl Checks for header files.
 AC_CHECK_HEADERS(sys/select.h)
 AC_CHECK_HEADERS(pty.h)

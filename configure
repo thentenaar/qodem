@@ -3800,6 +3800,8 @@ fi
 
 
 
+CFLAGS="$CFLAGS -DQ_NO_NEWTERM"
+
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
