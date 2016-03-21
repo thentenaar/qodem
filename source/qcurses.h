@@ -40,11 +40,28 @@
 #    include "term.h"
 #  else
 #    if defined(BSD) || defined(__APPLE__) || defined(__HAIKU__)
-#      define _XOPEN_SOURCE_EXTENDED
+#      ifndef _XOPEN_SOURCE_EXTENDED
+#        define _XOPEN_SOURCE_EXTENDED
+#      endif
 #      include <curses.h>
 #    else
-#      define _GNU_SOURCE
-#      include <ncursesw/curses.h>
-#    endif /* __FreeBSD__ __APPLE__ __HAIKU__ */
+#      ifdef HAS_NCURSESW_CURSES_H
+         /*
+          * Autoconf detected wide-char curses as ncursesw/curses.h.  This is
+          * the most common route on Linux systems.
+          */
+#        define _GNU_SOURCE
+#        include <ncursesw/curses.h>
+#      else
+         /*
+          * Some versions of Linux (e.g. Arch) use the wide-char ncurses as
+          * plain old curses.h, like the BSD's do.
+          */
+#        ifndef _XOPEN_SOURCE_EXTENDED
+#          define _XOPEN_SOURCE_EXTENDED
+#        endif
+#        include <curses.h>
+#      endif /* HAS_CURSES_NCURSES_H */
+#    endif /* BSD __APPLE__ __HAIKU__ */
 #  endif /* Q_PDCURSES */
 #endif /* Q_PDCURSES_WIN32 */

@@ -13,6 +13,7 @@ AC_CHECK_HEADERS(pty.h)
 AC_CHECK_HEADERS(libutil.h)
 AC_CHECK_HEADERS(util.h)
 AC_CHECK_HEADERS(getopt.h)
+AC_CHECK_HEADERS(ncursesw/curses.h)
 
 dnl Checks for libraries
 AC_SEARCH_LIBS(forkpty, util)

@@ -4258,6 +4258,18 @@ fi
 
 done
 
+for ac_header in ncursesw/curses.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "ncursesw/curses.h" "ac_cv_header_ncursesw_curses_h" "$ac_includes_default"
+if test "x$ac_cv_header_ncursesw_curses_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_NCURSESW_CURSES_H 1
+_ACEOF
+
+fi
+
+done
+
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing forkpty" >&5
 $as_echo_n "checking for library containing forkpty... " >&6; }

@@ -1297,14 +1297,12 @@ music_top:
                     digital_cycles--;
                 }
 
-                goto music_done_2;
+                goto music_done;
             }
             break;
 
         } /* switch (state) */
     }
-
-music_done:
 
     /*
      * See if we've got one more to go
@@ -1332,7 +1330,7 @@ music_done:
         p->next = q;
     }
 
-music_done_2:
+music_done:
 
     /*
      * Play the sequence

@@ -39,6 +39,14 @@
  */
 extern short q_color_bold_offset;
 
+#if !defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32)
+#include <stdlib.h>             /* getenv() */
+/*
+ * The ncurses screen representing stdin/stdout.
+ */
+SCREEN * q_main_screen = NULL;
+#endif
+
 /**
  * Get the to-screen color index for a logical attr that has COLOR_X and
  * A_BOLD set.
@@ -1085,7 +1093,15 @@ void screen_setup() {
     PDC_set_title("qodem " Q_VERSION);
 
 #else
-    initscr();
+    /*
+     * This is the standard ncurses case.
+     * 
+     * Since we use newterm() in initialize_keyboard() to interrogate a bunch
+     * of emulation keyboards, we need to use newterm() here also so that we
+     * are not mixing the use of initscr() and newterm().
+     */
+    q_main_screen = newterm(getenv("TERM"), stdout, stdin);
+    set_term(q_main_screen);
 #endif /* Q_PDCURSES */
 
     getmaxyx(stdscr, HEIGHT, WIDTH);

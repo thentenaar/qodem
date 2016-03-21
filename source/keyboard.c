@@ -97,6 +97,13 @@
 #include "netclient.h"
 #include "keyboard.h"
 
+#if !defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32)
+/*
+ * The ncurses screen representing stdin/stdout.  Stored in screen.c.
+ */
+extern SCREEN * q_main_screen;
+#endif
+
 /* Buffer used to generate a keyboard macro */
 static wchar_t macro_output_buffer[KEYBOARD_MACRO_SIZE];
 
@@ -1054,10 +1061,12 @@ static void encode_utf8_char(const wchar_t ch) {
  */
 void post_keystroke(const int keystroke, const int flags) {
 
+#ifdef SHOW_UNKNOWN_MESSAGE
     /*
      * This is used to display "Unknown keycode blah...."
      */
     char unknown_string[64];
+#endif
 
     wchar_t * term_string = L"";
     unsigned int i;
@@ -1297,12 +1306,37 @@ void post_keystroke(const int keystroke, const int flags) {
     }
 
     if (term_string == NULL) {
+        /*
+         * At this point, a keypress has come in from curses that Qodem does
+         * not recognize:
+         *
+         *   - It is not a normal Unicode keystroke, it is a function key of
+         *     some kind.
+         * 
+         *   - It is not one of the function keys that can drive a keyboard
+         *     macro (the bound keyboards).
+         * 
+         *   - It is not one of the function keys that is specifically
+         *     defined by an emulation (X_keypress()) or likely to be defined
+         *     by a terminfo entry.
+         *
+         * There are a LOT of keypresses defined in ncurses and PDCurses that
+         * did not exist on the old DOS keyboard.  For debugging, one can set
+         * SHOW_UNKNOWN_MESSAGE to see when this happens and (perhaps) define
+         * a sequence that can be sent to the remote side.  Otherwise, Qodem
+         * will quitely ignore the keystroke.
+         */
+        
+#ifdef SHOW_UNKNOWN_MESSAGE
         snprintf(unknown_string, sizeof(unknown_string),
                  _("[Unknown keycode 0x%04x %04o]"), keystroke, keystroke);
         for (i = 0; i < strlen(unknown_string); i++) {
             print_character(unknown_string[i]);
         }
         q_screen_dirty = Q_TRUE;
+#else
+        return;
+#endif
     } else {
         /*
          * See if a string from the terminfo database can be used.
@@ -2175,6 +2209,8 @@ static void reset_function_key_editor_textboxes() {
  */
 void initialize_keyboard() {
     int i;
+    SCREEN * fake_screen;
+    FILE * dev_null;
 
 #ifdef Q_PDCURSES_WIN32
 
@@ -2183,9 +2219,6 @@ void initialize_keyboard() {
     }
 
 #else
-
-    SCREEN * fake_screen;
-    FILE * dev_null;
 
     /*
      * For each emulation, create a SCREEN and interrogate terminfo via
@@ -2273,6 +2306,10 @@ void initialize_keyboard() {
         }
     }
     fclose(dev_null);
+
+#if !defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32)
+    set_term(q_main_screen);
+#endif
 
 #endif /* Q_PDCURSES_WIN32 */
 

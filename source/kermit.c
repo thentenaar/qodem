@@ -53,6 +53,10 @@
 #else
 #  include <utime.h>
 #endif
+#ifndef __USE_XOPEN
+#define __USE_XOPEN
+#endif
+#include <time.h>               /* strptime */
 #include "qodem.h"
 #include "console.h"
 #include "music.h"
