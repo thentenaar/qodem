@@ -36,6 +36,8 @@ distclean: clean
 clean:
 	-make -f makefile clean
 
+dist:
+
 distdir:
 
 install:

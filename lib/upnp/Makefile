@@ -99,6 +99,10 @@ clean:
 
 distclean: clean
 
+dist:
+
+distdir:
+
 install:
 
 libminiupnpc: $(MINIUPNPC_LIB)

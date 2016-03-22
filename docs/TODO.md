@@ -9,6 +9,8 @@ BUG: host mode chat inside message entry doesn't clear entry or return
 
 BUG: host mode not restarting
 
+BUG: cryptlib SSH cannot connect to modern OpenSSH servers
+
 1.0.0
 -----
 
@@ -23,7 +25,6 @@ Documentation sweep:
 
 Web site updates:
   Update getting started guide
-  Eliminate user's guide
 
 
 Rework codepage/UTF-8 support:
@@ -286,8 +287,6 @@ External protocols
 
 Pacing character support
 
-Autotrigger macros (ala ACECOMM)
-
 PETSCII
 
 ATASCII
@@ -304,12 +303,6 @@ Encrypted telnet
 
 True telnet NVT ASCII console (linemode option)
   Send the other telnet commands (IP, GA, ...)
-
-Intellisense-style completion window:
-  Alt-Space?
-
-Parse current command line, figure out what's going on, pop up what?
-  Man page?  Alternate arguments?
 
 .qwk downloads -> ~/mmail/down
   Detect in zmodem, ymodem, and kermit
@@ -336,6 +329,7 @@ True native (not PDCurses) port to X11:
   ReGIS graphics
   Tektronix
 
+Quartz backend for PDCurses
 
 
 Qodem support BBS:

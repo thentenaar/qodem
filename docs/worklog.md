@@ -1,6 +1,40 @@
 The Qodem Project Work Log
 ==========================
 
+March 21, 2016
+
+I announced my intention to release 1.0beta to the world a few days
+ago, and happily enough I got a couple bug reports to immediately work
+on.  I believe both are addressed now, but we will see what the users
+see on their end.
+
+While investigating IVT (http://home.planet.nl/~ruurdb/IVT.HTM), a
+terminal with a really impressive vttest score, I noticed that it had
+a feature to automatically remember passwords on logins.  This sounds
+super convenient, and a real perk for a terminal to do the kinds of
+things we normally think of in web browsers, but it left me feeling a
+little weirded out.  Which was weird, because I normally see cool
+features that are harder for me to see how to do and want to try to
+crack them.  But saving passwords kind of freaked me out.  Maybe it
+was also because I was playing with Arch Linux and their shell
+completions are a lot more that I am used to.
+
+But it led me to a new philosophy statement for Qodem: Qodem does not
+try to be aware of semantic meaning or context on the wire.  The
+reason I want this is because I don't want Qodem to act
+"independently" of the user, I don't ever want to watch Qodem do
+things I'm not expecting it to.  (The only exception I make is Zmodem
+and Kermit autostart, but even these have safeguards against trashing
+data.)  So it's OK for a script to take control -- there is the nice
+status bar indicator and the split screen for its stderr -- and it's
+OK for the user to press a function key to automate some things.  But
+it's not OK for Qodem to act in some way other than "be a terminal" to
+the data it sees from the remote side.
+
+This eliminates three features from the wishlist: autotrigger macros,
+Intellisense-style completion window, and parsing the current command
+line to do ... something.
+
 March 18, 2016
 
 Resurrected the debian builds.  Still need to test the RPM builds

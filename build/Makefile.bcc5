@@ -21,7 +21,8 @@ default: qodem
 
 # Available defines are listed below.  If none are set, qodem is built
 # as: Win32 PDCurses; using external 'ssh' binary; no UPnP; serial
-# port support enabled.
+# port support enabled; do use newterm() (but a separate check disable
+# newterm() on PDCurses anyway).
 #
 # Q_SSH_CRYPTLIB    - Use the cryptlib library to do ssh connections
 #                     rather than spawn the ssh binary through a pty.
@@ -46,8 +47,10 @@ default: qodem
 #
 # Q_GC_BOEHM        - Build for use with the Hans-Boehm garbage collector.
 #
-# Q_NO_SERIAL       - Remove code for serial port support.  This is required
-#                     for the Win32 build.
+# Q_NO_SERIAL       - Remove code for serial port support.
+#
+# Q_NO_NEWTERM      - Do not call newterm() in initialize_keyboard().  This
+#                     is required for running on Arch Linux.
 #
 
 # ----------------------------------------------------------------------------

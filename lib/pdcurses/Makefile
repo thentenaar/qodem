@@ -177,6 +177,10 @@ clean:
 
 distclean: clean
 
+dist:
+
+distdir:
+
 install:
 
 libXCurses: $(PDCURSESX11_LIB)
