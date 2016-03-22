@@ -23,10 +23,6 @@ Documentation sweep:
   help.c
 
 
-Web site updates:
-  Update getting started guide
-
-
 Rework codepage/UTF-8 support:
   Multiple translate tables:
     8-bit table
@@ -205,10 +201,10 @@ Release:
     qodem.c
     build/win32/qodem-isetup.iss
     build/win32/resources.rc
-    build/debian/qodem/debian/changelog
-    build/debian/qodem/debian/control
-    build/debian/qodem-x11/debian/changelog
-    build/debian/qodem-x11/debian/control
+    build/deb/qodem/changelog
+    build/deb/qodem/control
+    build/deb/qodem-x11/changelog
+    build/deb/qodem-x11/control
     build/qodem.spec
     build/qodem-x11.spec
   Update written by date to current year:
@@ -221,7 +217,6 @@ Release:
     Redo build
     Test on Windows 2000
     Test on Windows XP
-    Test on Windows 98
     Test on Windows 7
   Binary builds:
     Fedora i386

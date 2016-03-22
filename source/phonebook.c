@@ -5526,6 +5526,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
 #endif
 
     struct fieldset * edit_form;
+    struct field * address_field;
     struct field * port_field;
     void * form_window;
     Q_COLOR color_active = Q_COLOR_WINDOW_FIELD_TEXT_HIGHLIGHTED;
@@ -5642,6 +5643,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
     fields[0] = field_malloc(32, 1, 16, Q_FALSE, color_active, color_inactive);
     /* ADDRESS */
     fields[1] = field_malloc(32, 2, 16, Q_FALSE, color_active, color_inactive);
+    address_field = fields[1];
     /* PORT */
     fields[2] = field_malloc(5, 3, 16, Q_FALSE, color_active, color_inactive);
     port_field = fields[2];
@@ -5753,6 +5755,8 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
 
                 screen_win_put_color_str_yx(form_window, 1, 2, _("Name"),
                                             Q_COLOR_MENU_COMMAND);
+
+                address_field->invisible = Q_FALSE;
                 if (method == Q_DIAL_METHOD_COMMANDLINE) {
                     screen_win_put_color_str_yx(form_window, 2, 2,
                                                 _("Command Line"),
@@ -5762,6 +5766,8 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                     screen_win_put_color_str_yx(form_window, 2, 2, _("Phone #"),
                                                 Q_COLOR_MENU_COMMAND);
 #endif
+                } else if (method == Q_DIAL_METHOD_SHELL) {
+                    address_field->invisible = Q_TRUE;
                 } else {
                     screen_win_put_color_str_yx(form_window, 2, 2, _("Address"),
                                                 Q_COLOR_MENU_COMMAND);
@@ -6187,6 +6193,23 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                      * Replace with the password stars
                      */
                     field_set_char_value(fields[5], password_stars);
+                } else if (field_number == NAME) {
+                    /*
+                     * Leaving name
+                     */
+                    form_value_string = field_get_char_value(fields[3]);
+                    if ((method_from_string(form_value_string) ==
+                            Q_DIAL_METHOD_SHELL)
+                        ) {
+                        /*
+                         * Skip over address and port
+                         */
+                        field_number++;
+                        fieldset_next_field(edit_form);
+                        field_number++;
+                        fieldset_next_field(edit_form);
+                    }
+                    Xfree(form_value_string, __FILE__, __LINE);
                 } else if (field_number == ADDRESS) {
                     /*
                      * Leaving address
@@ -6297,6 +6320,16 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                         ) {
                         /*
                          * Skip over port
+                         */
+                        field_number--;
+                        fieldset_prev_field(edit_form);
+                    }
+
+                    if ((method_from_string(form_value_string) ==
+                            Q_DIAL_METHOD_SHELL)
+                        ) {
+                        /*
+                         * Skip over address
                          */
                         field_number--;
                         fieldset_prev_field(edit_form);
