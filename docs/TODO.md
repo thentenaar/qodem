@@ -65,10 +65,6 @@ OpenBSD build
 
 NetBSD build
 
-RPM build
-  Contact Fedora maintainer to sync up qodem.spec and also add
-  qodem-x11.spec
-
 
 Fix all marked TODOs in code
 
@@ -205,8 +201,8 @@ Release:
     build/deb/qodem/control
     build/deb/qodem-x11/changelog
     build/deb/qodem-x11/control
-    build/qodem.spec
-    build/qodem-x11.spec
+    build/rpm/qodem.spec
+    build/rpm/qodem-x11.spec
   Update written by date to current year:
     All code headers
     qodem.c --version

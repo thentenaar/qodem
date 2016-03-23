@@ -1,6 +1,13 @@
 The Qodem Project Work Log
 ==========================
 
+March 23, 2016
+
+The RPM build is working again.  I had to use Fedora 22 rather than 23
+due to 23 crashing under VirtualBox (other have seen this too).
+Worked out pretty well, it was almost longer getting Fedora running
+than it was testing the two builds.
+
 March 21, 2016
 
 I announced my intention to release 1.0beta to the world a few days

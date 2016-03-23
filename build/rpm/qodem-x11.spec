@@ -9,7 +9,7 @@ URL:            http://qodem.sourceforge.net/
 Source0:        https://downloads.sourceforge.net/project/qodem/qodem/1.0beta/qodem-1.0beta.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:  xorg-x11-devel
+BuildRequires:  libXaw-devel libXt-devel
 
 
 %description
@@ -34,7 +34,7 @@ Major features include:
 This version is built for X11 using PDCurses.
 
 %prep
-%setup -q
+%setup -q -n qodem-1.0beta
 
 
 %build
@@ -53,7 +53,7 @@ cp docs/qodem-x11.1 $RPM_BUILD_ROOT%{_mandir}/man1/
 rm -rf $RPM_BUILD_ROOT
 
 
-%files -f %{name}.lang
+%files
 %defattr(-,root,root,-)
 %{_bindir}/qodem-x11
 %{_mandir}/man1/qodem-x11.1.gz

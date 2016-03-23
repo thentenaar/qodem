@@ -99,6 +99,13 @@ Similarly a 'qodem-x11' deb can be built via:
   $ dpkg-buildpackage
 
 
+RPM Packages
+------------
+
+RPM spec files to create 'qodem' and 'qodem-x11' packages are provided
+in build/rpm.  Both packages build from the same source tarball.
+
+
 Pre-Processor Defines
 ---------------------
 

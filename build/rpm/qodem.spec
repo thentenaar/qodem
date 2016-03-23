@@ -53,7 +53,7 @@ cp docs/qodem.1 docs/xqodem.1 $RPM_BUILD_ROOT%{_mandir}/man1/
 rm -rf $RPM_BUILD_ROOT
 
 
-%files -f %{name}.lang
+%files
 %defattr(-,root,root,-)
 %{_bindir}/qodem
 %{_bindir}/xqodem
