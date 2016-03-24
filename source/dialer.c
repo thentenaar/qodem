@@ -26,7 +26,9 @@
 #  ifdef __APPLE__
 #    include <util.h>
 #  else
-#    ifdef BSD
+#    if defined(__FreeBSD__) || \
+        defined(__OpenBSD__) || \
+        defined(__NetBSD__)
 #      include <sys/types.h>
 #      include <util.h>
 #    else
