@@ -1,6 +1,24 @@
 The Qodem Project Work Log
 ==========================
 
+March 24, 2016
+
+Just tried the latest cryptlib to see if it fixed the cipher
+negotiation failure with modern OpenSSH, and it did not.  This one
+will have to wait until after 1.0beta.  This royally sucks for the
+Windows version though. :-(
+
+I fixed the compile errors in miniupnpc, now it is alive again on OSX.
+
+So where I am at right now is that I could conceivably call this
+1.0beta today.  The new translate table stuff is a good idea, but it
+could also be put off to 1.1 and few people would be impacted.
+
+I am going to respin the Windows build and take a couple weeks off.
+This has been a fantastic push and I feel pretty great about where it
+is.  Now I need to give myself some more me time outside work and rest
+up for the final leg next month.
+
 March 23, 2016
 
 The RPM build is working again.  I had to use Fedora 22 rather than 23

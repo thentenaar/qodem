@@ -9,8 +9,6 @@ BUG: host mode chat inside message entry doesn't clear entry or return
 
 BUG: host mode not restarting
 
-BUG: cryptlib SSH cannot connect to modern OpenSSH servers
-
 1.0.0
 -----
 
@@ -50,9 +48,6 @@ Rework codepage/UTF-8 support:
     www page
   Ship 8-bit table for EBCDIC
   Ship Unicode table for Wingdings
-
-
-Big5 support
 
 
 OS X Build:
