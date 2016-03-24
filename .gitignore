@@ -50,3 +50,4 @@ config.status
 config.log
 Makefile
 Makefile.in
+lib/cryptlib/tools/endian
