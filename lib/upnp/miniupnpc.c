@@ -5,22 +5,10 @@
  * copyright (c) 2005-2015 Thomas Bernard
  * This software is subjet to the conditions detailed in the
  * provided LICENSE file. */
-#define __EXTENSIONS__ 1
-#if !defined(__APPLE__) && !defined(__sun)
-#if !defined(_XOPEN_SOURCE) && !defined(__OpenBSD__) && !defined(__NetBSD__)
-#ifndef __cplusplus
-#define _XOPEN_SOURCE 600
-#endif
-#endif
-#ifndef __BSD_VISIBLE
-#define __BSD_VISIBLE 1
-#endif
-#endif
 
-#if !defined(__DragonFly__) && !defined(__OpenBSD__) && !defined(__NetBSD__) && !defined(__APPLE__) && !defined(_WIN32) && !defined(__CYGWIN__) && !defined(__sun) && !defined(__GNU__) && !defined(__FreeBSD_kernel__)
-#define HAS_IP_MREQN
+#ifdef __APPLE__
+#define _DARWIN_C_SOURCE
 #endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

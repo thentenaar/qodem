@@ -963,11 +963,15 @@ int net_connect_start(const char * host, const char * port) {
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
-#ifdef Q_PDCURSES_WIN32
+#if defined(Q_PDCURSES_WIN32)
     hints.ai_flags = AI_CANONNAME;
     start_winsock();
 #else
+#  if defined(__APPLE__)
+    hints.ai_flags = AI_CANONNAME;
+#  else
     hints.ai_flags = AI_NUMERICSERV | AI_CANONNAME;
+#  endif
 #endif
 
     /*

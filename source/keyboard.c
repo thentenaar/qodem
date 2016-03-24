@@ -1324,7 +1324,7 @@ void post_keystroke(const int keystroke, const int flags) {
          * did not exist on the old DOS keyboard.  For debugging, one can set
          * SHOW_UNKNOWN_MESSAGE to see when this happens and (perhaps) define
          * a sequence that can be sent to the remote side.  Otherwise, Qodem
-         * will quitely ignore the keystroke.
+         * will quietly ignore the keystroke.
          */
         
 #ifdef SHOW_UNKNOWN_MESSAGE

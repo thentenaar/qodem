@@ -15,6 +15,6 @@
 
 osascript <<EOF
 tell application "Terminal"
-    do script "/Applications/Qodem.app/Contents/MacOS/qodem-cli ; exit"
+    do script "/Applications/Qodem.app/Contents/MacOS/qodem ; exit"
 end tell
 EOF
