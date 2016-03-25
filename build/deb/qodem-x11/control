@@ -8,7 +8,7 @@ Homepage: http://qodem.sourceforge.net
 
 Package: qodem-x11
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libsdl1.2debian, libgcrypto11, libssh2-1
+Depends: ${shlibs:Depends}, ${misc:Depends}, libsdl1.2debian
 Recommends: telnet-client, ssh-client
 Suggests: rsh-client | rsh-redone-client, multimail
 Description: friendly curses-based Unicode-aware communications package
