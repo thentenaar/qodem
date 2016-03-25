@@ -39,7 +39,9 @@
 #  include <unistd.h>
 #endif /* Q_PDCURSES_WIN32 */
 
+#ifndef Q_PDCURSES_WIN32
 #include <sys/ioctl.h>
+#endif
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
