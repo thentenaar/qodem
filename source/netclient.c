@@ -3410,6 +3410,15 @@ static void rlogin_send_login(const int fd) {
 #endif
 
     /*
+     * UTF-8 encode support for passing the username.  snprintf() has
+     * "issues" on Windows.  Rather than have two code paths, just explicitly
+     * convert the username to UTF-8 in this function.
+     */
+    char utf8_buffer[6];
+    int rc;
+    int i;
+
+    /*
      * Empty string
      */
     buffer[0] = 0;
@@ -3443,10 +3452,15 @@ static void rlogin_send_login(const int fd) {
     if ((q_status.current_username != NULL) &&
         (wcslen(q_status.current_username) > 0)
     ) {
-
-        snprintf((char *) buffer, sizeof(buffer) - 1, "%ls",
-                 q_status.current_username);
-
+        /* Explicitly convert to UTF-8 here. */
+        for (i = 0; i < wcslen(q_status.current_username); i++) {
+            rc = utf8_encode(q_status.current_username[i], utf8_buffer);
+            utf8_buffer[rc] = 0;
+            raw_write(fd, utf8_buffer, rc);
+        }
+        /* The terminating NUL. */
+        utf8_buffer[0] = 0;
+        raw_write(fd, utf8_buffer, 1);
     } else {
 #ifdef Q_PDCURSES_WIN32
         snprintf((char *) buffer, sizeof(buffer) - 1, "%s", username);
@@ -3454,8 +3468,8 @@ static void rlogin_send_login(const int fd) {
         snprintf((char *) buffer, sizeof(buffer) - 1, "%s",
                  getpwuid(geteuid())->pw_name);
 #endif
+        raw_write(fd, buffer, strlen((char *) buffer) + 1);
     }
-    raw_write(fd, buffer, strlen((char *) buffer) + 1);
 
     /*
      * terminal/speed
