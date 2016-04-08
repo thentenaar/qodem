@@ -49,7 +49,10 @@
 #      endif
 #      include <curses.h>
 #    else
-#      ifdef HAS_NCURSESW_CURSES_H
+#      ifdef HAVE_CONFIG_H
+#        include "config.h"
+#      endif
+#      ifdef HAVE_NCURSESW_CURSES_H
          /*
           * Autoconf detected wide-char curses as ncursesw/curses.h.  This is
           * the most common route on Linux systems.
@@ -65,7 +68,7 @@
 #          define _XOPEN_SOURCE_EXTENDED
 #        endif
 #        include <curses.h>
-#      endif /* HAS_CURSES_NCURSES_H */
+#      endif /* HAVE_CURSES_NCURSES_H */
 #    endif /* BSD __APPLE__ __HAIKU__ */
 #  endif /* Q_PDCURSES */
 #endif /* Q_PDCURSES_WIN32 */

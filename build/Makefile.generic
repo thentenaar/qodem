@@ -19,7 +19,7 @@
 # remove config.h, as the autoconf-based build options may produce
 # conflicts with this bare-bones build.
 #
-# Note that HAS_NCURSESW_CURSES_H should be set when compiling on a
+# Note that HAVE_NCURSESW_CURSES_H should be set when compiling on a
 # Linux system that puts the wide-char ncurses header into
 # ncursesw/curses.h.  This is the default for this Makefile.
 
@@ -83,19 +83,19 @@ CC = cc
 # Normal settings
 EXTRA_LIBS =
 EXTRA_INC =
-CFLAGS = -O2 -Wall $(INC) -DHAS_NCURSESW_CURSES_H
+CFLAGS = -O2 -Wall $(INC) -DHAVE_NCURSESW_CURSES_H
 LDLIBS = -lncursesw -lutil
 
 # Debug settings which include cryptlib support
 # EXTRA_LIBS = $(CRYPTLIB_A)
 # EXTRA_INC = -I$(CRYPTLIB_DIR)
-# CFLAGS = -O0 -Wall -ggdb $(INC) -DHAS_NCURSESW_CURSES_H $(EXTRA_INC) -DQ_SSH_CRYPTLIB -DCONFIG_PROFILE_SSH
+# CFLAGS = -O0 -Wall -ggdb $(INC) -DHAVE_NCURSESW_CURSES_H $(EXTRA_INC) -DQ_SSH_CRYPTLIB -DCONFIG_PROFILE_SSH
 # LDLIBS = -lncursesw -lutil $(CRYPTLIB_A) -lpthread
 
 # Debug settings which include cryptlib and miniupnpc support
 # EXTRA_LIBS = $(CRYPTLIB_A) $(MINIUPNPC_A)
 # EXTRA_INC = -I$(CRYPTLIB_DIR) -I$(MINIUPNPC_DIR)
-# CFLAGS = -O0 -Wall -ggdb $(INC) -DHAS_NCURSESW_CURSES_H $(EXTRA_INC) -DQ_SSH_CRYPTLIB -DCONFIG_PROFILE_SSH -DQ_UPNP
+# CFLAGS = -O0 -Wall -ggdb $(INC) -DHAVE_NCURSESW_CURSES_H $(EXTRA_INC) -DQ_SSH_CRYPTLIB -DCONFIG_PROFILE_SSH -DQ_UPNP
 # LDLIBS = -lncursesw -lutil $(CRYPTLIB_A) $(MINIUPNPC_A) -lpthread
 
 
