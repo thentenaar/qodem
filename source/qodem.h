@@ -284,6 +284,30 @@ struct q_status_struct {
     Q_DIAL_METHOD dial_method;
 
     /**
+     * The 8-bit translate table that converts incoming bytes to something
+     * else.
+     */
+    void * translate_8bit_in;
+
+    /**
+     * The 8-bit translate table that converts bytes to something
+     * else before being written to the remote side.
+     */
+    void * translate_8bit_out;
+
+    /**
+     * The Unicode translate table that converts incoming wchar_t's to
+     * something else.
+     */
+    void * translate_unicode_in;
+
+    /**
+     * The Unicode translate table that converts wchar_t's to something else
+     * before being encoded to UTF-8 for eventual writing to the remote side.
+     */
+    void * translate_unicode_out;
+
+    /**
      * The username for the current connection.
      */
     wchar_t * current_username;

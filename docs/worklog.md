@@ -1,6 +1,24 @@
 The Qodem Project Work Log
 ==========================
 
+April 9, 2016
+
+I have stubbed in new phonebook fields for 8-bit and Unicode translate
+tables.  Along the way I have also broken existing 8-bit translation:
+qodem no longer knows what translate.tbl is.  But this is a
+significant start.  Next up is making the 8-bit table editor aware of
+the filename, then putting in something similar to the keyboard
+switcher: there will be default mappings (which do nothing) and then
+per-phonebook entry mappings.
+
+After that is the Unicode editor, which I have an idea for.  Basically
+the same editor as the 8-bit, except in 4 columns of 16 rows and using
+hex notation.  Add a couple shortcuts to 'F'ind the key (input) or the
+value (output) so people don't have to page through 64-1024 pages to
+find the code of interest, and the editor is mostly done.
+
+Gonna put this in git for now.
+
 March 24, 2016
 
 Just tried the latest cryptlib to see if it fixed the cipher

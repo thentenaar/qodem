@@ -1476,9 +1476,11 @@ void load_options() {
                     create_keybindings_files();
 
                     /*
-                     * Create the translation tables file
+                     * Create the translation tables files
+                     *
+                     * TODO
                      */
-                    create_translate_table_file();
+                    // create_default_translate_table_files();
 
 #ifndef Q_NO_SERIAL
                     /*

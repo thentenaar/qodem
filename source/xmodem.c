@@ -114,7 +114,7 @@
 static const char * DLOGNAME = NULL;
 
 /* Filename to send or receive */
-static char *filename = NULL;
+static char * filename = NULL;
 
 /* File to send or receive */
 static FILE * file = NULL;

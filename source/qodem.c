@@ -2723,13 +2723,15 @@ int qodem_main(int argc, char * const argv[]) {
     initial_call.password       = L"";
     initial_call.emulation      = Q_EMUL_LINUX;
     initial_call.codepage       = default_codepage(initial_call.emulation);
-    initial_call.notes                  = NULL;
-    initial_call.script_filename        = "";
-    initial_call.keybindings_filename   = "";
-    initial_call.capture_filename       = "";
-    initial_call.doorway                = Q_DOORWAY_CONFIG;
-    initial_call.use_default_toggles    = Q_TRUE;
-    dial_phonebook_entry_n              = -1;
+    initial_call.notes          = NULL;
+    initial_call.script_filename            = "";
+    initial_call.keybindings_filename       = "";
+    initial_call.capture_filename           = "";
+    initial_call.translate_8bit_filename    = "";
+    initial_call.translate_unicode_filename = "";
+    initial_call.doorway                    = Q_DOORWAY_CONFIG;
+    initial_call.use_default_toggles        = Q_TRUE;
+    dial_phonebook_entry_n                  = -1;
 
     /*
      * Set the global status to its defaults.
@@ -2802,9 +2804,9 @@ int qodem_main(int argc, char * const argv[]) {
 #endif
 
     /*
-     * Load the translation table
+     * Set the translation tables to do nothing.
      */
-    load_translate_tables();
+    initialize_translate_tables();
 
 #ifndef Q_NO_SERIAL
     /*

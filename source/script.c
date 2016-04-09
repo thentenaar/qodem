@@ -709,7 +709,8 @@ void script_process_data(unsigned char * input, const unsigned int input_n,
                  * all character are Unicode, only those less than or equal
                  * to 0x7F will get translated.
                  */
-                utf8_char = q_translate_table_output.map_to[utf8_char];
+                // TODO
+                // utf8_char = q_translate_table_output.map_to[utf8_char];
             }
 
             switch (q_status.emulation) {
@@ -1580,7 +1581,8 @@ void script_keyboard_handler(const int keystroke, const int flags) {
                  * table.  Note that Unicode keys greater than 0x7F will not
                  * get translated.
                  */
-                new_keystroke = q_translate_table_output.map_to[new_keystroke];
+                // TODO
+                // new_keystroke = q_translate_table_output.map_to[new_keystroke];
             }
 
             /*

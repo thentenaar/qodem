@@ -71,8 +71,10 @@ struct q_phone_struct {
     wchar_t * password;
     wchar_t ** notes;
     char * script_filename;
-    char * keybindings_filename;
     char * capture_filename;
+    char * translate_8bit_filename;
+    char * translate_unicode_filename;
+    char * keybindings_filename;
     Q_EMULATION emulation;
     Q_CODEPAGE codepage;
     time_t last_call;

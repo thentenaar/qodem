@@ -3607,7 +3607,7 @@ void function_key_editor_refresh() {
  *
  * @param filename name of file with key bindings
  */
-void switch_current_keyboard(const char *filename) {
+void switch_current_keyboard(const char * filename) {
     int i;
     char buffer[FILENAME_SIZE];
 

@@ -858,6 +858,8 @@ void load_phonebook(const Q_BOOL backup_version) {
         }
         Xfree(old_entry->script_filename, __FILE__, __LINE__);
         Xfree(old_entry->capture_filename, __FILE__, __LINE__);
+        Xfree(old_entry->translate_8bit_filename, __FILE__, __LINE__);
+        Xfree(old_entry->translate_unicode_filename, __FILE__, __LINE__);
         Xfree(old_entry->keybindings_filename, __FILE__, __LINE__);
         new_entry = old_entry;
         old_entry = old_entry->next;
@@ -935,12 +937,20 @@ void load_phonebook(const Q_BOOL backup_version) {
                         old_entry->script_filename =
                             Xstrdup("", __FILE__, __LINE__);
                     }
+                    if (old_entry->keybindings_filename == NULL) {
+                        old_entry->keybindings_filename =
+                            Xstrdup("", __FILE__, __LINE__);
+                    }
                     if (old_entry->capture_filename == NULL) {
                         old_entry->capture_filename =
                             Xstrdup("", __FILE__, __LINE__);
                     }
-                    if (old_entry->keybindings_filename == NULL) {
-                        old_entry->keybindings_filename =
+                    if (old_entry->translate_8bit_filename == NULL) {
+                        old_entry->translate_8bit_filename =
+                            Xstrdup("", __FILE__, __LINE__);
+                    }
+                    if (old_entry->translate_unicode_filename == NULL) {
+                        old_entry->translate_unicode_filename =
                             Xstrdup("", __FILE__, __LINE__);
                     }
                     if (old_entry->username == NULL) {
@@ -986,6 +996,8 @@ void load_phonebook(const Q_BOOL backup_version) {
                 new_entry->password = NULL;
                 new_entry->script_filename = NULL;
                 new_entry->capture_filename = NULL;
+                new_entry->translate_8bit_filename = NULL;
+                new_entry->translate_unicode_filename = NULL;
                 new_entry->keybindings_filename = NULL;
                 new_entry->use_default_toggles = Q_TRUE;
                 new_entry->toggles = 0;
@@ -1256,6 +1268,20 @@ void load_phonebook(const Q_BOOL backup_version) {
                  */
                 new_entry->capture_filename =
                     Xstrdup(begin, __FILE__, __LINE__);
+            } else if (strncmp(buffer, "translate_8bit_filename",
+                    strlen("translate_8bit_filename")) == 0) {
+                /*
+                 * 8-BIT TRANSLATE FILENAME
+                 */
+                new_entry->translate_8bit_filename =
+                    Xstrdup(begin, __FILE__, __LINE__);
+            } else if (strncmp(buffer, "translate_unicode_filename",
+                    strlen("translate_unicode_filename")) == 0) {
+                /*
+                 * UNICODE TRANSLATE FILENAME
+                 */
+                new_entry->translate_unicode_filename =
+                    Xstrdup(begin, __FILE__, __LINE__);
             } else if (strncmp(buffer, "keybindings_filename",
                     strlen("keybindings_filename")) == 0) {
                 /*
@@ -1316,6 +1342,12 @@ void load_phonebook(const Q_BOOL backup_version) {
     }
     if (new_entry->capture_filename == NULL) {
         new_entry->capture_filename = Xstrdup("", __FILE__, __LINE__);
+    }
+    if (new_entry->translate_8bit_filename == NULL) {
+        new_entry->translate_8bit_filename = Xstrdup("", __FILE__, __LINE__);
+    }
+    if (new_entry->translate_unicode_filename == NULL) {
+        new_entry->translate_unicode_filename = Xstrdup("", __FILE__, __LINE__);
     }
     if (new_entry->keybindings_filename == NULL) {
         new_entry->keybindings_filename = Xstrdup("", __FILE__, __LINE__);
@@ -1425,6 +1457,10 @@ static void save_phonebook(const Q_BOOL backup_version) {
         }
         fprintf(file, "script_filename=%s\n", entry->script_filename);
         fprintf(file, "capture_filename=%s\n", entry->capture_filename);
+        fprintf(file, "translate_8bit_filename=%s\n",
+            entry->translate_8bit_filename);
+        fprintf(file, "translate_unicode_filename=%s\n",
+            entry->translate_unicode_filename);
         fprintf(file, "keybindings_filename=%s\n", entry->keybindings_filename);
         fprintf(file, "\n");
     }
@@ -1490,10 +1526,12 @@ void create_phonebook() {
     new_entry->rtscts           = Q_TRUE;
     new_entry->lock_dte_baud    = Q_TRUE;
 #endif
-    new_entry->script_filename  = Xstrdup("", __FILE__, __LINE__);
-    new_entry->capture_filename = Xstrdup("", __FILE__, __LINE__);
-    new_entry->keybindings_filename     = Xstrdup("", __FILE__, __LINE__);
-    new_entry->use_default_toggles      = Q_TRUE;
+    new_entry->script_filename            = Xstrdup("", __FILE__, __LINE__);
+    new_entry->capture_filename           = Xstrdup("", __FILE__, __LINE__);
+    new_entry->translate_8bit_filename    = Xstrdup("", __FILE__, __LINE__);
+    new_entry->translate_unicode_filename = Xstrdup("", __FILE__, __LINE__);
+    new_entry->keybindings_filename       = Xstrdup("", __FILE__, __LINE__);
+    new_entry->use_default_toggles        = Q_TRUE;
     new_entry->toggles          = 0;
     new_entry->last_call        = 0;
     new_entry->times_on         = 0;
@@ -1537,10 +1575,12 @@ void create_phonebook() {
     new_entry->rtscts           = Q_TRUE;
     new_entry->lock_dte_baud    = Q_TRUE;
 #endif
-    new_entry->script_filename  = Xstrdup("", __FILE__, __LINE__);
-    new_entry->capture_filename = Xstrdup("", __FILE__, __LINE__);
-    new_entry->keybindings_filename     = Xstrdup("", __FILE__, __LINE__);
-    new_entry->use_default_toggles      = Q_TRUE;
+    new_entry->script_filename            = Xstrdup("", __FILE__, __LINE__);
+    new_entry->capture_filename           = Xstrdup("", __FILE__, __LINE__);
+    new_entry->translate_8bit_filename    = Xstrdup("", __FILE__, __LINE__);
+    new_entry->translate_unicode_filename = Xstrdup("", __FILE__, __LINE__);
+    new_entry->keybindings_filename       = Xstrdup("", __FILE__, __LINE__);
+    new_entry->use_default_toggles        = Q_TRUE;
     new_entry->toggles          = 0;
     new_entry->last_call        = 0;
     new_entry->times_on         = 0;
@@ -1583,10 +1623,12 @@ void create_phonebook() {
     new_entry->rtscts           = Q_TRUE;
     new_entry->lock_dte_baud    = Q_TRUE;
 #endif
-    new_entry->script_filename  = Xstrdup("", __FILE__, __LINE__);
-    new_entry->capture_filename = Xstrdup("", __FILE__, __LINE__);
-    new_entry->keybindings_filename     = Xstrdup("", __FILE__, __LINE__);
-    new_entry->use_default_toggles      = Q_TRUE;
+    new_entry->script_filename            = Xstrdup("", __FILE__, __LINE__);
+    new_entry->capture_filename           = Xstrdup("", __FILE__, __LINE__);
+    new_entry->translate_8bit_filename    = Xstrdup("", __FILE__, __LINE__);
+    new_entry->translate_unicode_filename = Xstrdup("", __FILE__, __LINE__);
+    new_entry->keybindings_filename       = Xstrdup("", __FILE__, __LINE__);
+    new_entry->use_default_toggles        = Q_TRUE;
     new_entry->toggles          = 0;
     new_entry->last_call        = 0;
     new_entry->times_on         = 0;
@@ -1630,10 +1672,12 @@ void create_phonebook() {
     new_entry->rtscts           = Q_TRUE;
     new_entry->lock_dte_baud    = Q_TRUE;
 #endif
-    new_entry->script_filename  = Xstrdup("", __FILE__, __LINE__);
-    new_entry->capture_filename = Xstrdup("", __FILE__, __LINE__);
-    new_entry->keybindings_filename     = Xstrdup("", __FILE__, __LINE__);
-    new_entry->use_default_toggles      = Q_TRUE;
+    new_entry->script_filename            = Xstrdup("", __FILE__, __LINE__);
+    new_entry->capture_filename           = Xstrdup("", __FILE__, __LINE__);
+    new_entry->translate_8bit_filename    = Xstrdup("", __FILE__, __LINE__);
+    new_entry->translate_unicode_filename = Xstrdup("", __FILE__, __LINE__);
+    new_entry->keybindings_filename       = Xstrdup("", __FILE__, __LINE__);
+    new_entry->use_default_toggles        = Q_TRUE;
     new_entry->toggles          = 0;
     new_entry->last_call        = 0;
     new_entry->times_on         = 0;
@@ -1676,10 +1720,12 @@ void create_phonebook() {
     new_entry->rtscts           = Q_TRUE;
     new_entry->lock_dte_baud    = Q_TRUE;
 #endif
-    new_entry->script_filename  = Xstrdup("", __FILE__, __LINE__);
-    new_entry->capture_filename = Xstrdup("", __FILE__, __LINE__);
-    new_entry->keybindings_filename     = Xstrdup("", __FILE__, __LINE__);
-    new_entry->use_default_toggles      = Q_TRUE;
+    new_entry->script_filename            = Xstrdup("", __FILE__, __LINE__);
+    new_entry->capture_filename           = Xstrdup("", __FILE__, __LINE__);
+    new_entry->translate_8bit_filename    = Xstrdup("", __FILE__, __LINE__);
+    new_entry->translate_unicode_filename = Xstrdup("", __FILE__, __LINE__);
+    new_entry->keybindings_filename       = Xstrdup("", __FILE__, __LINE__);
+    new_entry->use_default_toggles        = Q_TRUE;
     new_entry->toggles          = 0;
     new_entry->last_call        = 0;
     new_entry->times_on         = 0;
@@ -1723,10 +1769,12 @@ void create_phonebook() {
     new_entry->rtscts           = Q_TRUE;
     new_entry->lock_dte_baud    = Q_TRUE;
 #endif
-    new_entry->script_filename  = Xstrdup("", __FILE__, __LINE__);
-    new_entry->capture_filename = Xstrdup("", __FILE__, __LINE__);
-    new_entry->keybindings_filename     = Xstrdup("", __FILE__, __LINE__);
-    new_entry->use_default_toggles      = Q_TRUE;
+    new_entry->script_filename            = Xstrdup("", __FILE__, __LINE__);
+    new_entry->capture_filename           = Xstrdup("", __FILE__, __LINE__);
+    new_entry->translate_8bit_filename    = Xstrdup("", __FILE__, __LINE__);
+    new_entry->translate_unicode_filename = Xstrdup("", __FILE__, __LINE__);
+    new_entry->keybindings_filename       = Xstrdup("", __FILE__, __LINE__);
+    new_entry->use_default_toggles        = Q_TRUE;
     new_entry->toggles          = 0;
     new_entry->last_call        = 0;
     new_entry->times_on         = 0;
@@ -1769,10 +1817,12 @@ void create_phonebook() {
     new_entry->rtscts           = Q_TRUE;
     new_entry->lock_dte_baud    = Q_TRUE;
 #endif
-    new_entry->script_filename  = Xstrdup("", __FILE__, __LINE__);
-    new_entry->capture_filename = Xstrdup("", __FILE__, __LINE__);
-    new_entry->keybindings_filename     = Xstrdup("", __FILE__, __LINE__);
-    new_entry->use_default_toggles      = Q_TRUE;
+    new_entry->script_filename            = Xstrdup("", __FILE__, __LINE__);
+    new_entry->capture_filename           = Xstrdup("", __FILE__, __LINE__);
+    new_entry->translate_8bit_filename    = Xstrdup("", __FILE__, __LINE__);
+    new_entry->translate_unicode_filename = Xstrdup("", __FILE__, __LINE__);
+    new_entry->keybindings_filename       = Xstrdup("", __FILE__, __LINE__);
+    new_entry->use_default_toggles        = Q_TRUE;
     new_entry->toggles          = 0;
     new_entry->last_call        = 0;
     new_entry->times_on         = 0;
@@ -1816,10 +1866,12 @@ void create_phonebook() {
     new_entry->rtscts           = Q_TRUE;
     new_entry->lock_dte_baud    = Q_TRUE;
 #endif
-    new_entry->script_filename  = Xstrdup("", __FILE__, __LINE__);
-    new_entry->capture_filename = Xstrdup("", __FILE__, __LINE__);
-    new_entry->keybindings_filename     = Xstrdup("", __FILE__, __LINE__);
-    new_entry->use_default_toggles      = Q_TRUE;
+    new_entry->script_filename            = Xstrdup("", __FILE__, __LINE__);
+    new_entry->capture_filename           = Xstrdup("", __FILE__, __LINE__);
+    new_entry->translate_8bit_filename    = Xstrdup("", __FILE__, __LINE__);
+    new_entry->translate_unicode_filename = Xstrdup("", __FILE__, __LINE__);
+    new_entry->keybindings_filename       = Xstrdup("", __FILE__, __LINE__);
+    new_entry->use_default_toggles        = Q_TRUE;
     new_entry->toggles          = 0;
     new_entry->last_call        = 0;
     new_entry->times_on         = 0;
@@ -1861,10 +1913,12 @@ void create_phonebook() {
     new_entry->xonxoff          = Q_FALSE;
     new_entry->rtscts           = Q_TRUE;
     new_entry->lock_dte_baud    = Q_TRUE;
-    new_entry->script_filename  = Xstrdup("", __FILE__, __LINE__);
-    new_entry->capture_filename = Xstrdup("", __FILE__, __LINE__);
-    new_entry->keybindings_filename     = Xstrdup("", __FILE__, __LINE__);
-    new_entry->use_default_toggles      = Q_TRUE;
+    new_entry->script_filename            = Xstrdup("", __FILE__, __LINE__);
+    new_entry->capture_filename           = Xstrdup("", __FILE__, __LINE__);
+    new_entry->translate_8bit_filename    = Xstrdup("", __FILE__, __LINE__);
+    new_entry->translate_unicode_filename = Xstrdup("", __FILE__, __LINE__);
+    new_entry->keybindings_filename       = Xstrdup("", __FILE__, __LINE__);
+    new_entry->use_default_toggles        = Q_TRUE;
     new_entry->toggles          = 0;
     new_entry->last_call        = 0;
     new_entry->times_on         = 0;
@@ -2044,6 +2098,20 @@ void do_dialer() {
             stop_capture();
         }
         start_capture(q_current_dial_entry->capture_filename);
+    }
+
+    /*
+     * 8-bit translate table
+     */
+    if (strlen(q_current_dial_entry->translate_8bit_filename) > 0) {
+        // TODO
+    }
+
+    /*
+     * Unicode translate table
+     */
+    if (strlen(q_current_dial_entry->translate_unicode_filename) > 0) {
+        // TODO
     }
 
     /*
@@ -2499,6 +2567,8 @@ static void delete_phonebook_entry(struct q_phone_struct * entry) {
     }
     Xfree(entry->script_filename, __FILE__, __LINE__);
     Xfree(entry->capture_filename, __FILE__, __LINE__);
+    Xfree(entry->translate_8bit_filename, __FILE__, __LINE__);
+    Xfree(entry->translate_unicode_filename, __FILE__, __LINE__);
     Xfree(entry->keybindings_filename, __FILE__, __LINE__);
     Xfree(entry, __FILE__, __LINE__);
     q_phonebook.entry_count--;
@@ -5520,9 +5590,9 @@ static void spawn_script_editor(const char * script_filename) {
 static void edit_phone_entry_form(struct q_phone_struct * entry) {
 
 #ifdef Q_NO_SERIAL
-    struct field * fields[13];
+    struct field * fields[15];
 #else
-    struct field * fields[14];
+    struct field * fields[16];
 #endif
 
     struct fieldset * edit_form;
@@ -5535,7 +5605,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
     char * status_string = NULL;
     int window_left;
     int window_top;
-    int window_height = 20;
+    int window_height = 22;
     int window_length = 51;
     char * title;
     int title_left;
@@ -5549,7 +5619,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
      */
     char toggles_string[32];
 
-    struct file_info *file_selection;
+    struct file_info * file_selection;
 
     /*
      * Local copies of the fields being edited
@@ -5562,6 +5632,8 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
     char * password_stars;
     char * script_filename;
     char * capture_filename;
+    char * translate_8bit_filename;
+    char * translate_unicode_filename;
     char * keybindings_filename;
     Q_DIAL_METHOD method;
     Q_EMULATION emulation;
@@ -5603,6 +5675,8 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
         EMULATION,
         CODEPAGE,
         CAPTUREFILE_NAME,
+        TRANSLATE_8BIT_NAME,
+        TRANSLATE_UNICODE_NAME,
         KEYBINDINGS_NAME,
         DOORWAY,
 #ifndef Q_NO_SERIAL
@@ -5661,25 +5735,31 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
     fields[8] = field_malloc(15, 9, 16, Q_TRUE, color_active, color_inactive);
     /* CAPTUREFILE_NAME */
     fields[9] = field_malloc(32, 10, 16, Q_FALSE, color_active, color_inactive);
-    /* KEYBINDINGS_NAME */
+    /* TRANSLATE_8BIT_NAME */
     fields[10] = field_malloc(32, 11, 16, Q_FALSE, color_active,
         color_inactive);
+    /* TRANSLATE_UNICODE_NAME */
+    fields[11] = field_malloc(32, 12, 16, Q_FALSE, color_active,
+        color_inactive);
+    /* KEYBINDINGS_NAME */
+    fields[12] = field_malloc(32, 13, 16, Q_FALSE, color_active,
+        color_inactive);
     /* DOORWAY */
-    fields[11] = field_malloc(32, 12, 16, Q_TRUE, color_active, color_inactive);
+    fields[13] = field_malloc(32, 14, 16, Q_TRUE, color_active, color_inactive);
 #ifdef Q_NO_SERIAL
     /* TOGGLES */
-    fields[12] = field_malloc(32, 14, 16, Q_TRUE, color_active, color_inactive);
+    fields[14] = field_malloc(32, 14, 16, Q_TRUE, color_active, color_inactive);
 
     /* All fields defined, now make the big form. */
-    edit_form = fieldset_malloc(fields, 13, form_window);
+    edit_form = fieldset_malloc(fields, 15, form_window);
 #else
     /* COMM_SETTINGS */
-    fields[12] = field_malloc(32, 13, 16, Q_TRUE, color_active, color_inactive);
+    fields[14] = field_malloc(32, 15, 16, Q_TRUE, color_active, color_inactive);
     /* TOGGLES */
-    fields[13] = field_malloc(32, 14, 16, Q_TRUE, color_active, color_inactive);
+    fields[15] = field_malloc(32, 16, 16, Q_TRUE, color_active, color_inactive);
 
     /* All fields defined, now make the big form. */
-    edit_form = fieldset_malloc(fields, 14, form_window);
+    edit_form = fieldset_malloc(fields, 16, form_window);
 #endif
 
     field_number = NAME;
@@ -5693,7 +5773,12 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
     script_filename     = Xstrdup(entry->script_filename, __FILE__, __LINE__);
     emulation           = entry->emulation;
     codepage            = entry->codepage;
-    capture_filename    = Xstrdup(entry->capture_filename, __FILE__, __LINE__);
+    capture_filename           = Xstrdup(entry->capture_filename,
+        __FILE__, __LINE__);
+    translate_8bit_filename    = Xstrdup(entry->translate_8bit_filename,
+        __FILE__, __LINE__);
+    translate_unicode_filename = Xstrdup(entry->translate_unicode_filename,
+        __FILE__, __LINE__);
     keybindings_filename =
         Xstrdup(entry->keybindings_filename, __FILE__, __LINE__);
 
@@ -5797,19 +5882,25 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                 screen_win_put_color_str_yx(form_window, 10, 2,
                                             _("Capture File"),
                                             Q_COLOR_MENU_COMMAND);
-                screen_win_put_color_str_yx(form_window, 11, 2, _("Key File"),
+                screen_win_put_color_str_yx(form_window, 11, 2,
+                                            _("Xlate 8-Bit"),
                                             Q_COLOR_MENU_COMMAND);
-                screen_win_put_color_str_yx(form_window, 12, 2, _("Doorway"),
+                screen_win_put_color_str_yx(form_window, 12, 2,
+                                            _("Xlate Unicode"),
+                                            Q_COLOR_MENU_COMMAND);
+                screen_win_put_color_str_yx(form_window, 13, 2, _("Key File"),
+                                            Q_COLOR_MENU_COMMAND);
+                screen_win_put_color_str_yx(form_window, 14, 2, _("Doorway"),
                                             Q_COLOR_MENU_COMMAND);
 #ifndef Q_NO_SERIAL
-                screen_win_put_color_str_yx(form_window, 13, 2,
+                screen_win_put_color_str_yx(form_window, 15, 2,
                                             _("Port Settings"),
                                             Q_COLOR_MENU_COMMAND);
 #endif
-                screen_win_put_color_str_yx(form_window, 14, 2, _("Toggles"),
+                screen_win_put_color_str_yx(form_window, 16, 2, _("Toggles"),
                                             Q_COLOR_MENU_COMMAND);
 
-                screen_win_put_color_str_yx(form_window, 17, 2, _("Last Call"),
+                screen_win_put_color_str_yx(form_window, 19, 2, _("Last Call"),
                                             Q_COLOR_MENU_COMMAND);
                 if (entry->times_on > 0) {
                     strftime(time_string, sizeof(time_string),
@@ -5818,7 +5909,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                     screen_win_put_color_printf(form_window, Q_COLOR_MENU_TEXT,
                                                 "    %s", time_string);
                 }
-                screen_win_put_color_str_yx(form_window, 18, 2, _("Times On"),
+                screen_win_put_color_str_yx(form_window, 20, 2, _("Times On"),
                                             Q_COLOR_MENU_COMMAND);
                 screen_win_put_color_printf(form_window, Q_COLOR_MENU_TEXT,
                                             "     %u", entry->times_on);
@@ -5845,8 +5936,11 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                                          emulation_string(emulation));
                     field_set_char_value(fields[8], codepage_string(codepage));
                     field_set_char_value(fields[9], capture_filename);
-                    field_set_char_value(fields[10], keybindings_filename);
-                    field_set_char_value(fields[11], doorway_string(doorway));
+                    field_set_char_value(fields[10], translate_8bit_filename);
+                    field_set_char_value(fields[11],
+                                         translate_unicode_filename);
+                    field_set_char_value(fields[12], keybindings_filename);
+                    field_set_char_value(fields[13], doorway_string(doorway));
 
 #ifndef Q_NO_SERIAL
                     /*
@@ -5865,7 +5959,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                                  Q_TRUE ? _(" DTE Locked") : "")
                             );
                     }
-                    field_set_char_value(fields[12], comm_settings_string);
+                    field_set_char_value(fields[14], comm_settings_string);
 #endif
 
                     /*
@@ -5878,9 +5972,9 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                                 toggles_to_string(toggles));
                     }
 #ifdef Q_NO_SERIAL
-                    field_set_char_value(fields[12], toggles_string);
+                    field_set_char_value(fields[14], toggles_string);
 #else
-                    field_set_char_value(fields[13], toggles_string);
+                    field_set_char_value(fields[15], toggles_string);
 #endif
 
                 } /* if (dont_reload == Q_FALSE) */
@@ -5946,6 +6040,16 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
 " Change Capture File     [F2/Space] Pick   [F10/Alt-Enter] Save   [ESC] "
                                   "Abort ");
                 break;
+            case TRANSLATE_8BIT_NAME:
+                status_string = _(""
+" Change 8-bit Xlate File [F2/Space] Pick   [F10/Alt-Enter] Save   [ESC] "
+                                  "Abort ");
+                break;
+            case TRANSLATE_UNICODE_NAME:
+                status_string = _(""
+" Change UTF Xlate File   [F2/Space] Pick   [F10/Alt-Enter] Save   [ESC] "
+                                  "Abort ");
+                break;
             case KEYBINDINGS_NAME:
                 status_string = _(""
 " Change Key File               [F2] Edit   [F10/Alt-Enter] Save   [ESC] "
@@ -5987,11 +6091,11 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                                     Q_COLOR_STATUS);
 
             if (field_number == CLEAR_CALL_INFO) {
-                screen_win_put_color_str_yx(form_window, 15, 1,
+                screen_win_put_color_str_yx(form_window, 17, 1,
                                             _(" Clear Call Info "),
                                             Q_COLOR_PHONEBOOK_SELECTED_TAGGED);
             } else {
-                screen_win_put_color_str_yx(form_window, 15, 1,
+                screen_win_put_color_str_yx(form_window, 17, 1,
                                             _(" Clear Call Info "),
                                             Q_COLOR_MENU_COMMAND);
                 if (dont_reload == Q_FALSE) {
@@ -6085,6 +6189,12 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
             if (capture_filename != NULL) {
                 Xfree(capture_filename, __FILE__, __LINE__);
             }
+            if (translate_8bit_filename != NULL) {
+                Xfree(translate_8bit_filename, __FILE__, __LINE__);
+            }
+            if (translate_unicode_filename != NULL) {
+                Xfree(translate_unicode_filename, __FILE__, __LINE__);
+            }
             if (keybindings_filename != NULL) {
                 Xfree(keybindings_filename, __FILE__, __LINE__);
             }
@@ -6104,17 +6214,21 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                     Xfree(name, __FILE__, __LINE__);
                 }
                 name = field_get_value(fields[0]);
+
                 if (address != NULL) {
                     Xfree(address, __FILE__, __LINE__);
                 }
                 address = field_get_char_value(fields[1]);
+
                 if (port != NULL) {
                     Xfree(port, __FILE__, __LINE__);
                 }
                 port = field_get_char_value(fields[2]);
+
                 form_value_string = field_get_char_value(fields[3]);
                 method = method_from_string(form_value_string);
                 Xfree(form_value_string, __FILE__, __LINE);
+
                 if (username != NULL) {
                     Xfree(username, __FILE__, __LINE__);
                 }
@@ -6124,21 +6238,36 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                     Xfree(script_filename, __FILE__, __LINE__);
                 }
                 script_filename = field_get_char_value(fields[6]);
+
                 form_value_string = field_get_char_value(fields[7]);
                 emulation = emulation_from_string(form_value_string);
                 Xfree(form_value_string, __FILE__, __LINE);
+
                 form_value_string = field_get_char_value(fields[8]);
                 codepage = codepage_from_string(form_value_string);
                 Xfree(form_value_string, __FILE__, __LINE);
+
                 if (capture_filename != NULL) {
                     Xfree(capture_filename, __FILE__, __LINE__);
                 }
                 capture_filename = field_get_char_value(fields[9]);
+
+                if (translate_8bit_filename != NULL) {
+                    Xfree(translate_8bit_filename, __FILE__, __LINE__);
+                }
+                translate_8bit_filename = field_get_char_value(fields[10]);
+
+                if (translate_unicode_filename != NULL) {
+                    Xfree(translate_unicode_filename, __FILE__, __LINE__);
+                }
+                translate_unicode_filename = field_get_char_value(fields[11]);
+
                 if (keybindings_filename != NULL) {
                     Xfree(keybindings_filename, __FILE__, __LINE__);
                 }
-                keybindings_filename = field_get_char_value(fields[10]);
-                doorway = doorway_from_string(field_get_char_value(fields[11]));
+                keybindings_filename = field_get_char_value(fields[12]);
+
+                doorway = doorway_from_string(field_get_char_value(fields[13]));
 
                 /*
                  * Save settings ----------------------------
@@ -6455,7 +6584,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                 case DOORWAY:
                     doorway = pick_doorway();
                     if (doorway != -1) {
-                        field_set_char_value(fields[11],
+                        field_set_char_value(fields[13],
                                              doorway_string(doorway));
                     } else {
                         doorway = entry->doorway;
@@ -6560,6 +6689,42 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                     real_dirty = Q_TRUE;
                     break;
 
+                case TRANSLATE_8BIT_NAME:
+                    /*
+                     * Pull up the pick list
+                     */
+                    file_selection =
+                        view_directory(get_option(Q_OPTION_WORKING_DIR),
+                                       "*.xlate_8bit");
+
+                    if (file_selection != NULL) {
+                        field_set_char_value(fields[10],
+                                             basename(file_selection->name));
+                        Xfree(file_selection, __FILE__, __LINE__);
+                    }
+
+                    local_dirty = Q_TRUE;
+                    real_dirty = Q_TRUE;
+                    break;
+
+                case TRANSLATE_UNICODE_NAME:
+                    /*
+                     * Pull up the pick list
+                     */
+                    file_selection =
+                        view_directory(get_option(Q_OPTION_WORKING_DIR),
+                                       "*.xlate_utf8");
+
+                    if (file_selection != NULL) {
+                        field_set_char_value(fields[11],
+                                             basename(file_selection->name));
+                        Xfree(file_selection, __FILE__, __LINE__);
+                    }
+
+                    local_dirty = Q_TRUE;
+                    real_dirty = Q_TRUE;
+                    break;
+
                 case KEYBINDINGS_NAME:
                     /*
                      * Pull up keyboard editor window
@@ -6567,7 +6732,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                     if (keybindings_filename != NULL) {
                         Xfree(keybindings_filename, __FILE__, __LINE__);
                     }
-                    keybindings_filename = field_get_char_value(fields[10]);
+                    keybindings_filename = field_get_char_value(fields[12]);
                     if (strlen(keybindings_filename) > 0) {
                         switch_current_keyboard(keybindings_filename);
                         switch_state(Q_STATE_FUNCTION_KEY_EDITOR);
@@ -6603,17 +6768,21 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                 Xfree(name, __FILE__, __LINE__);
             }
             name = field_get_value(fields[0]);
+
             if (address != NULL) {
                 Xfree(address, __FILE__, __LINE__);
             }
             address = field_get_char_value(fields[1]);
+
             if (port != NULL) {
                 Xfree(port, __FILE__, __LINE__);
             }
             port = field_get_char_value(fields[2]);
+
             form_value_string = field_get_char_value(fields[3]);
             method = method_from_string(form_value_string);
             Xfree(form_value_string, __FILE__, __LINE);
+
             if (username != NULL) {
                 Xfree(username, __FILE__, __LINE__);
             }
@@ -6623,21 +6792,36 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                 Xfree(script_filename, __FILE__, __LINE__);
             }
             script_filename = field_get_char_value(fields[6]);
+
             form_value_string = field_get_char_value(fields[7]);
             emulation = emulation_from_string(form_value_string);
             Xfree(form_value_string, __FILE__, __LINE);
+
             form_value_string = field_get_char_value(fields[8]);
             codepage = codepage_from_string(form_value_string);
             Xfree(form_value_string, __FILE__, __LINE);
+
             if (capture_filename != NULL) {
                 Xfree(capture_filename, __FILE__, __LINE__);
             }
             capture_filename = field_get_char_value(fields[9]);
+
+            if (translate_8bit_filename != NULL) {
+                Xfree(translate_8bit_filename, __FILE__, __LINE__);
+            }
+            translate_8bit_filename = field_get_char_value(fields[10]);
+
+            if (translate_unicode_filename != NULL) {
+                Xfree(translate_unicode_filename, __FILE__, __LINE__);
+            }
+            translate_unicode_filename = field_get_char_value(fields[11]);
+
             if (keybindings_filename != NULL) {
                 Xfree(keybindings_filename, __FILE__, __LINE__);
             }
-            keybindings_filename = field_get_char_value(fields[10]);
-            doorway = doorway_from_string(field_get_char_value(fields[11]));
+            keybindings_filename = field_get_char_value(fields[12]);
+
+            doorway = doorway_from_string(field_get_char_value(fields[13]));
 
             /*
              * Save settings -----------------------------------
@@ -6695,17 +6879,21 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                 Xfree(entry->name, __FILE__, __LINE__);
             }
             entry->name = field_get_value(fields[0]);
+
             if (entry->address != NULL) {
                 Xfree(entry->address, __FILE__, __LINE__);
             }
             entry->address = field_get_char_value(fields[1]);
+
             if (entry->port != NULL) {
                 Xfree(entry->port, __FILE__, __LINE__);
             }
             entry->port = field_get_char_value(fields[2]);
+
             form_value_string = field_get_char_value(fields[3]);
             entry->method = method_from_string(form_value_string);
             Xfree(form_value_string, __FILE__, __LINE);
+
             if (entry->username != NULL) {
                 Xfree(entry->username, __FILE__, __LINE__);
             }
@@ -6732,22 +6920,38 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                 Xfree(entry->script_filename, __FILE__, __LINE__);
             }
             entry->script_filename = field_get_char_value(fields[6]);
+
             form_value_string = field_get_char_value(fields[7]);
             entry->emulation = emulation_from_string(form_value_string);
             Xfree(form_value_string, __FILE__, __LINE);
+
             form_value_string = field_get_char_value(fields[8]);
             entry->codepage = codepage_from_string(form_value_string);
             Xfree(form_value_string, __FILE__, __LINE);
+
             if (entry->capture_filename != NULL) {
                 Xfree(entry->capture_filename, __FILE__, __LINE__);
             }
             entry->capture_filename = field_get_char_value(fields[9]);
+
+            if (entry->translate_8bit_filename != NULL) {
+                Xfree(entry->translate_8bit_filename, __FILE__, __LINE__);
+            }
+            entry->translate_8bit_filename = field_get_char_value(fields[10]);
+
+            if (entry->translate_unicode_filename != NULL) {
+                Xfree(entry->translate_unicode_filename, __FILE__, __LINE__);
+            }
+            entry->translate_unicode_filename =
+                field_get_char_value(fields[11]);
+
             if (entry->keybindings_filename != NULL) {
                 Xfree(entry->keybindings_filename, __FILE__, __LINE__);
             }
-            entry->keybindings_filename = field_get_char_value(fields[10]);
+            entry->keybindings_filename = field_get_char_value(fields[12]);
+
             entry->doorway =
-                doorway_from_string(field_get_char_value(fields[11]));
+                doorway_from_string(field_get_char_value(fields[13]));
 
 #ifndef Q_NO_SERIAL
             entry->use_modem_cfg = use_modem_cfg;
@@ -6793,6 +6997,12 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
             }
             if (capture_filename != NULL) {
                 Xfree(capture_filename, __FILE__, __LINE__);
+            }
+            if (translate_8bit_filename != NULL) {
+                Xfree(translate_8bit_filename, __FILE__, __LINE__);
+            }
+            if (translate_unicode_filename != NULL) {
+                Xfree(translate_unicode_filename, __FILE__, __LINE__);
             }
             if (keybindings_filename != NULL) {
                 Xfree(keybindings_filename, __FILE__, __LINE__);
@@ -6916,8 +7126,10 @@ void phonebook_keyboard_handler(const int keystroke, const int flags) {
         entry->emulation        = Q_EMUL_XTERM_UTF8;
         entry->codepage         = default_codepage(entry->emulation);
         entry->script_filename  = Xstrdup("", __FILE__, __LINE__);
-        entry->capture_filename = Xstrdup("", __FILE__, __LINE__);
-        entry->keybindings_filename = Xstrdup("", __FILE__, __LINE__);
+        entry->capture_filename           = Xstrdup("", __FILE__, __LINE__);
+        entry->translate_8bit_filename    = Xstrdup("", __FILE__, __LINE__);
+        entry->translate_unicode_filename = Xstrdup("", __FILE__, __LINE__);
+        entry->keybindings_filename       = Xstrdup("", __FILE__, __LINE__);
         entry->doorway          = Q_DOORWAY_CONFIG;
         entry->use_default_toggles = Q_TRUE;
         entry->toggles          = 0;
@@ -7207,6 +7419,8 @@ void phonebook_keyboard_handler(const int keystroke, const int flags) {
             entry->notes = NULL;
             entry->script_filename = "";
             entry->capture_filename = "";
+            entry->translate_8bit_filename = "";
+            entry->translate_unicode_filename = "";
             entry->keybindings_filename = "";
             entry->doorway = Q_DOORWAY_CONFIG;
             entry->use_default_toggles = Q_TRUE;

@@ -349,7 +349,8 @@ static void ascii_transfer(unsigned char * input, const unsigned int input_n,
          */
         if (ascii_xfer_upload_use_xlate_table == Q_TRUE) {
             for (i = 0; i < (*output_n); i++) {
-                output[i] = q_translate_table_output.map_to[output[i]];
+                // TODO
+                // output[i] = q_translate_table_output.map_to[output[i]];
             }
         }
 
@@ -389,7 +390,8 @@ static void ascii_transfer(unsigned char * input, const unsigned int input_n,
          */
         if (ascii_xfer_download_use_xlate_table == Q_TRUE) {
             for (i = 0; i < input_n; i++) {
-                input[i] = q_translate_table_input.map_to[input[i]];
+                // TODO
+                // input[i] = q_translate_table_input.map_to[input[i]];
             }
         }
 

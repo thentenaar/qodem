@@ -756,7 +756,8 @@ void console_quicklearn_keyboard_handler(int keystroke, int flags) {
          * Run regular keystrokes through the output translation table.  Note
          * that Unicode keys greater than 0x7F will not get translated.
          */
-        new_keystroke = q_translate_table_output.map_to[new_keystroke];
+        // TODO
+        // new_keystroke = q_translate_table_output.map_to[new_keystroke];
     }
 
     post_keystroke(new_keystroke, flags);
@@ -1935,7 +1936,8 @@ void console_keyboard_handler(int keystroke, int flags) {
              * Note that Unicode keys greater than 0x7F will not get
              * translated.
              */
-            new_keystroke = q_translate_table_output.map_to[new_keystroke];
+            // TODO
+            // new_keystroke = q_translate_table_output.map_to[new_keystroke];
         }
 
         post_keystroke(new_keystroke, flags);
@@ -2140,11 +2142,13 @@ void console_process_incoming_data(unsigned char * buffer, const int n,
         case Q_EMUL_LINUX_UTF8:
         case Q_EMUL_XTERM_UTF8:
             if (buffer[i] <= 0x7F) {
-                buffer[i] = q_translate_table_input.map_to[buffer[i]];
+                // TODO
+                // buffer[i] = q_translate_table_input.map_to[buffer[i]];
             }
             break;
         default:
-            buffer[i] = q_translate_table_input.map_to[buffer[i]];
+            // TODO
+            // buffer[i] = q_translate_table_input.map_to[buffer[i]];
             break;
         }
 

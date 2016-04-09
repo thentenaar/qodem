@@ -16,6 +16,7 @@
  */
 
 #include "common.h"
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -32,7 +33,12 @@
 /**
  * Which table is currently being edited.
  */
-static struct q_translate_table_struct * editing_table;
+static struct q_translate_table_8bit_struct * editing_table;
+
+/**
+ * The filename that is currently being edited.
+ */
+static char * editing_table_filename = NULL;
 
 /**
  * Which table entry is currently being edited.
@@ -42,16 +48,14 @@ static int selected_entry = 0;
 /**
  * The ASCII INPUT table.
  */
-struct q_translate_table_struct q_translate_table_input;
+struct q_translate_table_8bit_struct q_translate_table_input;
 
 /**
  * The ASCII OUTPUT table.
  */
-struct q_translate_table_struct q_translate_table_output;
+struct q_translate_table_8bit_struct q_translate_table_output;
 
 #define TRANSLATE_TABLE_LINE_SIZE       128
-
-#define TRANSLATE_TABLE_FILENAME        "translate.tbl"
 
 /**
  * Whether we have changed the table mapping in the editor.
@@ -59,10 +63,12 @@ struct q_translate_table_struct q_translate_table_output;
 static Q_BOOL saved_changes = Q_TRUE;
 
 /**
- * This must be called to initialize the translate tables from the config
- * file.
+ * Load an 8-bit translate table pair from a file into the global translate
+ * table structs.
+ *
+ * @param filename the basename of a file in the data directory to read from
  */
-void load_translate_tables() {
+void load_translate_tables(const char * filename) {
     FILE * file;
     char * full_filename;
     char line[TRANSLATE_TABLE_LINE_SIZE];
@@ -81,7 +87,9 @@ void load_translate_tables() {
 
     int state = SCAN_INPUT;
 
-    file = open_datadir_file(TRANSLATE_TABLE_FILENAME, &full_filename, "r");
+    assert(filename != NULL);
+
+    file = open_datadir_file(filename, &full_filename, "r");
     if (file == NULL) {
 
         /*
@@ -212,19 +220,23 @@ void load_translate_tables() {
 }
 
 /**
- * Save the translate tables to the config file.
+ * Save an 8-bit translate table pair to a file.
+ *
+ * @param filename the basename of a file in the data directory to read from
  */
-static void save_translate_tables() {
+static void save_translate_tables(const char * filename) {
     char notify_message[DIALOG_MESSAGE_SIZE];
     char * full_filename;
     FILE * file;
     int i;
 
-    file = open_datadir_file(TRANSLATE_TABLE_FILENAME, &full_filename, "w");
+    assert(filename != NULL);
+
+    file = open_datadir_file(filename, &full_filename, "w");
     if (file == NULL) {
         snprintf(notify_message, sizeof(notify_message),
                  _("Error opening file \"%s\" for writing: %s"),
-                 TRANSLATE_TABLE_FILENAME, strerror(errno));
+                 filename, strerror(errno));
         notify_form(notify_message, 0);
         /*
          * No leak
@@ -265,12 +277,9 @@ static void save_translate_tables() {
 }
 
 /**
- * Create the config file for the translate tables (translate.tbl).
+ * Initialize the global translate pairs to do nothing.
  */
-void create_translate_table_file() {
-    FILE * file;
-    char buffer[FILENAME_SIZE];
-    char * full_filename;
+void initialize_translate_tables() {
     int i;
 
     /*
@@ -281,20 +290,6 @@ void create_translate_table_file() {
         q_translate_table_output.map_to[i] = i;
     }
 
-    sprintf(buffer, TRANSLATE_TABLE_FILENAME);
-    file = open_datadir_file(buffer, &full_filename, "a");
-    if (file != NULL) {
-        fclose(file);
-    } else {
-        fprintf(stderr, _("Error creating file \"%s\": %s"), full_filename,
-                strerror(errno));
-    }
-    Xfree(full_filename, __FILE__, __LINE__);
-
-    /*
-     * Now save the default values
-     */
-    save_translate_tables();
 }
 
 /**
@@ -307,11 +302,16 @@ void translate_table_menu_refresh() {
     int message_left;
     int window_left;
     int window_top;
-    int window_height = 9;
+    int window_height = 11;
     int window_length;
 
     if (q_screen_dirty == Q_FALSE) {
         return;
+    }
+
+    if (editing_table_filename == NULL) {
+        // TODO: load from default.xlate_8bit or default.xlate_utf8
+
     }
 
     /*
@@ -361,14 +361,21 @@ void translate_table_menu_refresh() {
     screen_put_color_str_yx(window_top + 2, window_left + 2,
                             _("Select Table to Edit"), Q_COLOR_MENU_TEXT);
 
-    screen_put_color_str_yx(window_top + 4, window_left + 7, "1",
+    screen_put_color_str_yx(window_top + 4, window_left + 2, "1",
                             Q_COLOR_MENU_COMMAND);
-    screen_put_color_printf(Q_COLOR_MENU_TEXT, " -  %s", _("INPUT"));
-    screen_put_color_str_yx(window_top + 5, window_left + 7, "2",
+    screen_put_color_printf(Q_COLOR_MENU_TEXT, " - %s", _("INPUT (8-Bit)"));
+    screen_put_color_str_yx(window_top + 5, window_left + 2, "2",
                             Q_COLOR_MENU_COMMAND);
-    screen_put_color_printf(Q_COLOR_MENU_TEXT, " -  %s", _("OUTPUT"));
+    screen_put_color_printf(Q_COLOR_MENU_TEXT, " - %s", _("OUTPUT (8-Bit)"));
 
-    screen_put_color_str_yx(window_top + 7, window_left + 2,
+    screen_put_color_str_yx(window_top + 6, window_left + 2, "3",
+                            Q_COLOR_MENU_COMMAND);
+    screen_put_color_printf(Q_COLOR_MENU_TEXT, " - %s", _("INPUT (Unicode)"));
+    screen_put_color_str_yx(window_top + 7, window_left + 2, "4",
+                            Q_COLOR_MENU_COMMAND);
+    screen_put_color_printf(Q_COLOR_MENU_TEXT, " - %s", _("OUTPUT (Unicode)"));
+
+    screen_put_color_str_yx(window_top + 9, window_left + 2,
                             _("Your Choice ? "), Q_COLOR_MENU_COMMAND);
 
     screen_flush();
@@ -397,6 +404,16 @@ void translate_table_menu_keyboard_handler(const int keystroke,
 
     case '2':
         editing_table = &q_translate_table_output;
+        break;
+
+    case '3':
+        // TODO
+        return;
+        break;
+
+    case '4':
+        // TODO
+        return;
         break;
 
     case '`':
@@ -533,12 +550,12 @@ void translate_table_editor_keyboard_handler(const int keystroke,
                  * Save if the user said so
                  */
                 if ((new_keystroke == 'y') || (new_keystroke == C_CR)) {
-                    save_translate_tables();
+                    save_translate_tables(editing_table_filename);
                 } else {
                     /*
                      * Abandon changes
                      */
-                    load_translate_tables();
+                    load_translate_tables(editing_table_filename);
                 }
 
             }
@@ -559,7 +576,7 @@ void translate_table_editor_keyboard_handler(const int keystroke,
             /*
              * Save
              */
-            save_translate_tables();
+            save_translate_tables(editing_table_filename);
 
             /*
              * Editing form is already deleted, so just escape out

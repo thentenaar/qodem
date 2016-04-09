@@ -35,11 +35,29 @@ typedef enum {
 } Q_TRANSLATE_TABLE_TYPE;
 
 /**
- * An ASCII translation table.
+ * An 8-bit translation table.
  */
-struct q_translate_table_struct {
+struct q_translate_table_8bit_struct {
     Q_TRANSLATE_TABLE_TYPE type;
     unsigned char map_to[256];
+};
+
+/**
+ * A <wchar_t, wchar_t> tuple.
+ */
+struct q_wchar_tuple {
+    wchar_t key;
+    wchar_t value;
+};
+
+/**
+ * A Unicode translation table.  This is currently a very stupid list of
+ * tuples.
+ */
+struct q_translate_table_unicode_struct {
+    Q_TRANSLATE_TABLE_TYPE type;
+    struct q_wchar_tuple * mappings;
+    size_t mappings_n;
 };
 
 /* Globals ---------------------------------------------------------------- */
@@ -47,12 +65,12 @@ struct q_translate_table_struct {
 /**
  * The input translation table.
  */
-extern struct q_translate_table_struct q_translate_table_input;
+extern struct q_translate_table_8bit_struct q_translate_table_input;
 
 /**
  * The output translation table.
  */
-extern struct q_translate_table_struct q_translate_table_output;
+extern struct q_translate_table_8bit_struct q_translate_table_output;
 
 /* Functions -------------------------------------------------------------- */
 
@@ -85,15 +103,25 @@ extern void translate_table_editor_keyboard_handler(const int keystroke,
 extern void translate_table_editor_refresh();
 
 /**
- * Create the config file for the translate tables (translate.tbl).
+ * Initialize the global translate pairs to do nothing.
  */
-extern void create_translate_table_file();
+extern void initialize_translate_tables();
 
 /**
- * This must be called to initialize the translate tables from the config
- * file.
+ * Load an 8-bit translate table pair from a file into the global translate
+ * table structs.
+ *
+ * @param filename the basename of a file in the data directory to read from
  */
-extern void load_translate_tables();
+extern void load_translate_table_8bit(const char * filename);
+
+/**
+ * Load a Unicode translate table pair from a file into the global translate
+ * table structs.
+ *
+ * @param filename the basename of a file in the data directory to read from
+ */
+extern void load_translate_table_unicode(const char * filename);
 
 #ifdef __cplusplus
 }
