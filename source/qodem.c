@@ -1949,7 +1949,8 @@ static void data_handler() {
         case Q_STATE_MODEM_CONFIG:
 #endif
         case Q_STATE_PHONEBOOK:
-        case Q_STATE_TRANSLATE_EDITOR:
+        case Q_STATE_TRANSLATE_EDITOR_8BIT:
+        case Q_STATE_TRANSLATE_EDITOR_UNICODE:
         case Q_STATE_EXIT:
         case Q_STATE_SCREENSAVER:
             /* For these states, do NOT read() */

@@ -116,8 +116,12 @@ void keyboard_handler() {
         translate_table_menu_keyboard_handler(keystroke, flags);
         break;
 
-    case Q_STATE_TRANSLATE_EDITOR:
-        translate_table_editor_keyboard_handler(keystroke, flags);
+    case Q_STATE_TRANSLATE_EDITOR_8BIT:
+        translate_table_editor_8bit_keyboard_handler(keystroke, flags);
+        break;
+
+    case Q_STATE_TRANSLATE_EDITOR_UNICODE:
+        translate_table_editor_unicode_keyboard_handler(keystroke, flags);
         break;
 
     case Q_STATE_PHONEBOOK:
@@ -233,8 +237,12 @@ void refresh_handler() {
         translate_table_menu_refresh();
         break;
 
-    case Q_STATE_TRANSLATE_EDITOR:
-        translate_table_editor_refresh();
+    case Q_STATE_TRANSLATE_EDITOR_8BIT:
+        translate_table_editor_8bit_refresh();
+        break;
+
+    case Q_STATE_TRANSLATE_EDITOR_UNICODE:
+        translate_table_editor_unicode_refresh();
         break;
 
     case Q_STATE_PHONEBOOK:
@@ -352,7 +360,8 @@ void switch_state(const Q_PROGRAM_STATE new_state) {
     case Q_STATE_MODEM_CONFIG:
 #endif
     case Q_STATE_PHONEBOOK:
-    case Q_STATE_TRANSLATE_EDITOR:
+    case Q_STATE_TRANSLATE_EDITOR_8BIT:
+    case Q_STATE_TRANSLATE_EDITOR_UNICODE:
         set_blocking_input(Q_TRUE);
         q_keyboard_blocks = Q_TRUE;
         q_screen_dirty = Q_TRUE;

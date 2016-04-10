@@ -6695,7 +6695,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                      */
                     file_selection =
                         view_directory(get_option(Q_OPTION_WORKING_DIR),
-                                       "*.xlate_8bit");
+                                       "*.xl8");
 
                     if (file_selection != NULL) {
                         field_set_char_value(fields[10],
@@ -6713,7 +6713,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                      */
                     file_selection =
                         view_directory(get_option(Q_OPTION_WORKING_DIR),
-                                       "*.xlate_utf8");
+                                       "*.xlu");
 
                     if (file_selection != NULL) {
                         field_set_char_value(fields[11],

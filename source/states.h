@@ -85,8 +85,9 @@ typedef enum Q_PROGRAM_STATES {
     /**
      * Translate table.  See translate.c.
      */
-    Q_STATE_TRANSLATE_MENU,     /* Translation table select menu */
-    Q_STATE_TRANSLATE_EDITOR,   /* Translation table editor */
+    Q_STATE_TRANSLATE_MENU,             /* Translation table select menu */
+    Q_STATE_TRANSLATE_EDITOR_8BIT,      /* Translation table editor (8-bit) */
+    Q_STATE_TRANSLATE_EDITOR_UNICODE,   /* Translation table editor (Unicode) */
 
     /**
      * Codepage dialog.  See codepage.c.

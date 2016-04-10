@@ -63,14 +63,24 @@ struct q_translate_table_unicode_struct {
 /* Globals ---------------------------------------------------------------- */
 
 /**
- * The input translation table.
+ * The 8-bit input translation table.
  */
-extern struct q_translate_table_8bit_struct q_translate_table_input;
+extern struct q_translate_table_8bit_struct q_translate_table_8bit_input;
 
 /**
- * The output translation table.
+ * The 8-bit output translation table.
  */
-extern struct q_translate_table_8bit_struct q_translate_table_output;
+extern struct q_translate_table_8bit_struct q_translate_table_8bit_output;
+
+/**
+ * The Unicode input translation table.
+ */
+extern struct q_translate_table_unicode_struct q_translate_table_unicode_input;
+
+/**
+ * The Unicode output translation table.
+ */
+extern struct q_translate_table_unicode_struct q_translate_table_unicode_output;
 
 /* Functions -------------------------------------------------------------- */
 
@@ -94,13 +104,27 @@ extern void translate_table_menu_refresh();
  * @param keystroke the keystroke from the user.
  * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.  See input.h.
  */
-extern void translate_table_editor_keyboard_handler(const int keystroke,
+extern void translate_table_editor_8bit_keyboard_handler(const int keystroke,
                                                     const int flags);
 
 /**
  * Draw screen for the Alt-A translation table editor screen.
  */
-extern void translate_table_editor_refresh();
+extern void translate_table_editor_8bit_refresh();
+
+/**
+ * Keyboard handler for the Alt-A translation table editor screen.
+ *
+ * @param keystroke the keystroke from the user.
+ * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.  See input.h.
+ */
+extern void translate_table_editor_unicode_keyboard_handler(const int keystroke,
+                                                            const int flags);
+
+/**
+ * Draw screen for the Alt-A translation table editor screen.
+ */
+extern void translate_table_editor_unicode_refresh();
 
 /**
  * Initialize the global translate pairs to do nothing.
