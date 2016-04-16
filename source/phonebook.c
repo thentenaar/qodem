@@ -2104,14 +2104,15 @@ void do_dialer() {
      * 8-bit translate table
      */
     if (strlen(q_current_dial_entry->translate_8bit_filename) > 0) {
-        // TODO
+        use_translate_table_8bit(q_current_dial_entry->translate_8bit_filename);
     }
 
     /*
      * Unicode translate table
      */
     if (strlen(q_current_dial_entry->translate_unicode_filename) > 0) {
-        // TODO
+        use_translate_table_unicode(q_current_dial_entry->
+                                        translate_unicode_filename);
     }
 
     /*

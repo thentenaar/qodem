@@ -30,20 +30,106 @@
 #include "help.h"
 #include "translate.h"
 
-/**
- * Which table is currently being edited.
+/*
+ * Maximum length of a line in a translation file on disk.
  */
-static struct q_translate_table_8bit_struct * editing_table_8bit;
+#define TRANSLATE_TABLE_LINE_SIZE       128
+
+/*
+ * The filename containing global default 8-bit mappings.
+ */
+#define DEFAULT_8BIT_FILENAME           "default.xl8"
+
+/*
+ * The filename containing global default Unicode mappings.
+ */
+#define DEFAULT_UNICODE_FILENAME        "default.xlu"
+
+/* Translate tables -------------------------------------------------------- */
 
 /**
- * Which table is currently being edited.
+ * Type of translate table.
  */
-static struct q_translate_table_unicode_struct * editing_table_unicode;
+typedef enum {
+    TABLE_INPUT,    /* Input table */
+    TABLE_OUTPUT    /* Output table */
+} TABLE_TYPE;
 
 /**
- * The filename that is currently being edited.
+ * An 8-bit translation table.
  */
-static char * editing_table_filename = NULL;
+struct table_8bit_struct {
+    TABLE_TYPE type;
+    unsigned char map_to[256];
+};
+
+/**
+ * A <wchar_t, wchar_t> tuple.
+ */
+struct q_wchar_tuple {
+    wchar_t key;
+    wchar_t value;
+};
+
+/**
+ * A Unicode translation table.  This is currently a very stupid list of
+ * tuples.
+ */
+struct table_unicode_struct {
+    TABLE_TYPE type;
+    struct q_wchar_tuple * mappings;
+    size_t mappings_n;
+};
+
+/**
+ * The 8-bit input translation table.
+ */
+static struct table_8bit_struct table_8bit_input;
+
+/**
+ * The 8-bit output translation table.
+ */
+static struct table_8bit_struct table_8bit_output;
+
+/**
+ * The Unicode input translation table.
+ */
+static struct table_unicode_struct table_unicode_input;
+
+/**
+ * The Unicode output translation table.
+ */
+static struct table_unicode_struct table_unicode_output;
+
+/* UI Editor fields -------------------------------------------------------- */
+
+/*
+ * UI is provided for both kinds of tables (8-bit and Unicode).  The editor
+ * only changes one part of a table pair, but the save/load works on both
+ * parts.  The editing_table enum keeps track of which of the four available
+ * parts are being edited, and each call to save/load uses that to figure out
+ * the other half.
+ */
+
+/**
+ * A copy of the 8-bit table that is currently being edited.
+ */
+static struct table_8bit_struct editing_table_8bit;
+
+/**
+ * A copy of the Unicode table that is currently being edited.
+ */
+static struct table_unicode_struct editing_table_unicode;
+
+/**
+ * The 8-bit table filename that is currently being edited.
+ */
+static char * editing_table_8bit_filename = NULL;
+
+/**
+ * The Unicode table filename that is currently being edited.
+ */
+static char * editing_table_unicode_filename = NULL;
 
 /**
  * Which table entry is currently being edited.
@@ -51,39 +137,37 @@ static char * editing_table_filename = NULL;
 static int selected_entry = 0;
 
 /**
- * The 8-bit input translation table.
- */
-struct q_translate_table_8bit_struct q_translate_table_8bit_input;
-
-/**
- * The 8-bit output translation table.
- */
-struct q_translate_table_8bit_struct q_translate_table_8bit_output;
-
-/**
- * The Unicode input translation table.
- */
-struct q_translate_table_unicode_struct q_translate_table_unicode_input;
-
-/**
- * The Unicode output translation table.
- */
-struct q_translate_table_unicode_struct q_translate_table_unicode_output;
-
-#define TRANSLATE_TABLE_LINE_SIZE       128
-
-/**
  * Whether we have changed the table mapping in the editor.
  */
 static Q_BOOL saved_changes = Q_TRUE;
+
+/**
+ * Type of translate table.
+ */
+typedef enum {
+    INPUT_8BIT,                 /* Input table 8-bit */
+    OUTPUT_8BIT,                /* Output table 8-bit */
+    INPUT_UNICODE,              /* Input table Unicode */
+    OUTPUT_UNICODE,             /* Output table Unicode */
+} EDITING_TABLE;
+
+/**
+ * Which table is being edited.
+ */
+static EDITING_TABLE editing_table = INPUT_8BIT;
 
 /**
  * Load an 8-bit translate table pair from a file into the global translate
  * table structs.
  *
  * @param filename the basename of a file in the data directory to read from
+ * @param table_input the input table to write the [input] values to
+ * @param table_output the output table to write the [output] values to
  */
-void load_translate_tables_8bit(const char * filename) {
+void load_translate_tables_8bit(const char * filename,
+    struct table_8bit_struct * table_input,
+    struct table_8bit_struct * table_output) {
+
     FILE * file;
     char * full_filename;
     char line[TRANSLATE_TABLE_LINE_SIZE];
@@ -106,24 +190,22 @@ void load_translate_tables_8bit(const char * filename) {
 
     file = open_datadir_file(filename, &full_filename, "r");
     if (file == NULL) {
-
-        /*
-         * Reset the defaults
-         */
-        for (i = 0; i < 256; i++) {
-            q_translate_table_8bit_input.map_to[i] = i;
-            q_translate_table_8bit_output.map_to[i] = i;
-        }
-
         /*
          * Quietly exit.
          */
-
         /*
          * No leak
          */
         Xfree(full_filename, __FILE__, __LINE__);
         return;
+    }
+
+    /*
+     * Set defaults to do no translation.
+     */
+    for (i = 0; i < 256; i++) {
+        table_input->map_to[i] = i;
+        table_output->map_to[i] = i;
     }
 
     memset(line, 0, sizeof(line));
@@ -218,9 +300,9 @@ void load_translate_tables_8bit(const char * filename) {
          * map_from and map_to are both valid unsigned integers
          */
         if (state == SCAN_INPUT_VALUES) {
-            q_translate_table_8bit_input.map_to[map_from] = map_to;
+            table_input->map_to[map_from] = map_to;
         } else {
-            q_translate_table_8bit_output.map_to[map_from] = map_to;
+            table_output->map_to[map_from] = map_to;
         }
 
     }
@@ -237,9 +319,14 @@ void load_translate_tables_8bit(const char * filename) {
 /**
  * Save an 8-bit translate table pair to a file.
  *
- * @param filename the basename of a file in the data directory to read from
+ * @param filename the basename of a file in the data directory to write to
+ * @param table_input the input table to read the [input] values from
+ * @param table_output the output table to read the [output] values from
  */
-static void save_translate_tables_8bit(const char * filename) {
+static void save_translate_tables_8bit(const char * filename,
+    struct table_8bit_struct * table_input,
+    struct table_8bit_struct * table_output) {
+
     char notify_message[DIALOG_MESSAGE_SIZE];
     char * full_filename;
     FILE * file;
@@ -271,7 +358,7 @@ static void save_translate_tables_8bit(const char * filename) {
      */
     fprintf(file, "\n[input]\n");
     for (i = 0; i < 256; i++) {
-        fprintf(file, "%d = %d\n", i, q_translate_table_8bit_input.map_to[i]);
+        fprintf(file, "%d = %d\n", i, table_input->map_to[i]);
     }
 
     /*
@@ -279,7 +366,7 @@ static void save_translate_tables_8bit(const char * filename) {
      */
     fprintf(file, "\n[output]\n");
     for (i = 0; i < 256; i++) {
-        fprintf(file, "%d = %d\n", i, q_translate_table_8bit_output.map_to[i]);
+        fprintf(file, "%d = %d\n", i, table_output->map_to[i]);
     }
 
     Xfree(full_filename, __FILE__, __LINE__);
@@ -296,8 +383,13 @@ static void save_translate_tables_8bit(const char * filename) {
  * table structs.
  *
  * @param filename the basename of a file in the data directory to read from
+ * @param table_input the input table to read the [input] values from
+ * @param table_output the output table to read the [output] values from
  */
-void load_translate_tables_unicode(const char * filename) {
+void load_translate_tables_unicode(const char * filename,
+    struct table_unicode_struct * table_input,
+    struct table_unicode_struct * table_output) {
+
     FILE * file;
     char * full_filename;
     char line[TRANSLATE_TABLE_LINE_SIZE];
@@ -430,10 +522,10 @@ void load_translate_tables_unicode(const char * filename) {
          */
         if (state == SCAN_INPUT_VALUES) {
             // TODO
-            // q_translate_table_input.map_to[map_from] = map_to;
+            // table_input.map_to[map_from] = map_to;
         } else {
             // TODO
-            // q_translate_table_output.map_to[map_from] = map_to;
+            // table_output.map_to[map_from] = map_to;
         }
 
     }
@@ -451,8 +543,13 @@ void load_translate_tables_unicode(const char * filename) {
  * Save a Unicode translate table pair to a file.
  *
  * @param filename the basename of a file in the data directory to read from
+ * @param table_input the input table to read the [input] values from
+ * @param table_output the output table to read the [output] values from
  */
-static void save_translate_tables_unicode(const char * filename) {
+static void save_translate_tables_unicode(const char * filename,
+    struct table_unicode_struct * table_input,
+    struct table_unicode_struct * table_output) {
+
     char notify_message[DIALOG_MESSAGE_SIZE];
     char * full_filename;
     FILE * file;
@@ -501,19 +598,86 @@ static void save_translate_tables_unicode(const char * filename) {
 }
 
 /**
- * Initialize the global translate pairs to do nothing.
+ * Sets a translate table mapping to do nothing.
+ *
+ * @param table the table to reset
  */
-void initialize_translate_tables() {
+static void reset_table_8bit(struct table_8bit_struct * table) {
     int i;
 
-    /*
-     * Set defaults
-     */
     for (i = 0; i < 256; i++) {
-        q_translate_table_8bit_input.map_to[i] = i;
-        q_translate_table_8bit_output.map_to[i] = i;
+        table->map_to[i] = i;
     }
+}
 
+/**
+ * Sets a translate table mapping to do nothing.
+ *
+ * @param table the table to reset
+ */
+static void reset_table_unicode(struct table_unicode_struct * table) {
+    // TODO
+}
+
+/**
+ * Copies a translate table mapping to another.
+ *
+ * @param src the table to copy from
+ * @param dest the table to copy to
+ */
+static void copy_table_8bit(struct table_8bit_struct * src,
+                            struct table_8bit_struct * dest) {
+
+    int i;
+
+    for (i = 0; i < 256; i++) {
+        dest->map_to[i] = src->map_to[i];
+    }
+    dest->type = src->type;
+}
+
+/**
+ * Copies a translate table mapping to another.
+ *
+ * @param src the table to copy from
+ * @param dest the table to copy to
+ */
+static void copy_table_unicode(struct table_unicode_struct * src,
+                               struct table_unicode_struct * dest) {
+
+    // TODO
+}
+
+/**
+ * Loads the default translate table pairs.
+ */
+void initialize_translate_tables() {
+    reset_table_8bit(&table_8bit_input);
+    reset_table_8bit(&table_8bit_output);
+    reset_table_unicode(&table_unicode_input);
+    reset_table_unicode(&table_unicode_output);
+    use_translate_table_8bit(DEFAULT_8BIT_FILENAME);
+    use_translate_table_unicode(DEFAULT_UNICODE_FILENAME);
+}
+
+/**
+ * Load an 8-bit translate table pair from a file and begin using it for
+ * translate_8bit().
+ *
+ * @param filename the basename of a file in the data directory to read from
+ */
+void use_translate_table_8bit(const char * filename) {
+    // TODO
+}
+
+/**
+ * Load a Unicode translate table pair from a file and begin using it for
+ * translate_unicode().
+ *
+ * @param filename the basename of a file in the data directory to read from
+ */
+void use_translate_table_unicode(const char * filename) {
+    // TODO
 }
 
 /**
@@ -531,11 +695,6 @@ void translate_table_menu_refresh() {
 
     if (q_screen_dirty == Q_FALSE) {
         return;
-    }
-
-    if (editing_table_filename == NULL) {
-        // TODO: load from default.xl8 or default.xlu
-
     }
 
     /*
@@ -617,32 +776,46 @@ void translate_table_menu_keyboard_handler(const int keystroke,
 
     Q_PROGRAM_STATE next_state = Q_STATE_TRANSLATE_EDITOR_8BIT;
 
-    /*
-     * Default to invalid
-     */
-    editing_table_8bit = NULL;
-    editing_table_unicode = NULL;
-
     switch (keystroke) {
 
     case '1':
-        editing_table_8bit = &q_translate_table_8bit_input;
+        copy_table_8bit(&table_8bit_input, &editing_table_8bit);
         next_state = Q_STATE_TRANSLATE_EDITOR_8BIT;
+        editing_table = INPUT_8BIT;
+        if (editing_table_8bit_filename == NULL) {
+            editing_table_8bit_filename = Xstrdup(DEFAULT_8BIT_FILENAME,
+                __FILE__, __LINE__);
+        }
         break;
 
     case '2':
-        editing_table_8bit = &q_translate_table_8bit_output;
+        copy_table_8bit(&table_8bit_output, &editing_table_8bit);
         next_state = Q_STATE_TRANSLATE_EDITOR_8BIT;
+        editing_table = OUTPUT_8BIT;
+        if (editing_table_8bit_filename == NULL) {
+            editing_table_8bit_filename = Xstrdup(DEFAULT_8BIT_FILENAME,
+                __FILE__, __LINE__);
+        }
         break;
 
     case '3':
-        editing_table_unicode = &q_translate_table_unicode_input;
+        copy_table_unicode(&table_unicode_input, &editing_table_unicode);
         next_state = Q_STATE_TRANSLATE_EDITOR_UNICODE;
+        editing_table = INPUT_UNICODE;
+        if (editing_table_unicode_filename == NULL) {
+            editing_table_unicode_filename = Xstrdup(DEFAULT_UNICODE_FILENAME,
+                __FILE__, __LINE__);
+        }
         break;
 
     case '4':
-        editing_table_unicode = &q_translate_table_unicode_output;
+        copy_table_unicode(&table_unicode_output, &editing_table_unicode);
         next_state = Q_STATE_TRANSLATE_EDITOR_UNICODE;
+        editing_table = OUTPUT_UNICODE;
+        if (editing_table_unicode_filename == NULL) {
+            editing_table_unicode_filename = Xstrdup(DEFAULT_UNICODE_FILENAME,
+                __FILE__, __LINE__);
+        }
         break;
 
     case '`':
@@ -713,7 +886,13 @@ void translate_table_editor_8bit_keyboard_handler(const int keystroke,
             /*
              * Save
              */
-            save_translate_tables_8bit(editing_table_filename);
+            if (editing_table == INPUT_8BIT) {
+                save_translate_tables_8bit(editing_table_8bit_filename,
+                    &editing_table_8bit, &table_8bit_output);
+            } else {
+                save_translate_tables_8bit(editing_table_8bit_filename,
+                    &table_8bit_input, &editing_table_8bit);
+            }
 
             /*
              * Editing form is already deleted, so just escape out
@@ -781,12 +960,19 @@ void translate_table_editor_8bit_keyboard_handler(const int keystroke,
                  * Save if the user said so
                  */
                 if ((new_keystroke == 'y') || (new_keystroke == C_CR)) {
-                    save_translate_tables_8bit(editing_table_filename);
+                    if (editing_table == INPUT_8BIT) {
+                        copy_table_8bit(&editing_table_8bit,
+                            &table_8bit_input);
+                    } else {
+                        copy_table_8bit(&editing_table_8bit,
+                            &table_8bit_output);
+                    }
+                    save_translate_tables_8bit(editing_table_8bit_filename,
+                        &table_8bit_input, &table_8bit_output);
                 } else {
                     /*
-                     * Abandon changes
+                     * Abandon changes, do nothing.
                      */
-                    load_translate_tables_8bit(editing_table_filename);
                 }
 
             }
@@ -886,7 +1072,7 @@ void translate_table_editor_8bit_keyboard_handler(const int keystroke,
              * The OK exit point
              */
             value = field_get_value(edit_table_entry_field);
-            editing_table_8bit->map_to[selected_entry] =
+            editing_table_8bit.map_to[selected_entry] =
                         (unsigned char) wcstoul(value, NULL, 10);
             Xfree(value, __FILE__, __LINE__);
 
@@ -917,13 +1103,13 @@ void translate_table_editor_8bit_keyboard_handler(const int keystroke,
             return;
         }
         break;
-        
+
     case ' ':
         /*
          * Ignore.  We either switched into editing mode, was already editing
          * and spacebar should not be passed to the form field anyway.
          */
-        break;
+        return;
 
     default:
         /*
@@ -981,7 +1167,7 @@ void translate_table_editor_8bit_keyboard_handler(const int keystroke,
                                _("Enter new value for %d >"), selected_entry);
 
     snprintf(buffer, sizeof(buffer), "%d",
-             editing_table_8bit->map_to[selected_entry]);
+             editing_table_8bit.map_to[selected_entry]);
     field_set_char_value(edit_table_entry_field, buffer);
 
     /*
@@ -1025,9 +1211,10 @@ void translate_table_editor_8bit_refresh() {
     screen_draw_box(window_left, window_top, window_left + window_length,
                     window_top + window_height);
 
-    if (editing_table_8bit == &q_translate_table_8bit_input) {
+    if (editing_table == INPUT_8BIT) {
         title = _("8-Bit INPUT Strip/Replace Table");
     } else {
+        assert(editing_table == OUTPUT_8BIT);
         title = _("8-Bit OUTPUT Strip/Replace Table");
     }
     title_left = window_length - (strlen(title) + 2);
@@ -1058,6 +1245,10 @@ void translate_table_editor_8bit_refresh() {
     screen_put_color_str_yx(HEIGHT - 1, status_left_stop, status_string,
                             Q_COLOR_STATUS);
 
+    screen_put_color_str_yx(window_top + 1, window_left + 3,
+                            _("File: "), Q_COLOR_MENU_TEXT);
+    screen_put_color_str(editing_table_8bit_filename, Q_COLOR_MENU_COMMAND);
+
     screen_put_color_str_yx(window_top + 3, window_left + 21,
                             _("In Character | |  Out Character | |"),
                             Q_COLOR_MENU_TEXT);
@@ -1065,7 +1256,7 @@ void translate_table_editor_8bit_refresh() {
                              cp437_chars[selected_entry & 0xFF],
                              Q_COLOR_MENU_COMMAND);
     screen_put_color_char_yx(window_top + 3, window_left + 21 + 33,
-                             cp437_chars[editing_table_8bit->
+                             cp437_chars[editing_table_8bit.
                                          map_to[selected_entry] & 0xFF],
                              Q_COLOR_MENU_COMMAND);
 
@@ -1084,12 +1275,12 @@ void translate_table_editor_8bit_refresh() {
             screen_put_color_printf_yx(window_top + 4 + row,
                                        window_left + 3 + (col * 9),
                                        Q_COLOR_MENU_COMMAND, "[%3d-%3d]", i,
-                                       editing_table_8bit->map_to[i]);
+                                       editing_table_8bit.map_to[i]);
         } else {
             screen_put_color_printf_yx(window_top + 4 + row,
                                        window_left + 3 + (col * 9),
                                        Q_COLOR_MENU_TEXT, " %3d-%3d ", i,
-                                       editing_table_8bit->map_to[i]);
+                                       editing_table_8bit.map_to[i]);
         }
     }
 
@@ -1127,7 +1318,13 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
             /*
              * Save
              */
-            save_translate_tables_unicode(editing_table_filename);
+            if (editing_table == INPUT_UNICODE) {
+                save_translate_tables_unicode(editing_table_unicode_filename,
+                    &editing_table_unicode, &table_unicode_output);
+            } else {
+                save_translate_tables_unicode(editing_table_unicode_filename,
+                    &table_unicode_input, &editing_table_unicode);
+            }
 
             /*
              * Editing form is already deleted, so just escape out
@@ -1138,14 +1335,15 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
         }
         break;
 
-    case ' ':
+    case 'L':
+    case 'l':
         if (editing_entry == Q_FALSE) {
             /*
-             * SPACEBAR - Begin editing
+             * Load
              */
-            editing_entry = Q_TRUE;
+            // TODO
         }
-        break;
+        return;
 
     default:
         break;
@@ -1194,12 +1392,20 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
                  * Save if the user said so
                  */
                 if ((new_keystroke == 'y') || (new_keystroke == C_CR)) {
-                    save_translate_tables_unicode(editing_table_filename);
+                    if (editing_table == INPUT_UNICODE) {
+                        copy_table_unicode(&editing_table_unicode,
+                            &table_unicode_input);
+                    } else {
+                        copy_table_unicode(&editing_table_unicode,
+                            &table_unicode_input);
+                    }
+                    save_translate_tables_unicode(
+                        editing_table_unicode_filename,
+                        &table_unicode_input, &table_unicode_output);
                 } else {
                     /*
                      * Abandon changes
                      */
-                    load_translate_tables_unicode(editing_table_filename);
                 }
 
             }
@@ -1288,12 +1494,17 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
 
     case Q_KEY_ENTER:
     case C_CR:
-        if (editing_entry == Q_TRUE) {
+        if (editing_entry == Q_FALSE) {
+            /*
+             * ENTER - Begin editing
+             */
+            editing_entry = Q_TRUE;
+        } else {
             /*
              * The OK exit point
              */
             value = field_get_value(edit_table_entry_field);
-            editing_table_8bit->map_to[selected_entry] =
+            editing_table_8bit.map_to[selected_entry] =
                         (unsigned char) wcstoul(value, NULL, 10);
             Xfree(value, __FILE__, __LINE__);
 
@@ -1312,7 +1523,7 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
          * Ignore.  We either switched into editing mode, was already editing
          * and spacebar should not be passed to the form field anyway.
          */
-        break;
+        return;
 
     default:
         /*
@@ -1370,7 +1581,7 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
                                _("Enter new value for %d >"), selected_entry);
 
     snprintf(buffer, sizeof(buffer), "%d",
-             editing_table_8bit->map_to[selected_entry]);
+             editing_table_8bit.map_to[selected_entry]);
     field_set_char_value(edit_table_entry_field, buffer);
 
     /*
@@ -1414,9 +1625,10 @@ void translate_table_editor_unicode_refresh() {
     screen_draw_box(window_left, window_top, window_left + window_length,
                     window_top + window_height);
 
-    if (editing_table_8bit == &q_translate_table_8bit_input) {
+    if (editing_table == INPUT_UNICODE) {
         title = _("Unicode INPUT Strip/Replace Table");
     } else {
+        assert(editing_table == OUTPUT_UNICODE);
         title = _("Unicode OUTPUT Strip/Replace Table");
     }
     title_left = window_length - (strlen(title) + 2);
@@ -1446,6 +1658,10 @@ void translate_table_editor_unicode_refresh() {
     }
     screen_put_color_str_yx(HEIGHT - 1, status_left_stop, status_string,
                             Q_COLOR_STATUS);
+
+    screen_put_color_str_yx(window_top + 1, window_left + 3,
+                            _("File: "), Q_COLOR_MENU_TEXT);
+    screen_put_color_str(editing_table_unicode_filename, Q_COLOR_MENU_COMMAND);
 
     screen_put_color_str_yx(window_top + 3, window_left + 21,
                             _("In Character | |  Out Character | |"),

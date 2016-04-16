@@ -26,61 +26,7 @@ extern "C" {
 
 /* Defines ---------------------------------------------------------------- */
 
-/**
- * Type of translate table.
- */
-typedef enum {
-    Q_TRANSLATE_TABLE_INPUT,    /* Input table */
-    Q_TRANSLATE_TABLE_OUTPUT    /* Output table */
-} Q_TRANSLATE_TABLE_TYPE;
-
-/**
- * An 8-bit translation table.
- */
-struct q_translate_table_8bit_struct {
-    Q_TRANSLATE_TABLE_TYPE type;
-    unsigned char map_to[256];
-};
-
-/**
- * A <wchar_t, wchar_t> tuple.
- */
-struct q_wchar_tuple {
-    wchar_t key;
-    wchar_t value;
-};
-
-/**
- * A Unicode translation table.  This is currently a very stupid list of
- * tuples.
- */
-struct q_translate_table_unicode_struct {
-    Q_TRANSLATE_TABLE_TYPE type;
-    struct q_wchar_tuple * mappings;
-    size_t mappings_n;
-};
-
 /* Globals ---------------------------------------------------------------- */
-
-/**
- * The 8-bit input translation table.
- */
-extern struct q_translate_table_8bit_struct q_translate_table_8bit_input;
-
-/**
- * The 8-bit output translation table.
- */
-extern struct q_translate_table_8bit_struct q_translate_table_8bit_output;
-
-/**
- * The Unicode input translation table.
- */
-extern struct q_translate_table_unicode_struct q_translate_table_unicode_input;
-
-/**
- * The Unicode output translation table.
- */
-extern struct q_translate_table_unicode_struct q_translate_table_unicode_output;
 
 /* Functions -------------------------------------------------------------- */
 
@@ -127,25 +73,43 @@ extern void translate_table_editor_unicode_keyboard_handler(const int keystroke,
 extern void translate_table_editor_unicode_refresh();
 
 /**
- * Initialize the global translate pairs to do nothing.
+ * Loads the default translate table pairs.
  */
 extern void initialize_translate_tables();
 
 /**
- * Load an 8-bit translate table pair from a file into the global translate
- * table structs.
+ * Load an 8-bit translate table pair from a file and begin using it for
+ * translate_8bit().
  *
  * @param filename the basename of a file in the data directory to read from
  */
-extern void load_translate_table_8bit(const char * filename);
+extern void use_translate_table_8bit(const char * filename);
 
 /**
- * Load a Unicode translate table pair from a file into the global translate
- * table structs.
+ * Load a Unicode translate table pair from a file and begin using it for
+ * translate_unicode().
  *
  * @param filename the basename of a file in the data directory to read from
  */
-extern void load_translate_table_unicode(const char * filename);
+extern void use_translate_table_unicode(const char * filename);
+
+/**
+ * Translate an 8-bit byte using the tables read via
+ * use_translate_table_8bit().
+ *
+ * @param in the byte to translate
+ * @return the translated byte
+ */
+extern unsigned char translate_8bit(const unsigned char in);
+
+/**
+ * Translate a Unicode code point using the tables read via
+ * use_translate_table_unicode().
+ *
+ * @param in the code point to translate
+ * @return the translated code point
+ */
+extern unsigned char translate_unicode(const wchar_t in);
 
 #ifdef __cplusplus
 }
