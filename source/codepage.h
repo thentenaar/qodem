@@ -262,6 +262,17 @@ extern Q_CODEPAGE codepage_from_string(const char * string);
 extern wchar_t codepage_map_char(const unsigned char ch);
 
 /**
+ * Map a Unicode code point / glyph to a byte in a codepage.
+ *
+ * @param ch the Unicode code point.
+ * @param codepage the codepage to look through.
+ * @param success if true, the reverse mapping worked.
+ * @return the 8-bit character in one of the 8-bit codepages.
+ */
+extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
+                                   Q_BOOL * success);
+
+/**
  * Keyboard handler for the codepage selection dialog.
  *
  * @param keystroke the keystroke from the user.

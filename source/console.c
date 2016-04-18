@@ -749,18 +749,7 @@ void console_quicklearn_keyboard_handler(int keystroke, int flags) {
      * Pass keystroke
      */
     assert(q_status.split_screen == Q_FALSE);
-    new_keystroke = keystroke;
-    if (((new_keystroke <= 0xFF) && ((flags & KEY_FLAG_UNICODE) == 0)) ||
-        ((new_keystroke <= 0x7F) && ((flags & KEY_FLAG_UNICODE) != 0))) {
-        /*
-         * Run regular keystrokes through the output translation table.  Note
-         * that Unicode keys greater than 0x7F will not get translated.
-         */
-        // TODO
-        // new_keystroke = q_translate_table_output.map_to[new_keystroke];
-    }
-
-    post_keystroke(new_keystroke, flags);
+    post_keystroke(keystroke, flags);
     return;
 }
 
@@ -1928,19 +1917,7 @@ void console_keyboard_handler(int keystroke, int flags) {
      * Pass keystroke
      */
     if (q_status.split_screen == Q_FALSE) {
-        new_keystroke = keystroke;
-        if (((new_keystroke <= 0xFF) && ((flags & KEY_FLAG_UNICODE) == 0)) ||
-            ((new_keystroke <= 0x7F) && ((flags & KEY_FLAG_UNICODE) != 0))) {
-            /*
-             * Run regular keystrokes through the output translation table.
-             * Note that Unicode keys greater than 0x7F will not get
-             * translated.
-             */
-            // TODO
-            // new_keystroke = q_translate_table_output.map_to[new_keystroke];
-        }
-
-        post_keystroke(new_keystroke, flags);
+        post_keystroke(keystroke, flags);
         return;
     }
 
@@ -2050,6 +2027,29 @@ void console_process_incoming_data(unsigned char * buffer, const int n,
         }
 
         /*
+         * Capture
+         */
+        if (q_status.capture == Q_TRUE) {
+            if (q_status.capture_type == Q_CAPTURE_TYPE_RAW) {
+                /*
+                 * Raw
+                 */
+                fprintf(q_status.capture_file, "%c", buffer[i]);
+                if (q_status.capture_flush_time < time(NULL)) {
+                    fflush(q_status.capture_file);
+                    q_status.capture_flush_time = time(NULL);
+                }
+            }
+        }
+
+        /*
+         * Run received characters through the 8-bit input translation table
+         * before doing anything else.  This can break UTF-8 decoding,
+         * Zmodem/Kermit autostart, and more.
+         */
+        buffer[i] = translate_8bit_in(buffer[i]);
+
+        /*
          * Strip 8th bit processing
          */
         if (q_status.strip_8th_bit == Q_TRUE) {
@@ -2118,39 +2118,6 @@ void console_process_incoming_data(unsigned char * buffer, const int n,
             }
 
         } /* if (q_status.state == Q_STATE_CONSOLE) */
-
-        /*
-         * Capture
-         */
-        if (q_status.capture == Q_TRUE) {
-            if (q_status.capture_type == Q_CAPTURE_TYPE_RAW) {
-                /*
-                 * Raw
-                 */
-                fprintf(q_status.capture_file, "%c", buffer[i]);
-                if (q_status.capture_flush_time < time(NULL)) {
-                    fflush(q_status.capture_file);
-                    q_status.capture_flush_time = time(NULL);
-                }
-            }
-        }
-
-        /*
-         * Run received characters through the input translation table.
-         */
-        switch (q_status.emulation) {
-        case Q_EMUL_LINUX_UTF8:
-        case Q_EMUL_XTERM_UTF8:
-            if (buffer[i] <= 0x7F) {
-                // TODO
-                // buffer[i] = q_translate_table_input.map_to[buffer[i]];
-            }
-            break;
-        default:
-            // TODO
-            // buffer[i] = q_translate_table_input.map_to[buffer[i]];
-            break;
-        }
 
         /*
          * Normal character -- pass it through emulator

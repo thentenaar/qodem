@@ -346,6 +346,23 @@ static void host_write(char * buffer, int count) {
         qodem_write(q_child_tty_fd, buffer, count, Q_TRUE);
     }
     for (i = 0; i < count; i++) {
+
+        /*
+         * Capture
+         */
+        if (q_status.capture == Q_TRUE) {
+            if (q_status.capture_type == Q_CAPTURE_TYPE_RAW) {
+                /*
+                 * Raw
+                 */
+                fprintf(q_status.capture_file, "%c", buffer[i]);
+                if (q_status.capture_flush_time < time(NULL)) {
+                    fflush(q_status.capture_file);
+                    q_status.capture_flush_time = time(NULL);
+                }
+            }
+        }
+
         if (buffer[i] == 0x08) {
             /*
              * Backspace
@@ -2521,6 +2538,23 @@ void host_process_data(unsigned char * input, const unsigned int input_n,
              * Online: pass everything in as keystrokes
              */
             for (i = 0; i < input_n; i++) {
+
+                /*
+                 * Capture
+                 */
+                if (q_status.capture == Q_TRUE) {
+                    if (q_status.capture_type == Q_CAPTURE_TYPE_RAW) {
+                        /*
+                         * Raw
+                         */
+                        fprintf(q_status.capture_file, "%c", input[i]);
+                        if (q_status.capture_flush_time < time(NULL)) {
+                            fflush(q_status.capture_file);
+                            q_status.capture_flush_time = time(NULL);
+                        }
+                    }
+                }
+
                 state_machine_keyboard_handler(input[i]);
             }
         }

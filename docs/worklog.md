@@ -1,6 +1,12 @@
 The Qodem Project Work Log
 ==========================
 
+April 18, 2016
+
+More of the translate system stubbed in.  8-bit translates are working
+again.  Stubs are in place for the Unicode-to-8-bit back-mapping
+also.
+
 April 9, 2016
 
 I have stubbed in new phonebook fields for 8-bit and Unicode translate

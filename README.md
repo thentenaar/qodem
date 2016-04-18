@@ -379,6 +379,9 @@ Qodem manages its own known_hosts file for SSH connections.  This file
 is stored in the ~/.qodem directory (or Documents\qodem\prefs on
 Windows).
 
+When using 'raw' mode for the capture file, host mode includes its
+outgoing bytes in the capture file.
+
 
 
 SCRIPT SUPPORT

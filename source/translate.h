@@ -20,6 +20,8 @@
 
 /* Includes --------------------------------------------------------------- */
 
+#include "codepage.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -94,22 +96,52 @@ extern void use_translate_table_8bit(const char * filename);
 extern void use_translate_table_unicode(const char * filename);
 
 /**
- * Translate an 8-bit byte using the tables read via
+ * Translate an 8-bit byte using the input table read via
  * use_translate_table_8bit().
  *
  * @param in the byte to translate
  * @return the translated byte
  */
-extern unsigned char translate_8bit(const unsigned char in);
+extern unsigned char translate_8bit_in(const unsigned char in);
 
 /**
- * Translate a Unicode code point using the tables read via
+ * Translate an 8-bit byte using the output table read via
+ * use_translate_table_8bit().
+ *
+ * @param in the byte to translate
+ * @return the translated byte
+ */
+extern unsigned char translate_8bit_out(const unsigned char in);
+
+/**
+ * Translate a Unicode code point using the input tables read via
  * use_translate_table_unicode().
  *
  * @param in the code point to translate
  * @return the translated code point
  */
-extern unsigned char translate_unicode(const wchar_t in);
+extern wchar_t translate_unicode_in(const wchar_t in);
+
+/**
+ * Translate a Unicode code point using the output tables read via
+ * use_translate_table_unicode().
+ *
+ * @param in the code point to translate
+ * @return the translated code point
+ */
+extern wchar_t translate_unicode_out(const wchar_t in);
+
+/**
+ * Try to map a Unicode code point to an 8-bit byte of a codepage.  Use both
+ * of the input/output tables read via use_translate_table_unicode(), and the
+ * codepage mappings.
+ *
+ * @param in the code point to translate
+ * @param codepage the 8-bit codepage to map to
+ * @return the mapped byte, or '?' if nothing can be mapped to it
+ */
+extern unsigned char translate_unicode_to_8bit(const wchar_t in,
+                                               const Q_CODEPAGE codepage);
 
 #ifdef __cplusplus
 }

@@ -703,16 +703,6 @@ void script_process_data(unsigned char * input, const unsigned int input_n,
                 continue;
             }
 
-            if (utf8_char <= 0x7F) {
-                /*
-                 * Run character through the output translation table.  Since
-                 * all character are Unicode, only those less than or equal
-                 * to 0x7F will get translated.
-                 */
-                // TODO
-                // utf8_char = q_translate_table_output.map_to[utf8_char];
-            }
-
             switch (q_status.emulation) {
             case Q_EMUL_TTY:
             case Q_EMUL_ANSI:
@@ -725,6 +715,12 @@ void script_process_data(unsigned char * input, const unsigned int input_n,
             case Q_EMUL_LINUX:
             case Q_EMUL_XTERM:
                 /*
+                 * 8-bit emulations: try to backmap to the codepage,
+                 * including allowing Unicode synonyms.
+                 */
+                output[*output_n] = translate_unicode_to_8bit(
+                                        (wchar_t) utf8_char, q_status.codepage);
+                /*
                  * 8-bit emulations
                  */
                 output[*output_n] = (unsigned char) (utf8_char & 0xFF);
@@ -733,9 +729,16 @@ void script_process_data(unsigned char * input, const unsigned int input_n,
             case Q_EMUL_LINUX_UTF8:
             case Q_EMUL_XTERM_UTF8:
                 /*
-                 * UTF-8 emulations - re-encode
+                 * UTF-8 emulations: encode outbound "keystroke", after
+                 * running it through the direct Unicode translation map.
                  */
-                rc = utf8_encode((wchar_t) utf8_char, (char *) &output[*output_n]);
+                utf8_char = translate_unicode_out((wchar_t) utf8_char);
+
+                /*
+                 * Now re-encode on the wire.
+                 */
+                rc = utf8_encode((wchar_t) utf8_char,
+                                 (char *) &output[*output_n]);
                 break;
             }
             *output_n += rc;
@@ -1528,7 +1531,6 @@ void script_resume() {
  * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.  See input.h.
  */
 void script_keyboard_handler(const int keystroke, const int flags) {
-    int new_keystroke;
 
     switch (keystroke) {
     case 'P':
@@ -1571,24 +1573,10 @@ void script_keyboard_handler(const int keystroke, const int flags) {
 
     if ((flags & KEY_FLAG_ALT) == 0) {
         if (q_running_script.paused == Q_TRUE) {
-
-            new_keystroke = keystroke;
-            if (((new_keystroke <= 0xFF) && ((flags & KEY_FLAG_UNICODE) == 0)) ||
-                ((new_keystroke <= 0x7F) && ((flags & KEY_FLAG_UNICODE) != 0))
-            ) {
-                /*
-                 * Run regular keystrokes through the output translation
-                 * table.  Note that Unicode keys greater than 0x7F will not
-                 * get translated.
-                 */
-                // TODO
-                // new_keystroke = q_translate_table_output.map_to[new_keystroke];
-            }
-
             /*
              * Pass keystroke
              */
-            post_keystroke(new_keystroke, 0);
+            post_keystroke(keystroke, 0);
         }
     }
 

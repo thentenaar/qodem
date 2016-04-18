@@ -41,12 +41,13 @@
 #include "states.h"
 #include "options.h"
 #include "music.h"
-#include "phonebook.h"
 #include "field.h"
 #include "script.h"
 #include "dialer.h"
 #include "help.h"
 #include "netclient.h"
+#include "translate.h"
+#include "phonebook.h"
 
 /* Modem dialer ----------------------------------------------------------- */
 
@@ -6038,17 +6039,17 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                 break;
             case CAPTUREFILE_NAME:
                 status_string = _(""
-" Change Capture File     [F2/Space] Pick   [F10/Alt-Enter] Save   [ESC] "
+" Change Capture File           [F2] Pick   [F10/Alt-Enter] Save   [ESC] "
                                   "Abort ");
                 break;
             case TRANSLATE_8BIT_NAME:
                 status_string = _(""
-" Change 8-bit Xlate File [F2/Space] Pick   [F10/Alt-Enter] Save   [ESC] "
+" Change 8-bit Xlate File       [F2] Pick   [F10/Alt-Enter] Save   [ESC] "
                                   "Abort ");
                 break;
             case TRANSLATE_UNICODE_NAME:
                 status_string = _(""
-" Change UTF Xlate File   [F2/Space] Pick   [F10/Alt-Enter] Save   [ESC] "
+" Change UTF Xlate File         [F2] Pick   [F10/Alt-Enter] Save   [ESC] "
                                   "Abort ");
                 break;
             case KEYBINDINGS_NAME:
@@ -6694,9 +6695,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                     /*
                      * Pull up the pick list
                      */
-                    file_selection =
-                        view_directory(get_option(Q_OPTION_WORKING_DIR),
-                                       "*.xl8");
+                    file_selection = view_directory(q_home_directory, "*.xl8");
 
                     if (file_selection != NULL) {
                         field_set_char_value(fields[10],
@@ -6712,9 +6711,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                     /*
                      * Pull up the pick list
                      */
-                    file_selection =
-                        view_directory(get_option(Q_OPTION_WORKING_DIR),
-                                       "*.xlu");
+                    file_selection = view_directory(q_home_directory, "*.xlu");
 
                     if (file_selection != NULL) {
                         field_set_char_value(fields[11],

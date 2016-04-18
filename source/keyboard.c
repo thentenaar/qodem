@@ -95,6 +95,7 @@
 #include "field.h"
 #include "help.h"
 #include "netclient.h"
+#include "translate.h"
 #include "keyboard.h"
 
 #if !defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32)
@@ -1101,14 +1102,17 @@ void post_keystroke(const int keystroke, const int flags) {
                 (q_status.emulation == Q_EMUL_LINUX_UTF8)) {
 
                 /*
-                 * UTF-8 emulations: encode outbound keystroke
+                 * UTF-8 emulations: encode outbound keystroke, after running
+                 * it through the direct Unicode translation map.
                  */
-                encode_utf8_char((wchar_t) keystroke);
+                encode_utf8_char(translate_unicode_out((wchar_t) keystroke));
             } else {
                 /*
-                 * Everyone else: send lower 8 bits only
+                 * Everyone else: try to backmap to the codepage, including
+                 * allowing Unicode synonyms.
                  */
-                utf8_buffer[0] = keystroke & 0xFF;
+                utf8_buffer[0] = translate_unicode_to_8bit((wchar_t) keystroke,
+                    q_status.codepage);
                 utf8_buffer[1] = 0;
             }
             qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer),
@@ -1312,10 +1316,10 @@ void post_keystroke(const int keystroke, const int flags) {
          *
          *   - It is not a normal Unicode keystroke, it is a function key of
          *     some kind.
-         * 
+         *
          *   - It is not one of the function keys that can drive a keyboard
          *     macro (the bound keyboards).
-         * 
+         *
          *   - It is not one of the function keys that is specifically
          *     defined by an emulation (X_keypress()) or likely to be defined
          *     by a terminfo entry.
@@ -1326,7 +1330,7 @@ void post_keystroke(const int keystroke, const int flags) {
          * a sequence that can be sent to the remote side.  Otherwise, Qodem
          * will quietly ignore the keystroke.
          */
-        
+
 #ifdef SHOW_UNKNOWN_MESSAGE
         snprintf(unknown_string, sizeof(unknown_string),
                  _("[Unknown keycode 0x%04x %04o]"), keystroke, keystroke);
