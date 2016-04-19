@@ -17,6 +17,8 @@ qodem (1.0beta-1) unstable; urgency=low
   * Win32 serial port support
   * Windows graphical installer
   * Host mode modem support
+  * Translate tables support 8-bit and Unicode separately
+  * Back-conversion of Unicode to current 8-bit codepage
 
  -- Kevin Lamonte <lamonte@users.sourceforge.net>  Wed, 27 Apr 2016 18:50:00 -0500
 
