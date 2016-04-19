@@ -646,8 +646,8 @@ static void save_translate_tables_unicode(const char * filename,
         assert(table_unicode_input.mappings[i].key !=
             table_unicode_input.mappings[i].value);
         fprintf(file, "\\u%04x = \\u%04x\n",
-            table_unicode_input.mappings[i].key,
-            table_unicode_input.mappings[i].value);
+            (uint16_t) table_unicode_input.mappings[i].key,
+            (uint16_t) table_unicode_input.mappings[i].value);
     }
 
     /*
@@ -658,8 +658,8 @@ static void save_translate_tables_unicode(const char * filename,
         assert(table_unicode_output.mappings[i].key !=
             table_unicode_output.mappings[i].value);
         fprintf(file, "\\u%04x = \\u%04x\n",
-            table_unicode_output.mappings[i].key,
-            table_unicode_output.mappings[i].value);
+            (uint16_t) table_unicode_output.mappings[i].key,
+            (uint16_t) table_unicode_output.mappings[i].value);
     }
 
     Xfree(full_filename, __FILE__, __LINE__);
@@ -1122,6 +1122,11 @@ void translate_table_menu_refresh() {
     q_screen_dirty = Q_FALSE;
 }
 
+/*
+ * When true, the user is editing the high bit range of the 8-bit table.
+ */
+static Q_BOOL editing_high_128 = Q_FALSE;
+
 /**
  * Keyboard handler for the Alt-A translation table selection dialog.
  *
@@ -1200,6 +1205,8 @@ void translate_table_menu_keyboard_handler(const int keystroke,
     /*
      * The OK exit point
      */
+    selected_entry = 0;
+    editing_high_128 = Q_FALSE;
     q_screen_dirty = Q_TRUE;
     console_refresh(Q_FALSE);
     switch_state(next_state);
@@ -1210,7 +1217,6 @@ static void * edit_table_entry_window;
 static struct fieldset * edit_table_entry_form;
 static struct field * edit_table_entry_field;
 static Q_BOOL editing_entry = Q_FALSE;
-static Q_BOOL editing_high_128 = Q_FALSE;
 static int window_left;
 static int window_top;
 static int window_length = 80;
@@ -1375,7 +1381,7 @@ void translate_table_editor_8bit_keyboard_handler(const int keystroke,
 
     case Q_KEY_DOWN:
         if (editing_entry == Q_FALSE) {
-            if (row < 16 - 1) {
+            if (row < 15) {
                 selected_entry++;
             }
             q_screen_dirty = Q_TRUE;
@@ -1404,7 +1410,7 @@ void translate_table_editor_8bit_keyboard_handler(const int keystroke,
 
     case Q_KEY_RIGHT:
         if (editing_entry == Q_FALSE) {
-            if (col < (128 / 16) - 1) {
+            if (col < 7) {
                 selected_entry += 16;
             }
             q_screen_dirty = Q_TRUE;
@@ -1579,7 +1585,7 @@ void translate_table_editor_8bit_refresh() {
     int title_left;
     char * title;
     int i, end_i;
-    int row, col, page;
+    int row, col;
 
     window_left = (WIDTH - window_length) / 2;
     window_top = (HEIGHT - window_height) / 2;
@@ -1634,6 +1640,8 @@ void translate_table_editor_8bit_refresh() {
                             _("File: "), Q_COLOR_MENU_TEXT);
     screen_put_color_str(editing_table_8bit_filename, Q_COLOR_MENU_COMMAND);
 
+    // TODO: only use CP437 for C0/C1, otherwise use current codepage.
+    // (CP437 when DEC is codepage).
     screen_put_color_str_yx(window_top + 3, window_left + 21,
                             _("In Character | |  Out Character | |"),
                             Q_COLOR_MENU_TEXT);
@@ -1691,8 +1699,9 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
     char buffer[16];
     struct file_info * new_file;
 
-    col = (selected_entry % 128) / 16;
-    row = (selected_entry % 128) % 16;
+    page = (selected_entry / 96);
+    col  = (selected_entry % 96) / 16;
+    row  = (selected_entry % 96) % 16;
 
     switch (keystroke) {
 
@@ -1839,7 +1848,7 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
 
     case Q_KEY_DOWN:
         if (editing_entry == Q_FALSE) {
-            if (row < 16 - 1) {
+            if (row < 15) {
                 selected_entry++;
             }
             q_screen_dirty = Q_TRUE;
@@ -1868,12 +1877,34 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
 
     case Q_KEY_RIGHT:
         if (editing_entry == Q_FALSE) {
-            if (col < (128 / 16) - 1) {
+            if ((col < 5) && (selected_entry <= 0xFFFF - 16)) {
                 selected_entry += 16;
             }
             q_screen_dirty = Q_TRUE;
         } else {
             fieldset_right(edit_table_entry_form);
+        }
+        return;
+
+    case Q_KEY_NPAGE:
+        if (editing_entry == Q_FALSE) {
+            if (selected_entry + 96 > 0xFFFF) {
+                selected_entry = 0;
+            } else {
+                selected_entry += 96;
+            }
+            q_screen_dirty = Q_TRUE;
+        }
+        return;
+
+    case Q_KEY_PPAGE:
+        if (editing_entry == Q_FALSE) {
+            if (selected_entry - 96 < 0) {
+                selected_entry = 0x10000 - (0x10000 % 96);
+            } else {
+                selected_entry -= 96;
+            }
+            q_screen_dirty = Q_TRUE;
         }
         return;
 
@@ -1997,7 +2028,7 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
                                _("Enter new value for %d >"), selected_entry);
 
     snprintf(buffer, sizeof(buffer), "%04x",
-        unicode_table_get(&editing_table_unicode, selected_entry));
+        (uint16_t) unicode_table_get(&editing_table_unicode, selected_entry));
     field_set_char_value(edit_table_entry_field, buffer);
 
     /*
@@ -2024,7 +2055,8 @@ void translate_table_editor_unicode_refresh() {
     int title_left;
     char * title;
     int i, end_i;
-    int row, col;
+    int row, col, page;
+    wchar_t selected_mapped;
 
     window_left = (WIDTH - window_length) / 2;
     window_top = (HEIGHT - window_height) / 2;
@@ -2083,41 +2115,62 @@ void translate_table_editor_unicode_refresh() {
                             _("In Character | |  Out Character | |"),
                             Q_COLOR_MENU_TEXT);
 
-    // TODO
-
-    /*
-    screen_put_color_char_yx(window_top + 3, window_left + 21 + 14,
-                             cp437_chars[selected_entry & 0xFF],
-                             Q_COLOR_MENU_COMMAND);
-    screen_put_color_char_yx(window_top + 3, window_left + 21 + 33,
-                             cp437_chars[editing_table_8bit->
-                                         map_to[selected_entry] & 0xFF],
-                             Q_COLOR_MENU_COMMAND);
-
-    if (editing_high_128) {
-        i = 128;
+    if ((selected_entry < 0x20) ||
+        ((selected_entry >= 0x7F) && (selected_entry < 0xA0))
+    ) {
+        /*
+         * Always use CP437 for C0 and C1 control characters.
+         */
+        screen_put_color_char_yx(window_top + 3, window_left + 21 + 14,
+                                 cp437_chars[selected_entry & 0xFF],
+                                 Q_COLOR_MENU_COMMAND);
     } else {
-        i = 0;
+        screen_put_color_char_yx(window_top + 3, window_left + 21 + 14,
+                                 selected_entry, Q_COLOR_MENU_COMMAND);
     }
-    end_i = i + 128;
+
+    selected_mapped = unicode_table_get(&editing_table_unicode, selected_entry);
+    if ((selected_mapped < 0x20) ||
+        ((selected_mapped >= 0x7F) && (selected_mapped < 0xA0))
+    ) {
+        /*
+         * Always use CP437 for C0 and C1 control characters.
+         */
+        screen_put_color_char_yx(window_top + 3, window_left + 21 + 33,
+                                 cp437_chars[selected_mapped & 0xFF],
+                                 Q_COLOR_MENU_COMMAND);
+    } else {
+        screen_put_color_char_yx(window_top + 3, window_left + 21 + 33,
+                                 selected_mapped, Q_COLOR_MENU_COMMAND);
+    }
+
+    i = selected_entry - (selected_entry % 96);
+    if (selected_entry >= (0x10000 - 64)) {
+        end_i = i + 64;
+    } else {
+        end_i = i + 96;
+    }
 
     for (; i < end_i; i++) {
-        col = (i % 128) / 16;
-        row = (i % 128) % 16;
+        page = (i / 96);
+        col  = (i % 96) / 16;
+        row  = (i % 96) % 16;
+        selected_mapped = unicode_table_get(&editing_table_unicode, i);
 
         if (i == selected_entry) {
             screen_put_color_printf_yx(window_top + 4 + row,
-                                       window_left + 3 + (col * 9),
-                                       Q_COLOR_MENU_COMMAND, "[%3d-%3d]", i,
-                                       editing_table_8bit->map_to[i]);
+                                       window_left + 3 + (col * 12),
+                                       Q_COLOR_MENU_COMMAND, "[%04x-%04x]",
+                                       (uint16_t) i,
+                                       (uint16_t) selected_mapped);
         } else {
             screen_put_color_printf_yx(window_top + 4 + row,
-                                       window_left + 3 + (col * 9),
-                                       Q_COLOR_MENU_TEXT, " %3d-%3d ", i,
-                                       editing_table_8bit->map_to[i]);
+                                       window_left + 3 + (col * 12),
+                                       Q_COLOR_MENU_TEXT, " %04x-%04x ",
+                                       (uint16_t) i,
+                                       (uint16_t) selected_mapped);
         }
     }
-    */
 
     q_screen_dirty = Q_FALSE;
     screen_flush();
