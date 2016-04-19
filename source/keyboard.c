@@ -1099,7 +1099,8 @@ void post_keystroke(const int keystroke, const int flags) {
             qodem_write(q_child_tty_fd, "\0", 1, Q_TRUE);
         } else {
             if ((q_status.emulation == Q_EMUL_XTERM_UTF8) ||
-                (q_status.emulation == Q_EMUL_LINUX_UTF8)) {
+                (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                (q_status.emulation == Q_EMUL_DEBUG)) {
 
                 /*
                  * UTF-8 emulations: encode outbound keystroke, after running

@@ -28,14 +28,6 @@ Rework codepage/UTF-8 support:
       wchar_t fields support 8-bit codepage
     main screen: support 8-bit codepage on field values in 'O'ther views
   host mode codepage option
-  DEBUG emulation:
-    codepage option
-    encoding UTF-8
-  Documentation:
-    help text
-    man page
-    www page
-  Ship 8-bit table for EBCDIC
 
 
 OS X Build:

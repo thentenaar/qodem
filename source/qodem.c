@@ -271,7 +271,9 @@ static struct timeval ssh_tv;
  * written, performing a busy wait and retry.
  * @return the number of bytes written
  */
-int qodem_write(const int fd, char * data, const int data_n, Q_BOOL sync) {
+int qodem_write(const int fd, const char * data, const int data_n,
+                const Q_BOOL sync) {
+
 #ifdef Q_PDCURSES_WIN32
     char notify_message[DIALOG_MESSAGE_SIZE];
 #endif
@@ -280,6 +282,13 @@ int qodem_write(const int fd, char * data, const int data_n, Q_BOOL sync) {
     int old_errno;
     int begin = 0;
     int n = data_n;
+
+    /*
+     * We were passed a const data so that callers can pass read-only string
+     * literals, but might need to change data before it hits the wire.
+     */
+    char write_buffer_data[Q_BUFFER_SIZE];
+    char * write_buffer = (char *) data;
 
     if (data_n == 0) {
         /* NOP */
@@ -294,15 +303,16 @@ int qodem_write(const int fd, char * data, const int data_n, Q_BOOL sync) {
          * through the 8-bit translate table here and in
          * process_incoming_data() so that everything is converted only once.
          */
+        write_buffer = write_buffer_data;
         for (i = 0; i < data_n; i++) {
-            data[i] = translate_8bit_out(data[i]);
+            write_buffer_data[i] = translate_8bit_out(data[i]);
         }
     }
 
     /* Quicklearn */
     if (q_status.quicklearn == Q_TRUE) {
         for (i = 0; i < data_n; i++) {
-            quicklearn_send_byte(data[i]);
+            quicklearn_send_byte(write_buffer[i]);
         }
     }
 
@@ -310,14 +320,42 @@ int qodem_write(const int fd, char * data, const int data_n, Q_BOOL sync) {
     /* Mark/space parity */
     if (Q_SERIAL_OPEN && (q_serial_port.parity == Q_PARITY_MARK)) {
         /* Outgoing data as MARK parity:  set the 8th bit */
-        for (i = 0; i < data_n; i++) {
-            data[i] |= 0x80;
+        if (write_buffer != data) {
+            /*
+             * data has already been copied to write_data.
+             */
+            for (i = 0; i < data_n; i++) {
+                write_buffer_data[i] |= 0x80;
+            }
+        } else {
+            /*
+             * This is the first destructive change of data, copy it to
+             * write_data.
+             */
+            write_buffer = write_buffer_data;
+            for (i = 0; i < data_n; i++) {
+                write_buffer_data[i] = data[i] | 0x80;
+            }
         }
     }
     if (Q_SERIAL_OPEN && (q_serial_port.parity == Q_PARITY_SPACE)) {
         /* Outgoing data as SPACE parity:  strip the 8th bit */
-        for (i = 0; i < data_n; i++) {
-            data[i] &= 0x7F;
+        if (write_buffer != data) {
+            /*
+             * data has already been copied to write_data.
+             */
+            for (i = 0; i < data_n; i++) {
+                write_buffer_data[i] &= 0x7F;
+            }
+        } else {
+            /*
+             * This is the first destructive change of data, copy it to
+             * write_data.
+             */
+            write_buffer = write_buffer_data;
+            for (i = 0; i < data_n; i++) {
+                write_buffer_data[i] = data[i] & 0x7F;
+            }
         }
     }
 #endif
@@ -326,12 +364,12 @@ int qodem_write(const int fd, char * data, const int data_n, Q_BOOL sync) {
 
         DLOG(("qodem_write() OUTPUT bytes: "));
         for (i = 0; i < data_n; i++) {
-            DLOG2(("%02x ", data[i] & 0xFF));
+            DLOG2(("%02x ", write_buffer[i] & 0xFF));
         }
         DLOG2(("\n"));
         DLOG(("qodem_write() OUTPUT bytes (ASCII): "));
         for (i = 0; i < data_n; i++) {
-            DLOG2(("%c ", data[i] & 0xFF));
+            DLOG2(("%c ", write_buffer[i] & 0xFF));
         }
         DLOG2(("\n"));
     }
@@ -346,19 +384,19 @@ do_write:
             (q_host_type == Q_HOST_TYPE_TELNETD))
     ) {
         /* Telnet */
-        rc = telnet_write(fd, data + begin, data_n);
+        rc = telnet_write(fd, write_buffer + begin, data_n);
     } else if ((q_status.dial_method == Q_DIAL_METHOD_RLOGIN) &&
         (net_is_connected() == Q_TRUE)
     ) {
         /* Rlogin */
-        rc = rlogin_write(fd, data + begin, data_n);
+        rc = rlogin_write(fd, write_buffer + begin, data_n);
     } else if (((q_status.dial_method == Q_DIAL_METHOD_SOCKET) &&
             (net_is_connected() == Q_TRUE)) ||
         (((q_program_state == Q_STATE_HOST) || (q_host_active == Q_TRUE)) &&
             (q_host_type == Q_HOST_TYPE_SOCKET))
     ) {
         /* Socket */
-        rc = send(fd, data + begin, data_n, 0);
+        rc = send(fd, write_buffer + begin, data_n, 0);
 #ifdef Q_SSH_CRYPTLIB
     } else if (((q_status.dial_method == Q_DIAL_METHOD_SSH) &&
             (net_is_connected() == Q_TRUE)) ||
@@ -366,7 +404,7 @@ do_write:
             (q_host_type == Q_HOST_TYPE_SSHD))
     ) {
         /* SSH */
-        rc = ssh_write(fd, data + begin, data_n);
+        rc = ssh_write(fd, write_buffer + begin, data_n);
 #endif
 
     } else {
@@ -381,8 +419,8 @@ do_write:
             (q_status.dial_method == Q_DIAL_METHOD_SHELL)
         ) {
             DWORD bytes_written = 0;
-            if (WriteFile(q_child_stdin, data + begin, data_n, &bytes_written,
-                    NULL) == TRUE) {
+            if (WriteFile(q_child_stdin, write_buffer + begin, data_n,
+                    &bytes_written, NULL) == TRUE) {
 
                 rc = bytes_written;
                 DLOG(("qodem_write() PIPE WriteFile() %d bytes written\n",
@@ -410,7 +448,7 @@ do_write:
             assert(q_serial_handle != NULL);
             ZeroMemory(&serial_overlapped, sizeof(serial_overlapped));
             serial_overlapped.hEvent = serial_event;
-            if (WriteFile(q_serial_handle, data + begin, data_n, NULL,
+            if (WriteFile(q_serial_handle, write_buffer + begin, data_n, NULL,
                     &serial_overlapped) == TRUE) {
 
                 if (GetOverlappedResult(q_serial_handle, &serial_overlapped,
@@ -462,12 +500,12 @@ do_write:
         } else {
             DLOG(("qodem_write() write() %d bytes to fd %d\n", data_n, fd));
             /* Everyone else */
-            rc = write(fd, data + begin, data_n);
+            rc = write(fd, write_buffer + begin, data_n);
         }
 #else
 
         /* Everyone else */
-        rc = write(fd, data + begin, data_n);
+        rc = write(fd, write_buffer + begin, data_n);
 
 #endif /* Q_PDCURSES_WIN32 */
 

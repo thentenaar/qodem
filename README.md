@@ -334,9 +334,6 @@ new file (SET FILE COLLISION RENAME / WARN file access Attribute).  It
 supports the APPEND file access Attribute but disregards the SUPERSEDE
 file access Attribute.
 
-Alt-A Translate Tables are only honored for 7-bit characters for
-L_UTF8 and X_UTF8 emulations.
-
 When sending files via Zmodem to HyperTerminal, if the HyperTerminal
 user clicks "Skip file" then the transfer will stall.  This appears to
 be due to two separate bugs in HyperTerminal: 1) When the user clicks
@@ -689,6 +686,47 @@ exposed via UPnP to the general Internet.
 
 
 
+TRANSLATE TABLES
+----------------
+
+Qodem has a slightly different method for translating bytes and
+Unicode code points than Qmodem's Alt-A Translate Table function.
+This section describes the Qodem Translate Tables.
+
+----
+
+The Alt-A Translate Table function has been renamed to Translate
+Tables (plural), and encompasses both 8-bit and Unicode conversions.
+The data flow is as follows:
+
+  * Bytes received from the wire are converted according to the 8-bit
+    INPUT table before any other processing.  Similarly, bytes are
+    converted through the 8-bit OUTPUT table before being written to
+    the wire.
+
+  * Code points written to the screen are converted according to the
+    Unicode INPUT table.  Code points read from the keyboard are
+    converted through the Unicode OUTPUT table before being converted
+    to UTF-8.
+
+  * When using 8-bit codepages, Qodem attempts to convert code points
+    read from the keyboard back to the correct 8-bit codepage value
+    based on several strategies.  If no values can be found, '?' is
+    sent instead.
+
+  * Capture, scrollback, screen dump, and keyboard macro files are
+    stored in untranslated formats where possible.  'raw' capture
+    records bytes before the 8-bit tables are applied; 'normal'
+    capture and other files record code points after 8-bit tables are
+    applied but before Unicode tables are applied.
+
+  * 8-bit and Unicode tables can be specified for each phonebook
+    entry.
+
+  * An EBCDIC-to-CP437 table is provided, but is largely untested.
+
+
+
 DOCUMENTATION
 -------------
 
@@ -748,3 +786,5 @@ We'd like to thank the following individuals:
 
 * Peter Gutmann for developing cryptlib and licensing it under an open
   source compatible license.
+
+* Nathanael Culver for obtaining Qmodem 2.3, 4.2f, and QmodemPro 1.50.

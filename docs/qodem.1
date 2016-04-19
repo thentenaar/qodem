@@ -365,11 +365,14 @@ This spawns the mail reader, by default
 This prompts to exit Qodem.  When not connected, Ctrl\-C will also
 bring up the exit prompt.
 .TP
-.B Alt\-A Translate Table
-This brings up the translate table editor.  Both incoming and outgoing
-bytes can be changed or stripped (set to ASCII NUL (0)).  Note that
-translation occurs before both emulation processing and UTF\-8
-decoding.
+.B Alt\-A Translate Tables
+This brings up the translate tables editor.  Both incoming and
+outgoing bytes can be changed or stripped (set to ASCII NUL (0)).
+Note that 8-bit INPUT translation occurs before both emulation
+processing and UTF\-8 decoding.  Unicode INPUT translation occurs
+before code points are written to the scrollback buffer; Unicode
+OUTPUT translation occurs after code points are read from the
+keyboard.
 .TP
 .B Alt\-J Function Keys
 This brings up the keyboard macro editor.  Keyboard macros support

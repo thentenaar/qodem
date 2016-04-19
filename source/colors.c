@@ -1000,9 +1000,10 @@ void convert_thedraw_screen(const unsigned char * screen, const int length,
 
     for (i = 0; i < length; i += 2) {
         /*
-         * First byte: character
+         * First byte: character.  Note this is CP437 because that is what
+         * TheDraw saved it as.
          */
-        output_line->chars[output_line->length] = screen[i];
+        output_line->chars[output_line->length] = cp437_chars[screen[i]];
 
         /*
          * Second byte: PC color

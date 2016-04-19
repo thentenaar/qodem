@@ -1263,7 +1263,7 @@ void console_keyboard_handler(int keystroke, int flags) {
     case 'a':
         if (flags & KEY_FLAG_ALT) {
             /*
-             * Alt-A Translate table
+             * Alt-A Translate tables
              */
             switch_state(Q_STATE_TRANSLATE_MENU);
             return;
@@ -2943,11 +2943,11 @@ void console_menu_refresh() {
     screen_put_color_hline_yx(menu_top + setup_row, menu_left + 28,
                               cp437_chars[SINGLE_BAR], 20, Q_COLOR_MENU_TEXT);
     /*
-     * A Translate table
+     * A Translate tables
      */
     screen_put_color_str_yx(menu_top + setup_row + 1, menu_left + 2,
                             _("Alt-A  "), Q_COLOR_MENU_COMMAND);
-    screen_put_color_str(_("Translate Table"), Q_COLOR_MENU_TEXT);
+    screen_put_color_str(_("Translate Tables"), Q_COLOR_MENU_TEXT);
     /*
      * N Configuration
      */
@@ -3395,10 +3395,12 @@ void console_info_refresh() {
                 if (i >= WIDTH) {
                     break;
                 }
+                /*
+                 * Don't run the info screen through the Unicode translate
+                 * tables.
+                 */
                 screen_put_scrollback_char_yx(row + info_top, i + info_left,
-                                              cp437_chars[line->
-                                                          chars[i] & 0xFF],
-                                              line->colors[i]);
+                                              line->chars[i], line->colors[i]);
             }
             row++;
         }

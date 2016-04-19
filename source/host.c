@@ -44,6 +44,7 @@
 #include "netclient.h"
 #include "music.h"
 #include "protocols.h"
+#include "translate.h"
 #include "host.h"
 
 /* Set this to a not-NULL value to enable debug log. */
@@ -353,9 +354,11 @@ static void host_write(char * buffer, int count) {
         if (q_status.capture == Q_TRUE) {
             if (q_status.capture_type == Q_CAPTURE_TYPE_RAW) {
                 /*
-                 * Raw
+                 * Raw - use the translation map here because it will match
+                 * what went out on the wire.
                  */
-                fprintf(q_status.capture_file, "%c", buffer[i]);
+                fprintf(q_status.capture_file, "%c",
+                    translate_8bit_out(buffer[i]));
                 if (q_status.capture_flush_time < time(NULL)) {
                     fflush(q_status.capture_file);
                     q_status.capture_flush_time = time(NULL);
@@ -2538,6 +2541,10 @@ void host_process_data(unsigned char * input, const unsigned int input_n,
              * Online: pass everything in as keystrokes
              */
             for (i = 0; i < input_n; i++) {
+                /*
+                 * Apply 8-bit translation
+                 */
+                input[i] = translate_8bit_in(input[i]);
 
                 /*
                  * Capture

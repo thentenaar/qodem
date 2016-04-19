@@ -1687,6 +1687,10 @@ void script_refresh() {
             if (i >= WIDTH) {
                 break;
             }
+            /*
+             * Don't run the script's stderr through the Unicode translate
+             * tables.
+             */
             screen_put_scrollback_char_yx(row + stderr_top, i, line->chars[i],
                                           scrollback_full_attr
                                           (Q_COLOR_CONSOLE_TEXT));
