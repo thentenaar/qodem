@@ -400,9 +400,8 @@ void load_translate_tables_unicode(const char * filename,
     char * key;
     char * value;
     char * endptr;
-    unsigned char map_to;
-    unsigned char map_from;
-    int i;
+    wchar_t map_to;
+    wchar_t map_from;
 
     enum {
         SCAN_INPUT,
@@ -530,7 +529,7 @@ void load_translate_tables_unicode(const char * filename,
             continue;
         }
 
-        map_to = (unsigned char) strtoul(value + 2, &endptr, 16);
+        map_to = (wchar_t) strtoul(value + 2, &endptr, 16);
         if (*endptr != 0) {
             /*
              * Invalid mapping
@@ -554,7 +553,7 @@ void load_translate_tables_unicode(const char * filename,
              */
             continue;
         }
-        map_from = (unsigned char) strtoul(key + 2, &endptr, 16);
+        map_from = (wchar_t) strtoul(key + 2, &endptr, 16);
         if (*endptr != 0) {
             /*
              * Invalid mapping
@@ -567,16 +566,18 @@ void load_translate_tables_unicode(const char * filename,
          */
         if (state == SCAN_INPUT_VALUES) {
             table_input->mappings = Xrealloc(table_input->mappings,
-                sizeof(struct q_wchar_tuple) * table_input->mappings_n + 1,
+                sizeof(struct q_wchar_tuple) * (table_input->mappings_n + 1),
                 __FILE__, __LINE__);
             table_input->mappings[table_input->mappings_n].key = map_from;
             table_input->mappings[table_input->mappings_n].value = map_to;
+            table_input->mappings_n++;
         } else {
             table_output->mappings = Xrealloc(table_output->mappings,
-                sizeof(struct q_wchar_tuple) * table_output->mappings_n + 1,
+                sizeof(struct q_wchar_tuple) * (table_output->mappings_n + 1),
                 __FILE__, __LINE__);
             table_output->mappings[table_output->mappings_n].key = map_from;
             table_output->mappings[table_output->mappings_n].value = map_to;
+            table_output->mappings_n++;
         }
 
     } /* while (!feof(file)) */
@@ -643,11 +644,12 @@ static void save_translate_tables_unicode(const char * filename,
      */
     fprintf(file, "\n[input]\n");
     for (i = 0; i < table_unicode_input.mappings_n; i++) {
-        assert(table_unicode_input.mappings[i].key !=
-            table_unicode_input.mappings[i].value);
-        fprintf(file, "\\u%04x = \\u%04x\n",
-            (uint16_t) table_unicode_input.mappings[i].key,
-            (uint16_t) table_unicode_input.mappings[i].value);
+        if (table_unicode_input.mappings[i].key !=
+            table_unicode_input.mappings[i].value) {
+            fprintf(file, "\\u%04x = \\u%04x\n",
+                (uint16_t) table_unicode_input.mappings[i].key,
+                (uint16_t) table_unicode_input.mappings[i].value);
+        }
     }
 
     /*
@@ -655,11 +657,12 @@ static void save_translate_tables_unicode(const char * filename,
      */
     fprintf(file, "\n[output]\n");
     for (i = 0; i < table_unicode_output.mappings_n; i++) {
-        assert(table_unicode_output.mappings[i].key !=
-            table_unicode_output.mappings[i].value);
-        fprintf(file, "\\u%04x = \\u%04x\n",
-            (uint16_t) table_unicode_output.mappings[i].key,
-            (uint16_t) table_unicode_output.mappings[i].value);
+        if (table_unicode_output.mappings[i].key !=
+            table_unicode_output.mappings[i].value) {
+            fprintf(file, "\\u%04x = \\u%04x\n",
+                (uint16_t) table_unicode_output.mappings[i].key,
+                (uint16_t) table_unicode_output.mappings[i].value);
+        }
     }
 
     Xfree(full_filename, __FILE__, __LINE__);
@@ -732,6 +735,7 @@ static void copy_table_unicode(struct table_unicode_struct * src,
             dest->mappings[i].key   = src->mappings[i].key;
             dest->mappings[i].value = src->mappings[i].value;
         }
+        dest->mappings_n = src->mappings_n;
     }
 }
 
@@ -767,7 +771,7 @@ unsigned char translate_8bit_out(const unsigned char in) {
 wchar_t translate_unicode_in(const wchar_t in) {
     int i = 0;
 
-    while (i < table_unicode_output.mappings_n) {
+    while (i < table_unicode_input.mappings_n) {
         if (table_unicode_input.mappings[i].key == in) {
             return table_unicode_input.mappings[i].value;
         }
@@ -851,10 +855,11 @@ static void unicode_table_set(struct table_unicode_struct * table,
      * No overrides found, add this one to the end.
      */
     table->mappings = Xrealloc(table->mappings,
-        sizeof(struct q_wchar_tuple) * table->mappings_n + 1,
+        sizeof(struct q_wchar_tuple) * (table->mappings_n + 1),
         __FILE__, __LINE__);
     table->mappings[table->mappings_n].key = key;
     table->mappings[table->mappings_n].value = value;
+    table->mappings_n++;
 }
 
 /**
@@ -1525,7 +1530,7 @@ void translate_table_editor_8bit_keyboard_handler(const int keystroke,
     }
 
     /*
-     * If we got here, the user hit space to begin editing a key.
+     * If we got here, the user hit Enter to begin editing a key.
      */
     if (selected_entry < 10) {
         edit_table_entry_window =
@@ -1558,7 +1563,7 @@ void translate_table_editor_8bit_keyboard_handler(const int keystroke,
                                _("Enter new value for %d >"), selected_entry);
 
     snprintf(buffer, sizeof(buffer), "%d",
-             editing_table_8bit.map_to[selected_entry]);
+        editing_table_8bit.map_to[selected_entry]);
     field_set_char_value(edit_table_entry_field, buffer);
 
     /*
@@ -1586,6 +1591,7 @@ void translate_table_editor_8bit_refresh() {
     char * title;
     int i, end_i;
     int row, col;
+    unsigned char selected_mapped;
 
     window_left = (WIDTH - window_length) / 2;
     window_top = (HEIGHT - window_height) / 2;
@@ -1640,18 +1646,54 @@ void translate_table_editor_8bit_refresh() {
                             _("File: "), Q_COLOR_MENU_TEXT);
     screen_put_color_str(editing_table_8bit_filename, Q_COLOR_MENU_COMMAND);
 
-    // TODO: only use CP437 for C0/C1, otherwise use current codepage.
-    // (CP437 when DEC is codepage).
+    screen_put_color_str_yx(window_top + 2, window_left + 3,
+                            _("Display Codepage: "), Q_COLOR_MENU_TEXT);
+    if (q_status.codepage == Q_CODEPAGE_DEC) {
+        screen_put_color_str(codepage_string(Q_CODEPAGE_CP437),
+                             Q_COLOR_MENU_COMMAND);
+    } else {
+        screen_put_color_str(codepage_string(q_status.codepage),
+                             Q_COLOR_MENU_COMMAND);
+    }
+
     screen_put_color_str_yx(window_top + 3, window_left + 21,
                             _("In Character | |  Out Character | |"),
                             Q_COLOR_MENU_TEXT);
-    screen_put_color_char_yx(window_top + 3, window_left + 21 + 14,
-                             cp437_chars[selected_entry & 0xFF],
-                             Q_COLOR_MENU_COMMAND);
-    screen_put_color_char_yx(window_top + 3, window_left + 21 + 33,
-                             cp437_chars[editing_table_8bit.
-                                         map_to[selected_entry] & 0xFF],
-                             Q_COLOR_MENU_COMMAND);
+    if ((selected_entry < 0x20) ||
+        ((selected_entry >= 0x7F) && (selected_entry < 0xA0)) ||
+        (q_status.codepage == Q_CODEPAGE_DEC)
+    ) {
+        /*
+         * Always use CP437 for C0 and C1 control characters, or when
+         * codepage is DEC.
+         */
+        screen_put_color_char_yx(window_top + 3, window_left + 21 + 14,
+                                 cp437_chars[selected_entry & 0xFF],
+                                 Q_COLOR_MENU_COMMAND);
+    } else {
+        screen_put_color_char_yx(window_top + 3, window_left + 21 + 14,
+                                 codepage_map_char(selected_entry & 0xFF),
+                                 Q_COLOR_MENU_COMMAND);
+    }
+
+    selected_mapped = editing_table_8bit.map_to[selected_entry & 0xFF];
+    if ((selected_mapped < 0x20) ||
+        ((selected_mapped >= 0x7F) && (selected_mapped < 0xA0)) ||
+        (q_status.codepage == Q_CODEPAGE_DEC)
+    ) {
+        /*
+         * Always use CP437 for C0 and C1 control characters, or when
+         * codepage is DEC.
+         */
+        screen_put_color_char_yx(window_top + 3, window_left + 21 + 33,
+                                 cp437_chars[selected_mapped],
+                                 Q_COLOR_MENU_COMMAND);
+    } else {
+        screen_put_color_char_yx(window_top + 3, window_left + 21 + 33,
+                                 codepage_map_char(selected_mapped),
+                                 Q_COLOR_MENU_COMMAND);
+    }
+
 
     if (editing_high_128) {
         i = 128;
@@ -1693,13 +1735,16 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
                                                      const int flags) {
     int row;
     int col;
-    int page;
     int new_keystroke;
     wchar_t * value;
     char buffer[16];
     struct file_info * new_file;
+    static wchar_t * search_string = NULL;
+    char * search_string_char = NULL;
+    wchar_t search_value;
+    char * endptr;
+    int i;
 
-    page = (selected_entry / 96);
     col  = (selected_entry % 96) / 16;
     row  = (selected_entry % 96) % 16;
 
@@ -1719,7 +1764,7 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
                     &table_unicode_input);
             } else {
                 copy_table_unicode(&editing_table_unicode,
-                    &table_unicode_input);
+                    &table_unicode_output);
             }
             save_translate_tables_unicode(editing_table_unicode_filename,
                 &table_unicode_input, &table_unicode_output);
@@ -1769,6 +1814,56 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
             q_screen_dirty = Q_TRUE;
         }
         return;
+
+    case 'F':
+    case 'f':
+        if (editing_entry == Q_FALSE) {
+            /*
+             * Find
+             */
+            if (search_string != NULL) {
+                Xfree(search_string, __FILE__, __LINE__);
+                search_string = NULL;
+            }
+            q_cursor_on();
+            search_string = pick_find_string();
+            q_cursor_off();
+            if (search_string == NULL) {
+                break;
+            }
+
+            assert(search_string_char == NULL);
+            search_string_char =
+                Xmalloc(sizeof(char) * (wcslen(search_string) + 1),
+                    __FILE__, __LINE__);
+            for (i = 0; i < wcslen(search_string); i++) {
+                search_string_char[i] = search_string[i] & 0x7F;
+            }
+            search_string_char[wcslen(search_string)] = 0;
+
+            /*
+             * Search for the first matching entry
+             */
+            search_value = (wchar_t) strtoul(search_string_char, &endptr, 16);
+            if (*endptr != 0) {
+                /*
+                 * Invalid number.
+                 */
+            } else {
+                selected_entry = search_value;
+            }
+            Xfree(search_string_char, __FILE__, __LINE__);
+            search_string_char = NULL;
+
+            q_screen_dirty = Q_TRUE;
+            return;
+        }
+
+        /*
+         * Break here so that the form handler can see 'f', it is a valid hex
+         * character.
+         */
+        break;
 
     default:
         break;
@@ -1822,7 +1917,7 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
                             &table_unicode_input);
                     } else {
                         copy_table_unicode(&editing_table_unicode,
-                            &table_unicode_input);
+                            &table_unicode_output);
                     }
                     save_translate_tables_unicode(
                         editing_table_unicode_filename,
@@ -1946,6 +2041,7 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
              * ENTER - Begin editing
              */
             editing_entry = Q_TRUE;
+            break;
         } else {
             /*
              * The OK exit point
@@ -1978,7 +2074,10 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
          */
         if (editing_entry == Q_TRUE) {
             if (!q_key_code_yes(keystroke)) {
-                if (q_isdigit(keystroke)) {
+                if (q_isdigit(keystroke) ||
+                    ((keystroke >= 'A') && (keystroke <= 'F')) ||
+                    ((keystroke >= 'a') && (keystroke <= 'f'))
+                ) {
                     /*
                      * Pass only digit keys to field
                      */
@@ -1995,21 +2094,10 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
     }
 
     /*
-     * If we got here, the user hit space to begin editing a key.
+     * If we got here, the user hit Enter to begin editing a key.
      */
-    if (selected_entry < 10) {
-        edit_table_entry_window =
-            screen_subwin(1, 3, window_top + window_height - 3,
-                          window_left + 49);
-    } else if (selected_entry < 100) {
-        edit_table_entry_window =
-            screen_subwin(1, 3, window_top + window_height - 3,
-                          window_left + 50);
-    } else {
-        edit_table_entry_window =
-            screen_subwin(1, 3, window_top + window_height - 3,
-                          window_left + 51);
-    }
+    edit_table_entry_window = screen_subwin(1, 4,
+        window_top + window_height - 3, window_left + 52);
     if (check_subwin_result(edit_table_entry_window) == Q_FALSE) {
         editing_entry = Q_FALSE;
         q_cursor_off();
@@ -2017,7 +2105,7 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
         return;
     }
 
-    edit_table_entry_field = field_malloc(3, 0, 0, Q_TRUE,
+    edit_table_entry_field = field_malloc(4, 0, 0, Q_TRUE,
                                           Q_COLOR_WINDOW_FIELD_TEXT_HIGHLIGHTED,
                                           Q_COLOR_WINDOW_FIELD_HIGHLIGHTED);
     edit_table_entry_form =
@@ -2025,7 +2113,7 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
 
     screen_put_color_printf_yx(window_top + window_height - 3, window_left + 25,
                                Q_COLOR_MENU_COMMAND,
-                               _("Enter new value for %d >"), selected_entry);
+                               _("Enter new value for %04x >"), selected_entry);
 
     snprintf(buffer, sizeof(buffer), "%04x",
         (uint16_t) unicode_table_get(&editing_table_unicode, selected_entry));
@@ -2055,7 +2143,7 @@ void translate_table_editor_unicode_refresh() {
     int title_left;
     char * title;
     int i, end_i;
-    int row, col, page;
+    int row, col;
     wchar_t selected_mapped;
 
     window_left = (WIDTH - window_length) / 2;
@@ -2111,6 +2199,11 @@ void translate_table_editor_unicode_refresh() {
                             _("File: "), Q_COLOR_MENU_TEXT);
     screen_put_color_str(editing_table_unicode_filename, Q_COLOR_MENU_COMMAND);
 
+    screen_put_color_str_yx(window_top + 2, window_left + 3,
+                            _("Display Codepage: "), Q_COLOR_MENU_TEXT);
+    /* Note "UNICODE" is not translated. */
+    screen_put_color_str("UNICODE", Q_COLOR_MENU_COMMAND);
+
     screen_put_color_str_yx(window_top + 3, window_left + 21,
                             _("In Character | |  Out Character | |"),
                             Q_COLOR_MENU_TEXT);
@@ -2152,7 +2245,6 @@ void translate_table_editor_unicode_refresh() {
     }
 
     for (; i < end_i; i++) {
-        page = (i / 96);
         col  = (i % 96) / 16;
         row  = (i % 96) % 16;
         selected_mapped = unicode_table_get(&editing_table_unicode, i);

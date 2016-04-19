@@ -7071,7 +7071,7 @@ void phonebook_keyboard_handler(const int keystroke, const int flags) {
     int visible_entries_n = HEIGHT - 1 - 14;
     int new_phonebook_entry_i;
     int new_phonebook_page;
-    static wchar_t *search_string = NULL;
+    static wchar_t * search_string = NULL;
     char * filename;
     char * print_destination = NULL;
     int new_keystroke;

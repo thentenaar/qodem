@@ -1774,11 +1774,11 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
 
     if (*keystroke != -1) {
         if (flags != NULL) {
-            DLOG(("Keystroke: %d %o FLAGS: %02x\n",
-                    *keystroke, *keystroke, *flags));
+            DLOG(("Keystroke: 0x%04x %d %o FLAGS: %02x\n",
+                    *keystroke, *keystroke, *keystroke, *flags));
         } else {
-            DLOG(("Keystroke: %d %o FLAGS: NULL\n",
-                    *keystroke, *keystroke));
+            DLOG(("Keystroke: 0x%04x %d %o FLAGS: NULL\n",
+                    *keystroke, *keystroke, *keystroke));
         }
     }
 

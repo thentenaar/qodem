@@ -1475,13 +1475,6 @@ void load_options() {
                      */
                     create_keybindings_files();
 
-                    /*
-                     * Create the translation tables files
-                     *
-                     * TODO
-                     */
-                    // create_default_translate_table_files();
-
 #ifndef Q_NO_SERIAL
                     /*
                      * Create the modem config file

@@ -22,32 +22,20 @@ Documentation sweep:
 
 
 Rework codepage/UTF-8 support:
-  Multiple translate tables:
-    8-bit table
-    Unicode table
-  Unicode translate table UI:
-    Organize by categories
   fieldset codepage support
   phonebook:
     revise entry screen:
-      new translate tables filenames
       wchar_t fields support 8-bit codepage
     main screen: support 8-bit codepage on field values in 'O'ther views
   host mode codepage option
   DEBUG emulation:
     codepage option
     encoding UTF-8
-  ASCII transfers
-  Move 8-bit translate tables to process_incoming_data() and
-    qodem_write()
-  Add Unicode translate tables to print_character() and
-    post_keystroke()
   Documentation:
     help text
     man page
     www page
   Ship 8-bit table for EBCDIC
-  Ship Unicode table for Wingdings
 
 
 OS X Build:

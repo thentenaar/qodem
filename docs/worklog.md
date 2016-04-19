@@ -1,6 +1,12 @@
 The Qodem Project Work Log
 ==========================
 
+April 19, 2016
+
+Both translation UI's appear to be complete.  Preliminary testing is
+good, Unicode only in/out and back-converting Unicode to 8-bit are
+both working.
+
 April 18, 2016
 
 More of the translate system stubbed in.  8-bit translates are working

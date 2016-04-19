@@ -88,6 +88,7 @@
 #include "states.h"
 #include "script.h"
 #include "console.h"
+#include "translate.h"
 #include "scrollback.h"
 
 /**
@@ -1683,14 +1684,12 @@ void render_scrollback(const int skip_lines) {
                         }
                         if (xterm == Q_FALSE) {
                             screen_put_scrollback_char_yx(row, (2 * i),
-                                                          line->chars[i],
-                                                          color);
+                                translate_unicode_in(line->chars[i]), color);
                             screen_put_scrollback_char_yx(row, (2 * i) + 1, ' ',
                                                           color);
                         } else {
                             screen_put_scrollback_char_yx(row, i,
-                                                          line->chars[i],
-                                                          color);
+                                translate_unicode_in(line->chars[i]), color);
                         }
 
                     } else {
@@ -1698,8 +1697,8 @@ void render_scrollback(const int skip_lines) {
                         if (i >= WIDTH) {
                             break;
                         }
-                        screen_put_scrollback_char_yx(row, i, line->chars[i],
-                                                      color);
+                        screen_put_scrollback_char_yx(row, i,
+                            translate_unicode_in(line->chars[i]), color);
                     }
                 }
                 if ((xterm == Q_TRUE) && (odd_line == Q_TRUE)) {

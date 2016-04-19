@@ -286,6 +286,19 @@ int qodem_write(const int fd, char * data, const int data_n, Q_BOOL sync) {
         return 0;
     }
 
+    if (sync == Q_TRUE) {
+        /*
+         * Every caller that syncs is sending data in console mode: emulation
+         * responses, modem command strings, and keystrokes.  The only caller
+         * that doesn't sync is process_incoming_data().  We run bytes
+         * through the 8-bit translate table here and in
+         * process_incoming_data() so that everything is converted only once.
+         */
+        for (i = 0; i < data_n; i++) {
+            data[i] = translate_8bit_out(data[i]);
+        }
+    }
+
     /* Quicklearn */
     if (q_status.quicklearn == Q_TRUE) {
         for (i = 0; i < data_n; i++) {
@@ -1606,6 +1619,24 @@ no_data:
                     old_q_transfer_buffer_raw_n, q_transfer_buffer_raw_n,
                     unprocessed_n));
 
+            /*
+             * The bytes between old_q_transfer_buffer_raw_n and
+             * q_transfer_buffer_raw_n needs to be run ONCE through the 8-bit
+             * translate table.
+             */
+            if (old_q_transfer_buffer_raw_n < 0) {
+                for (i = 0; i < q_transfer_buffer_raw_n; i++) {
+                    q_transfer_buffer_raw[i] =
+                        translate_8bit_out(q_transfer_buffer_raw[i]);
+                }
+            } else {
+                for (i = old_q_transfer_buffer_raw_n;
+                     i < q_transfer_buffer_raw_n; i++) {
+                    q_transfer_buffer_raw[i] =
+                        translate_8bit_out(q_transfer_buffer_raw[i]);
+                }
+            }
+
         }
 
         DLOG(("EXIT TRANSFER LOOP\n"));
@@ -2260,7 +2291,8 @@ static void data_handler() {
                 (difftime(current_time, q_data_sent_time) > q_keepalive_timeout)) {
                 /* Send keepalive bytes */
                 if (q_keepalive_bytes_n > 0) {
-                    qodem_write(q_child_tty_fd, q_keepalive_bytes, q_keepalive_bytes_n, Q_TRUE);
+                    qodem_write(q_child_tty_fd, q_keepalive_bytes,
+                        q_keepalive_bytes_n, Q_TRUE);
                 }
             }
         }
