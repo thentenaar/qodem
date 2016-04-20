@@ -115,11 +115,20 @@ Spawns the command line in a pseudo-tty.
 .SH EMULATIONS
 
 Emulations supported by Qodem and their status follows.  Note that
-TTY, DEBUG, ANSI.SYS, AVATAR, LINUX, and XTERM emulations can use both
-CP437 (PC VGA) and ISO\-8859\-1 glyphs for 8\-bit characters (see Alt\-;
-Codepage below).  If ISO\-8859\-1 is used, the C0 control characters
-(0x00 \- 0x1F) are mapped to the equivalent CP437 glyphs since there
-are no glyphs defined in that range for ISO\-8859\-1.
+TTY, DEBUG, ANSI.SYS, AVATAR, LINUX, and XTERM emulations can be set
+to CP437 (DOS VGA), ISO\-8859\-1, CP720 (DOS Arabic), CP737 (DOS
+Greek), CP775 (DOS Baltic Rim), CP850 (DOS West European), CP852 (DOS
+Central European), CP857 (DOS Turkish), CP858 (DOS West
+European+Euro), CP860 (DOS Portuguese), CP862 (DOS Hebrew), CP863 (DOS
+Quebecois), CP866 (DOS Cyrillic), Windows\-1250 (Central/East
+European), Windows\-1251 (Cyrillic), Windows\-1252 (West European),
+KOI8\-R (Russian), and KOI8\-U (Ukrainian).
+
+When 8\-bit characters are used (see Alt\-; Codepage below), the C0
+control characters (0x00 \- 0x1F, 0x7F) are mapped to the equivalent
+CP437 glyphs when there are no glyphs defined in that range for the
+set codepage.
+
 .TP
 .B
 ANSI

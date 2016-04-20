@@ -261,19 +261,6 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=B4BBS
-address=b4bbs.sampsa.com
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
 name=Backwood Realm BBS
 address=bwrbbs.ddns.net
 port=23
@@ -289,19 +276,6 @@ keybindings_filename=
 [entry]
 name=BackYard BBS
 address=62.202.42.63
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
-name=BadAss BBS
-address=badass.dynu.com
 port=23
 method=TELNET
 emulation=ANSI
@@ -339,19 +313,6 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=Bates Motel BBS
-address=76.14.174.25
-port=8888
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
 name=Battlestar BBS
 address=battlestarbbs.dyndns.org
 port=23
@@ -378,19 +339,6 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=BCG BBS
-address=webmail.bcgonsite.com
-port=24
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
 name=BCG-Box
 address=bbbs.net
 port=23
@@ -406,19 +354,6 @@ keybindings_filename=
 [entry]
 name=Bear's Den
 address=bbs.bearfather.net
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
-name=Beavis & Butt-Head BBS
-address=butthead.ddns.net
 port=23
 method=TELNET
 emulation=ANSI
@@ -508,19 +443,6 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=Black Flag (1)
-address=blackflag.acid.org
-port=2627
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
 name=Black Flag (2)
 address=blackflag.acid.org
 port=23
@@ -536,19 +458,6 @@ keybindings_filename=
 [entry]
 name=Black Knite's Dungeon
 address=bloodnet.myftp.org
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
-name=Blackfair's Manor
-address=blackf.synchro.net
 port=23
 method=TELNET
 emulation=ANSI
@@ -588,32 +497,6 @@ keybindings_filename=
 [entry]
 name=Blood Stone
 address=www.bsbbs.com
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
-name=Blue Lobster
-address=blobster.publicvm.com
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
-name=Bluehard BBS
-address=bbs.bluehard.com
 port=23
 method=TELNET
 emulation=ANSI
@@ -833,19 +716,6 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=Cave BBS
-address=cavebbs.homeip.net
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
 name=CedarNet BBS
 address=cedarvalleybbs.com
 port=2323
@@ -900,19 +770,6 @@ keybindings_filename=
 [entry]
 name=ChatNFiles BBS
 address=chat.chatnfiles.com
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
-name=Chowdanet
-address=chowdanet.com
 port=23
 method=TELNET
 emulation=ANSI
@@ -1004,6 +861,19 @@ keybindings_filename=
 [entry]
 name=Code Red BBS
 address=coderedmud.servegame.com
+port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
+name=Colorado Springs Central Net BBS
+address=cscnet1.net
 port=23
 method=TELNET
 emulation=ANSI
@@ -1145,6 +1015,19 @@ last_call=0
 keybindings_filename=
 
 [entry]
+name=Cottonwood BBS
+address=cottonwoodbbs.dyndns.org
+port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
 name=Crazy World BBS (1)
 address=crazyworldbbs.com
 port=23
@@ -1275,6 +1158,19 @@ last_call=0
 keybindings_filename=
 
 [entry]
+name=Dark Realms
+address=darkrealms.ca
+port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
 name=DarkAges BBS
 address=darkagesbbs.com
 port=23
@@ -1379,19 +1275,6 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=Deadline BBS
-address=deadline.aegis-corp.org
-port=1337
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
 name=Decker's Heaven
 address=bbs.deckersheaven.com
 port=23
@@ -1421,6 +1304,19 @@ keybindings_filename=
 name=Diamond Mine Online
 address=bbs.dmine.net
 port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
+name=Digital Creation BBS
+address=bbs.digitalcreationbbs.com
+port=2323
 method=TELNET
 emulation=ANSI
 codepage=CP437
@@ -1639,6 +1535,19 @@ last_call=0
 keybindings_filename=
 
 [entry]
+name=Dritt BBS
+address=dritt.no-ip.org
+port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
 name=Dungeon BBS
 address=dungeon.barnabasmusic.com
 port=23
@@ -1667,6 +1576,19 @@ keybindings_filename=
 [entry]
 name=Eagle's Dare
 address=bbsdoors.com
+port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
+name=EastSide BBS
+address=eastsidebbs.com
 port=23
 method=TELNET
 emulation=ANSI
@@ -1795,8 +1717,34 @@ last_call=0
 keybindings_filename=
 
 [entry]
+name=Emerald Hill BBS
+address=bbs.emeraldhill.org
+port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
 name=Emergency Scene
 address=bbs.emergencyscene.net
+port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
+name=Empire of the Dragon BBS
+address=bbs.eotd.com
 port=23
 method=TELNET
 emulation=ANSI
@@ -1811,6 +1759,19 @@ keybindings_filename=
 name=Endless Chaos BBS
 address=endlesschaos.dyndns.org
 port=6400
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
+name=Enigma BBS
+address=enigma.servebbs.net
+port=3023
 method=TELNET
 emulation=ANSI
 codepage=CP437
@@ -1899,6 +1860,19 @@ last_call=0
 keybindings_filename=
 
 [entry]
+name=EZY Prison Board
+address=ezypb.darktech.org
+port=2424
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
 name=Falcon BBS
 address=bbs.falconbbs.nl
 port=23
@@ -1938,34 +1912,8 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=Fastline
-address=fastline.dlinkddns.com
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
 name=Fatcats BBS
 address=fatcatsbbs.com
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
-name=FesterWerks
-address=fwbbs.egl.net
 port=23
 method=TELNET
 emulation=ANSI
@@ -2018,6 +1966,19 @@ keybindings_filename=
 [entry]
 name=Fireball Express VADV
 address=vadv.fireballex.com
+port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
+name=Firefly BBS
+address=fireflybbs.com
 port=23
 method=TELNET
 emulation=ANSI
@@ -2354,19 +2315,6 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=Holy Innocents Church
-address=reu.org
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
 name=Horizon BBS
 address=bbs.thehorizonbbs.com
 port=23
@@ -2382,6 +2330,19 @@ keybindings_filename=
 [entry]
 name=Illusions BBS
 address=arena7.sytes.net
+port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
+name=Immortal's Domain
+address=immortalsdomain.com
 port=23
 method=TELNET
 emulation=ANSI
@@ -2435,6 +2396,19 @@ keybindings_filename=
 name=ITC
 address=itcbbs.ddns.net
 port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
+name=Ivy Hill BBS
+address=ivyhill.homeip.net
+port=2323
 method=TELNET
 emulation=ANSI
 codepage=CP437
@@ -2525,6 +2499,19 @@ keybindings_filename=
 [entry]
 name=Killed In Action
 address=kiabbs.org
+port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
+name=Killing Ground
+address=bbs.zeusdev.co.uk
 port=23
 method=TELNET
 emulation=ANSI
@@ -2770,19 +2757,6 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=MemphisTW.org
-address=bbs.memphistw.org
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
 name=Metal Zone
 address=tmzbbs01.synchro.net
 port=23
@@ -2900,6 +2874,32 @@ last_call=0
 keybindings_filename=
 
 [entry]
+name=Mojo's World BBS
+address=mojo.synchro.net
+port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
+name=Momia BBS
+address=momiabbs.no-ip.info
+port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
 name=Monochrome
 address=mono.org
 port=23
@@ -2965,32 +2965,6 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=Mud Dweller
-address=mud.muddweller.com
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
-name=Mudbox BBS
-address=pimptite.com
-port=6969
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
 name=Mudders, Inc.
 address=muddersinc.doomdns.com
 port=23
@@ -3020,19 +2994,6 @@ keybindings_filename=
 name=My C=ult BBS
 address=maraud.dynalias.com
 port=6400
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
-name=My Web Community
-address=chat.mywebcommunity.net
-port=23
 method=TELNET
 emulation=ANSI
 codepage=CP437
@@ -3108,8 +3069,8 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=Neptune's Lair BBS
-address=neptune.ddns.net
+name=Necronomicon BBS
+address=necrobbs.strangled.net
 port=23
 method=TELNET
 emulation=ANSI
@@ -3408,7 +3369,7 @@ keybindings_filename=
 
 [entry]
 name=Particles! BBS
-address=particlesbbs.hopto.org
+address=particlesbbs.dyndns.org
 port=6400
 method=TELNET
 emulation=ANSI
@@ -3485,19 +3446,6 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=Phobos Computers
-address=phoboscomputers.com
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
 name=Phunc BBS
 address=bbs.phunc.com
 port=23
@@ -3539,19 +3487,6 @@ keybindings_filename=
 [entry]
 name=Prison Board
 address=rdfig.net
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
-name=Propylene Palace
-address=propylenepalace.com
 port=23
 method=TELNET
 emulation=ANSI
@@ -3784,6 +3719,19 @@ last_call=0
 keybindings_filename=
 
 [entry]
+name=Rob's Place BBS
+address=robsbbs.mooo.com
+port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
 name=Rockville Tavern
 address=bbs.rockvilletavern.com
 port=23
@@ -3823,34 +3771,8 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=Rusty Mailbox
-address=trmb.ca
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
 name=Sanctum II BBS
 address=telnet.sanctumbbs.com
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
-name=Sandnes BBS
-address=stokmarknes.org
 port=23
 method=TELNET
 emulation=ANSI
@@ -3927,19 +3849,6 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=Scruffy Bill's BBS
-address=bills.synchro.net
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
 name=Seattle Community Network
 address=scn.org
 port=23
@@ -3979,19 +3888,6 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=Shadow Project
-address=temporalrifts.com
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
 name=Shadowscope
 address=bbs.shadowscope.com
 port=23
@@ -4020,6 +3916,32 @@ keybindings_filename=
 [entry]
 name=Shodan's Core
 address=shodan.synchro.net
+port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
+name=Silicon Underground
+address=siliconu.synchro.net
+port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
+name=SilverHawk BBS
+address=silverhawk.me
 port=23
 method=TELNET
 emulation=ANSI
@@ -4083,7 +4005,7 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=Sovereign State BBS
+name=Southeast Texas BBS
 address=setxchat.net
 port=23
 method=TELNET
@@ -4122,34 +4044,8 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=Square One
-address=sq1bbs.com
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
 name=Starbase 21
 address=bbs.starbase21.net
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
-name=Stepping Stone BBS
-address=stepping.synchro.net
 port=23
 method=TELNET
 emulation=ANSI
@@ -4239,21 +4135,8 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=Tardis BBS
-address=bbs.cortex-media.info
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
-name=TechnoQuary
-address=technoquary.com
+name=Syrinx BBS
+address=syrinxbbs.ddns.net
 port=23
 method=TELNET
 emulation=ANSI
@@ -4305,7 +4188,7 @@ keybindings_filename=
 
 [entry]
 name=Temple of Doom
-address=hurrican.synchro.net
+address=tod.eothnet.com
 port=23
 method=TELNET
 emulation=ANSI
@@ -4343,9 +4226,35 @@ last_call=0
 keybindings_filename=
 
 [entry]
+name=Throwback BBS
+address=bbs.throwbackbbs.com
+port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
 name=Thunderbolt BBS
 address=wx1der.dyndns.org
 port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
+name=Time Warp of the Future BBS
+address=time.synchro.net
+port=24
 method=TELNET
 emulation=ANSI
 codepage=CP437
@@ -4512,19 +4421,6 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=Twisted Tower
-address=twisted-tower.com
-port=23
-method=TELNET
-emulation=ANSI
-codepage=CP437
-username=
-password=
-times_on=0
-last_call=0
-keybindings_filename=
-
-[entry]
 name=Uncensored!
 address=uncensored.citadel.org
 port=23
@@ -4540,6 +4436,19 @@ keybindings_filename=
 [entry]
 name=Undermine
 address=undermine.ddns.net
+port=23
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
+name=US 99 BBS
+address=bbs.quinnnet.org
 port=23
 method=TELNET
 emulation=ANSI
@@ -4577,8 +4486,8 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=Veleno BBS
-address=velenobbs.postabox.biz
+name=Vertrauen
+address=vert.synchro.net
 port=23
 method=TELNET
 emulation=ANSI
@@ -4590,8 +4499,21 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=Vertrauen
-address=vert.synchro.net
+name=Voodoo BBS
+address=bbs.magickabbs.com
+port=2023
+method=TELNET
+emulation=ANSI
+codepage=CP437
+username=
+password=
+times_on=0
+last_call=0
+keybindings_filename=
+
+[entry]
+name=Vortex BBS
+address=vortexbbs.com
 port=23
 method=TELNET
 emulation=ANSI
@@ -4694,7 +4616,7 @@ last_call=0
 keybindings_filename=
 
 [entry]
-name=Wildcat's Castle BBS (1)
+name=Wildcat's Castle BBS
 address=bbs.wildcatcastle.com
 port=23
 method=TELNET

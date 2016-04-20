@@ -722,8 +722,8 @@ void console_quicklearn_keyboard_handler(int keystroke, int flags) {
             /*
              * Alt-\ Alt Code key
              */
-            if ((q_status.emulation == Q_EMUL_LINUX_UTF8)
-                || (q_status.emulation == Q_EMUL_XTERM_UTF8)) {
+            if ((q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                (q_status.emulation == Q_EMUL_XTERM_UTF8)) {
                 new_keystroke = alt_code_key(Q_TRUE);
             } else {
                 new_keystroke = alt_code_key(Q_FALSE);
@@ -731,9 +731,11 @@ void console_quicklearn_keyboard_handler(int keystroke, int flags) {
             if (new_keystroke != -1) {
                 keystroke = new_keystroke;
                 flags &= ~KEY_FLAG_ALT;
-                if ((q_status.emulation == Q_EMUL_LINUX_UTF8)
-                    || (q_status.emulation == Q_EMUL_XTERM_UTF8)) {
+                if ((q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8)) {
                     flags |= KEY_FLAG_UNICODE;
+                } else {
+                    keystroke = codepage_map_char(keystroke);
                 }
             } else {
                 return;
@@ -1890,6 +1892,8 @@ void console_keyboard_handler(int keystroke, int flags) {
                 if ((q_status.emulation == Q_EMUL_LINUX_UTF8) ||
                     (q_status.emulation == Q_EMUL_XTERM_UTF8)) {
                     flags |= KEY_FLAG_UNICODE;
+                } else {
+                    keystroke = codepage_map_char(keystroke);
                 }
             } else {
                 return;

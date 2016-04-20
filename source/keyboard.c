@@ -1116,8 +1116,7 @@ void post_keystroke(const int keystroke, const int flags) {
             }
         } else {
             if ((q_status.emulation == Q_EMUL_XTERM_UTF8) ||
-                (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
-                (q_status.emulation == Q_EMUL_DEBUG)) {
+                (q_status.emulation == Q_EMUL_LINUX_UTF8)) {
 
                 /*
                  * UTF-8 emulations: encode outbound keystroke, after running
@@ -1184,6 +1183,13 @@ void post_keystroke(const int keystroke, const int flags) {
                 encode_utf8_char(C_LF);
                 qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer),
                             Q_TRUE);
+                if (q_status.emulation == Q_EMUL_DEBUG) {
+                    debug_local_echo(C_LF);
+                    /*
+                     * Force the console to refresh
+                     */
+                    q_screen_dirty = Q_TRUE;
+                }
             }
         }
 
@@ -1220,6 +1226,13 @@ void post_keystroke(const int keystroke, const int flags) {
                 encode_utf8_char(C_LF);
                 qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer),
                             Q_TRUE);
+                if (q_status.emulation == Q_EMUL_DEBUG) {
+                    debug_local_echo(C_LF);
+                    /*
+                     * Force the console to refresh
+                     */
+                    q_screen_dirty = Q_TRUE;
+                }
             }
         }
 
@@ -1376,20 +1389,28 @@ void post_keystroke(const int keystroke, const int flags) {
             for (i = 0; i < wcslen(term_string); i++) {
                 if ((q_status.emulation == Q_EMUL_XTERM_UTF8) ||
                     (q_status.emulation == Q_EMUL_LINUX_UTF8)) {
-
                     /*
-                     * UTF-8 emulations: encode outbound character
+                     * UTF-8 emulations: encode outbound keystroke, after
+                     * running it through the direct Unicode translation map.
                      */
-                    encode_utf8_char(term_string[i]);
+                    encode_utf8_char(translate_unicode_out(term_string[i]));
                 } else {
                     /*
-                     * Everyone else: send lower 8 bits only
+                     * Everyone else: try to backmap to the codepage,
+                     * including allowing Unicode synonyms.
                      */
-                    utf8_buffer[0] = term_string[i] & 0xFF;
+                    utf8_buffer[0] = translate_unicode_to_8bit(term_string[i],
+                        q_status.codepage);
                     utf8_buffer[1] = 0;
                 }
                 qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer),
                             Q_TRUE);
+
+                if (q_status.emulation == Q_EMUL_DEBUG) {
+                    for (i = 0; i < strlen(utf8_buffer); i++) {
+                        debug_local_echo(utf8_buffer[i]);
+                    }
+                }
             }
         }
     }
@@ -2864,7 +2885,27 @@ void function_key_editor_keyboard_handler(const int keystroke,
          */
         if (editing_key == Q_TRUE) {
             if (flags & KEY_FLAG_ALT) {
-                keystroke2 = alt_code_key(Q_TRUE);
+
+                if ((q_status.emulation == Q_EMUL_XTERM_UTF8) ||
+                    (q_status.emulation == Q_EMUL_LINUX_UTF8)) {
+                    keystroke2 = alt_code_key(Q_TRUE);
+                } else {
+                    /*
+                     * Get an 8-bit codepage value.
+                     */
+                    keystroke2 = alt_code_key(Q_FALSE);
+                    if (keystroke2 > 0) {
+                        if (q_status.codepage == Q_CODEPAGE_DEC) {
+                            /*
+                             * Always use CP437 glyphs for the VT100 terminals.
+                             */
+                            keystroke2 = cp437_chars[keystroke2 & 0xFF];
+                        } else {
+                            keystroke2 = codepage_map_char(keystroke2);
+                        }
+                    }
+                }
+
                 /*
                  * alt_code_key() sets q_screen_dirty to true, which is the
                  * right thing to do everywhere EXCEPT here.

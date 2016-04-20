@@ -249,7 +249,7 @@ static char datadir_filename[FILENAME_SIZE];
 #ifdef Q_SSH_CRYPTLIB
 
 /*
- * TODO: do we still need this timeout for cryptlib?
+ * The SSH socket will always be periodically checked.
  */
 #ifdef Q_PDCURSES_WIN32
 static long ssh_last_time = 1000000;

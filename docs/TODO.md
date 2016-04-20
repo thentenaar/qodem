@@ -14,21 +14,7 @@ BUG: host mode not restarting
 
 Release 1.0beta on Wednesday April 27, 2016
 
-Documentation sweep:
-  qodem.1 / qodem-x11.1
-  README.md
-  INSTALL
-  help.c
-
-
-Rework codepage/UTF-8 support:
-  fieldset codepage support
-  phonebook:
-    revise entry screen:
-      wchar_t fields support 8-bit codepage
-    main screen: support 8-bit codepage on field values in 'O'ther views
-  host mode codepage option
-
+Fix all marked TODOs in code
 
 OS X Build:
   App Icon
@@ -39,9 +25,6 @@ FreeBSD build
 OpenBSD build
 
 NetBSD build
-
-
-Fix all marked TODOs in code
 
 
 FULL REGRESSION ON EVERY ITEM:

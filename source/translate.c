@@ -893,17 +893,6 @@ unsigned char translate_unicode_to_8bit(const wchar_t in,
          */
         return table_8bit_output.map_to[in & 0x7F];
     }
-    if (in < 0x100) {
-        /*
-         * Keyboard input is ISO-8859-1.  But we are communicating with an
-         * 8-bit system, so we can use the top half of the 8-bit translate
-         * table.
-         */
-        assert((q_status.emulation != Q_EMUL_XTERM_UTF8) &&
-            (q_status.emulation != Q_EMUL_LINUX_UTF8));
-
-        return table_8bit_output.map_to[in & 0xFF];
-    }
 
     if (codepage == Q_CODEPAGE_DEC) {
         /*

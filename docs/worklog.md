@@ -1,6 +1,13 @@
 The Qodem Project Work Log
 ==========================
 
+April 20, 2016
+
+We are getting veeery close.  Updated the BBS list to the current
+month, fixed more codepage/widechar things, eliminated most of the
+remaining TODOs (by way of documentation), and updated the man pages
+and help text.
+
 April 19, 2016
 
 Both translation UI's appear to be complete.  Preliminary testing is

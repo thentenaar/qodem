@@ -1166,8 +1166,12 @@ decode_zdata_bytes_big_loop:
                 j++;
             } else {
                 /*
-                 * TODO: Ignore any unencoded control characters when
-                 * encoding was requested.
+                 * I ought to ignore any unencoded control characters when
+                 * encoding was requested at this point here.  However,
+                 * encoding control characters is broken anyway in lrzsz so I
+                 * won't bother with a further check.  If you want actually
+                 * reliable transfer over not-8-bit-clean links, use Kermit
+                 * instead.
                  */
                 output[*output_n] = input[i];
                 *output_n = *output_n + 1;
@@ -3049,11 +3053,13 @@ static Q_BOOL receive_zrpos_wait(unsigned char * output,
 
                 } else {
                     /*
-                     * TODO: what do I do when the sender claims that the
-                     * file size is different from the actual size they sent?
-                     * Pretend all is OK?
+                     * The sender claims that the file size is different from
+                     * the actual size they sent.  We will send an error and
+                     * try to recover.
                      */
-
+                    DLOG(("receive_zrpos_wait(): ERROR BAD FILE POSITION FROM SENDER\n"));
+                    stats_increment_errors(_("BAD FILE POSITION FROM SENDER"));
+                    status.state = ZRPOS;
                 }
 
             } else if (packet.type == P_ZDATA) {
@@ -3481,11 +3487,6 @@ static Q_BOOL receive_zdata(unsigned char * output,
             packet_buffer_n = 0;
             options = status.file_position;
             build_packet(P_ZRPOS, options, output, output_n, output_max);
-
-            /*
-             * Leave CRC ERROR up on the display
-             */
-            /* set_transfer_stats_last_message("ZRPOS"); */
             status.state = ZRPOS_WAIT;
 
             DLOG(("receive_zdata(): send ZRPOS file_position = %ld\n",
@@ -3510,8 +3511,9 @@ static Q_BOOL receive_zdata(unsigned char * output,
             return Q_TRUE;
         } else {
             /*
-             * Some other state, TODO
+             * Some other state.  This is a coding error.  Save a log message,
              */
+            DLOG(("receive_zdata(): CRC error, but in incorrect protocol state!\n"));
         }
     }
 
@@ -3988,13 +3990,9 @@ static Q_BOOL send_zsinit(unsigned char * output,
 
     /*
      * Escape ctrl characters by default, but not 8bit characters
-     *
-     * TODO: decide if I will support this or not.  Obviously I am choosing
-     * not to right now, but is that because of bugs in lrzsz, normally
-     * reliable 8-bit links, or something else?
      */
     if (((status.flags & TX_ESCAPE_CTRL) == 0) &&
-        (0) /* (q_status.zmodem_escape_ctrl == Q_TRUE) */ ) {
+        (q_status.zmodem_escape_ctrl == Q_TRUE)) {
 
         options = TX_ESCAPE_CTRL;
         build_packet(P_ZSINIT, options, output, output_n, output_max);
@@ -4646,10 +4644,10 @@ static Q_BOOL send_zdata(unsigned char * output,
                 stats_increment_errors("ZNAK");
 
                 /*
-                 * TODO: what do I do here?  Technically ZNAK on ZDATA is a
-                 * protocol error.  Should I just re-send starting from the
-                 * last ack'd position (which is what I'm doing now), cancel
-                 * the transfer, or other?
+                 * Technically ZNAK on ZDATA is a protocol error.  I am
+                 * choosing to re-send starting from the last ack'd position
+                 * hoping for a recovery, but it would be just as valid to
+                 * cancel the transfer here.
                  */
                 status.state = ZRPOS;
 

@@ -673,7 +673,14 @@ static struct option_struct options[] = {
 "### 'false' means Zmodem will not escape control characters.\n"
 "### \n"
 "### In both cases, Zmodem will honor the encoding requested at the\n"
-"### other end."},
+"### other end.\n"
+"### \n"
+"### The Zmodem protocol defines this as an available option, and Qodem\n"
+"### supports it for completeness.  However, (l)rzsz never used it, and\n"
+"### enabling this option causes uploads to (l)rzsz to fail.\n"
+"### \n"
+"### DO NOT SET THIS TO 'true' UNLESS YOU ARE TESTING ANOTHER ZMODEM\n"
+"### IMPLEMENTATION."},
 
 /* File transfer protocol: KERMIT */
 

@@ -16,6 +16,9 @@
  */
 
 /*
+ * This implementation of Kermit supports streaming, sliding windows, long
+ * packets, and File-Attributes.  It does not support locking shifts.
+ *
  * Bugs in the Kermit protocol:
  *
  *     NONE so far
@@ -28,10 +31,6 @@
  *
  *     NONE so far
  *
- *
- * TODO:
- *     Expose block size in qodemrc
- *     Locking shift
  */
 
 #include "qcurses.h"
@@ -3652,19 +3651,6 @@ static void nak_packet() {
     if (session_parms.windowing == Q_TRUE) {
 
         if (window_next_packet_seq(input_packet.seq) == Q_FALSE) {
-
-            /* TODO: why is this ifdef'd out? */
-#if 0
-            /*
-             * Another case: if we're trying to NAK an already-ACK'd packet,
-             * don't send anything out.
-             */
-            if (window_within(input_packet.seq) == Q_TRUE) {
-                DLOG(("nak_packet() NOT SENDING NAK - packet got here earlier - error in SEQ byte\n"));
-                output_packet.parsed_ok = Q_FALSE;
-                return;
-            }
-#endif
 
             /*
              * Do NOT add this to the window - it would create a gap or
