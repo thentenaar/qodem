@@ -1090,6 +1090,16 @@ void post_keystroke(const int keystroke, const int flags) {
             encode_utf8_char(KEY_ESCAPE);
             qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer),
                         Q_TRUE);
+
+            if (q_status.emulation == Q_EMUL_DEBUG) {
+                for (i = 0; i < strlen(utf8_buffer); i++) {
+                    debug_local_echo(utf8_buffer[i]);
+                }
+                /*
+                 * Force the console to refresh
+                 */
+                q_screen_dirty = Q_TRUE;
+            }
         }
 
         /*
@@ -1097,6 +1107,13 @@ void post_keystroke(const int keystroke, const int flags) {
          */
         if ((keystroke == 0) && (flags & KEY_FLAG_CTRL)) {
             qodem_write(q_child_tty_fd, "\0", 1, Q_TRUE);
+            if (q_status.emulation == Q_EMUL_DEBUG) {
+                debug_local_echo('\0');
+                /*
+                 * Force the console to refresh
+                 */
+                q_screen_dirty = Q_TRUE;
+            }
         } else {
             if ((q_status.emulation == Q_EMUL_XTERM_UTF8) ||
                 (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
@@ -1121,7 +1138,9 @@ void post_keystroke(const int keystroke, const int flags) {
         }
 
         if (q_status.emulation == Q_EMUL_DEBUG) {
-            debug_local_echo((unsigned char) keystroke);
+            for (i = 0; i < strlen(utf8_buffer); i++) {
+                debug_local_echo(utf8_buffer[i]);
+            }
 
             /*
              * Force the console to refresh
