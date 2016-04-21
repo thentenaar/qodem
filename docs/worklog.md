@@ -1,6 +1,18 @@
 The Qodem Project Work Log
 ==========================
 
+April 21, 2016
+
+I am down to two remaining TODOs in the code: verifying that the comm
+timeouts in Windows serial port are OK at various baud rates, and
+implementing a secondary strategy to map Unicode back to 8-bit.  DMG
+is building for OSX, Qodem does run in Terminal.app (a little ugly,
+but better than nothing), cleaned up the ChangeLog, and moved the last
+two host mode bugs to the git tracker.
+
+Some final testing for a few days, and then I will start spinning
+builds.  1.0beta is coming out within a week.
+
 April 20, 2016
 
 We are getting veeery close.  Updated the BBS list to the current

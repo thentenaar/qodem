@@ -4,10 +4,6 @@ Qodem TODO List
 NEW FUNCTIONALITY
 -----------------
 
-BUG: host mode chat inside message entry doesn't clear entry or return
-     to message editor
-
-BUG: host mode not restarting
 
 1.0.0
 -----
@@ -16,14 +12,6 @@ Release 1.0beta on Wednesday April 27, 2016
 
 Fix all marked TODOs in code
 
-OS X Build:
-  dmg image
-
-FreeBSD build
-
-OpenBSD build
-
-NetBSD build
 
 
 FULL REGRESSION ON EVERY ITEM:

@@ -51,3 +51,6 @@ config.log
 Makefile
 Makefile.in
 lib/cryptlib/tools/endian
+build/osx/dmg
+build/osx/*.dmg
+qodem

@@ -26,14 +26,11 @@ involved in a class-action lawsuit from Quintus shareholders.  The
 lawsuit (C-00-4263 VRW in the Northern District of California, US
 District Chief Judge Vaughn R Walker presiding) was settled on
 December 5, 2006 for $10.1 million (with 11% to plaintiffs legal
-fees).
+fees).  (For those wanting more, Greg Hewgill collected many articles
+and other media related to Mustang, including its acquisition of
+Qmodem, in a PDF: http://hewgill.com/mustang/MustangHistory.pdf .  I
+have a copy also at http://qodem.sourceforge.net/qmodem/MustangHistory.pdf .)
 
-A Windows installer for the impending 1.0beta release is now available
-[here](http://qodem.sf.net/qodem-1.0beta-preview-setup.exe).  This
-release is close to the 1.0beta feature-wise.  It is supported on
-Windows 2000 and above.  Since this build uses cryptlib, the source
-must also be provided: that is
-[here](http://qodem.sf.net/qodem-1.0beta.tar.gz).
 
 
 OBLIGATORY SCREENSHOTS

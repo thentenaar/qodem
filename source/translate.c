@@ -884,7 +884,6 @@ unsigned char translate_unicode_to_8bit(const wchar_t in,
 
     wchar_t utf8_char;
     unsigned char ch;
-    int i;
     Q_BOOL success;
 
     if (in < 0x80) {
@@ -933,7 +932,10 @@ unsigned char translate_unicode_to_8bit(const wchar_t in,
         return ch;
     }
 
-    // TODO: reverse the input map
+    /*
+     * TODO: implement strategy 2: reverse the Unicode input map, look for
+     * equivalents in the 8-bit codepage map.
+     */
     return '?';
 }
 
