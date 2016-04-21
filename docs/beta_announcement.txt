@@ -1,0 +1,94 @@
+Qodem 1.0beta Release
+=====================
+
+I am pleased to announce the release of Qodem 1.0beta.
+
+This marks the culmination of 13 years of development with the goal of
+re-creating one of the very best DOS-era modem terminals into the
+Internet era for use on modern systems.  Its major features include:
+
+  * Many ways to connect to a system: ssh, telnet, rlogin, raw socket,
+    dialing a modem, using a serial port, or executing a local shell.
+
+  * Support for BBS-era and modern emulations: ANSI.SYS (including
+    "ANSI music"), Avatar, VT52, VT100/102, VT220, Linux (+ UTF-8),
+    and XTerm (+ UTF-8 and mouse tracking).  The VT100, Linux, and
+    Xterm-based emulations have been run through the gauntlet of
+    'vttest'.
+
+  * A Unicode-based display, including translation of DOS and Windows
+    8-bit character sets (CP437, CP850, Windows 1252, and many more),
+    the VT100 DEC Special Graphics characters, and the VT220 National
+    Replacement Character sets to Unicode.
+
+  * The classic serial file transfer protocols Xmodem, Ymodem, Zmodem,
+    and Kermit.
+
+  * Terminal interface conveniences including a long scrollback
+    buffer, capture file, screen dump, dialing directory, and keyboard
+    macros.
+
+  * External script support.  ANY program that reads stdin and writes
+    to stdout and stderr can be run as a script.
+
+  * A host mode that provides a micro-BBS with messages, files, and
+    sysop chat.  In addition to answering a modem call, it can also
+    listen on a raw socket, act as a telnet or ssh daemon, and even
+    use UPnP to work seamlessly behind a home NAT router.
+
+Find out more at the Qodem homepage: http://qodem.sourceforge.net
+
+
+Download Links
+--------------
+
+Binary downloads: http://sourceforge.net/project/showfiles.php?group_id=79838
+
+Code repository: https://github.com/klamonte/qodem
+
+
+Supported Platforms
+-------------------
+
+Qodem is actively supported on the following platforms:
+
+  * Linux
+
+  * Windows 2000 and above
+
+  * ReactOS 0.4.0 and above
+
+  * Mac OSX Snow Leopard and above
+
+  * FreeBSD 10.2 and above
+
+  * OpenBSD 5.8 and above
+
+Other platforms that support the POSIX or Win32/64 APIs might work
+also.
+
+
+Reporting Bugs
+--------------
+
+This is a beta release.  Though I sincerely hope that you do not
+encounter any bugs while using Qodem, it might happen.  If you would
+like to report a problem at either of the links below, there is a good
+chance I can find it and fix it for the final 1.0 release.
+
+  * https://github.com/klamonte/qodem/issues
+
+  * https://sourceforge.net/p/qodem/bugs/
+
+
+License
+-------
+
+This is the first formal release of Qodem using the public domain
+codebase.  The source code to Qodem was dedicated to the public domain
+on May 26, 2015, with a CC-0 fallback license for those jurisdictions
+that do not recognize the public domain.  Due to inclusion of other
+pieces in the binary releases, the binary versions of Qodem have an
+effective license matching either MIT/BSD terms or GPLv3 terms,
+depending on whether or not cryptlib is included.  See the README file
+for further details.

@@ -8,10 +8,9 @@ NEW FUNCTIONALITY
 1.0.0
 -----
 
-Release 1.0beta on Wednesday April 27, 2016
-
 Fix all marked TODOs in code
 
+Eliminate 'bool' (Q_BOOL)
 
 
 FULL REGRESSION ON EVERY ITEM:

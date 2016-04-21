@@ -13,6 +13,77 @@ two host mode bugs to the git tracker.
 Some final testing for a few days, and then I will start spinning
 builds.  1.0beta is coming out within a week.
 
+[...later...]
+
+I lied, in a good way.  1.0beta is releasing TONIGHT!
+
+For nostalgia's sake (last done in May 2004), here is the 'wc' output:
+
+   2168    5894   55343 ansi.c
+     81     357    2454 ansi.h
+    920    2308   23849 avatar.c
+     56     186    1498 avatar.h
+   2173   10876   92040 codepage.c
+    292     946    7715 codepage.h
+   1742   12687   87996 colors.c
+    282     852    6396 colors.h
+    522    1664   12060 common.c
+    336    1373    9494 common.h
+   3592    9752  114804 console.c
+    179     664    4661 console.h
+    956    2661   26958 dialer.c
+    132     385    2880 dialer.h
+   1313    3522   33423 emulation.c
+    220     846    6569 emulation.h
+    594    1866   16201 field.c
+    276     851    5934 field.h
+   3952   10719  130633 forms.c
+    252    1409    9131 forms.h
+   2825   13064  104528 help.c
+     71     242    2095 help.h
+   2813    7559   78087 host.c
+    125     439    3177 host.h
+   1866    5438   51069 input.c
+    266     886    7835 input.h
+   6704   19900  194876 kermit.c
+     84     381    2659 kermit.h
+   3798    9966  111823 keyboard.c
+     80     275    2152 keyboard.h
+   2803    7512   81465 modem.c
+    291     973    7384 modem.h
+   1421    4569   42226 music.c
+     99     381    2805 music.h
+   4971   15596  145009 netclient.c
+    329    1456    8877 netclient.h
+   2082    8042   71440 options.c
+    231     697    6643 options.h
+   8473   23026  278234 phonebook.c
+    229     772    6105 phonebook.h
+   2343    6660   74073 protocols.c
+    290    1044    8075 protocols.h
+     74     290    2151 qcurses.h
+   3205   10156  103155 qodem.c
+    699    2464   17267 qodem.h
+   1346    5921   42253 screen.c
+    571    3080   19295 screen.h
+   1724    4906   49173 script.c
+    176     606    4308 script.h
+   2969    9604   91148 scrollback.c
+    406    1705   11359 scrollback.h
+    450     961   11610 states.c
+    166     540    4573 states.h
+   2373    7235   70606 translate.c
+    150     580    4411 translate.h
+   7479   21150  224054 vt100.c
+    152     639    4451 vt100.h
+    885    2121   21297 vt52.c
+     73     282    2060 vt52.h
+   3088    9855   88262 xmodem.c
+    114     554    3908 xmodem.h
+   5611   16942  164502 zmodem.c
+     87     402    2824 zmodem.h
+  94030  298689 2883343 total
+
 April 20, 2016
 
 We are getting veeery close.  Updated the BBS list to the current
@@ -1702,7 +1773,6 @@ get through (sigh).  But I have hopes that when that is done I'll have
 the -G protocols and will cut a new release.  Maybe (cross fingers) by
 Halloween.
 
-
 June 29, 2007
 
 Spent all day reorganizing the way file transfers move data in
@@ -2137,7 +2207,6 @@ compete with the original Qmodem(tm).  That's in only about 4 months
 of full-time coding (spaced out over two years in offtime).
 
 Damn, long two days.  Code size:  40972 lines.
-
 
 April 23, 2005
 
@@ -3210,8 +3279,6 @@ problems in the read()/write(), yet somehow memory is getting
 corrupted...hmm...  oh well weekend time.  I'm shooting for a 0.0.1
 file release by this time next week.
 
-
-
 May 8, 2003
 
 Protocols are close but no cigar yet.  There, got it.  rz expects
@@ -3233,7 +3300,6 @@ to comp.unix.programming FAQ kill(pid,0) is the way to go.  But
 that'll be a tomorrow thing...as my girlfriend is demanding the rest
 of the night.  G'night.
 
-
 May 6, 2003
 
 Put in a simple notify screen for the mode switches.  Alt-H works now,
@@ -3245,7 +3311,6 @@ Got scrollback save and clear working.  Sourceforge CVS is
 down....grrr...
 
 Alt-U Scrollback toggle.
-
 
 May 5, 2003
 
@@ -3302,7 +3367,6 @@ than a "real" bash prompt!  Heehee.
 
 Put in a top-level call to terminal emulation.  Soon we'll have basic
 ANSI support.  :) Time to commit...code size: 2169.
-
 
 April 29, 2003
 
