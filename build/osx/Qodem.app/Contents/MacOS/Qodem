@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # qodem - Qodem Terminal Emulator
 #
@@ -13,8 +13,10 @@
 # along with this software. If not, see
 # <http://creativecommons.org/publicdomain/zero/1.0/>.
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 osascript <<EOF
 tell application "Terminal"
-    do script "/Applications/Qodem.app/Contents/MacOS/qodem ; exit"
+    do script "$DIR/qodem-bin ; exit"
 end tell
 EOF

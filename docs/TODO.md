@@ -17,7 +17,6 @@ Release 1.0beta on Wednesday April 27, 2016
 Fix all marked TODOs in code
 
 OS X Build:
-  App Icon
   dmg image
 
 FreeBSD build
