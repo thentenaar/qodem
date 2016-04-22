@@ -661,7 +661,7 @@ static wchar_t * terminfo_keystroke(const int keystroke) {
  */
 static wchar_t * bound_keyboard_keystroke(const int keystroke,
                                           const struct emulation_keyboard * keyboard,
-                                          const bool find_something) {
+                                          const Q_BOOL find_something) {
     assert(keyboard != NULL);
 
     switch (keystroke) {

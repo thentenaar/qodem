@@ -10,8 +10,6 @@ NEW FUNCTIONALITY
 
 Fix all marked TODOs in code
 
-Eliminate 'bool' (Q_BOOL)
-
 
 FULL REGRESSION ON EVERY ITEM:
   F10 -> Enter or Alt-Enter
