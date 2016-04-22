@@ -1,0 +1,17 @@
+5 c's: c
+5 d's: ddddd
+
+5 abc's: abc
+16 patterns's: 
+normal line
+
+clear area: 7	
+
+
+
+
+
+
+
+
+init area: rd
