@@ -23,6 +23,7 @@
 #include <stddef.h>             /* wchar_t */
 #include <stdint.h>             /* uint32_t */
 #include "qcurses.h"            /* attr_t */
+#include "common.h"             /* Q_BOOL */
 
 #ifdef __cplusplus
 extern "C" {
