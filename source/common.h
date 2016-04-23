@@ -71,6 +71,7 @@ extern "C" {
 #endif
 
 /* Exit codes */
+#define EXIT_ERROR_CURSES               10
 #define EXIT_ERROR_SETLOCALE            12
 #define EXIT_ERROR_SELECT_FAILED        20
 #define EXIT_ERROR_SERIAL_FAILED        21
