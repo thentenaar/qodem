@@ -779,7 +779,7 @@ static void pdcurses_key(int * key, int * flags) {
  * Convert some of the broken out-of-range key codes seen on Debian Jessie
  * xterm into what it was supposed to be.
  *
- * @param key the PDCurses key
+ * @param key the ncurses key
  * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.
  */
 static void ncurses_invalid_keycode(int * key, int * flags) {
