@@ -1859,7 +1859,7 @@ void console_keyboard_handler(int keystroke, int flags) {
     case Q_KEY_NPAGE:
         if ((flags & KEY_FLAG_UNICODE) == 0) {
             /*
-             * PgUp Download
+             * PgDn Download
              */
             switch_state(Q_STATE_DOWNLOAD_MENU);
         }
