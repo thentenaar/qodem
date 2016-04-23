@@ -1095,12 +1095,21 @@ void screen_setup() {
 #else
     /*
      * This is the standard ncurses case.
-     * 
+     *
      * Since we use newterm() in initialize_keyboard() to interrogate a bunch
      * of emulation keyboards, we need to use newterm() here also so that we
      * are not mixing the use of initscr() and newterm().
      */
     q_main_screen = newterm(getenv("TERM"), stdout, stdin);
+    if (q_main_screen == NULL) {
+        /*
+         * We had a problem setting up ncurses, bail out right now.
+         */
+        fprintf(stderr, _("Unable to initialize curses!\n\n"));
+        fprintf(stderr, _("Is the TERM environment variable ('%s') correct?\n"),
+            getenv("TERM"));
+        exit(EXIT_ERROR_CURSES);
+    }
     set_term(q_main_screen);
 #endif /* Q_PDCURSES */
 
