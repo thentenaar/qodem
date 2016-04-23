@@ -773,6 +773,104 @@ static void pdcurses_key(int * key, int * flags) {
 
 }
 
+#else
+
+/**
+ * Convert some of the broken out-of-range key codes seen on Debian Jessie
+ * xterm into what it was supposed to be.
+ *
+ * @param key the PDCurses key
+ * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.
+ */
+static void ncurses_invalid_keycode(int * key, int * flags) {
+    DLOG(("ncurses_invalid_keycode() in: key '%c' %d %x %o flags %d\n",
+            *key, *key, *key, *key, *flags));
+
+    switch (*key) {
+
+    case 538:
+        /* Alt-Ins */
+        *key = Q_KEY_IC;
+        *flags = KEY_FLAG_ALT;
+        break;
+
+    case 517:
+        /* Alt-Del */
+        *key = Q_KEY_DC;
+        *flags = KEY_FLAG_ALT;
+        break;
+
+    case 533:
+        /* Alt-Home */
+        *key = Q_KEY_HOME;
+        *flags = KEY_FLAG_ALT;
+        break;
+
+    case 528:
+        /* Alt-End */
+        *key = Q_KEY_END;
+        *flags = KEY_FLAG_ALT;
+        break;
+
+    case 540:
+        /* Ctrl-Ins */
+        *key = Q_KEY_IC;
+        *flags = KEY_FLAG_CTRL;
+        break;
+
+    case 519:
+        /* Ctrl-Del */
+        *key = Q_KEY_DC;
+        *flags = KEY_FLAG_CTRL;
+        break;
+
+    case 555:
+        /* Ctrl-PgUp */
+        *key = Q_KEY_PPAGE;
+        *flags = KEY_FLAG_CTRL;
+        break;
+
+    case 550:
+        /* Ctrl-PgDn */
+        *key = Q_KEY_NPAGE;
+        *flags = KEY_FLAG_CTRL;
+        break;
+
+    case 535:
+        /* Ctrl-Home */
+        *key = Q_KEY_HOME;
+        *flags = KEY_FLAG_CTRL;
+        break;
+
+    case 530:
+        /* Ctrl-End */
+        *key = Q_KEY_END;
+        *flags = KEY_FLAG_CTRL;
+        break;
+
+    case 553:
+        /* Shift-PgUp */
+        *key = Q_KEY_PPAGE;
+        *flags = KEY_FLAG_SHIFT;
+        break;
+
+    case 548:
+        /* Shift-PgDn */
+        *key = Q_KEY_NPAGE;
+        *flags = KEY_FLAG_SHIFT;
+        break;
+
+    default:
+        *key = ERR;
+        *flags = 0;
+        break;
+    }
+
+    DLOG(("ncurses_invalid_keycode() out: key '%c' %d flags %d\n",
+            *key, *key, *flags));
+
+}
+
 #endif /* Q_PDCURSES || Q_PDCURSES_WIN32 */
 
 /**
@@ -1342,6 +1440,7 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
     wint_t utf_keystroke;
     Q_BOOL modifier = Q_FALSE;
     int return_keystroke = ERR;
+    int return_res = OK;
     Q_BOOL linux_fkey = Q_FALSE;
     int res;
 
@@ -1393,6 +1492,10 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
      */
     res = wget_wch((WINDOW *) window, &utf_keystroke);
     *keystroke = utf_keystroke;
+
+    DLOG(("wget_wch() res %04x utf8_keystroke: 0x%04x %d %o '%c'\n",
+            res, utf_keystroke, utf_keystroke, utf_keystroke, utf_keystroke));
+
     if (res == ERR) {
         *keystroke = ERR;
     }
@@ -1463,6 +1566,20 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
          * Handle PDCurses alternate keystrokes
          */
         pdcurses_key(keystroke, flags);
+#else
+    } else if (res == KEY_CODE_YES) {
+        /*
+         * Handle (n)curses alternate keystrokes
+         */
+        if ((*keystroke < KEY_MIN) || (*keystroke > KEY_MAX)) {
+            /*
+             * This is an invalid key code.  I should trash it, but it
+             * appears that some combination of ncurses and terminfo is
+             * turning xterm's "Normal Mode" keystrokes (CSI Pn ; modifier ~)
+             * -- what the parser below handles -- into invalid key codes.
+             */
+            ncurses_invalid_keycode(keystroke, flags);
+        }
 #endif
 
     } else if (*keystroke == KEY_ESCAPE) {
@@ -1614,7 +1731,8 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
                                 break;
                             }
                             *keystroke = return_keystroke;
-                            if ((return_keystroke > 0xFF) && (res == OK)) {
+                            if ((return_keystroke > 0xFF) &&
+                                (return_res == OK)) {
                                 /*
                                  * Unicode character
                                  */
@@ -1673,7 +1791,9 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
                                 break;
                             } else {
                                 return_keystroke = *keystroke;
-                                if ((return_keystroke > 0xFF) && (res == OK)) {
+                                return_res = res;
+                                if ((return_keystroke > 0xFF) &&
+                                    (return_res == OK)) {
                                     /*
                                      * Unicode character
                                      */
@@ -1771,14 +1891,22 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
     if (*keystroke == KEY_SELECT) {
         *keystroke = KEY_END;
     }
+    if (*keystroke == KEY_SHOME) {
+        *keystroke = KEY_HOME;
+        *flags = KEY_FLAG_CTRL;
+    }
+    if (*keystroke == KEY_SEND) {
+        *keystroke = KEY_END;
+        *flags = KEY_FLAG_CTRL;
+    }
 
     if (*keystroke != -1) {
         if (flags != NULL) {
-            DLOG(("Keystroke: 0x%04x %d %o FLAGS: %02x\n",
-                    *keystroke, *keystroke, *keystroke, *flags));
+            DLOG(("Keystroke: 0x%04x %d %o '%c' FLAGS: %02x\n",
+                    *keystroke, *keystroke, *keystroke, *keystroke, *flags));
         } else {
-            DLOG(("Keystroke: 0x%04x %d %o FLAGS: NULL\n",
-                    *keystroke, *keystroke, *keystroke));
+            DLOG(("Keystroke: 0x%04x %d %o '%c' FLAGS: NULL\n",
+                    *keystroke, *keystroke, *keystroke, *keystroke));
         }
     }
 
