@@ -2790,6 +2790,7 @@ char * raw_help_text = \
 "    @BOLD{telnetd}     - Qodem will listen for a TCP connection and use the telnet\n"
 "                  protocol to set options to ensure clean file transfers.\n"
 "                  The @BOLD{TCP Listen Port} dialog will appear to select the port.\n"
+#ifdef Q_SSH_CRYPTLIB
 "\n"
 "    @BOLD{sshd}        - Qodem will listen for a TCP connection and use the ssh\n"
 "                  protocol.  Users may login to the host using any ssh name\n"
@@ -2798,6 +2799,7 @@ char * raw_help_text = \
 "                  specified in the Qodem preferences file.  Like telnetd and\n"
 "                  socket, the @BOLD{TCP Listen Port} dialog will appear to select\n"
 "                  the port.\n"
+#endif
 "\n"
 "The @BOLD{TCP Listen Port} dialog is used to select the listening port.  The\n"
 "@BOLD{Next Available} option chooses any random available port.  The @BOLD{Enter Port}\n"
