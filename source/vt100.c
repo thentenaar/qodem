@@ -959,7 +959,7 @@ static void set_toggle(const Q_BOOL value) {
 
         case 1:
             if (state.dec_private_mode_flag == Q_TRUE) {
-                /* DECCKM */
+                /* DECCRM */
                 if (value == Q_TRUE) {
                     DLOG(("DECCRM: set (VT100 keys)\n"));
                     /* Use application arrow keys */
@@ -7082,10 +7082,24 @@ wchar_t * xterm_keystroke(const int keystroke) {
         return L"\033[1;2B";
 
     case Q_KEY_HOME:
-        return L"\033[H";
+        switch (q_vt100_arrow_keys) {
+        case Q_EMUL_ANSI:
+            return L"\033[H";
+        case Q_EMUL_VT52:
+            return L"\033H";
+        default:
+            return L"\033OH";
+        }
 
     case Q_KEY_END:
-        return L"\033[F";
+        switch (q_vt100_arrow_keys) {
+        case Q_EMUL_ANSI:
+            return L"\033[F";
+        case Q_EMUL_VT52:
+            return L"\033F";
+        default:
+            return L"\033OF";
+        }
 
     case Q_KEY_F(1):
         /* PF1 */
