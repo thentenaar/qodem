@@ -2062,31 +2062,44 @@ wchar_t * ansi_keystroke(const int keystroke) {
         return L"\033[B";
 
     case Q_KEY_PPAGE:
-        return L"\033[5~";
+        return L"\033[V";
     case Q_KEY_NPAGE:
-        return L"\033[6~";
+        return L"\033[U";
     case Q_KEY_IC:
-        return L"\033[2~";
+        return L"\033[@";
     case Q_KEY_DC:
-        return L"\033[3~";
+        return L"\177";
     case Q_KEY_SIC:
-        return L"\033[2;2~";
     case Q_KEY_SDC:
-        return L"\033[3;2~";
+        return L"";
     case Q_KEY_HOME:
+        return L"\033[H";
     case Q_KEY_END:
+        return L"\033[K";
     case Q_KEY_F(1):
+        return L"\033OP";
     case Q_KEY_F(2):
+        return L"\033OQ";
     case Q_KEY_F(3):
+        return L"\033OR";
     case Q_KEY_F(4):
+        return L"\033OS";
     case Q_KEY_F(5):
+        return L"\033Ot";
     case Q_KEY_F(6):
+        return L"\033[17~";
     case Q_KEY_F(7):
+        return L"\033[18~";
     case Q_KEY_F(8):
+        return L"\033[19~";
     case Q_KEY_F(9):
+        return L"\033[20~";
     case Q_KEY_F(10):
+        return L"\033[21~";
     case Q_KEY_F(11):
+        return L"\033[23~";
     case Q_KEY_F(12):
+        return L"\033[24~";
     case Q_KEY_F(13):
     case Q_KEY_F(14):
     case Q_KEY_F(15):
