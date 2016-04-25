@@ -152,37 +152,37 @@ $(QODEM_OBJS_DIR)/xmodem.obj \
 $(QODEM_OBJS_DIR)/zmodem.obj
 
 clean:
-        -del $(QODEM_EXE)
-        -del $(QODEM_OBJS_DIR)\*.obj
-        cd lib\c
-        make -f Makefile.bcc5 clean
-        cd ..\pdcurses
-        make -f Makefile.bcc5 clean
-        cd ..\..
+	-del $(QODEM_EXE)
+	-del $(QODEM_OBJS_DIR)\*.obj
+	cd lib\c
+	make -f Makefile.bcc5 clean
+	cd ..\pdcurses
+	make -f Makefile.bcc5 clean
+	cd ..\..
 
 qodem: $(QODEM_EXE)
 
 lib/libc.lib:
-        cd lib\c
-        make -f Makefile.bcc5
-        cd ..\..
+	cd lib\c
+	make -f Makefile.bcc5
+	cd ..\..
 
 lib/pdcurses.lib:
-        cd lib\pdcurses
-        make -f Makefile.bcc5
-        cd ..\..
+	cd lib\pdcurses
+	make -f Makefile.bcc5
+	cd ..\..
 
 $(QODEM_EXE): $(QODEM_OBJS) $(EXTRA_LIBS)
-        echo -e$(QODEM_EXE) > bcc32.rsp
-        echo $(LDFLAGS) >> bcc32.rsp
-        echo $(QODEM_OBJS_DIR)/*.obj >> bcc32.rsp
-        echo $(LDLIBS) >> bcc32.rsp
-        $(CC) @bcc32.rsp
+	echo -e$(QODEM_EXE) > bcc32.rsp
+	echo $(LDFLAGS) >> bcc32.rsp
+	echo $(QODEM_OBJS_DIR)/*.obj >> bcc32.rsp
+	echo $(LDLIBS) >> bcc32.rsp
+	$(CC) @bcc32.rsp
 
 {$(QODEM_SRC_DIR)/}.c{$(QODEM_OBJS_DIR)/}.obj:
-        echo $(CFLAGS1) > bcc32.rsp
-        echo $(CFLAGS2) >> bcc32.rsp
-        echo $(CFLAGS3) >> bcc32.rsp
-        echo $(CFLAGS4) >> bcc32.rsp
-        echo -c $< >> bcc32.rsp
-        $(CC) @bcc32.rsp
+	echo $(CFLAGS1) > bcc32.rsp
+	echo $(CFLAGS2) >> bcc32.rsp
+	echo $(CFLAGS3) >> bcc32.rsp
+	echo $(CFLAGS4) >> bcc32.rsp
+	echo -c $< >> bcc32.rsp
+	$(CC) @bcc32.rsp
