@@ -1,4 +1,4 @@
-AC_INIT([qodem], [1.0beta])
+AC_INIT([qodem], [1.0.0])
 AC_CONFIG_SRCDIR([source/qodem.h])
 AM_CONFIG_HEADER([source/config.h])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
@@ -93,16 +93,16 @@ else
 fi
 AM_CONDITIONAL(Q_X11_BUILD, [test "x$enable_x11" = "xyes"])
 
-dnl cryptlib support option - default is YES
-disable_ssh=no
-AC_ARG_ENABLE(ssh, [  --disable-ssh           Disable internal ssh (via cryptlib)])
+dnl cryptlib support option - default is NO
+disable_ssh=yes
+AC_ARG_ENABLE(ssh, [  --enable-ssh            Enable internal ssh (via cryptlib)])
 if test "x$enable_ssh" = "xyes" ; then
     disable_ssh=no
 else
     if test "x$enable_ssh" = "x" ; then
-        disable_ssh=no
-    else
         disable_ssh=yes
+    else
+        disable_ssh=no
     fi
 fi
 if test "x$disable_ssh" = "xyes"; then

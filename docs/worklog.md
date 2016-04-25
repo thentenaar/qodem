@@ -1,6 +1,12 @@
 The Qodem Project Work Log
 ==========================
 
+April 24, 2016
+
+I've gotten a few bug reports come in, which is really nice.  Bumping
+the dev version number to 1.0.0 (woo!) now.  I've decided to disable
+cryptlib by default in configure.
+
 April 21, 2016
 
 I am down to two remaining TODOs in the code: verifying that the comm

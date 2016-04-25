@@ -58,10 +58,10 @@ extern "C" {
 #endif
 
 /* Defines ---------------------------------------------------------------- */
-#define RELEASE
-/* #undef RELEASE */
+// #define RELEASE
+#undef RELEASE
 
-#define Q_VERSION               "1.0beta"
+#define Q_VERSION               "1.0.0"
 #define Q_AUTHOR                "Kevin Lamonte"
 
 #ifdef RELEASE

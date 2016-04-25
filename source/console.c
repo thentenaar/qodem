@@ -3348,6 +3348,7 @@ void console_info_refresh() {
     int status_left_stop;
     int row;
     int i;
+#ifndef QMODEM_INFO_SCREEN
     static int delay = 0;
     static Q_BOOL redeye_right = Q_TRUE;
     static int redeye_screen_x;
@@ -3360,6 +3361,7 @@ void console_info_refresh() {
     }
 
     delay = 0;
+#endif
 
     info_left = (WIDTH - 80) / 2;
     info_top = (HEIGHT - 24) / 2;
@@ -3551,6 +3553,8 @@ void console_info_refresh() {
         q_screen_dirty = Q_FALSE;
     }
 
+#ifndef QMODEM_INFO_SCREEN
+
     if (redeye_pause == 0) {
 
         /*
@@ -3588,5 +3592,7 @@ void console_info_refresh() {
     } else {
         redeye_pause--;
     }
+
+#endif /* QMODEM_INFO_SCREEN */
 
 }

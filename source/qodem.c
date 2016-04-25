@@ -795,7 +795,7 @@ static char * usage_string() {
  */
 static char * version_string() {
     return _(""
-"qodem version 1.0beta\n"
+"qodem version 1.0.0\n"
 "Written 2003-2016 by Kevin Lamonte\n"
 "\n"
 "To the extent possible under law, the author(s) have dedicated all\n"
