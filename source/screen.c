@@ -1100,6 +1100,15 @@ void screen_setup() {
      * of emulation keyboards, we need to use newterm() here also so that we
      * are not mixing the use of initscr() and newterm().
      */
+
+    /*
+     * Ask ncurses to use extended names.  qodem_win_getch() should work
+     * either way, but it would be slightly nicer to use the ncurses API
+     * which will be a bit more future-proof rather than custom parse these
+     * extended keys.
+     */
+    use_extended_names(TRUE);
+
     q_main_screen = newterm(getenv("TERM"), stdout, stdin);
     if (q_main_screen == NULL) {
         /*
