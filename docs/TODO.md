@@ -10,6 +10,9 @@ NEW FUNCTIONALITY
 
 Fix all marked TODOs in code
 
+xterm_keystroke: handle ALT/SHIFT/CTRL on function keys passed to
+remote side (e.g. don't strip out ALT/SHIFT/CTRL as is happening now).
+
 
 FULL REGRESSION ON EVERY ITEM:
   F10 -> Enter or Alt-Enter

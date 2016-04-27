@@ -185,21 +185,38 @@ static Q_BOOL keys_in_queue = Q_FALSE;
 static int curses_match_state = 0;
 
 /**
+ * A buffer to match sequences to a function key number.
+ */
+static char curses_match_buffer[16];
+static unsigned int curses_match_buffer_i = 0;
+static unsigned int curses_match_buffer_n = 0;
+
+/**
+ * Reset the curses function key recognizer.
+ */
+static void curses_match_reset() {
+    DLOG(("curses_match_reset()\n"));
+
+    curses_match_buffer_i = 0;
+    curses_match_buffer_n = 0;
+    memset(curses_match_buffer, 0, sizeof(curses_match_buffer));
+    keys_in_queue = Q_FALSE;
+    curses_match_state = 0;
+}
+
+/**
  * Parse terminal keystroke sequences into a keystroke and flags.
  *
  * @param ch the next byte of the sequence
  * @param key the ncurses key
  * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.
  */
-static void curses_match_keystring(const int ch, int * key, int * flags) {
+static void curses_match_keystring(int ch, int * key, int * flags) {
 
-    static char buffer[16];
-    static unsigned int buffer_i = 0;
-    static unsigned int buffer_n = 0;
     int i;
 
-    DLOG(("curses_match_keystring() %d in: ch '%c' 0x%04x %d %o buffer_n %d\n",
-            curses_match_state, ch, ch, ch, ch, buffer_n));
+    DLOG(("curses_match_keystring() %d in: ch '%c' 0x%04x %d %o curses_match_buffer_n %d\n",
+            curses_match_state, ch, ch, ch, ch, curses_match_buffer_n));
 
 drain_queue:
 
@@ -207,9 +224,51 @@ drain_queue:
         /*
          * We are draining the queue.
          */
-        assert(ch == ERR);
-        *key = buffer[buffer_i];
-        buffer_i++;
+
+        if (ch != ERR) {
+            /*
+             * Special case: we got ESC {something} ESC {something}, and that
+             * second {something} is being passed in right here.  Allow it to
+             * be appended, it will be drained out later.
+             */
+            DLOG(("curses_match_keystring() %d DRAIN APPEND '%c'\n",
+                    curses_match_state, ch));
+            if (curses_match_buffer_n < sizeof(curses_match_buffer) - 1) {
+                curses_match_buffer[curses_match_buffer_n] = (char) (ch & 0xFF);
+                curses_match_buffer_n++;
+            }
+        }
+
+        if ((curses_match_buffer_n - curses_match_buffer_i >= 2) &&
+            (curses_match_buffer[curses_match_buffer_i] == '\033')) {
+            /*
+             * Special case: the last two bytes in the buffer represent
+             * Alt-{comething}.  Return it as {something} with KEY_FLAG_ALT.
+             */
+            DLOG(("curses_match_keystring() %d DRAIN ALT-'%c'\n",
+                    curses_match_state,
+                    curses_match_buffer[curses_match_buffer_i] + 1));
+            if (flags != NULL) {
+                *flags |= KEY_FLAG_ALT;
+            }
+            *key = curses_match_buffer[curses_match_buffer_i + 1];
+            curses_match_buffer_i += 2;
+            if (curses_match_buffer_i == curses_match_buffer_n) {
+                curses_match_reset();
+            }
+            if (flags == NULL) {
+                DLOG(("curses_match_keystring() DRAIN ALT out: key '%c' %d flags NULL\n",
+                        *key, *key));
+            }
+            else {
+                DLOG(("curses_match_keystring() DRAIN ALT out: key '%c' %d flags %d\n",
+                        *key, *key, *flags));
+            }
+            return;
+        }
+
+        *key = curses_match_buffer[curses_match_buffer_i];
+        curses_match_buffer_i++;
         if (ch > 0xFF) {
             /*
              * Unicode character
@@ -218,12 +277,18 @@ drain_queue:
                 *flags |= KEY_FLAG_UNICODE;
             }
         }
-        if (buffer_i == buffer_n) {
-            curses_match_state = 0;
-            buffer_i = 0;
-            buffer_n = 0;
-            memset(buffer, 0, sizeof(buffer));
-            keys_in_queue = Q_FALSE;
+        if ((curses_match_buffer_i == curses_match_buffer_n - 1) && (curses_match_buffer[curses_match_buffer_i] == '\033')) {
+            /*
+             * The last byte in curses_match_buffer is the first byte for a
+             * new sequence.  Switch to match state 1.
+             */
+            curses_match_reset();
+            curses_match_state = 1;
+            curses_match_buffer_n = 1;
+            curses_match_buffer[0] = '\033';
+            keys_in_queue = Q_TRUE;
+        } else if (curses_match_buffer_i == curses_match_buffer_n) {
+            curses_match_reset();
         }
         if (flags == NULL) {
             DLOG(("curses_match_keystring() DRAIN out: key '%c' %d flags NULL\n",
@@ -240,20 +305,21 @@ drain_queue:
     assert(ch != ERR);
     assert(curses_match_state != 2);
     assert(keys_in_queue == Q_FALSE);
-    assert(buffer_i == 0);
+    assert(curses_match_buffer_i == 0);
 
-    if (buffer_n < sizeof(buffer) - 1) {
+    if (curses_match_buffer_n < sizeof(curses_match_buffer) - 1) {
         /*
          * We still have room for another byte.
          */
-        buffer[buffer_n] = (unsigned char) (ch & 0xFF);
-        buffer_n++;
+        curses_match_buffer[curses_match_buffer_n] = (char) (ch & 0xFF);
+        curses_match_buffer_n++;
     } else {
         /*
          * A sequence is too long.
          */
         curses_match_state = 2;
         keys_in_queue = Q_TRUE;
+        ch = ERR;
         goto drain_queue;
     }
 
@@ -275,8 +341,8 @@ drain_queue:
                     *flags |= KEY_FLAG_UNICODE;
                 }
             }
-            assert(buffer_n == 1);
-            buffer_n = 0;
+            assert(curses_match_buffer_n == 1);
+            curses_match_buffer_n = 0;
             return;
         }
         /* We have seen the beginning of a sequence. */
@@ -288,23 +354,25 @@ drain_queue:
         return;
 
     case 1:
-        if (buffer_n == 2) {
+        if (curses_match_buffer_n == 2) {
             /*
              * This is where we differentiate between Alt-x and something
              * else.
              */
             if (ch != '[') {
                 /*
-                 * This was Alt-something.
+                 * This was Alt-x.
                  */
                 *key = ch;
                 if (flags != NULL) {
                     *flags = KEY_FLAG_ALT;
                 }
-                buffer_n = 0;
-                curses_match_state = 0;
+                curses_match_reset();
                 return;
             }
+            /*
+             * We have at least CSI in the buffer from this line forward.
+             */
         }
 
         /*
@@ -349,6 +417,7 @@ drain_queue:
             /* An invalid sequence came in, switch to drain the queue. */
             curses_match_state = 2;
             keys_in_queue = Q_TRUE;
+            ch = ERR;
             goto drain_queue;
         }
 
@@ -362,8 +431,14 @@ drain_queue:
         return;
     }
     DLOG(("curses_match_keystring() searching for sequence: '%s'\n",
-        buffer));
+        curses_match_buffer));
 
+    /*
+     * The state machine is partially reset.  It is set to scan for a new
+     * sequence, but the buffer contains the last sequence.  We scan our list
+     * and either return something or not, but we must trash the buffer
+     * before we exit.
+     */
     assert(curses_match_state == 0);
     assert(keys_in_queue == Q_FALSE);
 
@@ -377,13 +452,11 @@ drain_queue:
             if (flags != NULL) {
                 *flags = 0;
             }
-            buffer_i = 0;
-            buffer_n = 0;
-            memset(buffer, 0, sizeof(buffer));
+            curses_match_reset();
             return;
         }
 
-        if (strcmp(terminfo_keystrings[i].name, buffer) == 0) {
+        if (strcmp(terminfo_keystrings[i].name, curses_match_buffer) == 0) {
             /*
              * Match found.
              */
@@ -395,9 +468,7 @@ drain_queue:
                          terminfo_keystrings[i].ctrl ||
                          terminfo_keystrings[i].alt;
             }
-            buffer_i = 0;
-            buffer_n = 0;
-            memset(buffer, 0, sizeof(buffer));
+            curses_match_reset();
             break;
         }
     }
@@ -1988,6 +2059,11 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
 #endif
 
     } else if (*keystroke == KEY_ESCAPE) {
+        /*
+         * We have some complex ESC handling here due to the multiple ways
+         * ESC is used: as Alt-{X}, as a sequence initializer for a function
+         * key, and as bare ESC.
+         */
         if (flags != NULL) {
             *flags |= KEY_FLAG_ALT;
         }
@@ -1997,7 +2073,7 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
         nodelay((WINDOW *) window, TRUE);
         res = wget_wch((WINDOW *) window, &utf_keystroke);
 
-        DLOG(("wget_wch() ESC res %04x utf8_keystroke: 0x%04x %d %o '%c'\n",
+        DLOG(("wget_wch() ESC 1 res %04x utf8_keystroke: 0x%04x %d %o '%c'\n",
                 res, utf_keystroke, utf_keystroke, utf_keystroke,
                 utf_keystroke));
 
@@ -2018,34 +2094,57 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
                 *flags &= ~KEY_FLAG_ALT;
             }
             *keystroke = KEY_ESCAPE;
+        } else if (res == KEY_CODE_YES) {
+            /*
+             * This was Alt-{some function key}.  Set ALT.
+             */
+            curses_match_reset();
+            if (flags != NULL) {
+                *flags &= ~KEY_FLAG_ALT;
+            }
         } else {
+            assert(res == OK);
+
             /*
              * A more complex keyboard sequence has come in that curses
-             * doesn't know about.  Use curses_match_keystring().
+             * doesn't know about.  Use curses_match_keystring().  We have
+             * the first TWO bytes in the sequence: ESCAPE and utf_keystroke.
              */
             if (flags != NULL) {
                 *flags = 0;
             }
             assert(keys_in_queue == Q_FALSE);
             curses_match_keystring(KEY_ESCAPE, keystroke, flags);
-            /*
-             * This should switch curses_match_state to 1.  keystroke should
-             * be ERR now.
-             */
-            assert(*keystroke == ERR);
-            assert(curses_match_state == 1);
+            curses_match_keystring(utf_keystroke, keystroke, flags);
 
-            if (res == OK) {
-                /*
-                 * curses_match_keystring() has it now.
-                 */
-                curses_match_keystring(utf_keystroke, keystroke, flags);
+            while ((curses_match_state == 1) && (res == OK)) {
+                res = wget_wch((WINDOW *) window, &utf_keystroke);
+
+                DLOG(("wget_wch() ESC 2 res %04x utf8_keystroke: 0x%04x %d %o '%c'\n",
+                        res, utf_keystroke, utf_keystroke, utf_keystroke,
+                        utf_keystroke));
+                if (res != ERR) {
+                    /*
+                     * Normal key, keep processing in match buffer.
+                     */
+                    curses_match_keystring(utf_keystroke, keystroke, flags);
+                } else if (res == KEY_CODE_YES) {
+                    /*
+                     * OK, this one is weird.  We got part of a matching
+                     * sequence, but then ended with a function key.  Ditch
+                     * what we had before.
+                     */
+                    curses_match_reset();
+                }
             }
         }
     } else if ((*keystroke != ERR) && (res == OK)) {
         assert(curses_match_state != 2);
         assert(keys_in_queue == Q_FALSE);
         if (curses_match_state != 0) {
+            /*
+             * Still collecting a sequence.
+             */
             assert(curses_match_state == 1);
             curses_match_keystring(utf_keystroke, keystroke, flags);
         }
