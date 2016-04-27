@@ -418,7 +418,7 @@ static void build_options_topic() {
          */
         memset(line, 0, sizeof(line));
         begin = get_option_default(option);
-        convert_unicode(_("    Default value: "), line);
+        convert_unicode(_("  Default value: "), line);
         while (*begin != 0) {
             line[wcslen(line)] = *begin | HELP_BOLD;
             begin++;
