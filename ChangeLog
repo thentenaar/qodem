@@ -2,6 +2,7 @@ qodem (1.0.0-1) unstable; urgency=low
 
   * ANSI keyboard mappings match SyncTERM/Netrunner
   * cryptlib disabled by default in configure
+  * ncurses: improved handling of ANSI and xterm function keys
 
   -- Kevin Lamonte <lamonte@users.sourceforge.net>  Mon,  4 Jul 2016 18:50:00 -0500
 
