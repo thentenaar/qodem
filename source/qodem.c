@@ -123,6 +123,8 @@ extern HANDLE q_child_process;
 extern HANDLE q_child_thread;
 extern HANDLE q_script_stdout;
 
+#ifndef Q_NO_SERIAL
+
 /**
  * The serial port handle, stored in modem.c.
  */
@@ -134,7 +136,9 @@ extern HANDLE q_serial_handle;
  */
 static Q_BOOL q_serial_readable;
 
-#endif
+#endif /* Q_NO_SERIAL */
+
+#endif /* Q_PDCURSES_WIN32 */
 
 /**
  * Global status struct.
@@ -1773,6 +1777,7 @@ no_data:
 #endif
             default:
 #ifdef Q_PDCURSES_WIN32
+#ifndef Q_NO_SERIAL
                 if (q_serial_handle != NULL) {
                     DWORD serial_error = GetLastError();
                     DLOG(("Call to write() failed: %d %s\n",
@@ -1784,6 +1789,7 @@ no_data:
                         strerror(serial_error));
                     notify_form(notify_message, 0);
                 } else {
+#endif
                     DLOG(("Call to write() failed: %d %s\n", error,
                             get_strerror(error)));
 
@@ -1791,7 +1797,10 @@ no_data:
                     snprintf(notify_message, sizeof(notify_message),
                         _("Call to write() failed: %s"), get_strerror(error));
                     notify_form(notify_message, 0);
+#ifndef Q_NO_SERIAL
                 }
+#endif
+
 #else
 
                 DLOG(("Call to write() failed: %d %s\n",
@@ -2064,131 +2073,125 @@ static void data_handler() {
 
         rc = select(select_fd_max, &readfds, &writefds, &exceptfds, &listen_timeout);
 
-    /* Note that the opening brace is deliberately missing here. */
-    } else
-
 #ifndef Q_NO_SERIAL
-        if (q_serial_handle != NULL) {
+    } else if (q_serial_handle != NULL) {
+        /*
+         * Use Win32 overlapped I/O to see if we have an empty buffer to
+         * write to, data to read, or a ring indication.
+         */
+        DWORD millis = listen_timeout.tv_sec * 1000 +
+        listen_timeout.tv_usec / 1000;
+        DWORD comm_mask = EV_RXCHAR | EV_RING;
+        OVERLAPPED serial_overlapped;
+
+        DLOG(("Check serial port for data\n"));
+
+        if (q_transfer_buffer_raw_n > 0) {
             /*
-             * Use Win32 overlapped I/O to see if we have an empty buffer to
-             * write to, data to read, or a ring indication.
+             * See when the buffer is empty for more data to write to it.
              */
-            DWORD millis = listen_timeout.tv_sec * 1000 +
-                listen_timeout.tv_usec / 1000;
-            DWORD comm_mask = EV_RXCHAR | EV_RING;
-            OVERLAPPED serial_overlapped;
+            comm_mask |= EV_TXEMPTY;
+        }
+        if (!SetCommMask(q_serial_handle, comm_mask)) {
+            error = GetLastError();
 
-            DLOG(("Check serial port for data\n"));
+            DLOG(("Call to SetCommMask() failed: %d %s\n",
+                    error, get_strerror(error)));
 
-            if (q_transfer_buffer_raw_n > 0) {
+            snprintf(notify_message, sizeof(notify_message),
+                _("Call to SetCommMask() failed: %d %s"),
+                error, get_strerror(error));
+            notify_form(notify_message, 0);
+            exit(EXIT_ERROR_SERIAL_FAILED);
+        }
+        q_serial_readable = Q_FALSE;
+        DLOG(("comm_mask: %d 0x%x\n", comm_mask, comm_mask));
+
+        ZeroMemory(&serial_overlapped, sizeof(serial_overlapped));
+        DLOG(("BEFORE serial_event_mask %d 0x%x\n", serial_event_mask,
+                serial_event_mask));
+        if (WaitCommEvent(q_serial_handle, &serial_event_mask,
+                &serial_overlapped) == FALSE) {
+            if (GetLastError() == ERROR_IO_PENDING) {
+                DWORD wait_rc;
+
+                DLOG(("WaitCommEvent() returned ERROR_IO_PENDING\n"));
+
                 /*
-                 * See when the buffer is empty for more data to write to it.
+                 * We don't have an event ready immediately.  Wait until we
+                 * do.
                  */
-                comm_mask |= EV_TXEMPTY;
-            }
-            if (!SetCommMask(q_serial_handle, comm_mask)) {
+                wait_rc = WaitForSingleObject(q_serial_handle,
+                    millis);
+                if (wait_rc == WAIT_FAILED) {
+                    error = GetLastError();
+
+                    DLOG(("Call to WaitForSingleObject() failed: %d %s\n",
+                            error, get_strerror(error)));
+
+                    snprintf(notify_message, sizeof(notify_message),
+                        _("Call to WaitForSingleObject() failed: %d %s"),
+                        error, get_strerror(error));
+                    notify_form(notify_message, 0);
+                    exit(EXIT_ERROR_SERIAL_FAILED);
+                } else if (wait_rc == WAIT_TIMEOUT) {
+                    DLOG(("WaitForSingleObject() WAIT_TIMEOUT\n"));
+                    /*
+                     * There is no data to process.  Go to the timeout case
+                     * at the bottom of the normal POSIX select() code.
+                     */
+                    rc = 0;
+                } else {
+                    DLOG(("WaitForSingleObject() WAIT_ABANDONED or WAIT_OBJECT_0\n"));
+                    DLOG(("AFTER serial_event_mask %d 0x%x\n",
+                            serial_event_mask, serial_event_mask));
+                    /*
+                     * This is either WAIT_ABANDONED or WAIT_OBJECT_0.  Treat
+                     * it the same way, as though some data came in.
+                     */
+                    rc = 1;
+                }
+
+            } else {
                 error = GetLastError();
 
-                DLOG(("Call to SetCommMask() failed: %d %s\n",
+                /*
+                 * Something strange happened.  Bail out.
+                 */
+                DLOG(("Call to WaitCommEvent() failed: %d %s\n",
                         error, get_strerror(error)));
 
                 snprintf(notify_message, sizeof(notify_message),
-                    _("Call to SetCommMask() failed: %d %s"),
+                    _("Call to WaitCommEvent() failed: %d %s"),
                     error, get_strerror(error));
                 notify_form(notify_message, 0);
                 exit(EXIT_ERROR_SERIAL_FAILED);
             }
-            q_serial_readable = Q_FALSE;
-            DLOG(("comm_mask: %d 0x%x\n", comm_mask, comm_mask));
+        } else {
+            DLOG(("WaitCommEvent() returned TRUE\n"));
 
-            ZeroMemory(&serial_overlapped, sizeof(serial_overlapped));
-            DLOG(("BEFORE serial_event_mask %d 0x%x\n", serial_event_mask,
-                    serial_event_mask));
-            if (WaitCommEvent(q_serial_handle, &serial_event_mask,
-                    &serial_overlapped) == FALSE) {
-                if (GetLastError() == ERROR_IO_PENDING) {
-                    DWORD wait_rc;
+            /*
+             * Data is ready somewhere on the serial port.  This is
+             * equivalent to select() returning > 0.
+             */
+            rc = 1;
+        }
 
-                    DLOG(("WaitCommEvent() returned ERROR_IO_PENDING\n"));
-
-                    /*
-                     * We don't have an event ready immediately.  Wait until
-                     * we do.
-                     */
-                    wait_rc = WaitForSingleObject(q_serial_handle,
-                        millis);
-                    if (wait_rc == WAIT_FAILED) {
-                        error = GetLastError();
-
-                        DLOG(("Call to WaitForSingleObject() failed: %d %s\n",
-                                error, get_strerror(error)));
-
-                        snprintf(notify_message, sizeof(notify_message),
-                            _("Call to WaitForSingleObject() failed: %d %s"),
-                            error, get_strerror(error));
-                        notify_form(notify_message, 0);
-                        exit(EXIT_ERROR_SERIAL_FAILED);
-                    } else if (wait_rc == WAIT_TIMEOUT) {
-                        DLOG(("WaitForSingleObject() WAIT_TIMEOUT\n"));
-                        /*
-                         * There is no data to process.  Go to the timeout
-                         * case at the bottom of the normal POSIX select()
-                         * code.
-                         */
-                        rc = 0;
-                    } else {
-                        DLOG(("WaitForSingleObject() WAIT_ABANDONED or WAIT_OBJECT_0\n"));
-                        DLOG(("AFTER serial_event_mask %d 0x%x\n",
-                                serial_event_mask, serial_event_mask));
-                        /*
-                         * This is either WAIT_ABANDONED or WAIT_OBJECT_0.
-                         * Treat it the same way, as though some data came
-                         * in.
-                         */
-                        rc = 1;
-                    }
-
-                } else {
-                    error = GetLastError();
-
-                    /*
-                     * Something strange happened.  Bail out.
-                     */
-                    DLOG(("Call to WaitCommEvent() failed: %d %s\n",
-                            error, get_strerror(error)));
-
-                    snprintf(notify_message, sizeof(notify_message),
-                        _("Call to WaitCommEvent() failed: %d %s"),
-                        error, get_strerror(error));
-                    notify_form(notify_message, 0);
-                    exit(EXIT_ERROR_SERIAL_FAILED);
-                }
-            } else {
-                DLOG(("WaitCommEvent() returned TRUE\n"));
-
-                /*
-                 * Data is ready somewhere on the serial port.  This is
-                 * equivalent to select() returning > 0.
-                 */
-                rc = 1;
-            }
-
-            if ((serial_event_mask & EV_RXCHAR) != 0) {
-                DLOG(("q_serial_readable set to TRUE - EV_RXCHAR\n"));
+        if ((serial_event_mask & EV_RXCHAR) != 0) {
+            DLOG(("q_serial_readable set to TRUE - EV_RXCHAR\n"));
+            q_serial_readable = Q_TRUE;
+        } else {
+            COMSTAT com_stat;
+            ClearCommError(q_serial_handle, NULL, &com_stat);
+            if (com_stat.cbInQue > 0) {
+                DLOG(("q_serial_readable set to TRUE - cbInQue > 0\n"));
                 q_serial_readable = Q_TRUE;
-            } else {
-                COMSTAT com_stat;
-                ClearCommError(q_serial_handle, NULL, &com_stat);
-                if (com_stat.cbInQue > 0) {
-                    DLOG(("q_serial_readable set to TRUE - cbInQue > 0\n"));
-                    q_serial_readable = Q_TRUE;
-                }
             }
+        }
 
-        /* This combines back with the missing opening brace above. */
-        } else { /* if (q_serial_handle != NULL) */
+#endif /* Q_NO_SERIAL */
 
-#endif
+    } else { /* if (q_serial_handle != NULL) */
 
         /*
          * There is no data to process.  We are either on the console or not
@@ -2197,7 +2200,6 @@ static void data_handler() {
          */
         rc = 0;
     }
-
 
 #else
 
