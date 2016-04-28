@@ -2802,7 +2802,7 @@ int qodem_main(int argc, char * const argv[]) {
     initial_call.address        = NULL;
     initial_call.port           = "22";
     initial_call.password       = L"";
-    initial_call.emulation      = Q_EMUL_LINUX;
+    initial_call.emulation      = Q_EMUL_XTERM_UTF8;
     initial_call.codepage       = default_codepage(initial_call.emulation);
     initial_call.notes          = NULL;
     initial_call.script_filename            = "";
