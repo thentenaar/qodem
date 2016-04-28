@@ -85,86 +85,96 @@ struct string_to_qodem_keystroke {
 static struct string_to_qodem_keystroke terminfo_keystrings[] = {
 
     /* name       , key      ,          shift,          ctrl,          alt */
-    { "\033[3;2~" , KEY_DC   ,              0,             0,            0 },
+    { "\033[3;2~" , KEY_DC   , KEY_FLAG_SHIFT,             0,            0 },
     { "\033[3;3~" , KEY_DC   ,              0,             0, KEY_FLAG_ALT },
     { "\033[3;4~" , KEY_DC   , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
     { "\033[3;5~" , KEY_DC   ,              0, KEY_FLAG_CTRL,            0 },
     { "\033[3;6~" , KEY_DC   , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
     { "\033[3;7~" , KEY_DC   ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[3;8~" , KEY_DC   , KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
 
-    { "\033[1;2~" , KEY_DOWN ,              0,             0,            0 },
-    { "\033[1;3~" , KEY_DOWN ,              0,             0, KEY_FLAG_ALT },
-    { "\033[1;4~" , KEY_DOWN , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
-    { "\033[1;5~" , KEY_DOWN ,              0, KEY_FLAG_CTRL,            0 },
-    { "\033[1;6~" , KEY_DOWN , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
-    { "\033[1;7~" , KEY_DOWN ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[1;2B" , KEY_DOWN , KEY_FLAG_SHIFT,             0,            0 },
+    { "\033[1;3B" , KEY_DOWN ,              0,             0, KEY_FLAG_ALT },
+    { "\033[1;4B" , KEY_DOWN , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "\033[1;5B" , KEY_DOWN ,              0, KEY_FLAG_CTRL,            0 },
+    { "\033[1;6B" , KEY_DOWN , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "\033[1;7B" , KEY_DOWN ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[1;8B" , KEY_DOWN , KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
 
     { "\033[K"    , KEY_END  ,              0,             0,            0 },
     { "\033[F"    , KEY_END  ,              0,             0,            0 },
-    { "\033[1;2F" , KEY_END  ,              0,             0,            0 },
+    { "\033[1;2F" , KEY_END  , KEY_FLAG_SHIFT,             0,            0 },
     { "\033[1;3F" , KEY_END  ,              0,             0, KEY_FLAG_ALT },
     { "\033[1;4F" , KEY_END  , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
     { "\033[1;5F" , KEY_END  ,              0, KEY_FLAG_CTRL,            0 },
     { "\033[1;6F" , KEY_END  , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
     { "\033[1;7F" , KEY_END  ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[1;8F" , KEY_END  , KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
 
     { "\033[L"    , KEY_HOME ,              0,             0,            0 },
     { "\033[H"    , KEY_HOME ,              0,             0,            0 },
-    { "\033[1;2H" , KEY_HOME ,              0,             0,            0 },
+    { "\033[1;2H" , KEY_HOME , KEY_FLAG_SHIFT,             0,            0 },
     { "\033[1;3H" , KEY_HOME ,              0,             0, KEY_FLAG_ALT },
     { "\033[1;4H" , KEY_HOME , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
     { "\033[1;5H" , KEY_HOME ,              0, KEY_FLAG_CTRL,            0 },
     { "\033[1;6H" , KEY_HOME , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
     { "\033[1;7H" , KEY_HOME ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[1;8H" , KEY_HOME , KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
 
     { "\033[@"    , KEY_IC   ,              0,             0,            0 },
-    { "\033[2;2~" , KEY_IC   ,              0,             0,            0 },
+    { "\033[2;2~" , KEY_IC   , KEY_FLAG_SHIFT,             0,            0 },
     { "\033[2;3~" , KEY_IC   ,              0,             0, KEY_FLAG_ALT },
     { "\033[2;4~" , KEY_IC   , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
     { "\033[2;5~" , KEY_IC   ,              0, KEY_FLAG_CTRL,            0 },
     { "\033[2;6~" , KEY_IC   , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
     { "\033[2;7~" , KEY_IC   ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[2;8~" , KEY_IC   , KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
 
     { "\033[D"    , KEY_LEFT ,              0,             0,            0 },
-    { "\033[1;2D" , KEY_LEFT ,              0,             0,            0 },
+    { "\033[1;2D" , KEY_LEFT , KEY_FLAG_SHIFT,             0,            0 },
     { "\033[1;3D" , KEY_LEFT ,              0,             0, KEY_FLAG_ALT },
     { "\033[1;4D" , KEY_LEFT , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
     { "\033[1;5D" , KEY_LEFT ,              0, KEY_FLAG_CTRL,            0 },
     { "\033[1;6D" , KEY_LEFT , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
     { "\033[1;7D" , KEY_LEFT ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[1;8D" , KEY_LEFT , KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
 
     { "\033[U"    , KEY_NPAGE,              0,             0,            0 },
-    { "\033[6;2~" , KEY_NPAGE,              0,             0,            0 },
+    { "\033[6;2~" , KEY_NPAGE, KEY_FLAG_SHIFT,             0,            0 },
     { "\033[6;3~" , KEY_NPAGE,              0,             0, KEY_FLAG_ALT },
     { "\033[6;4~" , KEY_NPAGE, KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
     { "\033[6;5~" , KEY_NPAGE,              0, KEY_FLAG_CTRL,            0 },
     { "\033[6;6~" , KEY_NPAGE, KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
     { "\033[6;7~" , KEY_NPAGE,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[6;8~" , KEY_NPAGE, KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
 
     { "\033[M"    , KEY_PPAGE,              0,             0,            0 },
     { "\033[V"    , KEY_PPAGE,              0,             0,            0 },
-    { "\033[5;2~" , KEY_PPAGE,              0,             0,            0 },
+    { "\033[5;2~" , KEY_PPAGE, KEY_FLAG_SHIFT,             0,            0 },
     { "\033[5;3~" , KEY_PPAGE,              0,             0, KEY_FLAG_ALT },
     { "\033[5;4~" , KEY_PPAGE, KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
     { "\033[5;5~" , KEY_PPAGE,              0, KEY_FLAG_CTRL,            0 },
     { "\033[5;6~" , KEY_PPAGE, KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
     { "\033[5;7~" , KEY_PPAGE,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[5;8~" , KEY_PPAGE, KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
 
     { "\033[C"    , KEY_RIGHT,              0,             0,            0 },
-    { "\033[1;2C" , KEY_RIGHT,              0,             0,            0 },
+    { "\033[1;2C" , KEY_RIGHT, KEY_FLAG_SHIFT,             0,            0 },
     { "\033[1;3C" , KEY_RIGHT,              0,             0, KEY_FLAG_ALT },
     { "\033[1;4C" , KEY_RIGHT, KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
     { "\033[1;5C" , KEY_RIGHT,              0, KEY_FLAG_CTRL,            0 },
     { "\033[1;6C" , KEY_RIGHT, KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
     { "\033[1;7C" , KEY_RIGHT,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[1;8C" , KEY_RIGHT, KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
 
     { "\033[A"    , KEY_UP   ,              0,             0,            0 },
-    { "\033[1;2A" , KEY_UP   ,              0,             0,            0 },
+    { "\033[1;2A" , KEY_UP   , KEY_FLAG_SHIFT,             0,            0 },
     { "\033[1;3A" , KEY_UP   ,              0,             0, KEY_FLAG_ALT },
     { "\033[1;4A" , KEY_UP   , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
     { "\033[1;5A" , KEY_UP   ,              0, KEY_FLAG_CTRL,            0 },
     { "\033[1;6A" , KEY_UP   , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
     { "\033[1;7A" , KEY_UP   ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[1;8A" , KEY_UP   , KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
 
     /* Terminating entry */
     { ""      , ERR      ,              0,             0,            0 },
@@ -464,8 +474,8 @@ drain_queue:
                 terminfo_keystrings[i].keystroke));
             *key = terminfo_keystrings[i].keystroke;
             if (flags != NULL) {
-                *flags = terminfo_keystrings[i].shift ||
-                         terminfo_keystrings[i].ctrl ||
+                *flags = terminfo_keystrings[i].shift |
+                         terminfo_keystrings[i].ctrl |
                          terminfo_keystrings[i].alt;
             }
             curses_match_reset();
@@ -1325,9 +1335,10 @@ static void ncurses_extended_keycode(int * key, int * flags) {
         }
 
         if (strcmp(keynames[i].name, keyname(*key)) == 0) {
+            DLOG(("ncurses_extended_keycode() out: ** FOUND **\n"));
             *key = keynames[i].keystroke;
             if (flags != NULL) {
-                *flags = keynames[i].shift || keynames[i].ctrl ||
+                *flags = keynames[i].shift | keynames[i].ctrl |
                          keynames[i].alt;
             }
             break;
@@ -2174,16 +2185,20 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
     if (*keystroke == KEY_FIND) {
         *keystroke = KEY_HOME;
     }
+    if (*keystroke == KEY_SFIND) {
+        *keystroke = KEY_HOME;
+        *flags = KEY_FLAG_SHIFT;
+    }
     if (*keystroke == KEY_SELECT) {
         *keystroke = KEY_END;
     }
     if (*keystroke == KEY_SHOME) {
         *keystroke = KEY_HOME;
-        *flags = KEY_FLAG_CTRL;
+        *flags = KEY_FLAG_SHIFT;
     }
     if (*keystroke == KEY_SEND) {
         *keystroke = KEY_END;
-        *flags = KEY_FLAG_CTRL;
+        *flags = KEY_FLAG_SHIFT;
     }
 
     if (*keystroke != -1) {

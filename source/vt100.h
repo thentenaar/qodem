@@ -138,12 +138,13 @@ extern wchar_t * linux_keystroke(const int keystroke);
  *
  * @param keystroke one of the Q_KEY values, OR a Unicode code point.  See
  * input.h.
+ * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.  See input.h.
  * @return a wide string that is appropriate to send to the remote side.
  * Note that XTERM emulation is an 8-bit emulation: only the bottom 8 bits
  * are transmitted to the remote side.  X_UTF8 emulation sends a true Unicode
  * sequence.  See post_keystroke().
  */
-extern wchar_t * xterm_keystroke(const int keystroke);
+extern wchar_t * xterm_keystroke(const int keystroke, const int flags);
 
 #ifdef __cplusplus
 }

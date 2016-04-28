@@ -1935,7 +1935,11 @@ void net_force_close() {
     /*
      * We close().  The other side might see a RST.
      */
+#ifdef Q_PDCURSES_WIN32
+    closesocket(q_child_tty_fd);
+#else
     close(q_child_tty_fd);
+#endif
     q_child_tty_fd = -1;
 
 }
