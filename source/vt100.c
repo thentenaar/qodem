@@ -3083,7 +3083,35 @@ static void osc_put(unsigned char xterm_char) {
  * isn't xterm.
  */
 static void osc() {
-    DLOG(("osc(): xterm command %s\n", q_emul_buffer));
+    DLOG(("osc(): xterm command '%s'\n", q_emul_buffer));
+
+    if (q_emul_buffer_n > 2) {
+        if (q_emul_buffer_n == sizeof(q_emul_buffer)) {
+            q_emul_buffer_n--;
+        }
+        q_emul_buffer[q_emul_buffer_n] = 0;
+        if ((q_emul_buffer[0] == '0') && (q_emul_buffer[1] == ';')) {
+            /*
+             * Change Icon Name and Window Title to Pt.
+             */
+#ifdef Q_PDCURSES
+            PDC_set_title(q_emul_buffer + 2);
+#endif
+        }
+        if ((q_emul_buffer[0] == '1') && (q_emul_buffer[1] == ';')) {
+            /*
+             * Change Icon Name to Pt.
+             */
+        }
+        if ((q_emul_buffer[0] == '2') && (q_emul_buffer[1] == ';')) {
+            /*
+             * Change Window Title to Pt.
+             */
+#ifdef Q_PDCURSES
+            PDC_set_title(q_emul_buffer + 2);
+#endif
+        }
+    }
 }
 
 /**
