@@ -4618,13 +4618,13 @@ if test "${enable_ssh+set}" = set; then :
 fi
 
 if test "x$enable_ssh" = "xyes" ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}:  --- Cryptlib requested --- " >&5
+$as_echo "$as_me:  --- Cryptlib requested --- " >&6;}
     disable_ssh=no
 else
-    if test "x$enable_ssh" = "x" ; then
-        disable_ssh=yes
-    else
-        disable_ssh=no
-    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}:  --- Cryptlib default: disable --- " >&5
+$as_echo "$as_me:  --- Cryptlib default: disable --- " >&6;}
+    disable_ssh=yes
 fi
 if test "x$disable_ssh" = "xyes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}:  *** Disable cryptlib *** " >&5

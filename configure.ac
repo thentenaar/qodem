@@ -99,13 +99,11 @@ dnl cryptlib support option - default is NO
 disable_ssh=yes
 AC_ARG_ENABLE(ssh, [  --enable-ssh            Enable internal ssh (via cryptlib)])
 if test "x$enable_ssh" = "xyes" ; then
+    AC_MSG_NOTICE([ --- Cryptlib requested --- ])
     disable_ssh=no
 else
-    if test "x$enable_ssh" = "x" ; then
-        disable_ssh=yes
-    else
-        disable_ssh=no
-    fi
+    AC_MSG_NOTICE([ --- Cryptlib default: disable --- ])
+    disable_ssh=yes
 fi
 if test "x$disable_ssh" = "xyes"; then
     AC_MSG_NOTICE([ *** Disable cryptlib *** ])
