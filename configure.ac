@@ -17,12 +17,14 @@ AC_CHECK_HEADERS(libutil.h)
 AC_CHECK_HEADERS(util.h)
 AC_CHECK_HEADERS(getopt.h)
 AC_CHECK_HEADERS(ncursesw/curses.h)
+AC_CHECK_HEADERS(miniupnpc/miniupnpc.h)
 
 dnl Checks for libraries
 AC_SEARCH_LIBS(forkpty, util)
 AC_CHECK_FUNCS(forkpty)
 AC_CHECK_LIB([ncursesw], [mvwadd_wch], Q_HAS_NCURSES="yes", Q_HAS_NCURSES="no")
 AC_CHECK_LIB([ncurses], [mvwadd_wch], Q_HAS_NCURSES_APPLE="yes", Q_HAS_NCURSES_APPLE="no")
+AC_CHECK_LIB([miniupnpc], [upnpDiscover], Q_USE_SYSTEM_UPNP="yes", Q_USE_SYSTEM_UPNP="no")
 
 dnl SDL is an argument
 disable_sdl=no
@@ -131,9 +133,16 @@ if test "x$disable_upnp" = "xyes"; then
     AC_MSG_NOTICE([ *** Disable UPnP *** ])
 else
     AC_MSG_NOTICE([ *** Enable UPnP *** ])
-    subdirs="lib/upnp $subdirs"
-    LIBS="$LIBS lib/upnp/libminiupnpc.a"
-    CFLAGS="$CFLAGS -DQ_UPNP -Ilib/upnp"
+    if test "x$Q_USE_SYSTEM_UPNP" = "xyes"; then
+        AC_MSG_NOTICE([ *** Using system-provided UPnP library *** ])
+        LIBS="$LIBS -lminiupnpc"
+        CFLAGS="$CFLAGS -DQ_UPNP -DQ_USE_SYSTEM_UPNP"
+    else
+        subdirs="lib/upnp $subdirs"
+        AC_MSG_NOTICE([ *** Using local UPnP library *** ])
+        LIBS="$LIBS lib/upnp/libminiupnpc.a"
+        CFLAGS="$CFLAGS -DQ_UPNP -Ilib/upnp"
+    fi
 fi
 
 AC_SUBST(subdirs)

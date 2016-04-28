@@ -132,9 +132,14 @@ extern char * net_ip_address();
 extern char * net_port();
 
 /**
- * Close the TCP connection.
+ * Close the TCP connection nicely.
  */
 extern void net_close();
+
+/**
+ * Close the TCP connection not nicely.
+ */
+extern void net_force_close();
 
 /**
  * Whether or not we are listening for a connection.

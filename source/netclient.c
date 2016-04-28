@@ -29,7 +29,10 @@
  *    net_connect_finish(host, port) - complete the protocol setup for the
  *        socket
  *
- *    net_close() - close the TCP port
+ *    net_close() - close the TCP port nicely (use shutdown())
+ *
+ *    net_force_close() - close the TCP port not nicely (use close(), the
+ *        other side might see RST)
  *
  *    telnet_read() / rlogin_read() / ssh_read() - same API as read()
  *
@@ -131,10 +134,22 @@
 #include "states.h"
 
 #ifdef Q_UPNP
+#if defined(HAVE_MINIUPNPC_MINIUPNPC_H) && defined(Q_USE_SYSTEM_UPNP)
+/*
+ * Use the system provided version of miniupnpc.
+ */
+#include <miniupnpc/miniupnpc.h>
+#include <miniupnpc/miniwget.h>
+#include <miniupnpc/upnpcommands.h>
+#else
+/*
+ * Use my local version of miniupnpc.
+ */
 #include "miniupnpc.h"
 #include "miniwget.h"
 #include "upnpcommands.h"
-#endif
+#endif /* HAVE_MINIUPNPC_MINIUPNPC_H */
+#endif /* Q_UPNP */
 
 #include "netclient.h"
 
@@ -445,7 +460,34 @@ static Q_BOOL upnp_init() {
 
     DLOG(("upnp_init() : upnpDiscover()\n"));
 
+#if (MINIUPNPC_API_VERSION == 10)
+    /*
+     * Version 10 API call:
+     *
+     * upnpDiscover(int delay, const char * multicastif,
+     *              const char * minissdpdsock, int sameport,
+     *              int ipv6,
+     *              int * error);
+     *
+     */
+    device_list = upnpDiscover(2000, NULL, NULL, 0, 0, NULL);
+#else
+#  if (MINIUPNPC_API_VERSION == 14)
+    /*
+     * Version 14
+     *
+     * upnpDiscover(int delay, const char * multicastif,
+     *              const char * minissdpdsock, int sameport,
+     *              int ipv6, unsigned char ttl,
+     *              int * error);
+     *
+     */
     device_list = upnpDiscover(2000, NULL, NULL, 0, 0, 2, NULL);
+#  else
+#    error "Unsupported miniupnpc API version.  Consider disabling UPNP (--disable-upnp), or file an issue at https://github.com/klamonte/qodem/issues" .
+#  endif
+#endif
+
     if (device_list != NULL) {
 
         rc = UPNP_GetValidIGD(device_list, &upnp_urls, &upnp_igd_datas,
@@ -1828,7 +1870,7 @@ int net_accept() {
 }
 
 /**
- * Close the TCP connection.
+ * Close the TCP connection nicely.
  */
 void net_close() {
 
@@ -1860,6 +1902,41 @@ void net_close() {
 #else
     shutdown(q_child_tty_fd, SHUT_WR);
 #endif
+
+}
+
+/**
+ * Close the TCP connection not nicely.
+ */
+void net_force_close() {
+
+    DLOG(("net_force_close()\n"));
+
+    if (connected == Q_FALSE) {
+        return;
+    }
+    connected = Q_FALSE;
+
+    if (q_child_tty_fd == -1) {
+        return;
+    }
+
+#ifdef Q_SSH_CRYPTLIB
+    /*
+     * SSH needs to destroy the crypto session.
+     */
+    if (q_status.dial_method == Q_DIAL_METHOD_SSH) {
+        ssh_close();
+    }
+#endif /* Q_SSH_CRYPTLIB */
+
+    DLOG(("net_force_close() : close(q_child_tty_fd)\n"));
+
+    /*
+     * We close().  The other side might see a RST.
+     */
+    close(q_child_tty_fd);
+    q_child_tty_fd = -1;
 
 }
 

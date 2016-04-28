@@ -958,33 +958,6 @@ void qlog(const char * format, ...) {
 }
 
 /**
- * Close remote connection, dispatching to the appropriate
- * connection-specific close function.
- */
-void close_connection() {
-
-    DLOG(("close_connection()\n"));
-
-    /* How to close depends on the connection method */
-    if (net_is_connected() == Q_TRUE) {
-        /* Telnet, Rlogin, SOCKET, SSH */
-        net_close();
-        return;
-    }
-
-#ifdef Q_PDCURSES_WIN32
-    /* Win32 case */
-    /* Terminate process */
-    assert(q_child_process != NULL);
-    TerminateProcess(q_child_process, -1);
-#else
-    /* Killing -1 kills EVERYTHING.  Not good! */
-    assert(q_child_pid != -1);
-    kill(q_child_pid, SIGHUP);
-#endif /* Q_PDCURSES_WIN32 */
-}
-
-/**
  * Cleanup connection resources, called AFTER read() has returned 0.
  */
 static void cleanup_connection() {
@@ -1156,6 +1129,41 @@ static void cleanup_connection() {
     if (q_status.exit_on_disconnect == Q_TRUE) {
         q_program_state = Q_STATE_EXIT;
     }
+}
+
+/**
+ * Close remote connection, dispatching to the appropriate
+ * connection-specific close function.
+ */
+void close_connection() {
+
+    DLOG(("close_connection()\n"));
+
+    /* How to close depends on the connection method */
+    if (net_is_connected() == Q_TRUE) {
+        /* Telnet, Rlogin, SOCKET, SSH */
+        net_close();
+        if (q_program_state == Q_STATE_HOST) {
+            /*
+             * Host mode has called host_stop().  Cleanup the connection
+             * immediately, don't wait on a read of 0 that may never come.
+             */
+            cleanup_connection();
+            net_force_close();
+        }
+        return;
+    }
+
+#ifdef Q_PDCURSES_WIN32
+    /* Win32 case */
+    /* Terminate process */
+    assert(q_child_process != NULL);
+    TerminateProcess(q_child_process, -1);
+#else
+    /* Killing -1 kills EVERYTHING.  Not good! */
+    assert(q_child_pid != -1);
+    kill(q_child_pid, SIGHUP);
+#endif /* Q_PDCURSES_WIN32 */
 }
 
 /**
