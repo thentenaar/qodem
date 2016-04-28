@@ -39,7 +39,7 @@ This version is built for X11 using PDCurses.
 
 
 %build
-%configure --enable-x11 --disable-ssh
+%configure --enable-x11 --disable-upnp --disable-ssh
 make %{?_smp_mflags}
 
 

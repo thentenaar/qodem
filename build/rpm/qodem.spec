@@ -39,7 +39,7 @@ This version is built for text consoles using ncurses.
 
 
 %build
-%configure --disable-sdl --disable-ssh
+%configure --disable-sdl --disable-upnp --disable-ssh
 make %{?_smp_mflags}
 
 

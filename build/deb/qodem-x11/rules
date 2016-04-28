@@ -31,7 +31,7 @@ endif
 ifneq "$(wildcard /usr/share/misc/config.guess)" ""
 	cp -f /usr/share/misc/config.guess config.guess
 endif
-	./configure $(CROSS) --enable-x11 --enable-sdl --disable-ssh --prefix=/usr --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info CFLAGS="$(CFLAGS)" LDFLAGS="$(shell dpkg-buildflags --get LDFLAGS)"
+	./configure $(CROSS) --enable-x11 --enable-sdl --disable-upnp --disable-ssh --prefix=/usr --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info CFLAGS="$(CFLAGS)" LDFLAGS="$(shell dpkg-buildflags --get LDFLAGS)"
 
 
 build: build-arch build-indep
