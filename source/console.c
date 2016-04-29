@@ -2206,6 +2206,18 @@ void console_refresh(Q_BOOL status_line) {
     time_t current_time;
     char dec_leds_string[6];
 
+    if ((q_status.xterm_mode == Q_TRUE) && (first == Q_TRUE)) {
+        first = Q_FALSE;
+        /*
+         * Initial line
+         */
+        new_scrollback_line();
+        q_scrollback_current = q_scrollback_last;
+        q_scrollback_position = q_scrollback_current;
+        q_status.cursor_y = 0;
+        q_status.cursor_x = 0;
+    }
+
     /*
      * Put the header on the console
      */
