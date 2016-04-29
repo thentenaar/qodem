@@ -139,11 +139,12 @@ static struct option_struct options[] = {
         {Q_OPTION_SHELL, NULL, "shell", "cmd.exe", ""
 #else
         /* Normal: use bash */
-        {Q_OPTION_SHELL, NULL, "shell", "/bin/bash --login", ""
+        {Q_OPTION_SHELL, NULL, "shell", "$SHELL", ""
 #endif
 "### LOCAL PROGRAMS (NOT CONNECTION PROTOCOLS) ----------------------------\n"
 "\n"
-"### The OS shell program.  Examples: /bin/bash /bin/tcsh my_shell"},
+"### The OS shell program.  The $SHELL environment  variable will be\n"
+"### substituted if specified.  Examples: /bin/bash /bin/tcsh my_shell"},
 
 #ifdef Q_PDCURSES_WIN32
         {Q_OPTION_EDITOR, NULL, "editor", "notepad.exe", ""
@@ -225,6 +226,10 @@ static struct option_struct options[] = {
 
         {Q_OPTION_START_PHONEBOOK, NULL, "start_in_phonebook", "true", ""
 "### Whether to startup in the phonebook.  Value is 'true' or\n"
+"### 'false'."},
+
+         {Q_OPTION_STATUS_LINE_VISIBLE, NULL, "status_line", "true", ""
+"### Whether the status line is visible on startup.  Value is 'true' or\n"
 "### 'false'."},
 
         {Q_OPTION_DIAL_CONNECT_TIME, NULL, "dial_connect_time", "60", ""
@@ -1246,6 +1251,18 @@ static void check_option(struct option_struct * option) {
          * Sustitute for $EDITOR
          */
         new_value = substitute_string(option->value, "$EDITOR", env_string);
+        Xfree(option->value, __FILE__, __LINE__);
+        option->value = new_value;
+        break;
+    case Q_OPTION_SHELL:
+        env_string = getenv("SHELL");
+        if (env_string == NULL) {
+            env_string = "";
+        }
+        /*
+         * Sustitute for $EDITOR
+         */
+        new_value = substitute_string(option->value, "$SHELL", env_string);
         Xfree(option->value, __FILE__, __LINE__);
         option->value = new_value;
         break;

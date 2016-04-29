@@ -257,6 +257,7 @@ static struct option q_getopt_long_options[] = {
      *    --geometry    (-g)
      *    --status-line (--sl)
      *    --doorway     (-d)
+     *    --xterm
      */
     {0,                     0,      0,      0}
 };
@@ -3116,6 +3117,13 @@ int qodem_main(int argc, char * const argv[]) {
             switch_state(Q_STATE_PHONEBOOK);
         } else {
             switch_state(Q_STATE_CONSOLE);
+        }
+
+        if (strncmp(get_option(Q_OPTION_STATUS_LINE_VISIBLE),
+                "true", 4) == 0) {
+            set_status_line(Q_TRUE);
+        } else {
+            set_status_line(Q_FALSE);
         }
 
 #ifdef Q_SSH_CRYPTLIB
