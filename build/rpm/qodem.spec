@@ -48,6 +48,43 @@ rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1
 cp docs/qodem.1 docs/xqodem.1 $RPM_BUILD_ROOT%{_mandir}/man1/
+# Create desktop file
+mkdir -p %{buildroot}%{_datadir}/applications
+cat > %{buildroot}%{_datadir}/applications/%{name}.desktop << EOL
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=qodem
+Comment=%{summary}
+Exec=%{name}
+Icon=%{name}
+Terminal=true
+Categories=Network;Dialup;FileTransfer;Telephony;
+EOL
+
+# Install icons
+mkdir -p %{buildroot}%{_datadir}/icons/hicolor/{64x64,512x512}
+install -pDm 0644 build/icons/qodem.png \
+                 %{buildroot}%{_datadir}/icons/hicolor/64x64/apps/%{name}.png
+install -pDm 0644 build/icons/qodem-512.png \
+                 %{buildroot}%{_datadir}/icons/hicolor/512x512/apps/%{name}.png
+
+desktop-file-validate %{buildroot}%{_datadir}/applications/%{name}.desktop
+
+
+%post
+/bin/touch --no-create %{_datadir}/icons/hicolor &>/dev/null || :
+
+
+%postun
+if [ $1 -eq 0 ] ; then
+    /bin/touch --no-create %{_datadir}/icons/hicolor &>/dev/null
+    /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
+fi
+
+
+%posttrans
+/usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 
 %clean
@@ -60,6 +97,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/xqodem
 %{_mandir}/man1/qodem.1.gz
 %{_mandir}/man1/xqodem.1.gz
+%{_datadir}/applications/%{name}.desktop
+%{_datadir}/icons/hicolor/*/apps/%{name}.png
 %doc ChangeLog COPYING CREDITS README.md docs/TODO.md
 
 
