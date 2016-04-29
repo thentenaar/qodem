@@ -3482,27 +3482,60 @@ void console_info_refresh() {
                                     box_left + (box_width -
                                                 strlen(box_title)) / 2,
                                     box_title, Q_COLOR_WINDOW_BORDER);
-            /*
-             * System name
-             */
-            screen_put_color_str_yx(box_top + 1, box_left + 2,
-                                    _("System"), Q_COLOR_MENU_TEXT);
-            screen_put_color_wcs_yx(box_top + 1, box_left + 14,
-                                    q_status.remote_phonebook_name,
-                                    Q_COLOR_MENU_COMMAND);
 
             /*
              * System address / port
              */
+            if (q_status.dial_method == Q_DIAL_METHOD_COMMANDLINE) {
+
+                /*
+                 * Command line
+                 */
+                screen_put_color_str_yx(box_top + 1, box_left + 2,
+                                        _("Command Line"), Q_COLOR_MENU_TEXT);
+                screen_put_color_str_yx(box_top + 1, box_left + 15,
+                                        q_status.remote_address,
+                                        Q_COLOR_MENU_COMMAND);
+
+            } else if (q_status.dial_method == Q_DIAL_METHOD_SHELL) {
+
+                /*
+                 * Command line
+                 */
+                screen_put_color_str_yx(box_top + 1, box_left + 2,
+                                        _("Command Line"), Q_COLOR_MENU_TEXT);
+                screen_put_color_str_yx(box_top + 1, box_left + 15,
+                                        get_option(Q_OPTION_SHELL),
+                                        Q_COLOR_MENU_COMMAND);
+
 #ifndef Q_NO_SERIAL
-            if (q_status.dial_method == Q_DIAL_METHOD_MODEM) {
+            } else if (q_status.dial_method == Q_DIAL_METHOD_MODEM) {
+                /*
+                 * System name
+                 */
+                screen_put_color_str_yx(box_top + 1, box_left + 2,
+                                        _("System"), Q_COLOR_MENU_TEXT);
+                screen_put_color_wcs_yx(box_top + 1, box_left + 14,
+                                        q_status.remote_phonebook_name,
+                                        Q_COLOR_MENU_COMMAND);
+
                 screen_put_color_str_yx(box_top + 2, box_left + 2,
                                         _("Number"), Q_COLOR_MENU_TEXT);
                 screen_put_color_str_yx(box_top + 2, box_left + 14,
                                         q_status.remote_address,
                                         Q_COLOR_MENU_COMMAND);
-            } else {
 #endif
+
+            } else {
+
+                /*
+                 * System name
+                 */
+                screen_put_color_str_yx(box_top + 1, box_left + 2,
+                                        _("System"), Q_COLOR_MENU_TEXT);
+                screen_put_color_wcs_yx(box_top + 1, box_left + 14,
+                                        q_status.remote_phonebook_name,
+                                        Q_COLOR_MENU_COMMAND);
                 /*
                  * Hostname
                  */
@@ -3528,6 +3561,8 @@ void console_info_refresh() {
                 screen_put_color_str_yx(box_top + 4, box_left + 14,
                                         q_status.remote_port,
                                         Q_COLOR_MENU_COMMAND);
+
+
 #ifndef Q_NO_SERIAL
             }
 #endif

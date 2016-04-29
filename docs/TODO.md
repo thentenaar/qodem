@@ -10,6 +10,25 @@ NEW FUNCTIONALITY
 
 Fix all marked TODOs in code
 
+#24 More command line switches:
+     *    --exit-on-completion (-x)
+     *    --keyfile     (-k)
+     *    --xl8file
+     *    --xlufile
+     *    --scrfile     (-s)
+     *    --capfile     (-p)
+     *    --logfile     (-l)
+     *    --emulation   (-e)
+     *    --codepage    (-c)
+     *    --geom        (-g)
+     *    --geometry    (-g)
+     *    --status-line (--sl)
+     *    --doorway     (-d)
+
+#24 Q_OPTION to disable status line on startup
+
+#26 Handle multiple instances operating on the phonebook
+
 
 FULL REGRESSION ON EVERY ITEM:
   F10 -> Enter or Alt-Enter

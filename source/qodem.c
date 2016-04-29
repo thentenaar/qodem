@@ -242,6 +242,22 @@ static struct option q_getopt_long_options[] = {
     {"play",                1,      0,      0},
     {"play-exit",           0,      0,      0},
     {"version",             0,      0,      0},
+    /*
+     * TODO:
+     *    --exit-on-completion (-x)
+     *    --keyfile     (-k)
+     *    --xl8file
+     *    --xlufile
+     *    --scrfile     (-s)
+     *    --capfile     (-p)
+     *    --logfile     (-l)
+     *    --emulation   (-e)
+     *    --codepage    (-c)
+     *    --geom        (-g)
+     *    --geometry    (-g)
+     *    --status-line (--sl)
+     *    --doorway     (-d)
+     */
     {0,                     0,      0,      0}
 };
 
@@ -2722,6 +2738,7 @@ int qodem_main(int argc, char * const argv[]) {
     int rc;
     char * env_string;
     char * substituted_filename;
+    Q_BOOL first = Q_TRUE;
 #ifdef Q_PDCURSES_WIN32
     TCHAR windows_user_name[65];
     DWORD windows_user_name_n;
@@ -2999,8 +3016,13 @@ int qodem_main(int argc, char * const argv[]) {
             /* Zero out the new space */
             memset(initial_call.address + strlen(initial_call.address), 0,
                 strlen(argv[optind]) + 1);
-            /* Add the space before the next argument */
-            initial_call.address[strlen(initial_call.address)] = ' ';
+            if (first == Q_TRUE) {
+                /* Don't precede the entire command line with a space. */
+                first = Q_FALSE;
+            } else {
+                /* Add the space before the next argument */
+                initial_call.address[strlen(initial_call.address)] = ' ';
+            }
             /* Copy the next argument + the null terminator over */
             memcpy(initial_call.address + strlen(initial_call.address),
                 argv[optind], strlen(argv[optind]) + 1);

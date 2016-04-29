@@ -349,9 +349,10 @@ the other bit settings (5, 6, 8) are possible if there is user demand.
 
 GNU Emacs may look wrong in ANSI emulation when Line Wrap is disabled.
 
-Internal telnet and rlogin connections do not pass the LANG
-environment variable to the remote host, due to limitations of remote
-daemons.
+Internal telnet and rlogin connections usually do not successfully
+pass the LANG environment variable to the remote host.  (Qodem sends
+the LANG variable and value, but most remote daemons do not listen for
+it.)
 
 The SSH server key fingerprint displayed in the Alt-I info screen is
 unique, but does not match the key fingerprints reported by ssh-keygen
@@ -563,21 +564,22 @@ External protocols are not yet supported.
 Some functions are different in TERMINAL mode:
 
 ```
-    Key      Qodem function         Qmodem function
+    Key        Qodem function         Qmodem function
     ----------------------------------------------------------
-    Alt-2    Backspace/Del Mode     80x25 (EGA/VGA)
-    Alt-3    Line Wrap              Debug Status Info
-    Alt-4    Display NULL           80x43/50 (EGA/VGA)
-    Alt-9    Serial Port            Printer Echo
-    Alt-K    Send BREAK             Change COM Port
-    Alt-L    Log View               Change drive
-    Alt-O    Modem Config           Change directory
-    Alt-P    Capture File           COM Parameters
-    Alt-Y    COM Parameters         -
-    Alt-,    ANSI Music             -
-    Alt-;    Codepage               -
-    Alt-:    Colors                 -
-    Alt-\    Alt Code Key           -
+    Ctrl-End   -                      Send BREAK
+    Alt-2      Backspace/Del Mode     80x25 (EGA/VGA)
+    Alt-3      Line Wrap              Debug Status Info
+    Alt-4      Display NULL           80x43/50 (EGA/VGA)
+    Alt-9      Serial Port            Printer Echo
+    Alt-K      Send BREAK             Change COM Port
+    Alt-L      Log View               Change drive
+    Alt-O      Modem Config           Change directory
+    Alt-P      Capture File           COM Parameters
+    Alt-Y      COM Parameters         -
+    Alt-,      ANSI Music             -
+    Alt-;      Codepage               -
+    Alt-:      Colors                 -
+    Alt-\      Alt Code Key           -
 ```
 
 The phone book stores an arbitrary number of entries, not the
