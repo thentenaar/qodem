@@ -804,6 +804,11 @@ void set_status_line(Q_BOOL make_visible) {
         }
         q_screen_dirty = Q_TRUE;
     }
+
+    /*
+     * Pass the new height to the remote side.
+     */
+    send_screen_size();
 }
 
 /**

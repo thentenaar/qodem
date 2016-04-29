@@ -21,8 +21,6 @@ Fix all marked TODOs in code
      *    --logfile     (-l)
      *    --emulation   (-e)
      *    --codepage    (-c)
-     *    --geom        (-g)
-     *    --geometry    (-g)
      *    --status-line (--sl)
      *    --doorway     (-d)
 

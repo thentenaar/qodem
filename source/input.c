@@ -24,6 +24,8 @@
 #ifdef Q_PDCURSES_WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#else
+#include <sys/ioctl.h>
 #endif
 #include "qodem.h"
 #include "console.h"
@@ -1377,6 +1379,51 @@ static void ncurses_extended_keycode(int * key, int * flags) {
 #endif /* Q_PDCURSES || Q_PDCURSES_WIN32 */
 
 /**
+ * Send the current screen dimensions to the remote side.
+ */
+void send_screen_size() {
+#ifndef Q_PDCURSES_WIN32
+    struct winsize console_size;
+#endif
+
+    /*
+     * Pass the new dimensions to the remote side
+     */
+    if (q_status.online == Q_TRUE) {
+        if (q_status.dial_method == Q_DIAL_METHOD_TELNET) {
+            telnet_resize_screen(HEIGHT - STATUS_HEIGHT, WIDTH);
+        }
+        if (q_status.dial_method == Q_DIAL_METHOD_RLOGIN) {
+            rlogin_resize_screen(HEIGHT - STATUS_HEIGHT, WIDTH);
+        }
+#ifdef Q_SSH_CRYPTLIB
+        if (q_status.dial_method == Q_DIAL_METHOD_SSH) {
+            ssh_resize_screen(HEIGHT - STATUS_HEIGHT, WIDTH);
+        }
+#endif
+
+#ifndef Q_PDCURSES_WIN32
+        if ((q_status.dial_method == Q_DIAL_METHOD_SHELL) ||
+            (q_status.dial_method == Q_DIAL_METHOD_COMMANDLINE)) {
+
+            /*
+             * Set the TTY cols and rows.
+             */
+            if (ioctl(q_child_tty_fd, TIOCGWINSZ, &console_size) < 0) {
+                /* perror("ioctl(TIOCGWINSZ)"); */
+            } else {
+                console_size.ws_row = HEIGHT - STATUS_HEIGHT;
+                console_size.ws_col = WIDTH;
+                if (ioctl(q_child_tty_fd, TIOCSWINSZ, &console_size) < 0) {
+                    /* perror("ioctl(TIOCSWINSZ)"); */
+                }
+            }
+        }
+#endif
+    } /* if (q_status.online == Q_TRUE) */
+}
+
+/**
  * Perform the necessary screen resizing if a KEY_RESIZE comes in.
  */
 static void handle_resize() {
@@ -1447,19 +1494,7 @@ static void handle_resize() {
     /*
      * Pass the new dimensions to the remote side
      */
-    if (q_status.online == Q_TRUE) {
-        if (q_status.dial_method == Q_DIAL_METHOD_TELNET) {
-            telnet_resize_screen(HEIGHT - STATUS_HEIGHT, WIDTH);
-        }
-        if (q_status.dial_method == Q_DIAL_METHOD_RLOGIN) {
-            rlogin_resize_screen(HEIGHT - STATUS_HEIGHT, WIDTH);
-        }
-#ifdef Q_SSH_CRYPTLIB
-        if (q_status.dial_method == Q_DIAL_METHOD_SSH) {
-            ssh_resize_screen(HEIGHT - STATUS_HEIGHT, WIDTH);
-        }
-#endif
-    }
+    send_screen_size();
 
     q_screen_dirty = Q_TRUE;
 }

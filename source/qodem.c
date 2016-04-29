@@ -230,6 +230,10 @@ static int dial_phonebook_entry_n;
 static unsigned char * play_music_string = NULL;
 static Q_BOOL play_music_exit = Q_FALSE;
 
+/* The geometry as requested by the command line arguments */
+static unsigned char rows_arg = 25;
+static unsigned char cols_arg = 80;
+
 /* Command-line options */
 static struct option q_getopt_long_options[] = {
     {"dial",                1,      0,      0},
@@ -243,6 +247,7 @@ static struct option q_getopt_long_options[] = {
     {"play-exit",           0,      0,      0},
     {"version",             0,      0,      0},
     {"xterm",               0,      0,      0},
+    {"geometry",            1,      0,      0},
     /*
      * TODO:
      *    --exit-on-completion (-x)
@@ -254,8 +259,6 @@ static struct option q_getopt_long_options[] = {
      *    --logfile     (-l)
      *    --emulation   (-e)
      *    --codepage    (-c)
-     *    --geom        (-g)
-     *    --geometry    (-g)
      *    --status-line (--sl)
      *    --doorway     (-d)
      */
@@ -799,6 +802,7 @@ static char * usage_string() {
 "      --username USERNAME             Log in as USERNAME\n"
 "      --play MUSIC                    Play MUSIC as ANSI Music\n"
 "      --play-exit                     Immediately exit after playing MUSIC\n"
+"      --geometry COLSxROWS            Request text window size COLS x ROWS\n"
 "      --xterm                         Enable X11 terminal mode\n"
 "      --version                       Display program version\n"
 "  -h, --help                          This help screen\n"
@@ -875,6 +879,8 @@ static void process_command_line_option(const char * option,
                                         const char * value) {
 
     wchar_t value_wchar[128];
+    int rows_arg_int;
+    int cols_arg_int;
 
     /*
      fprintf(stdout, "OPTION=%s VALUE=%s\n", option, value);
@@ -903,6 +909,25 @@ static void process_command_line_option(const char * option,
     if (strncmp(option, "xterm", strlen("xterm")) == 0) {
         q_status.xterm_mode = Q_TRUE;
         q_status.exit_on_disconnect = Q_TRUE;
+        set_status_line(Q_FALSE);
+    }
+
+    if (strncmp(option, "geometry", strlen("geometry")) == 0) {
+        sscanf(value, "%dx%d", &cols_arg_int, &rows_arg_int);
+        if (rows_arg_int < 25) {
+            rows_arg_int = 25;
+        }
+        if (rows_arg_int > 250) {
+            rows_arg_int = 250;
+        }
+        if (cols_arg_int < 80) {
+            cols_arg_int = 80;
+        }
+        if (cols_arg_int > 250) {
+            cols_arg_int = 250;
+        }
+        rows_arg = (unsigned char) rows_arg_int;
+        cols_arg = (unsigned char) cols_arg_int;
     }
 
     if (strcmp(option, "dial") == 0) {
@@ -2737,6 +2762,8 @@ static void reset_global_state() {
     q_keepalive_timeout             = 0;
     q_current_dial_entry            = NULL;
     q_status.exit_on_disconnect     = Q_FALSE;
+
+    set_status_line(Q_TRUE);
 }
 
 /**
@@ -2902,7 +2929,7 @@ int qodem_main(int argc, char * const argv[]) {
 #if defined(Q_PDCURSES) || defined(Q_PDCURSES_WIN32)
 
     /* Initialize curses. */
-    screen_setup();
+    screen_setup(rows_arg, cols_arg);
 
 #else
     /*
@@ -2945,7 +2972,7 @@ int qodem_main(int argc, char * const argv[]) {
     fflush(stdout);
 
     /* Initialize curses */
-    screen_setup();
+    screen_setup(rows_arg, cols_arg);
 #else
     /*
      * Initialize the keyboard here.  It will newterm() each supported

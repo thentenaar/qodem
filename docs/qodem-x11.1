@@ -15,6 +15,8 @@ qodem-x11 \- Qodem Terminal Emulator (X11 Version)
 .br
 .RI "[ \-\-play-exit ]"
 .br
+.RI "[ \-\-geometry COLSxROWS ]"
+.br
 .RI "[ [ \-\-xterm ]                                    | "
 .br
 .RI "[ [ \-\-dial n ]                                   | "
@@ -204,12 +206,11 @@ scroll/caps/numlock leds.
 .B
 XTERM
 This emulation has two modes: PC VGA (XTERM) and UTF\-8 (X_UTF8).  It
-recognizes everything in LINUX but also a few XTerm sequences in order
-to discard them to maintain a clean display.  As such it is not a true
-XTerm and does not support many of the features unique to XTerm such
-as Tektronix 4014 mode, mouse tracking, alternate screen buffer, and
-many more.  It is intended to support XTerm applications that only use
-the sequences in the 'xterm' terminfo entry.
+recognizes everything in LINUX, VT220, and a few more XTerm sequences.
+It does not support most of the advances features unique to XTerm such
+as Tektronix 4014 mode, alternate screen buffer, and many more.  It is
+intended to support XTerm applications that only use the sequences in
+the 'xterm' terminfo entry.
 
 .SH "FILE TRANSFER PROTOCOLS"
 Protocols supported by Qodem and their status follows:
@@ -572,6 +573,9 @@ GWBASIC PLAY statement.
 .TP
 .B \-\-play\-exit
 If \-\-play was specified, exit immediately after playing MUSIC.
+.TP
+.B \-\-geometry COLSxROWS
+Request text window size COLS x ROWS.
 .TP
 .B \-\-dial n
 Immediately open a connection to the phone book entry number n.  The
