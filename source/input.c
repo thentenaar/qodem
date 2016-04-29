@@ -502,7 +502,7 @@ drain_queue:
  * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.
  */
 static void pdcurses_key(int * key, int * flags) {
-    DLOG(("pdcurses_key() in: key '%c' %d %x %o flags %d\n",
+    DLOG(("pdcurses_key() in: key '%c' %d 0x%x %o flags %d\n",
             *key, *key, *key, *key, *flags));
 
     switch (*key) {
@@ -1212,10 +1212,29 @@ static void pdcurses_key(int * key, int * flags) {
         *key = Q_KEY_PAD9;
         break;
 
+    case KEY_SPREVIOUS:
+        /*
+         * Shift-PgUp
+         */
+        if (flags != NULL) {
+            *flags = KEY_FLAG_SHIFT;
+        }
+        *key = Q_KEY_PPAGE;
+        break;
+
+    case KEY_SNEXT:
+        /*
+         * Shift-PgDn
+         */
+        if (flags != NULL) {
+            *flags = KEY_FLAG_SHIFT;
+        }
+        *key = Q_KEY_NPAGE;
+        break;
     }
 
-    DLOG(("pdcurses_key() out: key '%c' %d flags %d\n",
-            *key, *key, *flags));
+    DLOG(("pdcurses_key() out: key '%c' %d 0x%x %o flags %d\n",
+            *key, *key, *key, *key, *flags));
 
 }
 
@@ -1997,6 +2016,14 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
 
             if (flags != NULL) {
                 *flags |= KEY_FLAG_CTRL;
+            }
+        }
+        if ((modifiers & PDC_KEY_MODIFIER_SHIFT) != 0) {
+
+            DLOG(("PDC: SHIFT\n"));
+
+            if (flags != NULL) {
+                *flags |= KEY_FLAG_SHIFT;
             }
         }
         if ((modifiers & PDC_KEY_MODIFIER_ALT) != 0) {

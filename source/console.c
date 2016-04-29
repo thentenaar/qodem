@@ -869,6 +869,13 @@ void console_keyboard_handler(int keystroke, int flags) {
                     post_keystroke(keystroke, flags);
                     return;
                 }
+                if ((keystroke == Q_KEY_PPAGE) && (flags == KEY_FLAG_SHIFT)) {
+                    /*
+                     * Shift-PgUp, switch to scrollback
+                     */
+                    switch_state(Q_STATE_SCROLLBACK);
+                    return;
+                }
                 if ((keystroke == Q_KEY_NPAGE) || (keystroke == Q_KEY_PPAGE)) {
                     /*
                      * Modified PgUp/PgDn, handle it below
@@ -1848,6 +1855,13 @@ void console_keyboard_handler(int keystroke, int flags) {
     switch (keystroke) {
 
     case Q_KEY_PPAGE:
+        if (flags == KEY_FLAG_SHIFT) {
+            /*
+             * Shift-PgUp, switch to scrollback
+             */
+            switch_state(Q_STATE_SCROLLBACK);
+            return;
+        }
         if ((flags & KEY_FLAG_UNICODE) == 0) {
             /*
              * PgUp Upload
