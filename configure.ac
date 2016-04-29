@@ -1,4 +1,4 @@
-AC_INIT([qodem], [1.0beta])
+AC_INIT([qodem], [1.0.0])
 AC_CONFIG_SRCDIR([source/qodem.h])
 AM_CONFIG_HEADER([source/config.h])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
@@ -17,12 +17,14 @@ AC_CHECK_HEADERS(libutil.h)
 AC_CHECK_HEADERS(util.h)
 AC_CHECK_HEADERS(getopt.h)
 AC_CHECK_HEADERS(ncursesw/curses.h)
+AC_CHECK_HEADERS(miniupnpc/miniupnpc.h)
 
 dnl Checks for libraries
 AC_SEARCH_LIBS(forkpty, util)
 AC_CHECK_FUNCS(forkpty)
 AC_CHECK_LIB([ncursesw], [mvwadd_wch], Q_HAS_NCURSES="yes", Q_HAS_NCURSES="no")
 AC_CHECK_LIB([ncurses], [mvwadd_wch], Q_HAS_NCURSES_APPLE="yes", Q_HAS_NCURSES_APPLE="no")
+AC_CHECK_LIB([miniupnpc], [upnpDiscover], Q_USE_SYSTEM_UPNP="yes", Q_USE_SYSTEM_UPNP="no")
 
 dnl SDL is an argument
 disable_sdl=no
@@ -93,17 +95,15 @@ else
 fi
 AM_CONDITIONAL(Q_X11_BUILD, [test "x$enable_x11" = "xyes"])
 
-dnl cryptlib support option - default is YES
-disable_ssh=no
-AC_ARG_ENABLE(ssh, [  --disable-ssh           Disable internal ssh (via cryptlib)])
+dnl cryptlib support option - default is NO
+disable_ssh=yes
+AC_ARG_ENABLE(ssh, [  --enable-ssh            Enable internal ssh (via cryptlib)])
 if test "x$enable_ssh" = "xyes" ; then
+    AC_MSG_NOTICE([ --- Cryptlib requested --- ])
     disable_ssh=no
 else
-    if test "x$enable_ssh" = "x" ; then
-        disable_ssh=no
-    else
-        disable_ssh=yes
-    fi
+    AC_MSG_NOTICE([ --- Cryptlib default: disable --- ])
+    disable_ssh=yes
 fi
 if test "x$disable_ssh" = "xyes"; then
     AC_MSG_NOTICE([ *** Disable cryptlib *** ])
@@ -131,9 +131,16 @@ if test "x$disable_upnp" = "xyes"; then
     AC_MSG_NOTICE([ *** Disable UPnP *** ])
 else
     AC_MSG_NOTICE([ *** Enable UPnP *** ])
-    subdirs="lib/upnp $subdirs"
-    LIBS="$LIBS lib/upnp/libminiupnpc.a"
-    CFLAGS="$CFLAGS -DQ_UPNP -Ilib/upnp"
+    if test "x$Q_USE_SYSTEM_UPNP" = "xyes"; then
+        AC_MSG_NOTICE([ *** Using system-provided UPnP library *** ])
+        LIBS="$LIBS -lminiupnpc"
+        CFLAGS="$CFLAGS -DQ_UPNP -DQ_USE_SYSTEM_UPNP"
+    else
+        subdirs="lib/upnp $subdirs"
+        AC_MSG_NOTICE([ *** Using local UPnP library *** ])
+        LIBS="$LIBS lib/upnp/libminiupnpc.a"
+        CFLAGS="$CFLAGS -DQ_UPNP -Ilib/upnp"
+    fi
 fi
 
 AC_SUBST(subdirs)

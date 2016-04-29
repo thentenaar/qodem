@@ -1337,7 +1337,7 @@ void post_keystroke(const int keystroke, const int flags) {
             break;
         case Q_EMUL_XTERM:
         case Q_EMUL_XTERM_UTF8:
-            term_string = xterm_keystroke(keystroke);
+            term_string = xterm_keystroke(keystroke, flags);
             break;
         }
     }

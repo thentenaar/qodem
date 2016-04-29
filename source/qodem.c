@@ -123,6 +123,8 @@ extern HANDLE q_child_process;
 extern HANDLE q_child_thread;
 extern HANDLE q_script_stdout;
 
+#ifndef Q_NO_SERIAL
+
 /**
  * The serial port handle, stored in modem.c.
  */
@@ -134,7 +136,9 @@ extern HANDLE q_serial_handle;
  */
 static Q_BOOL q_serial_readable;
 
-#endif
+#endif /* Q_NO_SERIAL */
+
+#endif /* Q_PDCURSES_WIN32 */
 
 /**
  * Global status struct.
@@ -226,6 +230,10 @@ static int dial_phonebook_entry_n;
 static unsigned char * play_music_string = NULL;
 static Q_BOOL play_music_exit = Q_FALSE;
 
+/* The geometry as requested by the command line arguments */
+static unsigned char rows_arg = 25;
+static unsigned char cols_arg = 80;
+
 /* Command-line options */
 static struct option q_getopt_long_options[] = {
     {"dial",                1,      0,      0},
@@ -238,6 +246,22 @@ static struct option q_getopt_long_options[] = {
     {"play",                1,      0,      0},
     {"play-exit",           0,      0,      0},
     {"version",             0,      0,      0},
+    {"xterm",               0,      0,      0},
+    {"geometry",            1,      0,      0},
+    /*
+     * TODO:
+     *    --exit-on-completion (-x)
+     *    --keyfile     (-k)
+     *    --xl8file
+     *    --xlufile
+     *    --scrfile     (-s)
+     *    --capfile     (-p)
+     *    --logfile     (-l)
+     *    --emulation   (-e)
+     *    --codepage    (-c)
+     *    --status-line (--sl)
+     *    --doorway     (-d)
+     */
     {0,                     0,      0,      0}
 };
 
@@ -778,6 +802,8 @@ static char * usage_string() {
 "      --username USERNAME             Log in as USERNAME\n"
 "      --play MUSIC                    Play MUSIC as ANSI Music\n"
 "      --play-exit                     Immediately exit after playing MUSIC\n"
+"      --geometry COLSxROWS            Request text window size COLS x ROWS\n"
+"      --xterm                         Enable X11 terminal mode\n"
 "      --version                       Display program version\n"
 "  -h, --help                          This help screen\n"
 "\n"
@@ -795,7 +821,7 @@ static char * usage_string() {
  */
 static char * version_string() {
     return _(""
-"qodem version 1.0beta\n"
+"qodem version 1.0.0\n"
 "Written 2003-2016 by Kevin Lamonte\n"
 "\n"
 "To the extent possible under law, the author(s) have dedicated all\n"
@@ -853,6 +879,8 @@ static void process_command_line_option(const char * option,
                                         const char * value) {
 
     wchar_t value_wchar[128];
+    int rows_arg_int;
+    int cols_arg_int;
 
     /*
      fprintf(stdout, "OPTION=%s VALUE=%s\n", option, value);
@@ -876,6 +904,30 @@ static void process_command_line_option(const char * option,
 
     if (strncmp(option, "enable-logging", strlen("enable-logging")) == 0) {
         start_logging(value);
+    }
+
+    if (strncmp(option, "xterm", strlen("xterm")) == 0) {
+        q_status.xterm_mode = Q_TRUE;
+        q_status.exit_on_disconnect = Q_TRUE;
+        set_status_line(Q_FALSE);
+    }
+
+    if (strncmp(option, "geometry", strlen("geometry")) == 0) {
+        sscanf(value, "%dx%d", &cols_arg_int, &rows_arg_int);
+        if (rows_arg_int < 25) {
+            rows_arg_int = 25;
+        }
+        if (rows_arg_int > 250) {
+            rows_arg_int = 250;
+        }
+        if (cols_arg_int < 80) {
+            cols_arg_int = 80;
+        }
+        if (cols_arg_int > 250) {
+            cols_arg_int = 250;
+        }
+        rows_arg = (unsigned char) rows_arg_int;
+        cols_arg = (unsigned char) cols_arg_int;
     }
 
     if (strcmp(option, "dial") == 0) {
@@ -951,33 +1003,6 @@ void qlog(const char * format, ...) {
 
     fprintf(q_status.logging_file, "%s", outbuf);
     fflush(q_status.logging_file);
-}
-
-/**
- * Close remote connection, dispatching to the appropriate
- * connection-specific close function.
- */
-void close_connection() {
-
-    DLOG(("close_connection()\n"));
-
-    /* How to close depends on the connection method */
-    if (net_is_connected() == Q_TRUE) {
-        /* Telnet, Rlogin, SOCKET, SSH */
-        net_close();
-        return;
-    }
-
-#ifdef Q_PDCURSES_WIN32
-    /* Win32 case */
-    /* Terminate process */
-    assert(q_child_process != NULL);
-    TerminateProcess(q_child_process, -1);
-#else
-    /* Killing -1 kills EVERYTHING.  Not good! */
-    assert(q_child_pid != -1);
-    kill(q_child_pid, SIGHUP);
-#endif /* Q_PDCURSES_WIN32 */
 }
 
 /**
@@ -1152,6 +1177,41 @@ static void cleanup_connection() {
     if (q_status.exit_on_disconnect == Q_TRUE) {
         q_program_state = Q_STATE_EXIT;
     }
+}
+
+/**
+ * Close remote connection, dispatching to the appropriate
+ * connection-specific close function.
+ */
+void close_connection() {
+
+    DLOG(("close_connection()\n"));
+
+    /* How to close depends on the connection method */
+    if (net_is_connected() == Q_TRUE) {
+        /* Telnet, Rlogin, SOCKET, SSH */
+        net_close();
+        if (q_program_state == Q_STATE_HOST) {
+            /*
+             * Host mode has called host_stop().  Cleanup the connection
+             * immediately, don't wait on a read of 0 that may never come.
+             */
+            cleanup_connection();
+            net_force_close();
+        }
+        return;
+    }
+
+#ifdef Q_PDCURSES_WIN32
+    /* Win32 case */
+    /* Terminate process */
+    assert(q_child_process != NULL);
+    TerminateProcess(q_child_process, -1);
+#else
+    /* Killing -1 kills EVERYTHING.  Not good! */
+    assert(q_child_pid != -1);
+    kill(q_child_pid, SIGHUP);
+#endif /* Q_PDCURSES_WIN32 */
 }
 
 /**
@@ -1773,6 +1833,7 @@ no_data:
 #endif
             default:
 #ifdef Q_PDCURSES_WIN32
+#ifndef Q_NO_SERIAL
                 if (q_serial_handle != NULL) {
                     DWORD serial_error = GetLastError();
                     DLOG(("Call to write() failed: %d %s\n",
@@ -1784,6 +1845,7 @@ no_data:
                         strerror(serial_error));
                     notify_form(notify_message, 0);
                 } else {
+#endif
                     DLOG(("Call to write() failed: %d %s\n", error,
                             get_strerror(error)));
 
@@ -1791,7 +1853,10 @@ no_data:
                     snprintf(notify_message, sizeof(notify_message),
                         _("Call to write() failed: %s"), get_strerror(error));
                     notify_form(notify_message, 0);
+#ifndef Q_NO_SERIAL
                 }
+#endif
+
 #else
 
                 DLOG(("Call to write() failed: %d %s\n",
@@ -2064,131 +2129,125 @@ static void data_handler() {
 
         rc = select(select_fd_max, &readfds, &writefds, &exceptfds, &listen_timeout);
 
-    /* Note that the opening brace is deliberately missing here. */
-    } else
-
 #ifndef Q_NO_SERIAL
-        if (q_serial_handle != NULL) {
+    } else if (q_serial_handle != NULL) {
+        /*
+         * Use Win32 overlapped I/O to see if we have an empty buffer to
+         * write to, data to read, or a ring indication.
+         */
+        DWORD millis = listen_timeout.tv_sec * 1000 +
+        listen_timeout.tv_usec / 1000;
+        DWORD comm_mask = EV_RXCHAR | EV_RING;
+        OVERLAPPED serial_overlapped;
+
+        DLOG(("Check serial port for data\n"));
+
+        if (q_transfer_buffer_raw_n > 0) {
             /*
-             * Use Win32 overlapped I/O to see if we have an empty buffer to
-             * write to, data to read, or a ring indication.
+             * See when the buffer is empty for more data to write to it.
              */
-            DWORD millis = listen_timeout.tv_sec * 1000 +
-                listen_timeout.tv_usec / 1000;
-            DWORD comm_mask = EV_RXCHAR | EV_RING;
-            OVERLAPPED serial_overlapped;
+            comm_mask |= EV_TXEMPTY;
+        }
+        if (!SetCommMask(q_serial_handle, comm_mask)) {
+            error = GetLastError();
 
-            DLOG(("Check serial port for data\n"));
+            DLOG(("Call to SetCommMask() failed: %d %s\n",
+                    error, get_strerror(error)));
 
-            if (q_transfer_buffer_raw_n > 0) {
+            snprintf(notify_message, sizeof(notify_message),
+                _("Call to SetCommMask() failed: %d %s"),
+                error, get_strerror(error));
+            notify_form(notify_message, 0);
+            exit(EXIT_ERROR_SERIAL_FAILED);
+        }
+        q_serial_readable = Q_FALSE;
+        DLOG(("comm_mask: %d 0x%x\n", comm_mask, comm_mask));
+
+        ZeroMemory(&serial_overlapped, sizeof(serial_overlapped));
+        DLOG(("BEFORE serial_event_mask %d 0x%x\n", serial_event_mask,
+                serial_event_mask));
+        if (WaitCommEvent(q_serial_handle, &serial_event_mask,
+                &serial_overlapped) == FALSE) {
+            if (GetLastError() == ERROR_IO_PENDING) {
+                DWORD wait_rc;
+
+                DLOG(("WaitCommEvent() returned ERROR_IO_PENDING\n"));
+
                 /*
-                 * See when the buffer is empty for more data to write to it.
+                 * We don't have an event ready immediately.  Wait until we
+                 * do.
                  */
-                comm_mask |= EV_TXEMPTY;
-            }
-            if (!SetCommMask(q_serial_handle, comm_mask)) {
+                wait_rc = WaitForSingleObject(q_serial_handle,
+                    millis);
+                if (wait_rc == WAIT_FAILED) {
+                    error = GetLastError();
+
+                    DLOG(("Call to WaitForSingleObject() failed: %d %s\n",
+                            error, get_strerror(error)));
+
+                    snprintf(notify_message, sizeof(notify_message),
+                        _("Call to WaitForSingleObject() failed: %d %s"),
+                        error, get_strerror(error));
+                    notify_form(notify_message, 0);
+                    exit(EXIT_ERROR_SERIAL_FAILED);
+                } else if (wait_rc == WAIT_TIMEOUT) {
+                    DLOG(("WaitForSingleObject() WAIT_TIMEOUT\n"));
+                    /*
+                     * There is no data to process.  Go to the timeout case
+                     * at the bottom of the normal POSIX select() code.
+                     */
+                    rc = 0;
+                } else {
+                    DLOG(("WaitForSingleObject() WAIT_ABANDONED or WAIT_OBJECT_0\n"));
+                    DLOG(("AFTER serial_event_mask %d 0x%x\n",
+                            serial_event_mask, serial_event_mask));
+                    /*
+                     * This is either WAIT_ABANDONED or WAIT_OBJECT_0.  Treat
+                     * it the same way, as though some data came in.
+                     */
+                    rc = 1;
+                }
+
+            } else {
                 error = GetLastError();
 
-                DLOG(("Call to SetCommMask() failed: %d %s\n",
+                /*
+                 * Something strange happened.  Bail out.
+                 */
+                DLOG(("Call to WaitCommEvent() failed: %d %s\n",
                         error, get_strerror(error)));
 
                 snprintf(notify_message, sizeof(notify_message),
-                    _("Call to SetCommMask() failed: %d %s"),
+                    _("Call to WaitCommEvent() failed: %d %s"),
                     error, get_strerror(error));
                 notify_form(notify_message, 0);
                 exit(EXIT_ERROR_SERIAL_FAILED);
             }
-            q_serial_readable = Q_FALSE;
-            DLOG(("comm_mask: %d 0x%x\n", comm_mask, comm_mask));
+        } else {
+            DLOG(("WaitCommEvent() returned TRUE\n"));
 
-            ZeroMemory(&serial_overlapped, sizeof(serial_overlapped));
-            DLOG(("BEFORE serial_event_mask %d 0x%x\n", serial_event_mask,
-                    serial_event_mask));
-            if (WaitCommEvent(q_serial_handle, &serial_event_mask,
-                    &serial_overlapped) == FALSE) {
-                if (GetLastError() == ERROR_IO_PENDING) {
-                    DWORD wait_rc;
+            /*
+             * Data is ready somewhere on the serial port.  This is
+             * equivalent to select() returning > 0.
+             */
+            rc = 1;
+        }
 
-                    DLOG(("WaitCommEvent() returned ERROR_IO_PENDING\n"));
-
-                    /*
-                     * We don't have an event ready immediately.  Wait until
-                     * we do.
-                     */
-                    wait_rc = WaitForSingleObject(q_serial_handle,
-                        millis);
-                    if (wait_rc == WAIT_FAILED) {
-                        error = GetLastError();
-
-                        DLOG(("Call to WaitForSingleObject() failed: %d %s\n",
-                                error, get_strerror(error)));
-
-                        snprintf(notify_message, sizeof(notify_message),
-                            _("Call to WaitForSingleObject() failed: %d %s"),
-                            error, get_strerror(error));
-                        notify_form(notify_message, 0);
-                        exit(EXIT_ERROR_SERIAL_FAILED);
-                    } else if (wait_rc == WAIT_TIMEOUT) {
-                        DLOG(("WaitForSingleObject() WAIT_TIMEOUT\n"));
-                        /*
-                         * There is no data to process.  Go to the timeout
-                         * case at the bottom of the normal POSIX select()
-                         * code.
-                         */
-                        rc = 0;
-                    } else {
-                        DLOG(("WaitForSingleObject() WAIT_ABANDONED or WAIT_OBJECT_0\n"));
-                        DLOG(("AFTER serial_event_mask %d 0x%x\n",
-                                serial_event_mask, serial_event_mask));
-                        /*
-                         * This is either WAIT_ABANDONED or WAIT_OBJECT_0.
-                         * Treat it the same way, as though some data came
-                         * in.
-                         */
-                        rc = 1;
-                    }
-
-                } else {
-                    error = GetLastError();
-
-                    /*
-                     * Something strange happened.  Bail out.
-                     */
-                    DLOG(("Call to WaitCommEvent() failed: %d %s\n",
-                            error, get_strerror(error)));
-
-                    snprintf(notify_message, sizeof(notify_message),
-                        _("Call to WaitCommEvent() failed: %d %s"),
-                        error, get_strerror(error));
-                    notify_form(notify_message, 0);
-                    exit(EXIT_ERROR_SERIAL_FAILED);
-                }
-            } else {
-                DLOG(("WaitCommEvent() returned TRUE\n"));
-
-                /*
-                 * Data is ready somewhere on the serial port.  This is
-                 * equivalent to select() returning > 0.
-                 */
-                rc = 1;
-            }
-
-            if ((serial_event_mask & EV_RXCHAR) != 0) {
-                DLOG(("q_serial_readable set to TRUE - EV_RXCHAR\n"));
+        if ((serial_event_mask & EV_RXCHAR) != 0) {
+            DLOG(("q_serial_readable set to TRUE - EV_RXCHAR\n"));
+            q_serial_readable = Q_TRUE;
+        } else {
+            COMSTAT com_stat;
+            ClearCommError(q_serial_handle, NULL, &com_stat);
+            if (com_stat.cbInQue > 0) {
+                DLOG(("q_serial_readable set to TRUE - cbInQue > 0\n"));
                 q_serial_readable = Q_TRUE;
-            } else {
-                COMSTAT com_stat;
-                ClearCommError(q_serial_handle, NULL, &com_stat);
-                if (com_stat.cbInQue > 0) {
-                    DLOG(("q_serial_readable set to TRUE - cbInQue > 0\n"));
-                    q_serial_readable = Q_TRUE;
-                }
             }
+        }
 
-        /* This combines back with the missing opening brace above. */
-        } else { /* if (q_serial_handle != NULL) */
+#endif /* Q_NO_SERIAL */
 
-#endif
+    } else { /* if (q_serial_handle != NULL) */
 
         /*
          * There is no data to process.  We are either on the console or not
@@ -2197,7 +2256,6 @@ static void data_handler() {
          */
         rc = 0;
     }
-
 
 #else
 
@@ -2667,10 +2725,16 @@ static void reset_global_state() {
     q_status.scrollback_lines       = 0;
     q_status.status_visible         = Q_TRUE;
     q_status.status_line_info       = Q_FALSE;
+    q_status.xterm_mode             = Q_FALSE;
     q_status.hard_backspace         = Q_TRUE;
-    /* Every console assumes line wrap, so turn it on by default */
+    /*
+     * Every console assumes line wrap, so turn it on by default.
+     */
     q_status.line_wrap              = Q_TRUE;
-    /* BBS-like emulations usually assume 80 columns, so turn it on by default */
+    /*
+     * BBS-like emulations usually assume 80 columns, so turn it on by
+     * default.
+     */
     q_status.assume_80_columns      = Q_TRUE;
     q_status.ansi_animate           = Q_FALSE;
     q_status.display_null           = Q_FALSE;
@@ -2698,6 +2762,8 @@ static void reset_global_state() {
     q_keepalive_timeout             = 0;
     q_current_dial_entry            = NULL;
     q_status.exit_on_disconnect     = Q_FALSE;
+
+    set_status_line(Q_TRUE);
 }
 
 /**
@@ -2712,6 +2778,7 @@ int qodem_main(int argc, char * const argv[]) {
     int rc;
     char * env_string;
     char * substituted_filename;
+    Q_BOOL first = Q_TRUE;
 #ifdef Q_PDCURSES_WIN32
     TCHAR windows_user_name[65];
     DWORD windows_user_name_n;
@@ -2785,26 +2852,6 @@ int qodem_main(int argc, char * const argv[]) {
 #endif /* Q_PDCURSES_WIN32 */
 
     /*
-     * Setup an initial call state to support the --connect or --dial command
-     * line options.
-     */
-    initial_call.method         = Q_DIAL_METHOD_SSH;
-    initial_call.address        = NULL;
-    initial_call.port           = "22";
-    initial_call.password       = L"";
-    initial_call.emulation      = Q_EMUL_LINUX;
-    initial_call.codepage       = default_codepage(initial_call.emulation);
-    initial_call.notes          = NULL;
-    initial_call.script_filename            = "";
-    initial_call.keybindings_filename       = "";
-    initial_call.capture_filename           = "";
-    initial_call.translate_8bit_filename    = "";
-    initial_call.translate_unicode_filename = "";
-    initial_call.doorway                    = Q_DOORWAY_CONFIG;
-    initial_call.use_default_toggles        = Q_TRUE;
-    dial_phonebook_entry_n                  = -1;
-
-    /*
      * Set the global status to its defaults.
      */
     reset_global_state();
@@ -2840,6 +2887,25 @@ int qodem_main(int argc, char * const argv[]) {
     /* Setup MIXED mode doorway */
     setup_doorway_handling();
 
+    /*
+     * Setup an initial call state to support the --connect or --dial command
+     * line options.
+     */
+    initial_call.address        = NULL;
+    initial_call.port           = "22";
+    initial_call.password       = L"";
+    initial_call.emulation      = Q_EMUL_XTERM_UTF8;
+    initial_call.codepage       = default_codepage(initial_call.emulation);
+    initial_call.notes          = NULL;
+    initial_call.script_filename            = "";
+    initial_call.keybindings_filename       = "";
+    initial_call.capture_filename           = "";
+    initial_call.translate_8bit_filename    = "";
+    initial_call.translate_unicode_filename = "";
+    initial_call.doorway                    = Q_DOORWAY_CONFIG;
+    initial_call.use_default_toggles        = Q_TRUE;
+    dial_phonebook_entry_n                  = -1;
+
     /* Process options */
     for (;;) {
         rc = getopt_long(argc, argv, "h?", q_getopt_long_options,
@@ -2863,7 +2929,7 @@ int qodem_main(int argc, char * const argv[]) {
 #if defined(Q_PDCURSES) || defined(Q_PDCURSES_WIN32)
 
     /* Initialize curses. */
-    screen_setup();
+    screen_setup(rows_arg, cols_arg);
 
 #else
     /*
@@ -2906,7 +2972,7 @@ int qodem_main(int argc, char * const argv[]) {
     fflush(stdout);
 
     /* Initialize curses */
-    screen_setup();
+    screen_setup(rows_arg, cols_arg);
 #else
     /*
      * Initialize the keyboard here.  It will newterm() each supported
@@ -2933,6 +2999,22 @@ int qodem_main(int argc, char * const argv[]) {
     /* Ignore SIGPIPE */
     signal(SIGPIPE, SIG_IGN);
 #endif
+
+    if (q_status.xterm_mode == Q_TRUE) {
+        /*
+         * We need empty strings for address and name to spawn the local
+         * shell.
+         */
+        initial_call.method = Q_DIAL_METHOD_SHELL;
+        initial_call.address = (char *)Xmalloc(sizeof(char) * 1, __FILE__,
+            __LINE__);
+        initial_call.address[0] = '\0';
+        initial_call.name = Xstring_to_wcsdup(initial_call.address,
+            __FILE__, __LINE__);
+        goto no_initial_call;
+    } else {
+        initial_call.method = Q_DIAL_METHOD_SSH;
+    }
 
     /*
      * If anything else remains, turn it into a command line.
@@ -2971,6 +3053,7 @@ int qodem_main(int argc, char * const argv[]) {
              * be used.
              */
         }
+
         /* Set the dial method */
         initial_call.method = Q_DIAL_METHOD_COMMANDLINE;
 
@@ -2989,15 +3072,24 @@ int qodem_main(int argc, char * const argv[]) {
             /* Zero out the new space */
             memset(initial_call.address + strlen(initial_call.address), 0,
                 strlen(argv[optind]) + 1);
-            /* Add the space before the next argument */
-            initial_call.address[strlen(initial_call.address)] = ' ';
+            if (first == Q_TRUE) {
+                /* Don't precede the entire command line with a space. */
+                first = Q_FALSE;
+            } else {
+                /* Add the space before the next argument */
+                initial_call.address[strlen(initial_call.address)] = ' ';
+            }
             /* Copy the next argument + the null terminator over */
             memcpy(initial_call.address + strlen(initial_call.address),
                 argv[optind], strlen(argv[optind]) + 1);
         }
         initial_call.name = Xstring_to_wcsdup(initial_call.address,
             __FILE__, __LINE__);
+
     } /* if (optind < argc) */
+
+no_initial_call:
+
 
     /* See if we need to --play something */
     if (play_music_string != NULL) {
@@ -3079,11 +3171,25 @@ int qodem_main(int argc, char * const argv[]) {
             q_keyboard_blocks = Q_TRUE;
             q_current_dial_entry = &initial_call;
             do_dialer();
-        } else if (strncmp(get_option(Q_OPTION_START_PHONEBOOK),
-                "true", 4) == 0) {
+        } else if ((strncmp(get_option(Q_OPTION_START_PHONEBOOK),
+                "true", 4) == 0) && (q_status.xterm_mode == Q_FALSE)) {
             switch_state(Q_STATE_PHONEBOOK);
+        } else if (q_status.xterm_mode == Q_TRUE) {
+            /*
+             * Spawn a the local shell.
+             */
+            q_keyboard_blocks = Q_TRUE;
+            q_current_dial_entry = &initial_call;
+            do_dialer();
         } else {
             switch_state(Q_STATE_CONSOLE);
+        }
+
+        if ((strncmp(get_option(Q_OPTION_STATUS_LINE_VISIBLE),
+                "true", 4) == 0) && (q_status.xterm_mode == Q_FALSE)) {
+            set_status_line(Q_TRUE);
+        } else {
+            set_status_line(Q_FALSE);
         }
 
 #ifdef Q_SSH_CRYPTLIB

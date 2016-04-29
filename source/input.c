@@ -24,6 +24,8 @@
 #ifdef Q_PDCURSES_WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#else
+#include <sys/ioctl.h>
 #endif
 #include "qodem.h"
 #include "console.h"
@@ -47,6 +49,452 @@ attr_t q_current_color;
  */
 time_t screensaver_time;
 
+/**
+ * A table of mappings between ncurses (well, xterm) keyname's OR raw string
+ * sequences and qodem keystroke/flags.  This is used by
+ * ncurses_extended_keycode() and ncurses_match_keystring().
+ */
+struct string_to_qodem_keystroke {
+    /*
+     * The value returned from keyname().
+     */
+    const char * name;
+
+    /*
+     * The KEY_* value that this corresponds to.
+     */
+    int keystroke;
+
+    /*
+     * Shift flag, either 0 or KEY_FLAG_SHIFT.
+     */
+    int shift;
+
+    /*
+     * Ctrl flag, either 0 or KEY_FLAG_CTRL.
+     */
+    int ctrl;
+
+    /*
+     * Alt flag, either 0 or KEY_FLAG_ALT.
+     */
+    int alt;
+};
+
+/**
+ * The mappings used by ncurses_match_keystring().
+ */
+static struct string_to_qodem_keystroke terminfo_keystrings[] = {
+
+    /* name       , key      ,          shift,          ctrl,          alt */
+    { "\033[3;2~" , KEY_DC   , KEY_FLAG_SHIFT,             0,            0 },
+    { "\033[3;3~" , KEY_DC   ,              0,             0, KEY_FLAG_ALT },
+    { "\033[3;4~" , KEY_DC   , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "\033[3;5~" , KEY_DC   ,              0, KEY_FLAG_CTRL,            0 },
+    { "\033[3;6~" , KEY_DC   , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "\033[3;7~" , KEY_DC   ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[3;8~" , KEY_DC   , KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    { "\033[1;2B" , KEY_DOWN , KEY_FLAG_SHIFT,             0,            0 },
+    { "\033[1;3B" , KEY_DOWN ,              0,             0, KEY_FLAG_ALT },
+    { "\033[1;4B" , KEY_DOWN , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "\033[1;5B" , KEY_DOWN ,              0, KEY_FLAG_CTRL,            0 },
+    { "\033[1;6B" , KEY_DOWN , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "\033[1;7B" , KEY_DOWN ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[1;8B" , KEY_DOWN , KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    { "\033[K"    , KEY_END  ,              0,             0,            0 },
+    { "\033[F"    , KEY_END  ,              0,             0,            0 },
+    { "\033[1;2F" , KEY_END  , KEY_FLAG_SHIFT,             0,            0 },
+    { "\033[1;3F" , KEY_END  ,              0,             0, KEY_FLAG_ALT },
+    { "\033[1;4F" , KEY_END  , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "\033[1;5F" , KEY_END  ,              0, KEY_FLAG_CTRL,            0 },
+    { "\033[1;6F" , KEY_END  , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "\033[1;7F" , KEY_END  ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[1;8F" , KEY_END  , KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    { "\033[L"    , KEY_HOME ,              0,             0,            0 },
+    { "\033[H"    , KEY_HOME ,              0,             0,            0 },
+    { "\033[1;2H" , KEY_HOME , KEY_FLAG_SHIFT,             0,            0 },
+    { "\033[1;3H" , KEY_HOME ,              0,             0, KEY_FLAG_ALT },
+    { "\033[1;4H" , KEY_HOME , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "\033[1;5H" , KEY_HOME ,              0, KEY_FLAG_CTRL,            0 },
+    { "\033[1;6H" , KEY_HOME , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "\033[1;7H" , KEY_HOME ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[1;8H" , KEY_HOME , KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    { "\033[@"    , KEY_IC   ,              0,             0,            0 },
+    { "\033[2;2~" , KEY_IC   , KEY_FLAG_SHIFT,             0,            0 },
+    { "\033[2;3~" , KEY_IC   ,              0,             0, KEY_FLAG_ALT },
+    { "\033[2;4~" , KEY_IC   , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "\033[2;5~" , KEY_IC   ,              0, KEY_FLAG_CTRL,            0 },
+    { "\033[2;6~" , KEY_IC   , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "\033[2;7~" , KEY_IC   ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[2;8~" , KEY_IC   , KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    { "\033[D"    , KEY_LEFT ,              0,             0,            0 },
+    { "\033[1;2D" , KEY_LEFT , KEY_FLAG_SHIFT,             0,            0 },
+    { "\033[1;3D" , KEY_LEFT ,              0,             0, KEY_FLAG_ALT },
+    { "\033[1;4D" , KEY_LEFT , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "\033[1;5D" , KEY_LEFT ,              0, KEY_FLAG_CTRL,            0 },
+    { "\033[1;6D" , KEY_LEFT , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "\033[1;7D" , KEY_LEFT ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[1;8D" , KEY_LEFT , KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    { "\033[U"    , KEY_NPAGE,              0,             0,            0 },
+    { "\033[6;2~" , KEY_NPAGE, KEY_FLAG_SHIFT,             0,            0 },
+    { "\033[6;3~" , KEY_NPAGE,              0,             0, KEY_FLAG_ALT },
+    { "\033[6;4~" , KEY_NPAGE, KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "\033[6;5~" , KEY_NPAGE,              0, KEY_FLAG_CTRL,            0 },
+    { "\033[6;6~" , KEY_NPAGE, KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "\033[6;7~" , KEY_NPAGE,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[6;8~" , KEY_NPAGE, KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    { "\033[M"    , KEY_PPAGE,              0,             0,            0 },
+    { "\033[V"    , KEY_PPAGE,              0,             0,            0 },
+    { "\033[5;2~" , KEY_PPAGE, KEY_FLAG_SHIFT,             0,            0 },
+    { "\033[5;3~" , KEY_PPAGE,              0,             0, KEY_FLAG_ALT },
+    { "\033[5;4~" , KEY_PPAGE, KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "\033[5;5~" , KEY_PPAGE,              0, KEY_FLAG_CTRL,            0 },
+    { "\033[5;6~" , KEY_PPAGE, KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "\033[5;7~" , KEY_PPAGE,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[5;8~" , KEY_PPAGE, KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    { "\033[C"    , KEY_RIGHT,              0,             0,            0 },
+    { "\033[1;2C" , KEY_RIGHT, KEY_FLAG_SHIFT,             0,            0 },
+    { "\033[1;3C" , KEY_RIGHT,              0,             0, KEY_FLAG_ALT },
+    { "\033[1;4C" , KEY_RIGHT, KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "\033[1;5C" , KEY_RIGHT,              0, KEY_FLAG_CTRL,            0 },
+    { "\033[1;6C" , KEY_RIGHT, KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "\033[1;7C" , KEY_RIGHT,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[1;8C" , KEY_RIGHT, KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    { "\033[A"    , KEY_UP   ,              0,             0,            0 },
+    { "\033[1;2A" , KEY_UP   , KEY_FLAG_SHIFT,             0,            0 },
+    { "\033[1;3A" , KEY_UP   ,              0,             0, KEY_FLAG_ALT },
+    { "\033[1;4A" , KEY_UP   , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "\033[1;5A" , KEY_UP   ,              0, KEY_FLAG_CTRL,            0 },
+    { "\033[1;6A" , KEY_UP   , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "\033[1;7A" , KEY_UP   ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+    { "\033[1;8A" , KEY_UP   , KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    /* Terminating entry */
+    { ""      , ERR      ,              0,             0,            0 },
+};
+
+/**
+ * If true, don't call win_wch() in qodem_getch(), instead call
+ * curses_match_string() keys_in_queue is false again.
+ */
+static Q_BOOL keys_in_queue = Q_FALSE;
+
+/**
+ * curses_match_string() parse states:
+ *   0 - no characters received
+ *   1 - reading more bytes into a sequence
+ *   2 - draining the bytes in queue (keys_in_queue is true)
+ */
+static int curses_match_state = 0;
+
+/**
+ * A buffer to match sequences to a function key number.
+ */
+static char curses_match_buffer[16];
+static unsigned int curses_match_buffer_i = 0;
+static unsigned int curses_match_buffer_n = 0;
+
+/**
+ * Reset the curses function key recognizer.
+ */
+static void curses_match_reset() {
+    DLOG(("curses_match_reset()\n"));
+
+    curses_match_buffer_i = 0;
+    curses_match_buffer_n = 0;
+    memset(curses_match_buffer, 0, sizeof(curses_match_buffer));
+    keys_in_queue = Q_FALSE;
+    curses_match_state = 0;
+}
+
+/**
+ * Parse terminal keystroke sequences into a keystroke and flags.
+ *
+ * @param ch the next byte of the sequence
+ * @param key the ncurses key
+ * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.
+ */
+static void curses_match_keystring(int ch, int * key, int * flags) {
+
+    int i;
+
+    DLOG(("curses_match_keystring() %d in: ch '%c' 0x%04x %d %o curses_match_buffer_n %d\n",
+            curses_match_state, ch, ch, ch, ch, curses_match_buffer_n));
+
+drain_queue:
+
+    if (curses_match_state == 2) {
+        /*
+         * We are draining the queue.
+         */
+
+        if (ch != ERR) {
+            /*
+             * Special case: we got ESC {something} ESC {something}, and that
+             * second {something} is being passed in right here.  Allow it to
+             * be appended, it will be drained out later.
+             */
+            DLOG(("curses_match_keystring() %d DRAIN APPEND '%c'\n",
+                    curses_match_state, ch));
+            if (curses_match_buffer_n < sizeof(curses_match_buffer) - 1) {
+                curses_match_buffer[curses_match_buffer_n] = (char) (ch & 0xFF);
+                curses_match_buffer_n++;
+            }
+        }
+
+        if ((curses_match_buffer_n - curses_match_buffer_i >= 2) &&
+            (curses_match_buffer[curses_match_buffer_i] == '\033')) {
+            /*
+             * Special case: the last two bytes in the buffer represent
+             * Alt-{comething}.  Return it as {something} with KEY_FLAG_ALT.
+             */
+            DLOG(("curses_match_keystring() %d DRAIN ALT-'%c'\n",
+                    curses_match_state,
+                    curses_match_buffer[curses_match_buffer_i] + 1));
+            if (flags != NULL) {
+                *flags |= KEY_FLAG_ALT;
+            }
+            *key = curses_match_buffer[curses_match_buffer_i + 1];
+            curses_match_buffer_i += 2;
+            if (curses_match_buffer_i == curses_match_buffer_n) {
+                curses_match_reset();
+            }
+            if (flags == NULL) {
+                DLOG(("curses_match_keystring() DRAIN ALT out: key '%c' %d flags NULL\n",
+                        *key, *key));
+            }
+            else {
+                DLOG(("curses_match_keystring() DRAIN ALT out: key '%c' %d flags %d\n",
+                        *key, *key, *flags));
+            }
+            return;
+        }
+
+        *key = curses_match_buffer[curses_match_buffer_i];
+        curses_match_buffer_i++;
+        if (ch > 0xFF) {
+            /*
+             * Unicode character
+             */
+            if (flags != NULL) {
+                *flags |= KEY_FLAG_UNICODE;
+            }
+        }
+        if ((curses_match_buffer_i == curses_match_buffer_n - 1) && (curses_match_buffer[curses_match_buffer_i] == '\033')) {
+            /*
+             * The last byte in curses_match_buffer is the first byte for a
+             * new sequence.  Switch to match state 1.
+             */
+            curses_match_reset();
+            curses_match_state = 1;
+            curses_match_buffer_n = 1;
+            curses_match_buffer[0] = '\033';
+            keys_in_queue = Q_TRUE;
+        } else if (curses_match_buffer_i == curses_match_buffer_n) {
+            curses_match_reset();
+        }
+        if (flags == NULL) {
+            DLOG(("curses_match_keystring() DRAIN out: key '%c' %d flags NULL\n",
+                    *key, *key));
+        }
+        else {
+            DLOG(("curses_match_keystring() DRAIN out: key '%c' %d flags %d\n",
+                    *key, *key, *flags));
+        }
+
+        return;
+    }
+
+    assert(ch != ERR);
+    assert(curses_match_state != 2);
+    assert(keys_in_queue == Q_FALSE);
+    assert(curses_match_buffer_i == 0);
+
+    if (curses_match_buffer_n < sizeof(curses_match_buffer) - 1) {
+        /*
+         * We still have room for another byte.
+         */
+        curses_match_buffer[curses_match_buffer_n] = (char) (ch & 0xFF);
+        curses_match_buffer_n++;
+    } else {
+        /*
+         * A sequence is too long.
+         */
+        curses_match_state = 2;
+        keys_in_queue = Q_TRUE;
+        ch = ERR;
+        goto drain_queue;
+    }
+
+    switch (curses_match_state) {
+    case 0:
+        /*
+         * Waiting to begin a new sequence.
+         */
+        if (ch != '\033') {
+            /*
+             * ch is either a byte or a Unicode wchar_t.
+             */
+            *key = ch;
+            if (ch > 0xFF) {
+                /*
+                 * Unicode character
+                 */
+                if (flags != NULL) {
+                    *flags |= KEY_FLAG_UNICODE;
+                }
+            }
+            assert(curses_match_buffer_n == 1);
+            curses_match_buffer_n = 0;
+            return;
+        }
+        /* We have seen the beginning of a sequence. */
+        curses_match_state = 1;
+        *key = ERR;
+        if (flags != NULL) {
+            *flags = 0;
+        }
+        return;
+
+    case 1:
+        if (curses_match_buffer_n == 2) {
+            /*
+             * This is where we differentiate between Alt-x and something
+             * else.
+             */
+            if (ch != '[') {
+                /*
+                 * This was Alt-x.
+                 */
+                *key = ch;
+                if (flags != NULL) {
+                    *flags = KEY_FLAG_ALT;
+                }
+                curses_match_reset();
+                return;
+            }
+            /*
+             * We have at least CSI in the buffer from this line forward.
+             */
+        }
+
+        /*
+         * Collecting more bytes to match a sequence.
+         */
+        switch (ch) {
+        case '~':
+        case 'A':
+        case 'B':
+        case 'C':
+        case 'D':
+        case 'F':
+        case 'H':
+        case 'K':
+        case 'V':
+        case 'U':
+        case '@':
+            /* A sequence is completed, and should match. */
+            curses_match_state = 0;
+            break;
+
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+        case ';':
+        case '[':
+            /* We are collecting more values to match a sequence. */
+            *key = ERR;
+            if (flags != NULL) {
+                *flags = 0;
+            }
+            return;
+
+        default:
+            /* An invalid sequence came in, switch to drain the queue. */
+            curses_match_state = 2;
+            keys_in_queue = Q_TRUE;
+            ch = ERR;
+            goto drain_queue;
+        }
+
+        break;
+
+    default:
+        /*
+         * BUG.
+         */
+        abort();
+        return;
+    }
+    DLOG(("curses_match_keystring() searching for sequence: '%s'\n",
+        curses_match_buffer));
+
+    /*
+     * The state machine is partially reset.  It is set to scan for a new
+     * sequence, but the buffer contains the last sequence.  We scan our list
+     * and either return something or not, but we must trash the buffer
+     * before we exit.
+     */
+    assert(curses_match_state == 0);
+    assert(keys_in_queue == Q_FALSE);
+
+    for (i = 0; ; i++) {
+        if (strlen(terminfo_keystrings[i].name) == 0) {
+            /*
+             * Not found, and not looking for a potential match.
+             */
+            DLOG(("curses_match_keystring() out: NOT FOUND, return ERR\n"));
+            *key = ERR;
+            if (flags != NULL) {
+                *flags = 0;
+            }
+            curses_match_reset();
+            return;
+        }
+
+        if (strcmp(terminfo_keystrings[i].name, curses_match_buffer) == 0) {
+            /*
+             * Match found.
+             */
+            DLOG(("curses_match_keystring() out: ** FOUND** %o\n",
+                terminfo_keystrings[i].keystroke));
+            *key = terminfo_keystrings[i].keystroke;
+            if (flags != NULL) {
+                *flags = terminfo_keystrings[i].shift |
+                         terminfo_keystrings[i].ctrl |
+                         terminfo_keystrings[i].alt;
+            }
+            curses_match_reset();
+            break;
+        }
+    }
+
+    if (flags == NULL) {
+        DLOG(("curses_match_keystring() out: key '%c' %d flags NULL\n",
+                *key, *key));
+    } else {
+        DLOG(("curses_match_keystring() out: key '%c' %d flags %d\n",
+                *key, *key, *flags));
+    }
+
+}
+
 #if defined(Q_PDCURSES) || defined(Q_PDCURSES_WIN32)
 
 /**
@@ -56,7 +504,7 @@ time_t screensaver_time;
  * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.
  */
 static void pdcurses_key(int * key, int * flags) {
-    DLOG(("pdcurses_key() in: key '%c' %d %x %o flags %d\n",
+    DLOG(("pdcurses_key() in: key '%c' %d 0x%x %o flags %d\n",
             *key, *key, *key, *key, *flags));
 
     switch (*key) {
@@ -766,14 +1214,214 @@ static void pdcurses_key(int * key, int * flags) {
         *key = Q_KEY_PAD9;
         break;
 
+    case KEY_SPREVIOUS:
+        /*
+         * Shift-PgUp
+         */
+        if (flags != NULL) {
+            *flags = KEY_FLAG_SHIFT;
+        }
+        *key = Q_KEY_PPAGE;
+        break;
+
+    case KEY_SNEXT:
+        /*
+         * Shift-PgDn
+         */
+        if (flags != NULL) {
+            *flags = KEY_FLAG_SHIFT;
+        }
+        *key = Q_KEY_NPAGE;
+        break;
     }
 
-    DLOG(("pdcurses_key() out: key '%c' %d flags %d\n",
-            *key, *key, *flags));
+    DLOG(("pdcurses_key() out: key '%c' %d 0x%x %o flags %d\n",
+            *key, *key, *key, *key, *flags));
+
+}
+
+#else
+
+/**
+ * The mappings used by ncurses_extended_keycode().
+ */
+static struct string_to_qodem_keystroke keynames[] = {
+
+    /* name   , key      ,          shift,          ctrl,          alt */
+    { "kDC"   , KEY_DC   ,              0,             0,            0 },
+    { "kDC3"  , KEY_DC   ,              0,             0, KEY_FLAG_ALT },
+    { "kDC4"  , KEY_DC   , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "kDC5"  , KEY_DC   ,              0, KEY_FLAG_CTRL,            0 },
+    { "kDC6"  , KEY_DC   , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "kDC7"  , KEY_DC   ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    { "kDN"   , KEY_DOWN ,              0,             0,            0 },
+    { "kDN3"  , KEY_DOWN ,              0,             0, KEY_FLAG_ALT },
+    { "kDN4"  , KEY_DOWN , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "kDN5"  , KEY_DOWN ,              0, KEY_FLAG_CTRL,            0 },
+    { "kDN6"  , KEY_DOWN , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "kDN7"  , KEY_DOWN ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    { "kEND"  , KEY_END  ,              0,             0,            0 },
+    { "kEND3" , KEY_END  ,              0,             0, KEY_FLAG_ALT },
+    { "kEND4" , KEY_END  , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "kEND5" , KEY_END  ,              0, KEY_FLAG_CTRL,            0 },
+    { "kEND6" , KEY_END  , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "kEND7" , KEY_END  ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    { "kHOM"  , KEY_HOME ,              0,             0,            0 },
+    { "kHOM3" , KEY_HOME ,              0,             0, KEY_FLAG_ALT },
+    { "kHOM4" , KEY_HOME , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "kHOM5" , KEY_HOME ,              0, KEY_FLAG_CTRL,            0 },
+    { "kHOM6" , KEY_HOME , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "kHOM7" , KEY_HOME ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    { "kIC"   , KEY_IC   ,              0,             0,            0 },
+    { "kIC3"  , KEY_IC   ,              0,             0, KEY_FLAG_ALT },
+    { "kIC4"  , KEY_IC   , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "kIC5"  , KEY_IC   ,              0, KEY_FLAG_CTRL,            0 },
+    { "kIC6"  , KEY_IC   , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "kIC7"  , KEY_IC   ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    { "kLFT"  , KEY_LEFT ,              0,             0,            0 },
+    { "kLFT3" , KEY_LEFT ,              0,             0, KEY_FLAG_ALT },
+    { "kLFT4" , KEY_LEFT , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "kLFT5" , KEY_LEFT ,              0, KEY_FLAG_CTRL,            0 },
+    { "kLFT6" , KEY_LEFT , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "kLFT7" , KEY_LEFT ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    { "kNXT"  , KEY_NPAGE,              0,             0,            0 },
+    { "kNXT3" , KEY_NPAGE,              0,             0, KEY_FLAG_ALT },
+    { "kNXT4" , KEY_NPAGE, KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "kNXT5" , KEY_NPAGE,              0, KEY_FLAG_CTRL,            0 },
+    { "kNXT6" , KEY_NPAGE, KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "kNXT7" , KEY_NPAGE,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    { "kPRV"  , KEY_PPAGE,              0,             0,            0 },
+    { "kPRV3" , KEY_PPAGE,              0,             0, KEY_FLAG_ALT },
+    { "kPRV4" , KEY_PPAGE, KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "kPRV5" , KEY_PPAGE,              0, KEY_FLAG_CTRL,            0 },
+    { "kPRV6" , KEY_PPAGE, KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "kPRV7" , KEY_PPAGE,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    { "kRIT"  , KEY_RIGHT,              0,             0,            0 },
+    { "kRIT3" , KEY_RIGHT,              0,             0, KEY_FLAG_ALT },
+    { "kRIT4" , KEY_RIGHT, KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "kRIT5" , KEY_RIGHT,              0, KEY_FLAG_CTRL,            0 },
+    { "kRIT6" , KEY_RIGHT, KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "kRIT7" , KEY_RIGHT,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    { "kUP"   , KEY_UP   ,              0,             0,            0 },
+    { "kUP3"  , KEY_UP   ,              0,             0, KEY_FLAG_ALT },
+    { "kUP4"  , KEY_UP   , KEY_FLAG_SHIFT,             0, KEY_FLAG_ALT },
+    { "kUP5"  , KEY_UP   ,              0, KEY_FLAG_CTRL,            0 },
+    { "kUP6"  , KEY_UP   , KEY_FLAG_SHIFT, KEY_FLAG_CTRL,            0 },
+    { "kUP7"  , KEY_UP   ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
+
+    /* Terminating entry */
+    { ""      , ERR      ,              0,             0,            0 },
+
+};
+
+/**
+ * Convert out-of-range key codes (extended_keycodes) into a keystroke and
+ * flags.
+ *
+ * @param key the ncurses key
+ * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.
+ */
+static void ncurses_extended_keycode(int * key, int * flags) {
+    int i;
+
+    if (flags == NULL) {
+        DLOG(("ncurses_extended_keycode() in: key '%c' %d %x %o flags NULL\n",
+                *key, *key, *key, *key));
+    } else {
+        DLOG(("ncurses_extended_keycode() in: key '%c' %d %x %o flags %d\n",
+                *key, *key, *key, *key, *flags));
+    }
+    DLOG(("ncurses_extended_keycode()    keyname '%s'\n", keyname(*key)));
+
+    for (i = 0; ; i++) {
+        if (strlen(keynames[i].name) == 0) {
+            /*
+             * Not found.
+             */
+            DLOG(("ncurses_extended_keycode() out: NOT FOUND, return ERR\n"));
+            *key = ERR;
+            if (flags != NULL) {
+                *flags = 0;
+            }
+            return;
+        }
+
+        if (strcmp(keynames[i].name, keyname(*key)) == 0) {
+            DLOG(("ncurses_extended_keycode() out: ** FOUND **\n"));
+            *key = keynames[i].keystroke;
+            if (flags != NULL) {
+                *flags = keynames[i].shift | keynames[i].ctrl |
+                         keynames[i].alt;
+            }
+            break;
+        }
+    }
+
+    if (flags == NULL) {
+        DLOG(("ncurses_extended_keycode() out: key '%c' %d flags NULL\n",
+                *key, *key));
+    } else {
+        DLOG(("ncurses_extended_keycode() out: key '%c' %d flags %d\n",
+                *key, *key, *flags));
+    }
 
 }
 
 #endif /* Q_PDCURSES || Q_PDCURSES_WIN32 */
+
+/**
+ * Send the current screen dimensions to the remote side.
+ */
+void send_screen_size() {
+#ifndef Q_PDCURSES_WIN32
+    struct winsize console_size;
+#endif
+
+    /*
+     * Pass the new dimensions to the remote side
+     */
+    if (q_status.online == Q_TRUE) {
+        if (q_status.dial_method == Q_DIAL_METHOD_TELNET) {
+            telnet_resize_screen(HEIGHT - STATUS_HEIGHT, WIDTH);
+        }
+        if (q_status.dial_method == Q_DIAL_METHOD_RLOGIN) {
+            rlogin_resize_screen(HEIGHT - STATUS_HEIGHT, WIDTH);
+        }
+#ifdef Q_SSH_CRYPTLIB
+        if (q_status.dial_method == Q_DIAL_METHOD_SSH) {
+            ssh_resize_screen(HEIGHT - STATUS_HEIGHT, WIDTH);
+        }
+#endif
+
+#ifndef Q_PDCURSES_WIN32
+        if ((q_status.dial_method == Q_DIAL_METHOD_SHELL) ||
+            (q_status.dial_method == Q_DIAL_METHOD_COMMANDLINE)) {
+
+            /*
+             * Set the TTY cols and rows.
+             */
+            if (ioctl(q_child_tty_fd, TIOCGWINSZ, &console_size) < 0) {
+                /* perror("ioctl(TIOCGWINSZ)"); */
+            } else {
+                console_size.ws_row = HEIGHT - STATUS_HEIGHT;
+                console_size.ws_col = WIDTH;
+                if (ioctl(q_child_tty_fd, TIOCSWINSZ, &console_size) < 0) {
+                    /* perror("ioctl(TIOCSWINSZ)"); */
+                }
+            }
+        }
+#endif
+    } /* if (q_status.online == Q_TRUE) */
+}
 
 /**
  * Perform the necessary screen resizing if a KEY_RESIZE comes in.
@@ -846,19 +1494,7 @@ static void handle_resize() {
     /*
      * Pass the new dimensions to the remote side
      */
-    if (q_status.online == Q_TRUE) {
-        if (q_status.dial_method == Q_DIAL_METHOD_TELNET) {
-            telnet_resize_screen(HEIGHT - STATUS_HEIGHT, WIDTH);
-        }
-        if (q_status.dial_method == Q_DIAL_METHOD_RLOGIN) {
-            rlogin_resize_screen(HEIGHT - STATUS_HEIGHT, WIDTH);
-        }
-#ifdef Q_SSH_CRYPTLIB
-        if (q_status.dial_method == Q_DIAL_METHOD_SSH) {
-            ssh_resize_screen(HEIGHT - STATUS_HEIGHT, WIDTH);
-        }
-#endif
-    }
+    send_screen_size();
 
     q_screen_dirty = Q_TRUE;
 }
@@ -1338,11 +1974,7 @@ void handle_mouse() {
 void qodem_win_getch(void * window, int * keystroke, int * flags,
                      const unsigned int usleep_time) {
     time_t current_time;
-    int param = 0;
     wint_t utf_keystroke;
-    Q_BOOL modifier = Q_FALSE;
-    int return_keystroke = ERR;
-    Q_BOOL linux_fkey = Q_FALSE;
     int res;
 
     /*
@@ -1366,6 +1998,12 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
             *keystroke = ERR;
             return;
         }
+    }
+
+    if (keys_in_queue == Q_TRUE) {
+        curses_match_keystring(ERR, keystroke, flags);
+        assert(*keystroke != ERR);
+        return;
     }
 
     /*
@@ -1393,6 +2031,13 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
      */
     res = wget_wch((WINDOW *) window, &utf_keystroke);
     *keystroke = utf_keystroke;
+
+    if (res != ERR) {
+        DLOG(("wget_wch() res %04x utf8_keystroke: 0x%04x %d %o '%c'\n",
+                res, utf_keystroke, utf_keystroke, utf_keystroke,
+                utf_keystroke));
+    }
+
     if (res == ERR) {
         *keystroke = ERR;
     }
@@ -1406,6 +2051,14 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
 
             if (flags != NULL) {
                 *flags |= KEY_FLAG_CTRL;
+            }
+        }
+        if ((modifiers & PDC_KEY_MODIFIER_SHIFT) != 0) {
+
+            DLOG(("PDC: SHIFT\n"));
+
+            if (flags != NULL) {
+                *flags |= KEY_FLAG_SHIFT;
             }
         }
         if ((modifiers & PDC_KEY_MODIFIER_ALT) != 0) {
@@ -1463,9 +2116,27 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
          * Handle PDCurses alternate keystrokes
          */
         pdcurses_key(keystroke, flags);
+#else
+    } else if (res == KEY_CODE_YES) {
+        /*
+         * Handle (n)curses alternate keystrokes
+         */
+        if ((*keystroke < KEY_MIN) || (*keystroke > KEY_MAX)) {
+            /*
+             * This is an "extended" key code.  The integer value of
+             * keystroke in non-deterministic.  keyname() can be used to try
+             * to figure out what it is.
+             */
+            ncurses_extended_keycode(keystroke, flags);
+        }
 #endif
 
     } else if (*keystroke == KEY_ESCAPE) {
+        /*
+         * We have some complex ESC handling here due to the multiple ways
+         * ESC is used: as Alt-{X}, as a sequence initializer for a function
+         * key, and as bare ESC.
+         */
         if (flags != NULL) {
             *flags |= KEY_FLAG_ALT;
         }
@@ -1474,6 +2145,11 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
          */
         nodelay((WINDOW *) window, TRUE);
         res = wget_wch((WINDOW *) window, &utf_keystroke);
+
+        DLOG(("wget_wch() ESC 1 res %04x utf8_keystroke: 0x%04x %d %o '%c'\n",
+                res, utf_keystroke, utf_keystroke, utf_keystroke,
+                utf_keystroke));
+
         if (q_keyboard_blocks == Q_TRUE) {
             nodelay((WINDOW *) window, FALSE);
         } else {
@@ -1491,256 +2167,59 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
                 *flags &= ~KEY_FLAG_ALT;
             }
             *keystroke = KEY_ESCAPE;
-        } else {
+        } else if (res == KEY_CODE_YES) {
             /*
-             * A more complex keyboard sequence has come in that ncurses
-             * doesn't know about.  For now just use some simple mapping and
-             * assume that all the bytes in the keystroke are present.
+             * This was Alt-{some function key}.  Set ALT.
              */
+            curses_match_reset();
+            if (flags != NULL) {
+                *flags &= ~KEY_FLAG_ALT;
+            }
+        } else {
+            assert(res == OK);
 
-            DLOG(("1 Keystroke: '%c' %d %o\n",
-                    *keystroke, *keystroke, *keystroke));
+            /*
+             * A more complex keyboard sequence has come in that curses
+             * doesn't know about.  Use curses_match_keystring().  We have
+             * the first TWO bytes in the sequence: ESCAPE and utf_keystroke.
+             */
+            if (flags != NULL) {
+                *flags = 0;
+            }
+            assert(keys_in_queue == Q_FALSE);
+            curses_match_keystring(KEY_ESCAPE, keystroke, flags);
+            curses_match_keystring(utf_keystroke, keystroke, flags);
 
-
-            if ((*keystroke == '[') && (res == OK)) {
-                /*
-                 * CSI
-                 */
-                param = 0;
-
-                while (*keystroke != ERR) {
-                    /*
-                     * Grab the next keystroke
-                     */
-                    res = wget_wch((WINDOW *) window, &utf_keystroke);
-                    *keystroke = utf_keystroke;
-                    if (res == ERR) {
-                        *keystroke = ERR;
-                    }
-
-                    DLOG(("2 Keystroke: '%c' %d %o\n",
-                            *keystroke, *keystroke, *keystroke));
-
-                    if (*keystroke == '[') {
-                        /*
-                         * Linux-style function keys
-                         */
-                        linux_fkey = Q_TRUE;
-                        continue;
-                    }
-
-                    if ((*keystroke >= '0') && (*keystroke <= '9')
-                        && (res == OK)) {
-                        param *= 10;
-                        param += (*keystroke - '0');
-                    } else if (((*keystroke >= 'A') || (*keystroke <= 'E'))
-                               && (res == OK) && (linux_fkey == Q_TRUE)) {
-                        /*
-                         * Linux-style function key
-                         */
-                        switch (*keystroke) {
-                        case 'A':
-                            *keystroke = KEY_F(1);
-                            break;
-                        case 'B':
-                            *keystroke = KEY_F(2);
-                            break;
-                        case 'C':
-                            *keystroke = KEY_F(3);
-                            break;
-                        case 'D':
-                            *keystroke = KEY_F(4);
-                            break;
-                        case 'E':
-                            *keystroke = KEY_F(5);
-                            break;
-                        }
-
-                        /*
-                         * Exit the while loop
-                         */
-                        break;
-                    } else if (((*keystroke == '~') || (*keystroke == ';'))
-                               && (res == OK)) {
-
-                        DLOG(("2 param: %d\n", param));
-
-                        if ((*keystroke == ';') && (res == OK)) {
-
-                            DLOG(("3 - modifier -\n"));
-
-                            /*
-                             * Param is followed by a modifier
-                             */
-                            modifier = Q_TRUE;
-                        }
-
-                        if ((*keystroke == '~') && (modifier == Q_TRUE)
-                            && (res == OK)) {
-
-                            DLOG(("3 param: %d\n", param));
-
-                            /*
-                             * Param is a modifier:
-                             *
-                             * SHIFT 2
-                             * ALT   3
-                             * CTRL  5
-                             */
-                            switch (param) {
-                            case 2:
-
-                                DLOG(("2 SHIFT\n"));
-
-                                if (flags != NULL) {
-                                    *flags |= KEY_FLAG_SHIFT;
-                                }
-                                break;
-                            case 3:
-
-                                DLOG(("2 ALT\n"));
-
-                                if (flags != NULL) {
-                                    *flags |= KEY_FLAG_ALT;
-                                }
-                                break;
-                            case 5:
-
-                                DLOG(("2 CTRL\n"));
-
-                                if (flags != NULL) {
-                                    *flags |= KEY_FLAG_CTRL;
-                                }
-                                break;
-                            }
-                            *keystroke = return_keystroke;
-                            if ((return_keystroke > 0xFF) && (res == OK)) {
-                                /*
-                                 * Unicode character
-                                 */
-                                *flags |= KEY_FLAG_UNICODE;
-                            }
-                            /*
-                             * Exit the while loop
-                             */
-                            break;
-                        }
-
-                        if (((*keystroke == '~') && (modifier == Q_FALSE)
-                             && (res == OK)) || ((*keystroke == ';')
-                                                 && (modifier == Q_TRUE)
-                                                 && (res == OK))) {
-
-                            switch (param) {
-                            case 1:
-
-                                DLOG(("2 Home\n"));
-
-                                *keystroke = KEY_HOME;
-                                break;
-                            case 4:
-
-                                DLOG(("2 End\n"));
-
-                                *keystroke = KEY_END;
-                                break;
-                            case 5:
-
-                                DLOG(("2 PgUp\n"));
-
-                                *keystroke = KEY_PPAGE;
-                                break;
-                            case 6:
-
-                                DLOG(("2 PgDn\n"));
-
-                                *keystroke = KEY_NPAGE;
-                                break;
-                            default:
-                                *keystroke = ERR;
-                                break;
-                            }
-
-                            /*
-                             * Reset for possible modifier
-                             */
-                            param = 0;
-
-                            if ((*keystroke == '~') && (res == OK)) {
-                                /*
-                                 * Exit the while loop
-                                 */
-                                break;
-                            } else {
-                                return_keystroke = *keystroke;
-                                if ((return_keystroke > 0xFF) && (res == OK)) {
-                                    /*
-                                     * Unicode character
-                                     */
-                                    *flags |= KEY_FLAG_UNICODE;
-                                }
-                            }
-                        }
-                    }
-                }
-
-            } else if ((*keystroke == 'O') && (res == OK)) {
-                /*
-                 * VT100-style function key
-                 */
-                param = 0;
-
-                /*
-                 * Grab the next keystroke
-                 */
+            while ((curses_match_state == 1) && (res == OK)) {
                 res = wget_wch((WINDOW *) window, &utf_keystroke);
-                *keystroke = utf_keystroke;
-                if (res == ERR) {
-                    *keystroke = ERR;
-                }
 
-                DLOG(("2 Keystroke: '%c' %d %o\n",
-                        *keystroke, *keystroke, *keystroke));
-
-                switch (*keystroke) {
-                case 'H':
-                    *keystroke = KEY_HOME;
-                    break;
-                case 'F':
-                    *keystroke = KEY_END;
-                    break;
-                case 'P':
-                    *keystroke = KEY_F(1);
-                    break;
-                case 'Q':
-                    *keystroke = KEY_F(2);
-                    break;
-                case 'R':
-                    *keystroke = KEY_F(3);
-                    break;
-                case 'S':
-                    *keystroke = KEY_F(4);
-                    break;
-                case 't':
-                    *keystroke = KEY_F(5);
-                    break;
-                case 'u':
-                    *keystroke = KEY_F(6);
-                    break;
-                case 'v':
-                    *keystroke = KEY_F(7);
-                    break;
-                case 'l':
-                    *keystroke = KEY_F(8);
-                    break;
-                case 'w':
-                    *keystroke = KEY_F(9);
-                    break;
-                case 'x':
-                    *keystroke = KEY_F(10);
-                    break;
+                DLOG(("wget_wch() ESC 2 res %04x utf8_keystroke: 0x%04x %d %o '%c'\n",
+                        res, utf_keystroke, utf_keystroke, utf_keystroke,
+                        utf_keystroke));
+                if (res != ERR) {
+                    /*
+                     * Normal key, keep processing in match buffer.
+                     */
+                    curses_match_keystring(utf_keystroke, keystroke, flags);
+                } else if (res == KEY_CODE_YES) {
+                    /*
+                     * OK, this one is weird.  We got part of a matching
+                     * sequence, but then ended with a function key.  Ditch
+                     * what we had before.
+                     */
+                    curses_match_reset();
                 }
             }
+        }
+    } else if ((*keystroke != ERR) && (res == OK)) {
+        assert(curses_match_state != 2);
+        assert(keys_in_queue == Q_FALSE);
+        if (curses_match_state != 0) {
+            /*
+             * Still collecting a sequence.
+             */
+            assert(curses_match_state == 1);
+            curses_match_keystring(utf_keystroke, keystroke, flags);
         }
     }
 
@@ -1768,17 +2247,29 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
     if (*keystroke == KEY_FIND) {
         *keystroke = KEY_HOME;
     }
+    if (*keystroke == KEY_SFIND) {
+        *keystroke = KEY_HOME;
+        *flags = KEY_FLAG_SHIFT;
+    }
     if (*keystroke == KEY_SELECT) {
         *keystroke = KEY_END;
+    }
+    if (*keystroke == KEY_SHOME) {
+        *keystroke = KEY_HOME;
+        *flags = KEY_FLAG_SHIFT;
+    }
+    if (*keystroke == KEY_SEND) {
+        *keystroke = KEY_END;
+        *flags = KEY_FLAG_SHIFT;
     }
 
     if (*keystroke != -1) {
         if (flags != NULL) {
-            DLOG(("Keystroke: 0x%04x %d %o FLAGS: %02x\n",
-                    *keystroke, *keystroke, *keystroke, *flags));
+            DLOG(("Keystroke: 0x%04x %d %o '%c' FLAGS: %02x\n",
+                    *keystroke, *keystroke, *keystroke, *keystroke, *flags));
         } else {
-            DLOG(("Keystroke: 0x%04x %d %o FLAGS: NULL\n",
-                    *keystroke, *keystroke, *keystroke));
+            DLOG(("Keystroke: 0x%04x %d %o '%c' FLAGS: NULL\n",
+                    *keystroke, *keystroke, *keystroke, *keystroke));
         }
     }
 

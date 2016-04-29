@@ -34,9 +34,13 @@ extern "C" {
 /* Functions -------------------------------------------------------------- */
 
 /**
- * This must be called to initialize the curses UI.
+ * This must be called to initialize the curses UI.  Rows and columns can be
+ * passed in, but might not be honored on all systems.
+ *
+ * @param rows the desired number of rows
+ * @param cols the desired number of columns
  */
-extern void screen_setup();
+extern void screen_setup(const unsigned char rows, const unsigned char cols);
 
 /**
  * Shut down the curses UI.

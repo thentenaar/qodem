@@ -418,7 +418,7 @@ static void build_options_topic() {
          */
         memset(line, 0, sizeof(line));
         begin = get_option_default(option);
-        convert_unicode(_("    Default value: "), line);
+        convert_unicode(_("  Default value: "), line);
         while (*begin != 0) {
             line[wcslen(line)] = *begin | HELP_BOLD;
             begin++;
@@ -2604,12 +2604,11 @@ char * raw_help_text = \
 "sets, X11 mouse reporting, and setting the scroll/caps/numlock leds.\n"
 "\n"
 "@BOLD{XTERM}  - This emulation has two modes: PC VGA (@BOLD{XTERM}) and UTF-8 (@BOLD{X_UTF8}).\n"
-"It recognizes everything in LINUX but also a few xterm sequences in order to\n"
-"discard them to maintain a clean display.  As such it is not a true xterm\n"
-"and does not support many of the features unique to xterm such as Tektronix\n"
-"4014 mode, mouse tracking, alternate screen buffer, and many more.  It is\n"
-"intended to support xterm applications that only use the sequences in the\n"
-"'xterm' terminfo entry.\n"
+"It recognizes everything in LINUX, VT220, and a few more XTerm sequences.\n"
+"It does not support most of the advances features unique to XTerm such\n"
+"as Tektronix 4014 mode, alternate screen buffer, and many more.  It is\n"
+"intended to support XTerm applications that only use the sequences in\n"
+"the 'xterm' terminfo entry.\n"
 "\n"
 "\n"
 "\n"
@@ -2736,6 +2735,9 @@ char * raw_help_text = \
 "@BOLD{--play-exit}\n"
 "    If @BOLD{--play} was specified, exit immediately after playing MUSIC.\n"
 "\n"
+"@BOLD{--geometry} COLSxROWS\n"
+"    Request text window size COLS x ROWS.\n"
+"\n"
 "@BOLD{--dial} n\n"
 "    Immediately open a connection to the phone book entry number n.  The\n"
 "    first phone book entry has n=1.\n"
@@ -2751,6 +2753,11 @@ char * raw_help_text = \
 "@BOLD{--username} USERNAME\n"
 "    Use USERNAME when connecting with the @BOLD{--connect} option.  This value\n"
 "    is passed on the command line to @BOLD{ssh}, and @BOLD{rlogin}.\n"
+"\n"
+"@BOLD{--xterm}\n"
+"    Enables X11 terminal mode: phonebook and serial port are disabled,\n"
+"    status line is turned off at startup, a shell is opened, and Qodem\n"
+"    exits when the shell session exits.\n"
 "\n"
 "@BOLD{args...}\n"
 "    Spawn a local shell and pass args to it.\n"
@@ -2790,6 +2797,7 @@ char * raw_help_text = \
 "    @BOLD{telnetd}     - Qodem will listen for a TCP connection and use the telnet\n"
 "                  protocol to set options to ensure clean file transfers.\n"
 "                  The @BOLD{TCP Listen Port} dialog will appear to select the port.\n"
+#ifdef Q_SSH_CRYPTLIB
 "\n"
 "    @BOLD{sshd}        - Qodem will listen for a TCP connection and use the ssh\n"
 "                  protocol.  Users may login to the host using any ssh name\n"
@@ -2798,6 +2806,7 @@ char * raw_help_text = \
 "                  specified in the Qodem preferences file.  Like telnetd and\n"
 "                  socket, the @BOLD{TCP Listen Port} dialog will appear to select\n"
 "                  the port.\n"
+#endif
 "\n"
 "The @BOLD{TCP Listen Port} dialog is used to select the listening port.  The\n"
 "@BOLD{Next Available} option chooses any random available port.  The @BOLD{Enter Port}\n"

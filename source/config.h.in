@@ -15,6 +15,9 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
+/* Define to 1 if you have the <miniupnpc/miniupnpc.h> header file. */
+#undef HAVE_MINIUPNPC_MINIUPNPC_H
+
 /* Define to 1 if you have the <ncursesw/curses.h> header file. */
 #undef HAVE_NCURSESW_CURSES_H
 

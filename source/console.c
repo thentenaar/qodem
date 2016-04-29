@@ -804,6 +804,11 @@ void set_status_line(Q_BOOL make_visible) {
         }
         q_screen_dirty = Q_TRUE;
     }
+
+    /*
+     * Pass the new height to the remote side.
+     */
+    send_screen_size();
 }
 
 /**
@@ -867,6 +872,13 @@ void console_keyboard_handler(int keystroke, int flags) {
                      * Raw PgUp, pass it on
                      */
                     post_keystroke(keystroke, flags);
+                    return;
+                }
+                if ((keystroke == Q_KEY_PPAGE) && (flags == KEY_FLAG_SHIFT)) {
+                    /*
+                     * Shift-PgUp, switch to scrollback
+                     */
+                    switch_state(Q_STATE_SCROLLBACK);
                     return;
                 }
                 if ((keystroke == Q_KEY_NPAGE) || (keystroke == Q_KEY_PPAGE)) {
@@ -1142,7 +1154,7 @@ void console_keyboard_handler(int keystroke, int flags) {
         /*
          * Alt-9 Serial Port
          */
-        if (flags & KEY_FLAG_ALT) {
+        if ((flags & KEY_FLAG_ALT) && (q_status.xterm_mode == Q_FALSE)) {
             if (!Q_SERIAL_OPEN && (q_status.online == Q_FALSE)) {
                 if (open_serial_port() == Q_FALSE) {
                     /*
@@ -1319,7 +1331,7 @@ void console_keyboard_handler(int keystroke, int flags) {
 
     case 'D':
     case 'd':
-        if (flags & KEY_FLAG_ALT) {
+        if ((flags & KEY_FLAG_ALT) && (q_status.xterm_mode == Q_FALSE)) {
             /*
              * Alt-D Phonebook
              */
@@ -1848,6 +1860,13 @@ void console_keyboard_handler(int keystroke, int flags) {
     switch (keystroke) {
 
     case Q_KEY_PPAGE:
+        if (flags == KEY_FLAG_SHIFT) {
+            /*
+             * Shift-PgUp, switch to scrollback
+             */
+            switch_state(Q_STATE_SCROLLBACK);
+            return;
+        }
         if ((flags & KEY_FLAG_UNICODE) == 0) {
             /*
              * PgUp Upload
@@ -1859,7 +1878,7 @@ void console_keyboard_handler(int keystroke, int flags) {
     case Q_KEY_NPAGE:
         if ((flags & KEY_FLAG_UNICODE) == 0) {
             /*
-             * PgUp Download
+             * PgDn Download
              */
             switch_state(Q_STATE_DOWNLOAD_MENU);
         }
@@ -2186,6 +2205,18 @@ void console_refresh(Q_BOOL status_line) {
     char time_string[32];
     time_t current_time;
     char dec_leds_string[6];
+
+    if ((q_status.xterm_mode == Q_TRUE) && (first == Q_TRUE)) {
+        first = Q_FALSE;
+        /*
+         * Initial line
+         */
+        new_scrollback_line();
+        q_scrollback_current = q_scrollback_last;
+        q_scrollback_position = q_scrollback_current;
+        q_status.cursor_y = 0;
+        q_status.cursor_x = 0;
+    }
 
     /*
      * Put the header on the console
@@ -2798,8 +2829,13 @@ void console_menu_refresh() {
     /*
      * D Phonebook
      */
-    screen_put_color_str_yx(menu_top + before_row + 1, menu_left + 2,
-                            _("Alt-D  "), Q_COLOR_MENU_COMMAND);
+    if (q_status.xterm_mode == Q_TRUE) {
+        screen_put_color_str_yx(menu_top + before_row + 1, menu_left + 2,
+                                _("Alt-D  "), Q_COLOR_MENU_COMMAND_UNAVAILABLE);
+    } else {
+        screen_put_color_str_yx(menu_top + before_row + 1, menu_left + 2,
+                                _("Alt-D  "), Q_COLOR_MENU_COMMAND);
+    }
     screen_put_color_str(_("Phone Book"), Q_COLOR_MENU_TEXT);
     /*
      * G Term emulation
@@ -3077,8 +3113,13 @@ void console_menu_refresh() {
     /*
      * 9 Serial port
      */
-    screen_put_color_str_yx(menu_top + toggles_row + 10, menu_left + 52,
-                            _("Alt-9  "), Q_COLOR_MENU_COMMAND);
+    if (q_status.xterm_mode == Q_TRUE) {
+        screen_put_color_str_yx(menu_top + toggles_row + 10, menu_left + 52,
+                                _("Alt-9  "), Q_COLOR_MENU_COMMAND_UNAVAILABLE);
+    } else {
+        screen_put_color_str_yx(menu_top + toggles_row + 10, menu_left + 52,
+                                _("Alt-9  "), Q_COLOR_MENU_COMMAND);
+    }
     screen_put_color_str(_("Serial Port"), Q_COLOR_MENU_TEXT);
 #endif
 
@@ -3348,6 +3389,7 @@ void console_info_refresh() {
     int status_left_stop;
     int row;
     int i;
+#ifndef QMODEM_INFO_SCREEN
     static int delay = 0;
     static Q_BOOL redeye_right = Q_TRUE;
     static int redeye_screen_x;
@@ -3360,6 +3402,7 @@ void console_info_refresh() {
     }
 
     delay = 0;
+#endif
 
     info_left = (WIDTH - 80) / 2;
     info_top = (HEIGHT - 24) / 2;
@@ -3480,27 +3523,60 @@ void console_info_refresh() {
                                     box_left + (box_width -
                                                 strlen(box_title)) / 2,
                                     box_title, Q_COLOR_WINDOW_BORDER);
-            /*
-             * System name
-             */
-            screen_put_color_str_yx(box_top + 1, box_left + 2,
-                                    _("System"), Q_COLOR_MENU_TEXT);
-            screen_put_color_wcs_yx(box_top + 1, box_left + 14,
-                                    q_status.remote_phonebook_name,
-                                    Q_COLOR_MENU_COMMAND);
 
             /*
              * System address / port
              */
+            if (q_status.dial_method == Q_DIAL_METHOD_COMMANDLINE) {
+
+                /*
+                 * Command line
+                 */
+                screen_put_color_str_yx(box_top + 1, box_left + 2,
+                                        _("Command Line"), Q_COLOR_MENU_TEXT);
+                screen_put_color_str_yx(box_top + 1, box_left + 15,
+                                        q_status.remote_address,
+                                        Q_COLOR_MENU_COMMAND);
+
+            } else if (q_status.dial_method == Q_DIAL_METHOD_SHELL) {
+
+                /*
+                 * Command line
+                 */
+                screen_put_color_str_yx(box_top + 1, box_left + 2,
+                                        _("Command Line"), Q_COLOR_MENU_TEXT);
+                screen_put_color_str_yx(box_top + 1, box_left + 15,
+                                        get_option(Q_OPTION_SHELL),
+                                        Q_COLOR_MENU_COMMAND);
+
 #ifndef Q_NO_SERIAL
-            if (q_status.dial_method == Q_DIAL_METHOD_MODEM) {
+            } else if (q_status.dial_method == Q_DIAL_METHOD_MODEM) {
+                /*
+                 * System name
+                 */
+                screen_put_color_str_yx(box_top + 1, box_left + 2,
+                                        _("System"), Q_COLOR_MENU_TEXT);
+                screen_put_color_wcs_yx(box_top + 1, box_left + 14,
+                                        q_status.remote_phonebook_name,
+                                        Q_COLOR_MENU_COMMAND);
+
                 screen_put_color_str_yx(box_top + 2, box_left + 2,
                                         _("Number"), Q_COLOR_MENU_TEXT);
                 screen_put_color_str_yx(box_top + 2, box_left + 14,
                                         q_status.remote_address,
                                         Q_COLOR_MENU_COMMAND);
-            } else {
 #endif
+
+            } else {
+
+                /*
+                 * System name
+                 */
+                screen_put_color_str_yx(box_top + 1, box_left + 2,
+                                        _("System"), Q_COLOR_MENU_TEXT);
+                screen_put_color_wcs_yx(box_top + 1, box_left + 14,
+                                        q_status.remote_phonebook_name,
+                                        Q_COLOR_MENU_COMMAND);
                 /*
                  * Hostname
                  */
@@ -3526,6 +3602,8 @@ void console_info_refresh() {
                 screen_put_color_str_yx(box_top + 4, box_left + 14,
                                         q_status.remote_port,
                                         Q_COLOR_MENU_COMMAND);
+
+
 #ifndef Q_NO_SERIAL
             }
 #endif
@@ -3550,6 +3628,8 @@ void console_info_refresh() {
 
         q_screen_dirty = Q_FALSE;
     }
+
+#ifndef QMODEM_INFO_SCREEN
 
     if (redeye_pause == 0) {
 
@@ -3588,5 +3668,7 @@ void console_info_refresh() {
     } else {
         redeye_pause--;
     }
+
+#endif /* QMODEM_INFO_SCREEN */
 
 }

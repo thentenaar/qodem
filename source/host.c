@@ -117,6 +117,8 @@ struct host_state {
 
 /* Forward references to various menu functions */
 static void do_login();
+static void view_current_message();
+static void view_new_message();
 static void enter_message();
 static void save_message();
 static void kill_message();
@@ -174,12 +176,14 @@ static struct host_state states[] = {
     {UPLOAD_FILE_ZMODEM, 0, UPLOAD_FILE_ZMODEM, upload_file_zmodem},
     {UPLOAD_FILE_KERMIT, 0, UPLOAD_FILE_KERMIT, upload_file_kermit},
     {READ_MESSAGES, 'q', MAIN_MENU, main_menu},
+    {READ_MESSAGES, 'v', READ_MESSAGES, view_current_message},
     {READ_MESSAGES, 'e', ENTER_MESSAGE, enter_message},
     {READ_MESSAGES, 'p', READ_MESSAGES, previous_message},
     {READ_MESSAGES, 'n', READ_MESSAGES, next_message},
     {READ_MESSAGES, 'k', READ_MESSAGES, kill_read_message},
     {READ_MESSAGES, C_CR, READ_MESSAGES, read_messages_menu},
     {ENTER_MESSAGE, 0, ENTER_MESSAGE, enter_message},
+    {ENTER_MESSAGE_FINISH, 'v', ENTER_MESSAGE_FINISH, view_new_message},
     {ENTER_MESSAGE_FINISH, 'k', MAIN_MENU, kill_message},
     {ENTER_MESSAGE_FINISH, 's', MAIN_MENU, save_message},
     {ENTER_MESSAGE_FINISH, C_CR, ENTER_MESSAGE_FINISH,
@@ -197,6 +201,16 @@ static struct host_state states[] = {
  * The current host mode state.
  */
 static STATE current_state;
+
+/**
+ * The state host mode was in when chat was entered.
+ */
+static STATE chat_previous_state;
+
+/**
+ * The value of the do_line_buffer flag when chat was entered.
+ */
+static STATE chat_previous_line_buffer;
 
 /**
  * If true, we are in a call (either remote or local login).
@@ -280,6 +294,12 @@ static char login_password[64];
 /* Line mode editing support buffer. */
 static wchar_t line_buffer[80];
 static int line_buffer_n = 0;
+/*
+ * save_line_buffer() and restore_line_buffer() copy between line_buffer and
+ * saved_line_buffer.
+ */
+static wchar_t saved_line_buffer[80];
+static int saved_line_buffer_n = 0;
 
 /**
  * When true, we are collecting a full line into the line buffer.
@@ -319,6 +339,22 @@ static void reset_line_buffer() {
     line_buffer_n = 0;
     utf8_state = 0;
     utf8_char = 0;
+}
+
+/**
+ * Save the line buffer into saved_line_buffer.
+ */
+static void save_line_buffer() {
+    wmemcpy(saved_line_buffer, line_buffer, line_buffer_n);
+    saved_line_buffer_n = line_buffer_n;
+}
+
+/**
+ * Restore the line buffer from saved_line_buffer.
+ */
+static void restore_line_buffer() {
+    wmemcpy(line_buffer, saved_line_buffer, saved_line_buffer_n);
+    line_buffer_n = saved_line_buffer_n;
 }
 
 /**
@@ -733,7 +769,47 @@ static void do_login() {
 /* Finished entering a message. */
 static void enter_message_finish_menu() {
     do_menu(EOL
-    "S)ave This Message   K)ill (Abort) This Message" EOL
+    "V)iew This Message Again   S)ave This Message   K)ill (Abort) This Message" EOL
+    "Your choice?  ");
+}
+
+/* View the new message. */
+static void view_new_message() {
+    char buffer[Q_MAX_LINE_LENGTH];
+    int line_i;
+    wchar_t * line;
+
+    do_menu(EOL);
+
+    /*
+     * Print message #
+     */
+    sprintf(buffer, _("New Message:%s"), EOL);
+    host_write(buffer, strlen(buffer));
+    sprintf(buffer, "--------------------------%s", EOL);
+    host_write(buffer, strlen(buffer));
+
+    sprintf(buffer, _("From: %ls%s"), msg_from, EOL);
+    host_write(buffer, strlen(buffer));
+    sprintf(buffer, _("To: %ls%s"), msg_to, EOL);
+    host_write(buffer, strlen(buffer));
+
+    sprintf(buffer, "-----%s", EOL);
+    host_write(buffer, strlen(buffer));
+
+    for (line_i = 0; line_i < msg_body_n; line_i++) {
+        line = msg_body[line_i];
+        sprintf(buffer, "%ls%s", line, EOL);
+        host_write(buffer, strlen(buffer));
+    }
+
+    sprintf(buffer, "-----%s", EOL);
+    host_write(buffer, strlen(buffer));
+
+    do_menu(EOL);
+
+    do_menu(EOL
+    "V)iew This Message Again   S)ave This Message   K)ill (Abort) This Message" EOL
     "Your choice?  ");
 }
 
@@ -1247,6 +1323,15 @@ static void display_message(const int n) {
     }
 }
 
+/* View a message again */
+static void view_current_message() {
+    do_menu(EOL);
+    display_message(current_message);
+    do_menu(EOL
+        " V)iew  P)revious  N)ext  K)ill/Delete  E)nter New Message  Q)uit To Main Menu" EOL
+        "Your choice?  ");
+}
+
 /* Read the saved messages */
 static void read_messages_menu() {
     if (all_messages == NULL) {
@@ -1266,7 +1351,7 @@ static void read_messages_menu() {
     do_menu(EOL);
     display_message(current_message);
     do_menu(EOL
-        " P)revious   N)ext   K)ill/Delete   E)nter New Message   Q)uit To Main Menu" EOL
+        " V)iew  P)revious  N)ext  K)ill/Delete  E)nter New Message  Q)uit To Main Menu" EOL
         "Your choice?  ");
 }
 
@@ -1992,6 +2077,7 @@ static void page_sysop() {
 static void chat() {
     char * eol_msg = EOL;
     host_write(eol_msg, strlen(eol_msg));
+    save_line_buffer();
     reset_line_buffer();
     do_line_buffer = Q_TRUE;
 }
@@ -2679,6 +2765,8 @@ void host_keyboard_handler(const int keystroke, const int flags) {
                 /*
                  * Breaking into chat
                  */
+                chat_previous_state = current_state;
+                chat_previous_line_buffer = do_line_buffer;
                 do_menu(EOL
                     "------------------------" EOL
                     " ***  Entering Chat  ***" EOL
@@ -2691,9 +2779,9 @@ void host_keyboard_handler(const int keystroke, const int flags) {
                     "------------------------" EOL
                     " ***  Leaving Chat   ***" EOL
                     "------------------------" EOL);
-                current_state = MAIN_MENU;
-                do_line_buffer = Q_FALSE;
-                main_menu();
+                restore_line_buffer();
+                current_state = chat_previous_state;
+                do_line_buffer = chat_previous_line_buffer;
                 qlog(_("Leaving sysop chat.\n"));
             }
             return;

@@ -1,6 +1,27 @@
 The Qodem Project Work Log
 ==========================
 
+April 28, 2016
+
+Well, that's all the bugs I currently know about cleared off the
+queue.  Still have those two TODOs in the code, but we are in a nice
+place.  ncurses keyboard handling is much more sophisticated now,
+parsing modifier xterm sequences and also passing them through
+XTERM/X_UTF8 to the other side.  The host mode bugs are basically
+ironed out, though you can still get a message messed up if chat mode
+is used, however now you can re-view the message before saving it.
+If miniupnpc is already on the system then autoconf has a decent
+change of finding and using it.
+
+I just need to keep banging on it for another couple months and then
+release 1.0.0 in July.
+
+April 24, 2016
+
+I've gotten a few bug reports come in, which is really nice.  Bumping
+the dev version number to 1.0.0 (woo!) now.  I've decided to disable
+cryptlib by default in configure.
+
 April 21, 2016
 
 I am down to two remaining TODOs in the code: verifying that the comm

@@ -1549,6 +1549,8 @@ void render_scrollback(const int skip_lines) {
      */
     if (q_status.status_visible == Q_TRUE) {
         row -= STATUS_HEIGHT;
+    } else if (q_program_state == Q_STATE_SCROLLBACK) {
+        row -= 1;
     }
 
     /*

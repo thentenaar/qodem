@@ -58,10 +58,10 @@ extern "C" {
 #endif
 
 /* Defines ---------------------------------------------------------------- */
-#define RELEASE
-/* #undef RELEASE */
+// #define RELEASE
+#undef RELEASE
 
-#define Q_VERSION               "1.0beta"
+#define Q_VERSION               "1.0.0"
 #define Q_AUTHOR                "Kevin Lamonte"
 
 #ifdef RELEASE
@@ -71,6 +71,7 @@ extern "C" {
 #endif
 
 /* Exit codes */
+#define EXIT_ERROR_CURSES               10
 #define EXIT_ERROR_SETLOCALE            12
 #define EXIT_ERROR_SELECT_FAILED        20
 #define EXIT_ERROR_SERIAL_FAILED        21

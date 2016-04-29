@@ -1048,9 +1048,13 @@ void screen_beep() {
 }
 
 /**
- * This must be called to initialize the curses UI.
+ * This must be called to initialize the curses UI.  Rows and columns can be
+ * passed in, but might not be honored on all systems.
+ *
+ * @param rows the desired number of rows
+ * @param cols the desired number of columns
  */
-void screen_setup() {
+void screen_setup(const unsigned char rows, const unsigned char cols) {
 #if defined(Q_PDCURSES) || defined(Q_PDCURSES_WIN32)
 #ifdef XCURSES
     /*
@@ -1064,6 +1068,18 @@ void screen_setup() {
         "80",
         0
     };
+    char rowString[10];
+    char colString[10];
+
+    if ((rows > 25) && (rows < 250)) {
+        sprintf(rowString, "%d", rows);
+        pdcursesOptions[2] = rowString;
+    }
+
+    if ((cols > 80) && (cols < 250)) {
+        sprintf(colString, "%d", cols);
+        pdcursesOptions[4] = colString;
+    }
     Xinitscr(5, pdcursesOptions);
 
 #else
@@ -1084,7 +1100,8 @@ void screen_setup() {
     /*
      * Set to default 80x25 size.
      */
-    resize_term(25, 80);
+    resize_term(((rows < 250) && (rows >= 25) ? rows : 25),
+        ((cols < 250) && (cols >= 80) ? cols : 80));
 #endif /* XCURSES */
 
     /*
@@ -1095,17 +1112,34 @@ void screen_setup() {
 #else
     /*
      * This is the standard ncurses case.
-     * 
+     *
      * Since we use newterm() in initialize_keyboard() to interrogate a bunch
      * of emulation keyboards, we need to use newterm() here also so that we
      * are not mixing the use of initscr() and newterm().
      */
+
+    /*
+     * Ask ncurses to use extended names.  qodem_win_getch() should work
+     * either way, but it would be slightly nicer to use the ncurses API
+     * which will be a bit more future-proof rather than custom parse these
+     * extended keys.
+     */
+    use_extended_names(TRUE);
+
     q_main_screen = newterm(getenv("TERM"), stdout, stdin);
+    if (q_main_screen == NULL) {
+        /*
+         * We had a problem setting up ncurses, bail out right now.
+         */
+        fprintf(stderr, _("Unable to initialize curses!\n\n"));
+        fprintf(stderr, _("Is the TERM environment variable ('%s') correct?\n"),
+            getenv("TERM"));
+        exit(EXIT_ERROR_CURSES);
+    }
     set_term(q_main_screen);
 #endif /* Q_PDCURSES */
 
     getmaxyx(stdscr, HEIGHT, WIDTH);
-    STATUS_HEIGHT = 1;
     /*
      * I remember re-reading the worklog.html and wondering how I managed to
      * get ^Z and ^C passed in.  Here it is: curses call to enable raw mode.

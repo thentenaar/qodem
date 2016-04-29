@@ -24,33 +24,36 @@ default: qodem
 # port support enabled; do use newterm() (but a separate check disable
 # newterm() on PDCurses anyway).
 #
-# Q_SSH_CRYPTLIB    - Use the cryptlib library to do ssh connections
-#                     rather than spawn the ssh binary through a pty.
-#                     You will need to add cryptlib.a to LDFLAGS.
+# Q_SSH_CRYPTLIB     - Use the cryptlib library to do ssh connections
+#                      rather than spawn the ssh binary through a pty.
+#                      You will need to add cryptlib.a to LDFLAGS.
 #
-# Q_UPNP            - Include support for miniupmpc-1.4.  You will need to
-#                     add -Iupmp/miniupnpc-1.4 to CFLAGS, and the following
-#                     to LDLIBS:
+# Q_UPNP             - Include support for miniupmpc-1.4.  You will need to
+#                      add -Iupmp/miniupnpc-1.4 to CFLAGS, and the following
+#                      to LDLIBS:
 #                          upnp/miniupnpc-1.4/libminiupnpc.a
 #
-# Q_SOUND_SDL       - Enable support for libSDL for sound (ANSI music and
-#                     beep()).  You will need to add "-lSDL -lm" to LBLIBS.
-#                     libSDL headers are assumed to be installed.
+# Q_SOUND_SDL        - Enable support for libSDL for sound (ANSI music and
+#                      beep()).  You will need to add "-lSDL -lm" to LBLIBS.
+#                      libSDL headers are assumed to be installed.
 #
-# Q_PDCURSES        - Use PDCurses instead of ncurses.  You will need to
-#                     add -Ix11/PDCurses-3.4 to CFLAGS, and the following
-#                     to LDLIBS:
+# Q_PDCURSES         - Use PDCurses instead of ncurses.  You will need to
+#                      add -Ix11/PDCurses-3.4 to CFLAGS, and the following
+#                      to LDLIBS:
 #                          x11/PDCurses-3.4/x11/libXCurses.a
 #                          -lXaw -lXmu -lXt -lX11 -lXpm
-#                          
-# Q_PDCURSES_WIN32  - Build for the Win32 PDCurses version.
 #
-# Q_GC_BOEHM        - Build for use with the Hans-Boehm garbage collector.
+# Q_PDCURSES_WIN32   - Build for the Win32 PDCurses version.
 #
-# Q_NO_SERIAL       - Remove code for serial port support.
+# Q_GC_BOEHM         - Build for use with the Hans-Boehm garbage collector.
 #
-# Q_NO_NEWTERM      - Do not call newterm() in initialize_keyboard().  This
-#                     is required for running on Arch Linux.
+# Q_NO_SERIAL        - Remove code for serial port support.
+#
+# Q_NO_NEWTERM       - Do not call newterm() in initialize_keyboard().  This
+#                      is required for running on Arch Linux.
+#
+# QMODEM_INFO_SCREEN - Use a Qmodem 5.0-derived screen for the Alt-I info
+#                      display.
 #
 
 # ----------------------------------------------------------------------------
@@ -152,22 +155,22 @@ clean:
 	-del $(QODEM_EXE)
 	-del $(QODEM_OBJS_DIR)\*.obj
 	cd lib\c
-        make -f Makefile.bcc5 clean
+	make -f Makefile.bcc5 clean
 	cd ..\pdcurses
-        make -f Makefile.bcc5 clean
-        cd ..\..
+	make -f Makefile.bcc5 clean
+	cd ..\..
 
 qodem: $(QODEM_EXE)
 
 lib/libc.lib:
 	cd lib\c
-        make -f Makefile.bcc5
-        cd ..\..
+	make -f Makefile.bcc5
+	cd ..\..
 
 lib/pdcurses.lib:
 	cd lib\pdcurses
-        make -f Makefile.bcc5
-        cd ..\..
+	make -f Makefile.bcc5
+	cd ..\..
 
 $(QODEM_EXE): $(QODEM_OBJS) $(EXTRA_LIBS)
 	echo -e$(QODEM_EXE) > bcc32.rsp

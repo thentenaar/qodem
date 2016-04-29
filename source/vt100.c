@@ -959,7 +959,7 @@ static void set_toggle(const Q_BOOL value) {
 
         case 1:
             if (state.dec_private_mode_flag == Q_TRUE) {
-                /* DECCKM */
+                /* DECCRM */
                 if (value == Q_TRUE) {
                     DLOG(("DECCRM: set (VT100 keys)\n"));
                     /* Use application arrow keys */
@@ -3083,7 +3083,35 @@ static void osc_put(unsigned char xterm_char) {
  * isn't xterm.
  */
 static void osc() {
-    DLOG(("osc(): xterm command %s\n", q_emul_buffer));
+    DLOG(("osc(): xterm command '%s'\n", q_emul_buffer));
+
+    if (q_emul_buffer_n > 2) {
+        if (q_emul_buffer_n == sizeof(q_emul_buffer)) {
+            q_emul_buffer_n--;
+        }
+        q_emul_buffer[q_emul_buffer_n] = 0;
+        if ((q_emul_buffer[0] == '0') && (q_emul_buffer[1] == ';')) {
+            /*
+             * Change Icon Name and Window Title to Pt.
+             */
+#ifdef Q_PDCURSES
+            PDC_set_title(q_emul_buffer + 2);
+#endif
+        }
+        if ((q_emul_buffer[0] == '1') && (q_emul_buffer[1] == ';')) {
+            /*
+             * Change Icon Name to Pt.
+             */
+        }
+        if ((q_emul_buffer[0] == '2') && (q_emul_buffer[1] == ';')) {
+            /*
+             * Change Window Title to Pt.
+             */
+#ifdef Q_PDCURSES
+            PDC_set_title(q_emul_buffer + 2);
+#endif
+        }
+    }
 }
 
 /**
@@ -7005,17 +7033,88 @@ wchar_t * linux_keystroke(const int keystroke) {
 }
 
 /**
+ * Some keystrokes need to be constructed based on VT100 flags and keystroke
+ * flags.  This buffer is used to generate those custom sequences.  See
+ * terminfo_keystrings[] in input.c for those mappings.
+ */
+static wchar_t xterm_keystroke_buffer[16];
+
+/**
+ * Generate the proper xterm suffix string based on KEY_FLAG_X constants.
+ *
+ * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.  See input.h.
+ * @return the suffix byte
+ */
+static wchar_t * xterm_keystroke_suffix(const int flags) {
+    switch (flags) {
+    case 0:
+        return L"";
+    case KEY_FLAG_SHIFT:
+        return L";2";
+    case KEY_FLAG_ALT:
+        return L";3";
+    case KEY_FLAG_ALT | KEY_FLAG_SHIFT:
+        return L";4";
+    case KEY_FLAG_CTRL:
+        return L";5";
+    case KEY_FLAG_SHIFT | KEY_FLAG_CTRL:
+        return L";6";
+    case KEY_FLAG_ALT | KEY_FLAG_CTRL:
+        return L";7";
+    case KEY_FLAG_ALT | KEY_FLAG_SHIFT | KEY_FLAG_CTRL:
+        return L";8";
+    default:
+        return L"";
+    }
+}
+
+/**
+ * Build one of the complex xterm keystroke sequences, storing the result in
+ * xterm_keystroke_buffer.
+ *
+ * @param ss3 the prefix to use based on VT100 state.
+ * @param first the first character, usually a number.
+ * @param first the last character, one of the following: ~ A B C D F H
+ * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.  See input.h.
+ @ @return the buffer with the full key sequence
+ */
+static wchar_t * xterm_build_key_sequence(const wchar_t * ss3,
+                                          const wchar_t first,
+                                          const wchar_t last,
+                                          const int flags) {
+
+    int i, j;
+    wchar_t * suffix;
+
+    memset(xterm_keystroke_buffer, 0, sizeof(xterm_keystroke_buffer));
+    for (i = 0; i < wcslen(ss3); i++) {
+        xterm_keystroke_buffer[i] = ss3[i];
+    }
+    if ((last == '~') || (flags != 0)) {
+        xterm_keystroke_buffer[i++] = first;
+        suffix = xterm_keystroke_suffix(flags);
+        for (j = 0; j < wcslen(suffix); j++, i++) {
+            xterm_keystroke_buffer[i] = suffix[j];
+        }
+    }
+    xterm_keystroke_buffer[i++] = last;
+
+    return xterm_keystroke_buffer;
+}
+
+/**
  * Generate a sequence of bytes to send to the remote side that correspond to
  * a keystroke.  Used by XTERM and X_UTF8.
  *
  * @param keystroke one of the Q_KEY values, OR a Unicode code point.  See
  * input.h.
+ * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.  See input.h.
  * @return a wide string that is appropriate to send to the remote side.
  * Note that XTERM emulation is an 8-bit emulation: only the bottom 8 bits
  * are transmitted to the remote side.  X_UTF8 emulation sends a true Unicode
  * sequence.  See post_keystroke().
  */
-wchar_t * xterm_keystroke(const int keystroke) {
+wchar_t * xterm_keystroke(const int keystroke, const int flags) {
 
     switch (keystroke) {
     case Q_KEY_BACKSPACE:
@@ -7028,41 +7127,41 @@ wchar_t * xterm_keystroke(const int keystroke) {
     case Q_KEY_LEFT:
         switch (q_vt100_arrow_keys) {
         case Q_EMUL_ANSI:
-            return L"\033[D";
+            return xterm_build_key_sequence(L"\033[", '1', 'D', flags);
         case Q_EMUL_VT52:
-            return L"\033D";
+            return xterm_build_key_sequence(L"\033",  '1', 'D', flags);
         default:
-            return L"\033OD";
+            return xterm_build_key_sequence(L"\033O", '1', 'D', flags);
         }
 
     case Q_KEY_RIGHT:
         switch (q_vt100_arrow_keys) {
         case Q_EMUL_ANSI:
-            return L"\033[C";
+            return xterm_build_key_sequence(L"\033[", '1', 'C', flags);
         case Q_EMUL_VT52:
-            return L"\033C";
+            return xterm_build_key_sequence(L"\033",  '1', 'C', flags);
         default:
-            return L"\033OC";
+            return xterm_build_key_sequence(L"\033O", '1', 'C', flags);
         }
 
     case Q_KEY_UP:
         switch (q_vt100_arrow_keys) {
         case Q_EMUL_ANSI:
-            return L"\033[A";
+            return xterm_build_key_sequence(L"\033[", '1', 'A', flags);
         case Q_EMUL_VT52:
-            return L"\033A";
+            return xterm_build_key_sequence(L"\033",  '1', 'A', flags);
         default:
-            return L"\033OA";
+            return xterm_build_key_sequence(L"\033O", '1', 'A', flags);
         }
 
     case Q_KEY_DOWN:
         switch (q_vt100_arrow_keys) {
         case Q_EMUL_ANSI:
-            return L"\033[B";
+            return xterm_build_key_sequence(L"\033[", '1', 'B', flags);
         case Q_EMUL_VT52:
-            return L"\033B";
+            return xterm_build_key_sequence(L"\033",  '1', 'B', flags);
         default:
-            return L"\033OB";
+            return xterm_build_key_sequence(L"\033O", '1', 'B', flags);
         }
 
     case Q_KEY_SLEFT:
@@ -7082,10 +7181,24 @@ wchar_t * xterm_keystroke(const int keystroke) {
         return L"\033[1;2B";
 
     case Q_KEY_HOME:
-        return L"\033[H";
+        switch (q_vt100_arrow_keys) {
+        case Q_EMUL_ANSI:
+            return xterm_build_key_sequence(L"\033[", '1', 'H', flags);
+        case Q_EMUL_VT52:
+            return xterm_build_key_sequence(L"\033",  '1', 'H', flags);
+        default:
+            return xterm_build_key_sequence(L"\033O", '1', 'H', flags);
+        }
 
     case Q_KEY_END:
-        return L"\033[F";
+        switch (q_vt100_arrow_keys) {
+        case Q_EMUL_ANSI:
+            return xterm_build_key_sequence(L"\033[", '1', 'F', flags);
+        case Q_EMUL_VT52:
+            return xterm_build_key_sequence(L"\033",  '1', 'F', flags);
+        default:
+            return xterm_build_key_sequence(L"\033O", '1', 'F', flags);
+        }
 
     case Q_KEY_F(1):
         /* PF1 */
@@ -7284,18 +7397,22 @@ wchar_t * xterm_keystroke(const int keystroke) {
         return L"\033[24;5~";
 
     case Q_KEY_PPAGE:
-        return L"\033[5~";
+        return xterm_build_key_sequence(L"\033[", '5', '~', flags);
 
     case Q_KEY_NPAGE:
-        return L"\033[6~";
+        return xterm_build_key_sequence(L"\033[", '6', '~', flags);
 
     case Q_KEY_IC:
+        return xterm_build_key_sequence(L"\033[", '2', '~', flags);
+
     case Q_KEY_SIC:
-        return L"\033[2~";
+        return xterm_build_key_sequence(L"\033[", '2', '~', KEY_FLAG_SHIFT);
 
     case Q_KEY_DC:
+        return xterm_build_key_sequence(L"\033[", '3', '~', flags);
+
     case Q_KEY_SDC:
-        return L"\033[3~";
+        return xterm_build_key_sequence(L"\033[", '3', '~', KEY_FLAG_SHIFT);
 
     case Q_KEY_PAD0:
         if (q_vt100_keypad_mode.keypad_mode != Q_KEYPAD_MODE_NUMERIC) {

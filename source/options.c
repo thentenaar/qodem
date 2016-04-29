@@ -139,11 +139,12 @@ static struct option_struct options[] = {
         {Q_OPTION_SHELL, NULL, "shell", "cmd.exe", ""
 #else
         /* Normal: use bash */
-        {Q_OPTION_SHELL, NULL, "shell", "/bin/bash --login", ""
+        {Q_OPTION_SHELL, NULL, "shell", "$SHELL", ""
 #endif
 "### LOCAL PROGRAMS (NOT CONNECTION PROTOCOLS) ----------------------------\n"
 "\n"
-"### The OS shell program.  Examples: /bin/bash /bin/tcsh my_shell"},
+"### The OS shell program.  The $SHELL environment  variable will be\n"
+"### substituted if specified.  Examples: /bin/bash /bin/tcsh my_shell"},
 
 #ifdef Q_PDCURSES_WIN32
         {Q_OPTION_EDITOR, NULL, "editor", "notepad.exe", ""
@@ -195,7 +196,24 @@ static struct option_struct options[] = {
 "### Whether or not to support sounds.  This overrides ANSI music.  Value\n"
 "### is 'true' or 'false'."},
 
-        {Q_OPTION_XTERM_DOUBLE, NULL, "xterm_double_width", "true", ""
+        {Q_OPTION_X11_FONT, NULL, "x11_font", "-misc-fixed-medium-r-normal--20-200-75-75-c-100-iso10646-1", ""
+"### The font to use in the X11 version of Qodem.  Some good font choices\n"
+"### are listed below.  Currently only bitmap fonts (those that can be seen\n"
+"### in 'xfontsel' and/or 'xterm -fn font-name') are supported.\n"
+"###\n"
+"###   PDCurses default:\n"
+"###        -misc-fixed-medium-r-normal--20-200-75-75-c-100-iso10646-1\n"
+"###   Terminus:\n"
+"###        -*-terminus-medium-r-normal--16-200-*-*-c-*-iso10646-1\n"
+"###        -*-terminus-medium-r-normal--20-200-*-*-c-*-iso10646-1\n"
+"###        -*-terminus-medium-r-normal--24-240-*-*-c-*-iso10646-1\n"
+"###        -*-terminus-medium-r-normal--32-320-*-*-c-*-iso10646-1\n"
+"###   uni_vga:\n"
+"###        -bolkhov-vga-medium-r-normal--16-160-75-75-c-80-iso10646-1\n"
+"###\n"
+"### This is only used by the X11 (PDCurses) build."},
+
+         {Q_OPTION_XTERM_DOUBLE, NULL, "xterm_double_width", "true", ""
 "### Qodem can display true double-width / double-height characters\n"
 "### when run under an xterm that supports it.  Examples of xterms\n"
 "### that can do so are PuTTY, Terminal.app on OS X, and of course\n"
@@ -208,6 +226,10 @@ static struct option_struct options[] = {
 
         {Q_OPTION_START_PHONEBOOK, NULL, "start_in_phonebook", "true", ""
 "### Whether to startup in the phonebook.  Value is 'true' or\n"
+"### 'false'."},
+
+         {Q_OPTION_STATUS_LINE_VISIBLE, NULL, "status_line", "true", ""
+"### Whether the status line is visible on startup.  Value is 'true' or\n"
 "### 'false'."},
 
         {Q_OPTION_DIAL_CONNECT_TIME, NULL, "dial_connect_time", "60", ""
@@ -1229,6 +1251,18 @@ static void check_option(struct option_struct * option) {
          * Sustitute for $EDITOR
          */
         new_value = substitute_string(option->value, "$EDITOR", env_string);
+        Xfree(option->value, __FILE__, __LINE__);
+        option->value = new_value;
+        break;
+    case Q_OPTION_SHELL:
+        env_string = getenv("SHELL");
+        if (env_string == NULL) {
+            env_string = "";
+        }
+        /*
+         * Sustitute for $EDITOR
+         */
+        new_value = substitute_string(option->value, "$SHELL", env_string);
         Xfree(option->value, __FILE__, __LINE__);
         option->value = new_value;
         break;

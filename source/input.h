@@ -259,6 +259,11 @@ extern int q_cursor(const int cursor);
  */
 extern int q_key_code_yes(int keystroke);
 
+/**
+ * Send the current screen dimensions to the remote side.
+ */
+extern void send_screen_size();
+
 #ifdef __cplusplus
 }
 #endif
