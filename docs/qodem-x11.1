@@ -15,6 +15,8 @@ qodem-x11 \- Qodem Terminal Emulator (X11 Version)
 .br
 .RI "[ \-\-play-exit ]"
 .br
+.RI "[ [ \-\-xterm ]                                    | "
+.br
 .RI "[ [ \-\-dial n ]                                   | "
 .br
 .RI "[ [ \-\-connect HOST [ \-\-connect\-method method ] "
@@ -592,6 +594,11 @@ Use USERNAME when connecting with the
 .B \-\-connect
 option.  This value is passed on the command line to
 .BR ssh ", and " rlogin "."
+.TP
+.BR \-\-xterm
+Enables X11 terminal mode: phonebook and serial port are disabled,
+status line is turned off at startup, a shell is opened, and Qodem
+exits when the shell session exits.
 .TP
 .B args...
 Spawn a local shell and pass args to it.

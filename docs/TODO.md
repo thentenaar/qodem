@@ -10,6 +10,7 @@ NEW FUNCTIONALITY
 
 Fix all marked TODOs in code
 
+
 #24 More command line switches:
      *    --exit-on-completion (-x)
      *    --keyfile     (-k)
@@ -24,8 +25,6 @@ Fix all marked TODOs in code
      *    --geometry    (-g)
      *    --status-line (--sl)
      *    --doorway     (-d)
-
-#24 Q_OPTION to disable status line on startup
 
 #26 Handle multiple instances operating on the phonebook
 

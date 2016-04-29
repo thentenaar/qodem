@@ -1149,7 +1149,7 @@ void console_keyboard_handler(int keystroke, int flags) {
         /*
          * Alt-9 Serial Port
          */
-        if (flags & KEY_FLAG_ALT) {
+        if ((flags & KEY_FLAG_ALT) && (q_status.xterm_mode == Q_FALSE)) {
             if (!Q_SERIAL_OPEN && (q_status.online == Q_FALSE)) {
                 if (open_serial_port() == Q_FALSE) {
                     /*
@@ -1326,7 +1326,7 @@ void console_keyboard_handler(int keystroke, int flags) {
 
     case 'D':
     case 'd':
-        if (flags & KEY_FLAG_ALT) {
+        if ((flags & KEY_FLAG_ALT) && (q_status.xterm_mode == Q_FALSE)) {
             /*
              * Alt-D Phonebook
              */
@@ -2812,8 +2812,13 @@ void console_menu_refresh() {
     /*
      * D Phonebook
      */
-    screen_put_color_str_yx(menu_top + before_row + 1, menu_left + 2,
-                            _("Alt-D  "), Q_COLOR_MENU_COMMAND);
+    if (q_status.xterm_mode == Q_TRUE) {
+        screen_put_color_str_yx(menu_top + before_row + 1, menu_left + 2,
+                                _("Alt-D  "), Q_COLOR_MENU_COMMAND_UNAVAILABLE);
+    } else {
+        screen_put_color_str_yx(menu_top + before_row + 1, menu_left + 2,
+                                _("Alt-D  "), Q_COLOR_MENU_COMMAND);
+    }
     screen_put_color_str(_("Phone Book"), Q_COLOR_MENU_TEXT);
     /*
      * G Term emulation
@@ -3091,8 +3096,13 @@ void console_menu_refresh() {
     /*
      * 9 Serial port
      */
-    screen_put_color_str_yx(menu_top + toggles_row + 10, menu_left + 52,
-                            _("Alt-9  "), Q_COLOR_MENU_COMMAND);
+    if (q_status.xterm_mode == Q_TRUE) {
+        screen_put_color_str_yx(menu_top + toggles_row + 10, menu_left + 52,
+                                _("Alt-9  "), Q_COLOR_MENU_COMMAND_UNAVAILABLE);
+    } else {
+        screen_put_color_str_yx(menu_top + toggles_row + 10, menu_left + 52,
+                                _("Alt-9  "), Q_COLOR_MENU_COMMAND);
+    }
     screen_put_color_str(_("Serial Port"), Q_COLOR_MENU_TEXT);
 #endif
 

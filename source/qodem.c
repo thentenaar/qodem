@@ -242,6 +242,7 @@ static struct option q_getopt_long_options[] = {
     {"play",                1,      0,      0},
     {"play-exit",           0,      0,      0},
     {"version",             0,      0,      0},
+    {"xterm",               0,      0,      0},
     /*
      * TODO:
      *    --exit-on-completion (-x)
@@ -257,7 +258,6 @@ static struct option q_getopt_long_options[] = {
      *    --geometry    (-g)
      *    --status-line (--sl)
      *    --doorway     (-d)
-     *    --xterm
      */
     {0,                     0,      0,      0}
 };
@@ -799,6 +799,7 @@ static char * usage_string() {
 "      --username USERNAME             Log in as USERNAME\n"
 "      --play MUSIC                    Play MUSIC as ANSI Music\n"
 "      --play-exit                     Immediately exit after playing MUSIC\n"
+"      --xterm                         Enable X11 terminal mode\n"
 "      --version                       Display program version\n"
 "  -h, --help                          This help screen\n"
 "\n"
@@ -897,6 +898,11 @@ static void process_command_line_option(const char * option,
 
     if (strncmp(option, "enable-logging", strlen("enable-logging")) == 0) {
         start_logging(value);
+    }
+
+    if (strncmp(option, "xterm", strlen("xterm")) == 0) {
+        q_status.xterm_mode = Q_TRUE;
+        q_status.exit_on_disconnect = Q_TRUE;
     }
 
     if (strcmp(option, "dial") == 0) {
@@ -2694,10 +2700,16 @@ static void reset_global_state() {
     q_status.scrollback_lines       = 0;
     q_status.status_visible         = Q_TRUE;
     q_status.status_line_info       = Q_FALSE;
+    q_status.xterm_mode             = Q_FALSE;
     q_status.hard_backspace         = Q_TRUE;
-    /* Every console assumes line wrap, so turn it on by default */
+    /*
+     * Every console assumes line wrap, so turn it on by default.
+     */
     q_status.line_wrap              = Q_TRUE;
-    /* BBS-like emulations usually assume 80 columns, so turn it on by default */
+    /*
+     * BBS-like emulations usually assume 80 columns, so turn it on by
+     * default.
+     */
     q_status.assume_80_columns      = Q_TRUE;
     q_status.ansi_animate           = Q_FALSE;
     q_status.display_null           = Q_FALSE;
@@ -2813,26 +2825,6 @@ int qodem_main(int argc, char * const argv[]) {
 #endif /* Q_PDCURSES_WIN32 */
 
     /*
-     * Setup an initial call state to support the --connect or --dial command
-     * line options.
-     */
-    initial_call.method         = Q_DIAL_METHOD_SSH;
-    initial_call.address        = NULL;
-    initial_call.port           = "22";
-    initial_call.password       = L"";
-    initial_call.emulation      = Q_EMUL_XTERM_UTF8;
-    initial_call.codepage       = default_codepage(initial_call.emulation);
-    initial_call.notes          = NULL;
-    initial_call.script_filename            = "";
-    initial_call.keybindings_filename       = "";
-    initial_call.capture_filename           = "";
-    initial_call.translate_8bit_filename    = "";
-    initial_call.translate_unicode_filename = "";
-    initial_call.doorway                    = Q_DOORWAY_CONFIG;
-    initial_call.use_default_toggles        = Q_TRUE;
-    dial_phonebook_entry_n                  = -1;
-
-    /*
      * Set the global status to its defaults.
      */
     reset_global_state();
@@ -2867,6 +2859,25 @@ int qodem_main(int argc, char * const argv[]) {
 
     /* Setup MIXED mode doorway */
     setup_doorway_handling();
+
+    /*
+     * Setup an initial call state to support the --connect or --dial command
+     * line options.
+     */
+    initial_call.address        = NULL;
+    initial_call.port           = "22";
+    initial_call.password       = L"";
+    initial_call.emulation      = Q_EMUL_XTERM_UTF8;
+    initial_call.codepage       = default_codepage(initial_call.emulation);
+    initial_call.notes          = NULL;
+    initial_call.script_filename            = "";
+    initial_call.keybindings_filename       = "";
+    initial_call.capture_filename           = "";
+    initial_call.translate_8bit_filename    = "";
+    initial_call.translate_unicode_filename = "";
+    initial_call.doorway                    = Q_DOORWAY_CONFIG;
+    initial_call.use_default_toggles        = Q_TRUE;
+    dial_phonebook_entry_n                  = -1;
 
     /* Process options */
     for (;;) {
@@ -2962,6 +2973,22 @@ int qodem_main(int argc, char * const argv[]) {
     signal(SIGPIPE, SIG_IGN);
 #endif
 
+    if (q_status.xterm_mode == Q_TRUE) {
+        /*
+         * We need empty strings for address and name to spawn the local
+         * shell.
+         */
+        initial_call.method = Q_DIAL_METHOD_SHELL;
+        initial_call.address = (char *)Xmalloc(sizeof(char) * 1, __FILE__,
+            __LINE__);
+        initial_call.address[0] = '\0';
+        initial_call.name = Xstring_to_wcsdup(initial_call.address,
+            __FILE__, __LINE__);
+        goto no_initial_call;
+    } else {
+        initial_call.method = Q_DIAL_METHOD_SSH;
+    }
+
     /*
      * If anything else remains, turn it into a command line.
      */
@@ -2999,6 +3026,7 @@ int qodem_main(int argc, char * const argv[]) {
              * be used.
              */
         }
+
         /* Set the dial method */
         initial_call.method = Q_DIAL_METHOD_COMMANDLINE;
 
@@ -3030,7 +3058,11 @@ int qodem_main(int argc, char * const argv[]) {
         }
         initial_call.name = Xstring_to_wcsdup(initial_call.address,
             __FILE__, __LINE__);
+
     } /* if (optind < argc) */
+
+no_initial_call:
+
 
     /* See if we need to --play something */
     if (play_music_string != NULL) {
@@ -3112,15 +3144,22 @@ int qodem_main(int argc, char * const argv[]) {
             q_keyboard_blocks = Q_TRUE;
             q_current_dial_entry = &initial_call;
             do_dialer();
-        } else if (strncmp(get_option(Q_OPTION_START_PHONEBOOK),
-                "true", 4) == 0) {
+        } else if ((strncmp(get_option(Q_OPTION_START_PHONEBOOK),
+                "true", 4) == 0) && (q_status.xterm_mode == Q_FALSE)) {
             switch_state(Q_STATE_PHONEBOOK);
+        } else if (q_status.xterm_mode == Q_TRUE) {
+            /*
+             * Spawn a the local shell.
+             */
+            q_keyboard_blocks = Q_TRUE;
+            q_current_dial_entry = &initial_call;
+            do_dialer();
         } else {
             switch_state(Q_STATE_CONSOLE);
         }
 
-        if (strncmp(get_option(Q_OPTION_STATUS_LINE_VISIBLE),
-                "true", 4) == 0) {
+        if ((strncmp(get_option(Q_OPTION_STATUS_LINE_VISIBLE),
+                "true", 4) == 0) && (q_status.xterm_mode == Q_FALSE)) {
             set_status_line(Q_TRUE);
         } else {
             set_status_line(Q_FALSE);

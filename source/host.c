@@ -777,7 +777,6 @@ static void enter_message_finish_menu() {
 static void view_new_message() {
     char buffer[Q_MAX_LINE_LENGTH];
     int line_i;
-    wchar_t ** message;
     wchar_t * line;
 
     do_menu(EOL);

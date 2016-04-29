@@ -237,6 +237,14 @@ struct q_status_struct {
     Q_BOOL status_line_info;
 
     /**
+     * When true, Qodem is operating in "X11 terminal mode": no phonebook, no
+     * serial port, status line starts turned off, and disconnect on exit.
+     * The only way to enable xterm_mode is to pass the --xterm command line
+     * option.
+     */
+    Q_BOOL xterm_mode;
+
+    /**
      * When true, backspace sends the C0 backspace control character ^H
      * (0x08).  When false, backspace sends the DEL character (0x7F).  VT220
      * emulation does not honor this flag, because backspace is defined by
