@@ -284,6 +284,14 @@ static struct timeval ssh_tv;
 
 #endif /* Q_SSH_CRYPTLIB */
 
+#if defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32)
+/*
+ * The socket used to convey keystrokes from the X11 process back to
+ * PDCurses.  data_handler() selects on this to improve latency.
+ */
+extern int xc_key_sock;
+#endif
+
 /**
  * Write data from a buffer to the remote system, dispatching to the
  * appropriate connection-specific write function.
@@ -2017,8 +2025,16 @@ static void data_handler() {
     select_fd_max = STDIN_FILENO;
     FD_SET(STDIN_FILENO, &readfds);
 #else
-    /* PDCurses case: don't select on stdin */
+#  if defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32)
+    /* X11 PDCurses case: select on xc_key_sock just like it was stdin */
+    assert(xc_key_sock > 2);
+
+    select_fd_max = xc_key_sock;
+    FD_SET(xc_key_sock, &readfds);
+#  else
+    /* Win32 PDCurses case: don't select on stdin */
     select_fd_max = 0;
+#  endif
 #endif
 
     /* Add the child tty */

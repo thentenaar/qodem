@@ -2325,7 +2325,18 @@ int q_cursor_off() {
  * @return the previous cursor state
  */
 int q_cursor_on() {
+#ifdef Q_PDCURSES
+    /*
+     * Use the block cursor for PDCurses.
+     */
+    return curs_set(2);
+#else
+    /*
+     * Use the normal cursor (whatever the user defined for their terminal)
+     * for ncurses.
+     */
     return curs_set(1);
+#endif
 }
 
 /**
