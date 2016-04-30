@@ -257,6 +257,9 @@ static char *program_name;
 // KAL: we pick the font from qodemrc now.
 #include "../../../source/options.h"
 
+// KAL: we use blank text when drawing blinked-out text
+static XChar2b blank_text[513];
+
 #ifdef PDC_WIDE
 # define DEFFONT "-misc-fixed-medium-r-normal--20-200-75-75-c-100-iso10646-1"
 #else
@@ -582,7 +585,8 @@ static int _new_packet(chtype attr, bool rev, int len, int col, int row,
     /* Specify the color table offsets */
 
     fore |= (attr & A_BOLD) ? 8 : 0;
-    back |= (attr & A_BLINK) ? 8 : 0;
+    // KAL
+    // back |= (attr & A_BLINK) ? 8 : 0;
 
     /* Reverse flag = highlighted selection XOR A_REVERSE set */
 
@@ -599,17 +603,32 @@ static int _new_packet(chtype attr, bool rev, int len, int col, int row,
 
     _make_xy(col, row, &xpos, &ypos);
 
+    // KAL
+    if ((visible_cursor == FALSE) && ((attr & A_BLINK) != 0)) {
+
+#ifdef PDC_WIDE
+    XDrawImageString16(
+#else
+    XDrawImageString(
+#endif
+                     XCURSESDISPLAY, XCURSESWIN, gc, xpos, ypos, blank_text, len);
+    } else {
 #ifdef PDC_WIDE
     XDrawImageString16(
 #else
     XDrawImageString(
 #endif
                      XCURSESDISPLAY, XCURSESWIN, gc, xpos, ypos, text, len);
+    }
 
     /* Underline, etc. */
 
-    if (attr & (A_LEFTLINE|A_RIGHTLINE|A_UNDERLINE))
-    {
+    // KAL
+    if (((visible_cursor == FALSE) && ((attr & A_BLINK) == 0) &&
+            (attr & (A_LEFTLINE|A_RIGHTLINE|A_UNDERLINE))) ||
+        ((visible_cursor == TRUE) &&
+            (attr & (A_LEFTLINE|A_RIGHTLINE|A_UNDERLINE)))
+    ) {
         int k;
 
         if (SP->line_color != -1)
@@ -1906,27 +1925,78 @@ static void _send_key_to_curses(unsigned long key, MOUSE_STATUS *ms,
 
 static void _blink_cursor(XtPointer unused, XtIntervalId *id)
 {
+    int row;
+    int j;
+    chtype * ch;
+    chtype curr;
+    attr_t attr;
+    bool draw_row;
+
     XC_LOG(("_blink_cursor() - called:\n"));
 
     if (window_entered)
     {
+
         if (visible_cursor)
         {
             /* Cursor currently ON, turn it off */
 
             int save_visibility = SP->visibility;
             SP->visibility = 0;
-            _redraw_cursor();
-            SP->visibility = save_visibility;
+
             visible_cursor = FALSE;
+
+            // KAL: redraw the screen to match the blink state
+            for (row = 0; row < XCursesLINES; row++) {
+                XC_get_line_lock(row);
+                ch = (chtype *)(Xcurscr + XCURSCR_Y_OFF(row));
+                draw_row = FALSE;
+                for (j = 0; j < COLS; j++) {
+                    curr = ch[j];
+                    attr = curr & A_ATTRIBUTES;
+                    if ((attr & A_BLINK) != 0) {
+                        draw_row = TRUE;
+                        break;
+                    }
+                }
+                if (draw_row == TRUE) {
+                    _display_text(ch, row, 0, COLS, FALSE);
+                }
+                XC_release_line_lock(row);
+            }
+            _redraw_cursor();
+            _draw_border();
+            SP->visibility = save_visibility;
         }
         else
         {
             /* Cursor currently OFF, turn it on */
-
-            _redraw_cursor();
             visible_cursor = TRUE;
+
+            // KAL: redraw the screen to match the blink state
+            for (row = 0; row < XCursesLINES; row++) {
+                XC_get_line_lock(row);
+                ch = (chtype *)(Xcurscr + XCURSCR_Y_OFF(row));
+                draw_row = FALSE;
+                for (j = 0; j < COLS; j++) {
+                    curr = ch[j];
+                    attr = curr & A_ATTRIBUTES;
+                    if ((attr & A_BLINK) != 0) {
+                        draw_row = TRUE;
+                        break;
+                    }
+                }
+                if (draw_row == TRUE) {
+                    _display_text(ch, row, 0, COLS, FALSE);
+                }
+                XC_release_line_lock(row);
+            }
+            _redraw_cursor();
+            _draw_border();
         }
+
+
+
     }
 
     XtAppAddTimeOut(app_context, xc_app_data.cursorBlinkRate,
@@ -2913,6 +2983,12 @@ int XCursesSetupX(int argc, char *argv[])
         fprintf(stderr, "Error: no DISPLAY variable set\n");
         kill(xc_otherpid, SIGKILL);
         return ERR;
+    }
+
+    // Initialize blank text
+    for (i = 0; i < 513; i++) {
+        blank_text[i].byte1 = 0;
+        blank_text[i].byte2 = ' ';
     }
 
     // KAL: set normalFont and italicFont based on qodemrc.
