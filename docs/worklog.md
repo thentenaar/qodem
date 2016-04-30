@@ -1,6 +1,32 @@
 The Qodem Project Work Log
 ==========================
 
+April 30, 2016
+
+I merged current 1.0.0-dev back into master yesterday and put some dev
+snapshots (source and Windows installer) on the downloads page.  Still
+working on the 1.0.0-dev branch for a few more items and will re-sync
+to master about every week or two.
+
+My favorite new feature is "xterm mode", activated by the --xterm
+command line flag.  It makes Qodem startup and behave very similarly
+to an actual X terminal: no banner, no phonebook, no networking, no
+serial port: just a local shell and then Qodem exits when the shell
+does.  Yet we still have scrollback, capture, zmodem/kermit, keyboard
+macros, and all the other goodies.  Combined with support for window
+title changes and Shift-PgUp entering scrollback, and qodem-x11 will
+soon be my new permanent X terminal.  I can finally eat my own dog
+food 100% of the time.  Scary, but exciting.  (I'm already noticing
+some latency that will be driving me bananas.  So that will get fixed
+soon too.)
+
+In more personal matters, we are cancelling our home broadband
+Internet connection soon.  I intend to spend a good deal of time this
+summer outside in the yard and further about town.  I can still do
+Qodem development offline, and I can check github and personal email
+during my day job, but commits will probably come in about every week
+or two.
+
 April 28, 2016
 
 Well, that's all the bugs I currently know about cleared off the
