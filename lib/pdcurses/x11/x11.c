@@ -248,7 +248,7 @@ static Pixmap icon_bitmap;
 static Pixmap icon_pixmap;
 static Pixmap icon_pixmap_mask;
 #endif
-static bool visible_cursor = FALSE;
+static bool visible_cursor = TRUE;
 static bool window_entered = TRUE;
 static char *program_name;
 
@@ -346,7 +346,7 @@ static XtResource app_resources[] =
     RINT(doubleClickPeriod, DoubleClickPeriod, (PDC_CLICK_PERIOD * 2)),
     RINT(clickPeriod, ClickPeriod, PDC_CLICK_PERIOD),
     RINT(scrollbarWidth, ScrollbarWidth, 15),
-    RINT(cursorBlinkRate, CursorBlinkRate, 0),
+    RINT(cursorBlinkRate, CursorBlinkRate, 500),
 
     RSTRING(textCursor, TextCursor)
 };

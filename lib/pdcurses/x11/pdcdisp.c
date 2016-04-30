@@ -82,6 +82,11 @@ int PDC_display_cursor(int oldrow, int oldcol, int newrow, int newcol,
     }
     else
     {
+        // KAL
+        if ((oldrow == newrow) && (oldcol == newcol)) {
+            return OK;
+        }
+
         idx = CURSES_CURSOR;
         memcpy(buf, &idx, sizeof(int));
 
