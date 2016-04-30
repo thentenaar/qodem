@@ -6104,7 +6104,8 @@ wchar_t * vt100_keystroke(const int keystroke) {
 
     switch (keystroke) {
     case Q_KEY_BACKSPACE:
-        if ((q_status.hard_backspace == Q_TRUE) && (q_status.emulation != Q_EMUL_VT220)) {
+        if ((q_status.hard_backspace == Q_TRUE) &&
+            (q_status.emulation != Q_EMUL_VT220)) {
             return L"\010";
         } else {
             return L"\177";

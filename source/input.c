@@ -2111,6 +2111,22 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
         *keystroke = KEY_BACKSPACE;
 
 #if defined(Q_PDCURSES) || defined(Q_PDCURSES_WIN32)
+    } else if ((*keystroke == 0x08) && (res == OK)) {
+        /*
+         * Special case: map DEL to KEY_BACKSPACE, but only if CTRL is not
+         * set.
+         */
+        if (flags != NULL) {
+            if ((*flags & KEY_FLAG_CTRL) == 0) {
+                *keystroke = KEY_BACKSPACE;
+                *flags = 0;
+            }
+        } else {
+            /*
+             * Flags not looked for, just make this backspace.
+             */
+            *keystroke = KEY_BACKSPACE;
+        }
     } else if (res == KEY_CODE_YES) {
         /*
          * Handle PDCurses alternate keystrokes
