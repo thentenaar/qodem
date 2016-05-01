@@ -249,7 +249,7 @@ static Pixmap icon_pixmap;
 static Pixmap icon_pixmap_mask;
 #endif
 static bool visible_cursor = TRUE;
-static bool window_entered = TRUE;
+static bool window_focused = TRUE;
 static char *program_name;
 
 /* Macros just for app_resources */
@@ -1873,23 +1873,23 @@ static void _redraw_cursor(void)
     _display_cursor(SP->cursrow, SP->curscol, SP->cursrow, SP->curscol);
 }
 
-static void _handle_enter_leave(Widget w, XtPointer client_data,
-                                XEvent *event, Boolean *unused)
+static void _handle_focus_change(Widget w, XtPointer client_data,
+                                 XEvent *event, Boolean *unused)
 {
-    XC_LOG(("_handle_enter_leave called\n"));
+    XC_LOG(("_handle_focus_change called\n"));
 
     switch(event->type)
     {
-    case EnterNotify:
-        XC_LOG(("EnterNotify received\n"));
+    case FocusIn:
+        XC_LOG(("FocusIn received\n"));
 
-        window_entered = TRUE;
+        window_focused = TRUE;
         break;
 
-    case LeaveNotify:
-        XC_LOG(("LeaveNotify received\n"));
+    case FocusOut:
+        XC_LOG(("FocusOut received\n"));
 
-        window_entered = FALSE;
+        window_focused = FALSE;
 
         /* Display the cursor so it stays on while the window is
            not current */
@@ -1898,7 +1898,7 @@ static void _handle_enter_leave(Widget w, XtPointer client_data,
         break;
 
     default:
-        PDC_LOG(("%s:_handle_enter_leave - unknown event %d\n",
+        PDC_LOG(("%s:_handle_focus_change - unknown event %d\n",
                  XCLOGMSG, event->type));
     }
 }
@@ -1934,9 +1934,7 @@ static void _blink_cursor(XtPointer unused, XtIntervalId *id)
 
     XC_LOG(("_blink_cursor() - called:\n"));
 
-    // KAL: always blink, it's annoying to have the behavior change whether
-    // the mouse is over it or not.
-    if (window_entered || 1)
+    if (window_focused)
     {
 
         if (visible_cursor)
@@ -2764,7 +2762,7 @@ static void _process_curses_requests(XtPointer client_data, int *fid,
             /* If the window is not active, ignore this command. The
                cursor will stay solid. */
 
-            if (window_entered)
+            if (window_focused)
             {
                 if (visible_cursor)
                 {
@@ -3176,8 +3174,8 @@ int XCursesSetupX(int argc, char *argv[])
     XtAddEventHandler(drawing, ExposureMask, False, _handle_expose, NULL);
     XtAddEventHandler(drawing, StructureNotifyMask, False,
                       _handle_structure_notify, NULL);
-    XtAddEventHandler(drawing, EnterWindowMask | LeaveWindowMask, False,
-                      _handle_enter_leave, NULL);
+    XtAddEventHandler(drawing, FocusChangeMask, False,
+                      _handle_focus_change, NULL);
     XtAddEventHandler(topLevel, 0, True, _handle_nonmaskable, NULL);
 
     /* Add input handler from xc_display_sock (requests from curses
