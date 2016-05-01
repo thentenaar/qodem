@@ -19,6 +19,7 @@ qodem (1.0.0-1) unstable; urgency=low
     immediately launches a shell.  When the shell exits, Qodem exits.
   * --geometry command line option
   * X11/Win32: Shift/Ctrl-Ins pastes from system clipboard
+  * X11: Blinking cursor, blinking text
 
  -- Kevin Lamonte <lamonte@users.sourceforge.net>  Mon,  4 Jul 2016 18:50:00 -0500
 

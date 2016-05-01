@@ -1934,7 +1934,9 @@ static void _blink_cursor(XtPointer unused, XtIntervalId *id)
 
     XC_LOG(("_blink_cursor() - called:\n"));
 
-    if (window_entered)
+    // KAL: always blink, it's annoying to have the behavior change whether
+    // the mouse is over it or not.
+    if (window_entered || 1)
     {
 
         if (visible_cursor)
