@@ -7027,8 +7027,13 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                     local_dirty = Q_TRUE;
                     real_dirty = Q_TRUE;
                 }
+                break;
             }
-            break;
+
+            /*
+             * Fall through so that '\' can be picked up by the form
+             * handler.
+             */
         default:
             /*
              * This code is also copied in the case ' ' above case F2.  Make
