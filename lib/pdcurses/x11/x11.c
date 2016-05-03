@@ -718,7 +718,12 @@ static int _display_text(const chtype *ch, int row, int col,
 
 #ifdef PDC_WIDE
         text[i].byte1 = (curr & 0xff00) >> 8;
-        text[i++].byte2 = curr & 0x00ff;
+        text[i].byte2 = curr & 0x00ff;
+        // KAL: don't try to display null, display space instead.
+        if ((text[i].byte1 == 0) && (text[i].byte2 == 0)) {
+            text[i].byte2 = ' ';
+        }
+        i++;
 #else
         text[i++] = curr & 0xff;
 #endif
