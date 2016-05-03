@@ -20,6 +20,17 @@ qodem (1.0.0-1) unstable; urgency=low
   * --geometry command line option
   * X11/Win32: Shift/Ctrl-Ins pastes from system clipboard
   * X11: Blinking cursor, blinking text
+  * --enable-capture command line option is now --capfile
+  * --enable-logging command line option is now --logfile
+  * --keyfile command line option
+  * --xl8file command line option
+  * --xlufile command line option
+  * --scrfile command line option
+  * --doorway command line option
+  * --codepage command line option
+  * --emulation command line option
+  * --status-line command line option
+  * --exit-on-completion (-x) command line option
 
  -- Kevin Lamonte <lamonte@users.sourceforge.net>  Mon,  4 Jul 2016 18:50:00 -0500
 

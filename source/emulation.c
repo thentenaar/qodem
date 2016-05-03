@@ -73,29 +73,29 @@ int q_emul_repeat_state_count;
  */
 Q_EMULATION emulation_from_string(const char * string) {
 
-    if (strncmp(string, "TTY", sizeof("TTY")) == 0) {
+    if (strncasecmp(string, "TTY", sizeof("TTY")) == 0) {
         return Q_EMUL_TTY;
-    } else if (strncmp(string, "ANSI", sizeof("ANSI")) == 0) {
+    } else if (strncasecmp(string, "ANSI", sizeof("ANSI")) == 0) {
         return Q_EMUL_ANSI;
-    } else if (strncmp(string, "AVATAR", sizeof("AVATAR")) == 0) {
+    } else if (strncasecmp(string, "AVATAR", sizeof("AVATAR")) == 0) {
         return Q_EMUL_AVATAR;
-    } else if (strncmp(string, "VT52", sizeof("VT52")) == 0) {
+    } else if (strncasecmp(string, "VT52", sizeof("VT52")) == 0) {
         return Q_EMUL_VT52;
-    } else if (strncmp(string, "VT100", sizeof("VT100")) == 0) {
+    } else if (strncasecmp(string, "VT100", sizeof("VT100")) == 0) {
         return Q_EMUL_VT100;
-    } else if (strncmp(string, "VT102", sizeof("VT102")) == 0) {
+    } else if (strncasecmp(string, "VT102", sizeof("VT102")) == 0) {
         return Q_EMUL_VT102;
-    } else if (strncmp(string, "VT220", sizeof("VT220")) == 0) {
+    } else if (strncasecmp(string, "VT220", sizeof("VT220")) == 0) {
         return Q_EMUL_VT220;
-    } else if (strncmp(string, "LINUX", sizeof("LINUX")) == 0) {
+    } else if (strncasecmp(string, "LINUX", sizeof("LINUX")) == 0) {
         return Q_EMUL_LINUX;
-    } else if (strncmp(string, "L_UTF8", sizeof("L_UTF8")) == 0) {
+    } else if (strncasecmp(string, "L_UTF8", sizeof("L_UTF8")) == 0) {
         return Q_EMUL_LINUX_UTF8;
-    } else if (strncmp(string, "XTERM", sizeof("XTERM")) == 0) {
+    } else if (strncasecmp(string, "XTERM", sizeof("XTERM")) == 0) {
         return Q_EMUL_XTERM;
-    } else if (strncmp(string, "X_UTF8", sizeof("X_UTF8")) == 0) {
+    } else if (strncasecmp(string, "X_UTF8", sizeof("X_UTF8")) == 0) {
         return Q_EMUL_XTERM_UTF8;
-    } else if (strncmp(string, "DEBUG", sizeof("DEBUG")) == 0) {
+    } else if (strncasecmp(string, "DEBUG", sizeof("DEBUG")) == 0) {
         return Q_EMUL_DEBUG;
     }
 

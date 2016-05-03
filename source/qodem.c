@@ -234,34 +234,52 @@ static Q_BOOL play_music_exit = Q_FALSE;
 static unsigned char rows_arg = 25;
 static unsigned char cols_arg = 80;
 
+/* The --status-line command line argument */
+static Q_BOOL status_line_disabled = Q_FALSE;
+
+/**
+ * The --keyfile command line argument.
+ */
+char * q_keyfile = NULL;
+
+/**
+ * The --scrfile command line argument.
+ */
+char * q_scrfile = NULL;
+
+/**
+ * The --xl8file command line argument.
+ */
+char * q_xl8file = NULL;
+
+/**
+ * The --xlufile command line argument.
+ */
+char * q_xlufile = NULL;
+
 /* Command-line options */
 static struct option q_getopt_long_options[] = {
     {"dial",                1,      0,      0},
     {"connect",             1,      0,      0},
     {"connect-method",      1,      0,      0},
-    {"enable-capture",      1,      0,      0},
-    {"enable-logging",      1,      0,      0},
+    {"capfile",             1,      0,      0},
+    {"logfile",             1,      0,      0},
+    {"keyfile",             1,      0,      0},
+    {"xl8file",             1,      0,      0},
+    {"xlufile",             1,      0,      0},
+    {"scrfile",             1,      0,      0},
     {"help",                0,      0,      0},
     {"username",            1,      0,      0},
     {"play",                1,      0,      0},
     {"play-exit",           0,      0,      0},
     {"version",             0,      0,      0},
     {"xterm",               0,      0,      0},
+    {"exit-on-completion",  0,      0,      0},
+    {"doorway",             1,      0,      0},
+    {"codepage",            1,      0,      0},
+    {"emulation",           1,      0,      0},
+    {"status-line",         1,      0,      0},
     {"geometry",            1,      0,      0},
-    /*
-     * TODO:
-     *    --exit-on-completion (-x)
-     *    --keyfile     (-k)
-     *    --xl8file
-     *    --xlufile
-     *    --scrfile     (-s)
-     *    --capfile     (-p)
-     *    --logfile     (-l)
-     *    --emulation   (-e)
-     *    --codepage    (-c)
-     *    --status-line (--sl)
-     *    --doorway     (-d)
-     */
     {0,                     0,      0,      0}
 };
 
@@ -782,38 +800,51 @@ static char * usage_string() {
 "'qodem' is a terminal connection manager with scrollback, capture,\n"
 "and basic scripting support.\n"
 "\n"
-"Usage: qodem [OPTIONS] { [--connect] | [command line] }\n"
+"Usage: qodem [OPTIONS] { [ --dial N ] | [ --connect ] | [ command line ] }\n"
 "\n"
 "Options:\n"
 "\n"
 "If a long option shows an argument as mandatory, then it is mandatory\n"
 "for the equivalent short option also.  Similarly for optional arguments.\n"
 "\n"
-"      --dial n                        Immediately connect to the phonebook\n"
-"                                      entry numbered n.\n"
+"      --dial N                    Immediately connect to the phonebook\n"
+"                                  entry numbered N.\n"
 "\n"
-"      --connect HOST                  Immediately open a connection to "
-"HOST.\n"
-"                                      The default connection method is \"ssh"
+"      --connect HOST              Immediately open a connection to HOST.\n"
+"                                  The default connection method is \"ssh"
 "\".\n"
-"      --connect-method METHOD         Use METHOD to connect for the --"
-"connect\n"
-"                                      option.  Valid values are\n"
-"                                      \"ssh\", \"rlogin\", \"telnet,"
-"\",\n"
-"                                      and \"shell\".\n"
-"      --enable-capture FILENAME       Capture the entire session and save "
-"to\n"
-"                                      FILENAME.\n"
-"      --enable-logging FILENAME       Enable the session log and save to\n"
-"                                      FILENAME.\n"
-"      --username USERNAME             Log in as USERNAME\n"
-"      --play MUSIC                    Play MUSIC as ANSI Music\n"
-"      --play-exit                     Immediately exit after playing MUSIC\n"
-"      --geometry COLSxROWS            Request text window size COLS x ROWS\n"
-"      --xterm                         Enable X11 terminal mode\n"
-"      --version                       Display program version\n"
-"  -h, --help                          This help screen\n"
+"      --connect-method METHOD     Use METHOD to connect for the --connect\n"
+"                                  option.  Valid values are \"ssh\",\n"
+"                                  \"rlogin\", \"telnet,\", and \"shell\".\n"
+"      --username USERNAME         Log in as USERNAME\n"
+"      --capfile FILENAME          Capture the entire session and save to\n"
+"                                  FILENAME.\n"
+"      --logfile FILENAME          Enable the session log and save to FILENAME.\n"
+"      --keyfile FILENAME          Load keyboard macros from FILENAME\n"
+"      --xl8file FILENAME          Load 8-bit translate tables from FILENAME.\n"
+"      --xlufile FILENAME          Load Unicode translate tables from\n"
+"                                  FILENAME.\n"
+"      --srcfile FILENAME          Start script FILENAME after connect.\n"
+"  -x, --exit-on-completion        Exit after connection/command finishes.\n"
+"      --doorway MODE              Select doorway MODE.  Valid values for\n"
+"                                  MODE are \"doorway\", \"mixed\", and\n"
+"                                  \"off\".\n"
+"      --codepage CODEPAGE         Select codepage CODEPAGE.  See Alt-; list\n"
+"                                  for valid codepages.  Example: \"CP437\",\n"
+"                                  \"CP850\", \"Windows-1252\", etc.\n"
+"      --emulation EMULATION       Select emulation EMULATION.  Valid values\n"
+"                                  are \"ansi\", \"avatar\", \"debug\",\n"
+"                                  \"vt52\", \"vt100\", \"vt102\", \"vt220\",\n"
+"                                  \"linux\", \"l_utf8\", \"xterm\", and\n"
+"                                  \"x_utf8\".\n"
+"      --status-line { on | off }  If \"on\" enable status line.  If \"off\"\n"
+"                                  disable status line.\n"
+"      --play MUSIC                Play MUSIC as ANSI Music\n"
+"      --play-exit                 Immediately exit after playing MUSIC\n"
+"      --geometry COLSxROWS        Request text window size COLS x ROWS\n"
+"      --xterm                     Enable X11 terminal mode\n"
+"      --version                   Display program version\n"
+"  -h, --help                      This help screen\n"
 "\n"
 "qodem can also open a raw shell with the command line given.\n"
 "So for example 'qodem --connect my.host --connect-method ssh' is\n"
@@ -870,7 +901,6 @@ static int check_for_help(int argc, char * const argv[]) {
             printf("%s", version_string());
             return EXIT_VERSION;
         }
-
     }
 
     /* The user did not ask for help or version */
@@ -906,18 +936,69 @@ static void process_command_line_option(const char * option,
         q_program_state = Q_STATE_EXIT;
     }
 
-    if (strncmp(option, "enable-capture", strlen("enable-capture")) == 0) {
+    if (strncmp(option, "capfile", strlen("capfile")) == 0) {
         start_capture(value);
     }
 
-    if (strncmp(option, "enable-logging", strlen("enable-logging")) == 0) {
+    if (strncmp(option, "logfile", strlen("logfile")) == 0) {
         start_logging(value);
+    }
+
+    if (strncmp(option, "keyfile", strlen("keyfile")) == 0) {
+        q_keyfile = Xstrdup(value, __FILE__, __LINE__);
+    }
+
+    if (strncmp(option, "scrfile", strlen("scrfile")) == 0) {
+        q_scrfile = Xstrdup(value, __FILE__, __LINE__);
+    }
+
+    if (strncmp(option, "xl8file", strlen("xl8file")) == 0) {
+        q_xl8file = Xstrdup(value, __FILE__, __LINE__);
+    }
+
+    if (strncmp(option, "xlufile", strlen("xlufile")) == 0) {
+        q_xlufile = Xstrdup(value, __FILE__, __LINE__);
     }
 
     if (strncmp(option, "xterm", strlen("xterm")) == 0) {
         q_status.xterm_mode = Q_TRUE;
         q_status.exit_on_disconnect = Q_TRUE;
+        q_status.doorway_mode = Q_DOORWAY_MODE_MIXED;
         set_status_line(Q_FALSE);
+    }
+
+    if (strncmp(option, "exit-on-completion",
+            strlen("exit-on-completion")) == 0) {
+        q_status.exit_on_disconnect = Q_TRUE;
+    }
+
+    if (strncmp(option, "doorway", strlen("doorway")) == 0) {
+        if (strcasecmp(value, "doorway") == 0) {
+            q_status.doorway_mode = Q_DOORWAY_MODE_FULL;
+        } else if (strcasecmp(value, "mixed") == 0) {
+            q_status.doorway_mode = Q_DOORWAY_MODE_MIXED;
+        } else {
+            q_status.doorway_mode = Q_DOORWAY_MODE_OFF;
+        }
+    }
+
+    if (strncmp(option, "codepage", strlen("codepage")) == 0) {
+        q_status.codepage = codepage_from_string(value);
+    }
+
+    if (strncmp(option, "emulation", strlen("emulation")) == 0) {
+        q_status.emulation = emulation_from_string(value);
+        q_status.codepage = default_codepage(q_status.emulation);
+    }
+
+    if (strncmp(option, "status-line", strlen("status-line")) == 0) {
+        if (strcasecmp(value, "off") == 0) {
+            set_status_line(Q_FALSE);
+            status_line_disabled = Q_TRUE;
+        } else {
+            set_status_line(Q_TRUE);
+            status_line_disabled = Q_FALSE;
+        }
     }
 
     if (strncmp(option, "geometry", strlen("geometry")) == 0) {
@@ -1153,6 +1234,9 @@ static void cleanup_connection() {
             wait4(q_child_pid, &status, WNOHANG, NULL);
             if (WIFEXITED(status)) {
                 qlog(_("Connection exited with RC=%u\n"), WEXITSTATUS(status));
+                if (q_status.exit_on_disconnect == Q_TRUE) {
+                    q_exitrc = WEXITSTATUS(status);
+                }
             } else if (WIFSIGNALED(status)) {
                 qlog(_("Connection exited with signal=%u\n"), WTERMSIG(status));
             }
@@ -2924,7 +3008,7 @@ int qodem_main(int argc, char * const argv[]) {
 
     /* Process options */
     for (;;) {
-        rc = getopt_long(argc, argv, "h?", q_getopt_long_options,
+        rc = getopt_long(argc, argv, "xh?", q_getopt_long_options,
             &option_index);
         if (rc == -1) {
             /* Fall out of the for loop, we're done calling getopt_long */
@@ -2937,6 +3021,11 @@ int qodem_main(int argc, char * const argv[]) {
             process_command_line_option(
                 q_getopt_long_options[option_index].name, optarg);
             break;
+
+        case 'x':
+            q_status.exit_on_disconnect = Q_TRUE;
+            break;
+
         default:
             break;
         }
@@ -2953,13 +3042,21 @@ int qodem_main(int argc, char * const argv[]) {
      * emulation, but restore things before it leaves.
      */
     initialize_keyboard();
-
+    if (q_keyfile != NULL) {
+        switch_current_keyboard(q_keyfile);
+    }
 #endif
 
     /*
      * Set the translation tables to do nothing.
      */
     initialize_translate_tables();
+    if (q_xl8file != NULL) {
+        use_translate_table_8bit(q_xl8file);
+    }
+    if (q_xlufile != NULL) {
+        use_translate_table_unicode(q_xlufile);
+    }
 
 #ifndef Q_NO_SERIAL
     /*
@@ -2991,10 +3088,13 @@ int qodem_main(int argc, char * const argv[]) {
     screen_setup(rows_arg, cols_arg);
 #else
     /*
-     * Initialize the keyboard here.  It will newterm() each supported
-     * emulation, but restore things before it leaves.
+     * Initialize the keyboard here.  It will NOT call newterm() because
+     * PDCurses newterm does not look at TERM, there is no point.
      */
     initialize_keyboard();
+    if (q_keyfile != NULL) {
+        switch_current_keyboard(q_keyfile);
+    }
 #endif
 
     /*
@@ -3202,7 +3302,10 @@ no_initial_call:
         }
 
         if ((strncmp(get_option(Q_OPTION_STATUS_LINE_VISIBLE),
-                "true", 4) == 0) && (q_status.xterm_mode == Q_FALSE)) {
+                "true", 4) == 0) &&
+            (q_status.xterm_mode == Q_FALSE) &&
+            (status_line_disabled == Q_FALSE)
+        ) {
             set_status_line(Q_TRUE);
         } else {
             set_status_line(Q_FALSE);

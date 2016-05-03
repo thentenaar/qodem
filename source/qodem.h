@@ -603,6 +603,26 @@ extern unsigned int q_keepalive_bytes_n;
  */
 extern time_t q_data_sent_time;
 
+/**
+ * The --keyfile command line argument.
+ */
+extern char * q_keyfile;
+
+/**
+ * The --scrfile command line argument.
+ */
+extern char * q_scrfile;
+
+/**
+ * The --xl8file command line argument.
+ */
+extern char * q_xl8file;
+
+/**
+ * The --xlufile command line argument.
+ */
+extern char * q_xlufile;
+
 /* Functions -------------------------------------------------------------- */
 
 /**

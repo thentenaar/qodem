@@ -763,15 +763,33 @@ void dial_success() {
             /*
              * Execute script if supplied.
              */
-            if (q_current_dial_entry->script_filename != NULL) {
-                if (strlen(q_current_dial_entry->script_filename) > 0) {
-                    if ((q_status.quicklearn == Q_FALSE) &&
-                        (q_current_dial_entry->quicklearn == Q_FALSE)
-                    ) {
+            if (q_scrfile != NULL) {
+                if (file_exists(get_scriptdir_filename(q_scrfile)) == Q_TRUE) {
+                    if (q_status.quicklearn == Q_FALSE) {
                         /*
-                         * We're not quicklearning, start the script
+                         * Execute script if supplied
                          */
-                        script_start(q_current_dial_entry->script_filename);
+                        script_start(q_scrfile);
+                    }
+                }
+                Xfree(q_scrfile, __FILE__, __LINE__);
+                q_scrfile = NULL;
+            } else {
+                if (q_current_dial_entry->script_filename != NULL) {
+                    if ((strlen(q_current_dial_entry->script_filename) > 0) &&
+                        (file_exists(
+                            get_scriptdir_filename(
+                            q_current_dial_entry->script_filename))
+                                == Q_TRUE)
+                    ) {
+                        if ((q_status.quicklearn == Q_FALSE) &&
+                            (q_current_dial_entry->quicklearn == Q_FALSE)
+                        ) {
+                            /*
+                             * We're not quicklearning, start the script
+                             */
+                            script_start(q_current_dial_entry->script_filename);
+                        }
                     }
                 }
             }
