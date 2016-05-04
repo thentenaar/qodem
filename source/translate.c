@@ -1089,16 +1089,15 @@ void use_translate_table_8bit(const char * filename) {
         reset_table_8bit(&table_8bit_output);
         save_translate_tables_8bit(filename, &table_8bit_input,
             &table_8bit_output);
-        return;
+    } else {
+        fclose(file);
+
+        /*
+         * File exists, let's load it.
+         */
+        load_translate_tables_8bit(filename, &table_8bit_input,
+            &table_8bit_output);
     }
-
-    fclose(file);
-
-    /*
-     * File exists, let's load it.
-     */
-    load_translate_tables_8bit(filename, &table_8bit_input,
-        &table_8bit_output);
 
     /*
      * Make sure this is what shows in the editor.
@@ -1137,14 +1136,23 @@ void use_translate_table_unicode(const char * filename) {
         reset_table_unicode(&table_unicode_output);
         save_translate_tables_unicode(filename, &table_unicode_input,
             &table_unicode_output);
-        return;
+    } else {
+        fclose(file);
+
+        /*
+         * File exists, let's load it.
+         */
+        load_translate_tables_unicode(filename, &table_unicode_input,
+            &table_unicode_output);
     }
 
     /*
-     * File exists, let's load it.
+     * Make sure this is what shows in the editor.
      */
-    load_translate_tables_unicode(filename, &table_unicode_input,
-        &table_unicode_output);
+    if (editing_table_unicode_filename != NULL) {
+        Xfree(editing_table_unicode_filename, __FILE__, __LINE__);
+    }
+    editing_table_unicode_filename = Xstrdup(filename, __FILE__, __LINE__);
 }
 
 /**

@@ -84,7 +84,7 @@ char * codepage_string(Q_CODEPAGE codepage) {
 
 /* Convenience macro used to match a string to a codepage enum */
 #define MATCH_CODEPAGE(x, y)   \
-if (strcmp(string, y) == 0) {  \
+if (strcasecmp(string, y) == 0) {  \
         return Q_CODEPAGE_##x; \
 }
 
@@ -96,6 +96,9 @@ if (strcmp(string, y) == 0) {  \
  */
 Q_CODEPAGE codepage_from_string(const char * string) {
     if (strncmp(string, "ISO 8859-1", sizeof("ISO 8859-1")) == 0) {
+        return Q_CODEPAGE_ISO8859_1;
+    }
+    if (strncmp(string, "ISO-8859-1", sizeof("ISO-8859-1")) == 0) {
         return Q_CODEPAGE_ISO8859_1;
     }
     MATCH_CODEPAGE(DEC, "DEC");
@@ -114,8 +117,13 @@ Q_CODEPAGE codepage_from_string(const char * string) {
     MATCH_CODEPAGE(CP1250, "CP1250");
     MATCH_CODEPAGE(CP1251, "CP1251");
     MATCH_CODEPAGE(CP1252, "CP1252");
+    MATCH_CODEPAGE(CP1250, "Windows-1250");
+    MATCH_CODEPAGE(CP1251, "Windows-1251");
+    MATCH_CODEPAGE(CP1252, "Windows-1252");
     MATCH_CODEPAGE(KOI8_R, "KOI8_R");
     MATCH_CODEPAGE(KOI8_U, "KOI8_U");
+    MATCH_CODEPAGE(KOI8_R, "KOI8-R");
+    MATCH_CODEPAGE(KOI8_U, "KOI8-U");
     return Q_CODEPAGE_DEC;
 }
 

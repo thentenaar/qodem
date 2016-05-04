@@ -39,8 +39,11 @@ int PDC_curs_set(int visibility)
 
     PDC_LOG(("PDC_curs_set() - called: visibility=%d\n", visibility));
 
+    // KAL
+    /*
     if (visibility != -1)
         SP->visibility = visibility;
+     */
 
     PDC_display_cursor(SP->cursrow, SP->curscol, SP->cursrow,
                        SP->curscol, visibility);

@@ -83,21 +83,23 @@ Qodem is designed to help the following kinds of people:
   scrollback, screen dump, capture, keyboard macros, very good VT100
   emulation, and many more functions.
 
-* Windows and X11 desktop users who want the same functions listed
-  above in a keyboard-driven interface.  Qodem has both an X11 version
-  that almost exactly matches its text console version and a
-  fully-supported Win32 version.
+* Windows and X11 desktop users who want a full-featured terminal with
+  a keyboard-driven interface.  The X11 and Windows versions of Qodem
+  combine the typical conveniences of modern terminals including
+  scrollback, select-and-paste, Unicode support, and a resizable
+  window, with more rare BBS-era features like Zmodem, Kermit, and
+  keyboard macros.
 
 * Users of telnet/ssh BBSes who would like to use BBS-era features
-  such as: a phone book, Avatar and ANSI emulations, file transfers,
-  session logging, and many more functions.
+  such as: a phone book, Avatar and ANSI emulations (including ANSI
+  music), file transfers, session logging, and many more functions.
 
 * Those who use serial ports and modems to communicate with embedded
   devices, headless servers, and remote systems.  Qodem supports the
   serial port, has a modem dialer, and also a special "DEBUG"
-  emulation mode that prints incoming bytes in a programmer's hex dump
-  format which can be quite useful in debugging communication with
-  specialized devices.
+  emulation mode that prints incoming and outgoing bytes in a
+  programmer's hex dump format which can be quite useful in debugging
+  communication with specialized devices.
 
 * System administrators who need to manage a number of machines.
   Qodem can keep track of those machines in its phone book, including
@@ -134,47 +136,6 @@ The INSTALL file has some additional details.
 
 
 
-WHY A CONSOLE-BASED TERMINAL EMULATOR?
---------------------------------------
-
-"Why not?"  :-)
-
-More seriously, Qodem has several advantages over the native console
-or the typical "local shell" X-based emulator.  But it also has an X11
-version (qodem-x11) and supports Windows so these same features are
-available to modern GUI desktop users
-
-First, Qodem provides a lot of GUI-based emulator-isms to the text
-console: scrollback, screen dump, capture, keyboard macros, etc.
-These functions are very handy when you need to work a lot at the
-command line.
-
-Second, Qodem provides access to X/Y/Zmodem and Kermit upload and
-download protocols over almost any interactive network link or local
-shell session.  This is extremely useful for quick-and-dirty file
-transfers when firewalls are blocking the standard protocols.
-
-Third, Qodem translates the character sets of the remote systems into
-Unicode in a manner similar to GNU screen.  This allows modern systems
-to see BBS-era screens as they were originally intended, and also
-supports the graphical glyphs for other emulations including VT100,
-VT102, and VT220.  Qodem also supports modern xterm and Linux
-emulations that use UTF-8 encoding.
-
-Fourth, Qodem strives to understand the emulation of its supported
-terminals as well as possible within the text character-cell model, so
-Qodem can understand and respond to remote applications that the local
-console/emulator might not handle.  For instance, Qodem can pass many
-more 'vttest' scenarios than: the raw Linux 2.6.32 console,
-gnome-terminal, and Konsole.  But Qodem also understands Avatar,
-ANSI.SYS, and can even play "ANSI Music" via either SDL audio or on
-the raw Linux console by using its PC speaker control sequences.
-
-Finally, Qodem hopes to bundle all of this function inside a pleasant
-environment with some eye appeal.
-
-
-
 HOW TO USE QODEM
 ----------------
 
@@ -205,25 +166,26 @@ TERMINAL mode the status line can be turned off with Alt--
 
 
 
-DIFFERENCES BETWEEN THE TEXT, X11, AND WIN32 VERSIONS
------------------------------------------------------
+DIFFERENCES BETWEEN THE TEXT (NCURSES), X11, AND WINDOWS VERSIONS
+-----------------------------------------------------------------
 
 Version 1.0.0 introduces two new builds based on the PDCurses library:
-an X11 version and a Win32 version.  These versions in general work
+an X11 version and a Windows version.  These versions in general work
 the same as the text-based ncurses version, but have a few differences
 due to the environments.  This section describes those differences.
 
 ----
 
-X11 BUILD
+X11 VERSION
 
-The X11 build is activated by passing --enable-x11 to configure.  Due
-to how the curses libraries are linked, a single Qodem binary cannot
-currently support both interfaces.  The X11 binary is built as
-'qodem-x11', and its man page is accessed by 'man qodem-x11'.
+The X11 version can be built by passing --enable-x11 to configure.
+Due to how the curses libraries are linked, a single Qodem binary
+cannot currently support both text ncurses and X11 PDCurses
+interfaces, therefore the X11 binary is 'qodem-x11', and its man page
+is accessed by 'man qodem-x11'.
 
-The Debian package is 'qodem-x11'.  It can be installed entirely
-independently of the normal 'qodem' package.
+The Fedora and Debian package is 'qodem-x11'.  It can be installed
+entirely independently of the normal 'qodem' package.
 
 When spawning other processes such as editors (Alt-L, Alt-N, Alt-V,
 and editing files in the phone book), the mail reader (Alt-M), or
@@ -236,7 +198,10 @@ qodemrc.
 Mouse motion events do not work due to limitation in the PDCurses
 mouse API.  Mouse clicks however do work.
 
-WIN32 BUILD
+WINDOWS VERSION
+
+The Windows version can be built using either Borland C++ 5 or later,
+or Microsoft Visual C++ 6 or later.
 
 When spawning other processes such as editors (Alt-L, Alt-N, Alt-V,
 and editing files in the phone book), the mail reader (Alt-M), or
@@ -244,10 +209,6 @@ shelling to the OS (Alt-R), Qodem waits for the program to exit.
 
 Quicklearn scripts are written in Perl.  Strawberry Perl for Windows
 is available at http://strawberryperl.com .
-
-The left ALT key does not produce all combinations correctly in the
-PDCurses-3.4 build due to Windows conventions.  The right Alt key
-appears to work normally.  The win32a build appears to work correctly.
 
 The Windows build uses Beep() rather than SDL for sounds.  This might
 not work on Windows Vista and 64-bit XP systems.
@@ -270,10 +231,10 @@ issues.
 
 ----
 
-Qodem requires a Unicode-capable Linux console or X emulator to look
-right.  For the Linux console, the default settings for most Linux
-distributions should work well.  Under X11, uxterm, rxvt-unicode, and
-Konsole work well.
+The ncurses version of Qodem requires a Unicode-capable Linux console
+or X emulator to look right.  For the Linux console, the default
+settings for most Linux distributions should work well.  Under X11,
+uxterm, rxvt-unicode, and Konsole work well.
 
 Most BBS programs assume a display with 80x24 dimensions.  Qodem by
 default sets the right margin to column 80 for ANSI, Avatar, and TTY
@@ -501,6 +462,12 @@ The ANSI.SYS screen mode switch sequence (ESC [ = Pn {h | l}) only
 supports enable/disable line wrap (Pn = 7); the various screen mode
 settings (e.g 40x25 mono, 640x480 16-color, etc.) are not supported.
 
+XTERM (and X_UTF8) recognizes only a few more features than LINUX and
+VT220.  It does not support most of the advanced features unique to
+XTerm such as Tektronix 4014 mode, alternate screen buffer, and many
+more.  It is intended to support XTerm applications that only use the
+sequences in the 'xterm' terminfo entry.
+
 
 
 DEVIATIONS FROM QMODEM
@@ -532,9 +499,9 @@ The F2, F4 and F10 function keys are often co-opted by modern desktop
 environments and unavailable for Qodem.  F2 and F10 are still
 supported, but also have additional keys depending on function.  Most
 of the time space bar can be used for F2 and the Enter key for F10.
-The status bar will show the alternate keystrokes.  Since F4 is
-currently only used to clear the Batch Entry Window, no alternative
-keystroke is provided.
+The status bar will show the alternate keystrokes.  F4 is currently
+only used to clear the Batch Entry Window and show/hide dotfiles in
+the View Directory window, no alternative keystroke is provided.
 
 The ESCAPE key can have a long delay (up to 1 second) under some
 installations of curses.  It is still supported, but the backtick (`)
@@ -566,20 +533,27 @@ Some functions are different in TERMINAL mode:
 ```
     Key        Qodem function         Qmodem function
     ----------------------------------------------------------
-    Ctrl-End   -                      Send BREAK
-    Alt-2      Backspace/Del Mode     80x25 (EGA/VGA)
-    Alt-3      Line Wrap              Debug Status Info
-    Alt-4      Display NULL           80x43/50 (EGA/VGA)
-    Alt-9      Serial Port            Printer Echo
     Alt-K      Send BREAK             Change COM Port
     Alt-L      Log View               Change drive
     Alt-O      Modem Config           Change directory
     Alt-P      Capture File           COM Parameters
-    Alt-Y      COM Parameters         -
+    Alt-Y      COM Parameters         Auto Answer
+    Alt-Z      Terminal Mode Menu     -
+    Alt-2      Backspace/Del Mode     80x25 (EGA/VGA)
+    Alt-3      Line Wrap              Debug Status Info
+    Alt-4      Display NULL           80x43/50 (EGA/VGA)
+    Alt-9      Serial Port            Printer Echo
+    Alt-+      CR/CRLF Mode           -
     Alt-,      ANSI Music             -
-    Alt-;      Codepage               -
-    Alt-:      Colors                 -
     Alt-\      Alt Code Key           -
+    Alt-:      Colors                 -
+    Alt-/      Scroll Back            -
+    Alt-;      Codepage               -
+    Home       -                      Terminal Mode Menu
+    Alt-Up     -                      Scroll Back
+    Ctrl-End   -                      Send BREAK
+    Ctrl-Home  -                      Capture File
+    Shift-Tab  -                      CR/CRLF Mode
 ```
 
 The phone book stores an arbitrary number of entries, not the

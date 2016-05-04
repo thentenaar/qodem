@@ -11,19 +11,6 @@ NEW FUNCTIONALITY
 Fix all marked TODOs in code
 
 
-#24 More command line switches:
-     *    --exit-on-completion (-x)
-     *    --keyfile     (-k)
-     *    --xl8file
-     *    --xlufile
-     *    --scrfile     (-s)
-     *    --capfile     (-p)
-     *    --logfile     (-l)
-     *    --emulation   (-e)
-     *    --codepage    (-c)
-     *    --status-line (--sl)
-     *    --doorway     (-d)
-
 #26 Handle multiple instances operating on the phonebook
 
 

@@ -2089,7 +2089,17 @@ void do_dialer() {
     /*
      * Switch keyboard
      */
-    switch_current_keyboard(q_current_dial_entry->keybindings_filename);
+    if (q_keyfile != NULL) {
+        /*
+         * The very first time we connect, we will honor the --keyfile
+         * command line option.
+         */
+        switch_current_keyboard(q_keyfile);
+        Xfree(q_keyfile, __FILE__, __LINE__);
+        q_keyfile = NULL;
+    } else {
+        switch_current_keyboard(q_current_dial_entry->keybindings_filename);
+    }
 
     /*
      * Capture file
@@ -2104,14 +2114,22 @@ void do_dialer() {
     /*
      * 8-bit translate table
      */
-    if (strlen(q_current_dial_entry->translate_8bit_filename) > 0) {
+    if (q_xl8file != NULL) {
+        use_translate_table_8bit(q_xl8file);
+        Xfree(q_xl8file, __FILE__, __LINE__);
+        q_xl8file = NULL;
+    } else if (strlen(q_current_dial_entry->translate_8bit_filename) > 0) {
         use_translate_table_8bit(q_current_dial_entry->translate_8bit_filename);
     }
 
     /*
      * Unicode translate table
      */
-    if (strlen(q_current_dial_entry->translate_unicode_filename) > 0) {
+    if (q_xlufile != NULL) {
+        use_translate_table_unicode(q_xlufile);
+        Xfree(q_xlufile, __FILE__, __LINE__);
+        q_xlufile = NULL;
+    } else if (strlen(q_current_dial_entry->translate_unicode_filename) > 0) {
         use_translate_table_unicode(q_current_dial_entry->
                                         translate_unicode_filename);
     }
@@ -4093,16 +4111,29 @@ void phonebook_refresh() {
             switch_state(Q_STATE_CONSOLE);
             q_screen_dirty = Q_TRUE;
 
-            if ((strlen(q_current_dial_entry->script_filename) > 0) &&
-                (file_exists(
-                    get_scriptdir_filename(
-                        q_current_dial_entry->script_filename)) == Q_TRUE)
-            ) {
-                if (q_status.quicklearn == Q_FALSE) {
-                    /*
-                     * Execute script if supplied
-                     */
-                    script_start(q_current_dial_entry->script_filename);
+            if (q_scrfile != NULL) {
+                if (file_exists(get_scriptdir_filename(q_scrfile)) == Q_TRUE) {
+                    if (q_status.quicklearn == Q_FALSE) {
+                        /*
+                         * Execute script if supplied
+                         */
+                        script_start(q_scrfile);
+                    }
+                }
+                Xfree(q_scrfile, __FILE__, __LINE__);
+                q_scrfile = NULL;
+            } else {
+                if ((strlen(q_current_dial_entry->script_filename) > 0) &&
+                    (file_exists(
+                        get_scriptdir_filename(
+                            q_current_dial_entry->script_filename)) == Q_TRUE)
+                ) {
+                    if (q_status.quicklearn == Q_FALSE) {
+                        /*
+                         * Execute script if supplied
+                         */
+                        script_start(q_current_dial_entry->script_filename);
+                    }
                 }
             }
             break;
@@ -7027,8 +7058,13 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                     local_dirty = Q_TRUE;
                     real_dirty = Q_TRUE;
                 }
+                break;
             }
-            break;
+
+            /*
+             * Fall through so that '\' can be picked up by the form
+             * handler.
+             */
         default:
             /*
              * This code is also copied in the case ' ' above case F2.  Make
@@ -7960,15 +7996,28 @@ void dialer_keyboard_handler(const int keystroke, const int flags) {
         switch_state(Q_STATE_CONSOLE);
         q_screen_dirty = Q_TRUE;
 
-        if ((strlen(q_current_dial_entry->script_filename) > 0) &&
-            (file_exists
-             (get_scriptdir_filename(q_current_dial_entry->script_filename)) ==
-             Q_TRUE)) {
-            if (q_status.quicklearn == Q_FALSE) {
-                /*
-                 * Execute script if supplied
-                 */
-                script_start(q_current_dial_entry->script_filename);
+        if (q_scrfile != NULL) {
+            if (file_exists(get_scriptdir_filename(q_scrfile)) == Q_TRUE) {
+                if (q_status.quicklearn == Q_FALSE) {
+                    /*
+                     * Execute script if supplied
+                     */
+                    script_start(q_scrfile);
+                }
+            }
+            Xfree(q_scrfile, __FILE__, __LINE__);
+            q_scrfile = NULL;
+        } else {
+            if ((strlen(q_current_dial_entry->script_filename) > 0) &&
+                (file_exists
+                 (get_scriptdir_filename(
+                     q_current_dial_entry->script_filename)) == Q_TRUE)) {
+                if (q_status.quicklearn == Q_FALSE) {
+                    /*
+                     * Execute script if supplied
+                     */
+                    script_start(q_current_dial_entry->script_filename);
+                }
             }
         }
         return;
@@ -8084,15 +8133,28 @@ static void modem_data(unsigned char * input, unsigned int input_n,
     if (modem_state == DIAL_MODEM_CONNECTED) {
         DLOG(("modem_data() DIAL_MODEM_CONNECTED\n"));
 
-        if ((strlen(q_current_dial_entry->script_filename) > 0) &&
-            (file_exists
-             (get_scriptdir_filename(q_current_dial_entry->script_filename)) ==
-             Q_TRUE)) {
-            if (q_status.quicklearn == Q_FALSE) {
-                /*
-                 * Execute script if supplied
-                 */
-                script_start(q_current_dial_entry->script_filename);
+        if (q_scrfile != NULL) {
+            if (file_exists(get_scriptdir_filename(q_scrfile)) == Q_TRUE) {
+                if (q_status.quicklearn == Q_FALSE) {
+                    /*
+                     * Execute script if supplied
+                     */
+                    script_start(q_scrfile);
+                }
+            }
+            Xfree(q_scrfile, __FILE__, __LINE__);
+            q_scrfile = NULL;
+        } else {
+            if ((strlen(q_current_dial_entry->script_filename) > 0) &&
+                (file_exists
+                 (get_scriptdir_filename(
+                     q_current_dial_entry->script_filename)) == Q_TRUE)) {
+                if (q_status.quicklearn == Q_FALSE) {
+                    /*
+                     * Execute script if supplied
+                     */
+                    script_start(q_current_dial_entry->script_filename);
+                }
             }
         }
 

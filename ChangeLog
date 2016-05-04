@@ -2,9 +2,37 @@ qodem (1.0.0-1) unstable; urgency=low
 
   * ANSI keyboard mappings match SyncTERM/Netrunner
   * cryptlib disabled by default in configure
-  * ncurses: improved handling of ANSI and xterm function keys
+  * X11: font can be changed via 'x11_font' option in qodemrc
+  * X11/Win32: recognizes window title changes in XTERM/X_UTF8 and
+    changes the window title appropriately
+  * Curses: improved detection and passing through of xterm modified
+    function keys
+  * X11/Win32: Shift-PgUp will now enter scrollback
+  * 'status_line' option in qodemrc: if false, status line is turned off
+    on startup
+  * $SHELL environment variable now recognized and used for 'shell'
+    option in qodemrc
+  * X11/Curses: configure detects and uses system-provided miniupnpc
+    if available
+  * --xterm command line option: suppresses the terminal mode banner
+    and status line, disables phonebook and serial port, and
+    immediately launches a shell.  When the shell exits, Qodem exits.
+  * --geometry command line option
+  * X11/Win32: Shift/Ctrl-Ins pastes from system clipboard
+  * X11: Blinking cursor, blinking text
+  * --enable-capture command line option is now --capfile
+  * --enable-logging command line option is now --logfile
+  * --keyfile command line option
+  * --xl8file command line option
+  * --xlufile command line option
+  * --scrfile command line option
+  * --doorway command line option
+  * --codepage command line option
+  * --emulation command line option
+  * --status-line command line option
+  * --exit-on-completion (-x) command line option
 
-  -- Kevin Lamonte <lamonte@users.sourceforge.net>  Mon,  4 Jul 2016 18:50:00 -0500
+ -- Kevin Lamonte <lamonte@users.sourceforge.net>  Mon,  4 Jul 2016 18:50:00 -0500
 
 qodem (1.0beta-1) unstable; urgency=low
 

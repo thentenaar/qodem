@@ -248,14 +248,17 @@ static Pixmap icon_bitmap;
 static Pixmap icon_pixmap;
 static Pixmap icon_pixmap_mask;
 #endif
-static bool visible_cursor = FALSE;
-static bool window_entered = TRUE;
+static bool visible_cursor = TRUE;
+static bool window_focused = TRUE;
 static char *program_name;
 
 /* Macros just for app_resources */
 
 // KAL: we pick the font from qodemrc now.
 #include "../../../source/options.h"
+
+// KAL: we use blank text when drawing blinked-out text
+static XChar2b blank_text[513];
 
 #ifdef PDC_WIDE
 # define DEFFONT "-misc-fixed-medium-r-normal--20-200-75-75-c-100-iso10646-1"
@@ -346,7 +349,7 @@ static XtResource app_resources[] =
     RINT(doubleClickPeriod, DoubleClickPeriod, (PDC_CLICK_PERIOD * 2)),
     RINT(clickPeriod, ClickPeriod, PDC_CLICK_PERIOD),
     RINT(scrollbarWidth, ScrollbarWidth, 15),
-    RINT(cursorBlinkRate, CursorBlinkRate, 0),
+    RINT(cursorBlinkRate, CursorBlinkRate, 500),
 
     RSTRING(textCursor, TextCursor)
 };
@@ -582,7 +585,8 @@ static int _new_packet(chtype attr, bool rev, int len, int col, int row,
     /* Specify the color table offsets */
 
     fore |= (attr & A_BOLD) ? 8 : 0;
-    back |= (attr & A_BLINK) ? 8 : 0;
+    // KAL
+    // back |= (attr & A_BLINK) ? 8 : 0;
 
     /* Reverse flag = highlighted selection XOR A_REVERSE set */
 
@@ -599,17 +603,32 @@ static int _new_packet(chtype attr, bool rev, int len, int col, int row,
 
     _make_xy(col, row, &xpos, &ypos);
 
+    // KAL
+    if ((visible_cursor == FALSE) && ((attr & A_BLINK) != 0)) {
+
+#ifdef PDC_WIDE
+    XDrawImageString16(
+#else
+    XDrawImageString(
+#endif
+                     XCURSESDISPLAY, XCURSESWIN, gc, xpos, ypos, blank_text, len);
+    } else {
 #ifdef PDC_WIDE
     XDrawImageString16(
 #else
     XDrawImageString(
 #endif
                      XCURSESDISPLAY, XCURSESWIN, gc, xpos, ypos, text, len);
+    }
 
     /* Underline, etc. */
 
-    if (attr & (A_LEFTLINE|A_RIGHTLINE|A_UNDERLINE))
-    {
+    // KAL
+    if (((visible_cursor == FALSE) && ((attr & A_BLINK) == 0) &&
+            (attr & (A_LEFTLINE|A_RIGHTLINE|A_UNDERLINE))) ||
+        ((visible_cursor == TRUE) &&
+            (attr & (A_LEFTLINE|A_RIGHTLINE|A_UNDERLINE)))
+    ) {
         int k;
 
         if (SP->line_color != -1)
@@ -699,7 +718,12 @@ static int _display_text(const chtype *ch, int row, int col,
 
 #ifdef PDC_WIDE
         text[i].byte1 = (curr & 0xff00) >> 8;
-        text[i++].byte2 = curr & 0x00ff;
+        text[i].byte2 = curr & 0x00ff;
+        // KAL: don't try to display null, display space instead.
+        if ((text[i].byte1 == 0) && (text[i].byte2 == 0)) {
+            text[i].byte2 = ' ';
+        }
+        i++;
 #else
         text[i++] = curr & 0xff;
 #endif
@@ -1854,23 +1878,23 @@ static void _redraw_cursor(void)
     _display_cursor(SP->cursrow, SP->curscol, SP->cursrow, SP->curscol);
 }
 
-static void _handle_enter_leave(Widget w, XtPointer client_data,
-                                XEvent *event, Boolean *unused)
+static void _handle_focus_change(Widget w, XtPointer client_data,
+                                 XEvent *event, Boolean *unused)
 {
-    XC_LOG(("_handle_enter_leave called\n"));
+    XC_LOG(("_handle_focus_change called\n"));
 
     switch(event->type)
     {
-    case EnterNotify:
-        XC_LOG(("EnterNotify received\n"));
+    case FocusIn:
+        XC_LOG(("FocusIn received\n"));
 
-        window_entered = TRUE;
+        window_focused = TRUE;
         break;
 
-    case LeaveNotify:
-        XC_LOG(("LeaveNotify received\n"));
+    case FocusOut:
+        XC_LOG(("FocusOut received\n"));
 
-        window_entered = FALSE;
+        window_focused = FALSE;
 
         /* Display the cursor so it stays on while the window is
            not current */
@@ -1879,7 +1903,7 @@ static void _handle_enter_leave(Widget w, XtPointer client_data,
         break;
 
     default:
-        PDC_LOG(("%s:_handle_enter_leave - unknown event %d\n",
+        PDC_LOG(("%s:_handle_focus_change - unknown event %d\n",
                  XCLOGMSG, event->type));
     }
 }
@@ -1906,27 +1930,78 @@ static void _send_key_to_curses(unsigned long key, MOUSE_STATUS *ms,
 
 static void _blink_cursor(XtPointer unused, XtIntervalId *id)
 {
+    int row;
+    int j;
+    chtype * ch;
+    chtype curr;
+    attr_t attr;
+    bool draw_row;
+
     XC_LOG(("_blink_cursor() - called:\n"));
 
-    if (window_entered)
+    if (window_focused)
     {
+
         if (visible_cursor)
         {
             /* Cursor currently ON, turn it off */
 
             int save_visibility = SP->visibility;
             SP->visibility = 0;
-            _redraw_cursor();
-            SP->visibility = save_visibility;
+
             visible_cursor = FALSE;
+
+            // KAL: redraw the screen to match the blink state
+            for (row = 0; row < XCursesLINES; row++) {
+                XC_get_line_lock(row);
+                ch = (chtype *)(Xcurscr + XCURSCR_Y_OFF(row));
+                draw_row = FALSE;
+                for (j = 0; j < COLS; j++) {
+                    curr = ch[j];
+                    attr = curr & A_ATTRIBUTES;
+                    if ((attr & A_BLINK) != 0) {
+                        draw_row = TRUE;
+                        break;
+                    }
+                }
+                if (draw_row == TRUE) {
+                    _display_text(ch, row, 0, COLS, FALSE);
+                }
+                XC_release_line_lock(row);
+            }
+            _redraw_cursor();
+            _draw_border();
+            SP->visibility = save_visibility;
         }
         else
         {
             /* Cursor currently OFF, turn it on */
-
-            _redraw_cursor();
             visible_cursor = TRUE;
+
+            // KAL: redraw the screen to match the blink state
+            for (row = 0; row < XCursesLINES; row++) {
+                XC_get_line_lock(row);
+                ch = (chtype *)(Xcurscr + XCURSCR_Y_OFF(row));
+                draw_row = FALSE;
+                for (j = 0; j < COLS; j++) {
+                    curr = ch[j];
+                    attr = curr & A_ATTRIBUTES;
+                    if ((attr & A_BLINK) != 0) {
+                        draw_row = TRUE;
+                        break;
+                    }
+                }
+                if (draw_row == TRUE) {
+                    _display_text(ch, row, 0, COLS, FALSE);
+                }
+                XC_release_line_lock(row);
+            }
+            _redraw_cursor();
+            _draw_border();
         }
+
+
+
     }
 
     XtAppAddTimeOut(app_context, xc_app_data.cursorBlinkRate,
@@ -2692,7 +2767,7 @@ static void _process_curses_requests(XtPointer client_data, int *fid,
             /* If the window is not active, ignore this command. The
                cursor will stay solid. */
 
-            if (window_entered)
+            if (window_focused)
             {
                 if (visible_cursor)
                 {
@@ -2915,6 +2990,12 @@ int XCursesSetupX(int argc, char *argv[])
         return ERR;
     }
 
+    // Initialize blank text
+    for (i = 0; i < 513; i++) {
+        blank_text[i].byte1 = 0;
+        blank_text[i].byte2 = ' ';
+    }
+
     // KAL: set normalFont and italicFont based on qodemrc.
     for (i = 0; i < sizeof(app_resources) / sizeof(XtResource); i++) {
         if (strcmp(app_resources[i].resource_name, "normalFont") == 0) {
@@ -3098,8 +3179,8 @@ int XCursesSetupX(int argc, char *argv[])
     XtAddEventHandler(drawing, ExposureMask, False, _handle_expose, NULL);
     XtAddEventHandler(drawing, StructureNotifyMask, False,
                       _handle_structure_notify, NULL);
-    XtAddEventHandler(drawing, EnterWindowMask | LeaveWindowMask, False,
-                      _handle_enter_leave, NULL);
+    XtAddEventHandler(drawing, FocusChangeMask, False,
+                      _handle_focus_change, NULL);
     XtAddEventHandler(topLevel, 0, True, _handle_nonmaskable, NULL);
 
     /* Add input handler from xc_display_sock (requests from curses

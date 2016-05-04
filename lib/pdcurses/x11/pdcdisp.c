@@ -82,6 +82,15 @@ int PDC_display_cursor(int oldrow, int oldcol, int newrow, int newcol,
     }
     else
     {
+        // KAL
+        if ((oldrow == newrow) && (oldcol == newcol) &&
+            (visibility == SP->visibility)
+        ) {
+            return OK;
+        }
+
+        SP->visibility = visibility;
+
         idx = CURSES_CURSOR;
         memcpy(buf, &idx, sizeof(int));
 

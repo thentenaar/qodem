@@ -6,10 +6,28 @@ qodem-x11 \- Qodem Terminal Emulator (X11 Version)
 .SH SYNOPSIS
 .ll +8
 .B qodem-x11
-.RI "[ \-\-enable\-capture FILENAME ]"
+.RI "[ \-\-capfile FILENAME ]"
 .br
 .in 13
-.RI "[ \-\-enable\-logging FILENAME ]"
+.RI "[ \-\-logfile FILENAME ]"
+.br
+.RI "[ \-\-keyfile FILENAME ]"
+.br
+.RI "[ \-\-xl8file FILENAME ]"
+.br
+.RI "[ \-\-xlufile FILENAME ]"
+.br
+.RI "[ \-\-scrfile FILENAME ]"
+.br
+.RI "[ \-x | \-\-exit\-on\-completion ]"
+.br
+.RI "[ \-\-doorway MODE ]"
+.br
+.RI "[ \-\-codepage CODEPAGE ]"
+.br
+.RI "[ \-\-emulation EMULATION ]"
+.br
+.RI "[ \-\-status\-line { on | off } ]"
 .br
 .RI "[ \-\-play MUSIC ]"
 .br
@@ -59,6 +77,92 @@ The major features of Qodem are:
   * Emulations: ANSI, Avatar, VT52, VT100/102, VT220, Linux, and XTerm
 
   * Transfer protocols: Xmodem, Ymodem, Zmodem, and Kermit
+
+.SH OPTIONS
+.TP
+.B \-\-capfile FILENAME
+Capture the entire session and save to FILENAME.
+.TP
+.B \-\-logfile FILENAME
+Start the session log and log to FILENAME.
+.TP
+.B \-\-keyfile FILENAME
+Load keyboard macros from FILENAME.
+.TP
+.B \-\-xl8file FILENAME
+Load 8-bit translate tables from FILENAME.
+.TP
+.B \-\-xlufile FILENAME
+Load Unicode translate tables from FILENAME.
+.TP
+.B \-\-scrfile FILENAME
+Start script FILENAME after connect.
+.TP
+.B \-x \-\-exit\-on\-completion
+Exit after connection/command finishes.
+.TP
+.B \-\-doorway MODE
+Select doorway MODE.  Valid values for MODE are "doorway", "mixed",
+and "off".
+.TP
+.B \-\-codepage CODEPAGE
+Select codepage CODEPAGE.  See Alt\-; list for valid codepages.
+Example: "CP437", "CP850", "Windows\-1252", etc.
+.TP
+.B \-\-emulation EMULATION
+Select emulation EMULATION.  Valid values are "ansi", "avatar",
+"debug", "vt52", "vt100", "vt102", "vt220", "linux", "l_utf8",
+"xterm", and "x_utf8".
+.TP
+.B \-\-status\-line { on | off }
+If "on" enable status line.  If "off" disable status line.
+.TP
+.B \-\-play MUSIC
+Play the MUSIC string as ANSI Music.  For more information on ANSI
+Music, see http://www.textfiles.com/artscene/ansimusic/, or the
+GWBASIC PLAY statement.
+.TP
+.B \-\-play\-exit
+If \-\-play was specified, exit immediately after playing MUSIC.
+.TP
+.B \-\-geometry COLSxROWS
+Request text window size COLS x ROWS.
+.TP
+.B \-\-dial n
+Immediately open a connection to the phone book entry number n.  The
+first phone book entry has n=1.
+.TP
+.B \-\-connect HOST
+Immediately open a connection to HOST.  The default connection method is
+"ssh" unless specified with the
+.B \-\-connect\-method
+option.
+.TP
+.B \-\-connect\-method METHOD
+Use METHOD to connect for the
+.B \-\-connect
+option.  Valid values are "ssh", "rlogin", "telnet", "socket", and
+"shell".
+.TP
+.B \-\-username USERNAME
+Use USERNAME when connecting with the
+.B \-\-connect
+option.  This value is passed on the command line to
+.BR ssh ", and " rlogin "."
+.TP
+.BR \-\-xterm
+Enables X11 terminal mode: phonebook and serial port are disabled,
+status line is turned off at startup, doorway is set to MIXED mode, a
+shell is opened, and Qodem exits when the shell session exits.
+.TP
+.B args...
+Spawn a local shell and pass args to it.
+.TP
+.BR \-\-version
+Display program version and brief public domain dedication statement.
+.TP
+.BR \-\-help ", " \-h ", " \-?
+Display usage screen.
 
 .SH CONNECTION METHODS
 
@@ -207,7 +311,7 @@ scroll/caps/numlock leds.
 XTERM
 This emulation has two modes: PC VGA (XTERM) and UTF\-8 (X_UTF8).  It
 recognizes everything in LINUX, VT220, and a few more XTerm sequences.
-It does not support most of the advances features unique to XTerm such
+It does not support most of the advanced features unique to XTerm such
 as Tektronix 4014 mode, alternate screen buffer, and many more.  It is
 intended to support XTerm applications that only use the sequences in
 the 'xterm' terminfo entry.
@@ -556,62 +660,6 @@ Alt\-F script dialog and the phone book linked script field.  For
 example, pressing Alt\-F and entering "my_script.pl arg1" will launch
 my_script.pl and with its first command\-line argument ($ARGV[0] in
 Perl) set to "arg1".
-
-
-.SH OPTIONS
-.TP
-.B \-\-enable\-capture FILENAME
-Capture the entire session and save to FILENAME.
-.TP
-.B \-\-enable\-capture FILENAME
-Start the session log and log to FILENAME.
-.TP
-.B \-\-play MUSIC
-Play the MUSIC string as ANSI Music.  For more information on ANSI
-Music, see http://www.textfiles.com/artscene/ansimusic/, or the
-GWBASIC PLAY statement.
-.TP
-.B \-\-play\-exit
-If \-\-play was specified, exit immediately after playing MUSIC.
-.TP
-.B \-\-geometry COLSxROWS
-Request text window size COLS x ROWS.
-.TP
-.B \-\-dial n
-Immediately open a connection to the phone book entry number n.  The
-first phone book entry has n=1.
-.TP
-.B \-\-connect HOST
-Immediately open a connection to HOST.  The default connection method is
-"ssh" unless specified with the
-.B \-\-connect\-method
-option.
-.TP
-.B \-\-connect\-method METHOD
-Use METHOD to connect for the
-.B \-\-connect
-option.  Valid values are "ssh", "rlogin", "telnet", "socket", and
-"shell".
-.TP
-.B \-\-username USERNAME
-Use USERNAME when connecting with the
-.B \-\-connect
-option.  This value is passed on the command line to
-.BR ssh ", and " rlogin "."
-.TP
-.BR \-\-xterm
-Enables X11 terminal mode: phonebook and serial port are disabled,
-status line is turned off at startup, a shell is opened, and Qodem
-exits when the shell session exits.
-.TP
-.B args...
-Spawn a local shell and pass args to it.
-.TP
-.BR \-\-version
-Display program version and brief public domain dedication statement.
-.TP
-.BR \-\-help ", " \-h ", " \-?
-Display usage screen.
 
 .SH ENVIRONMENT VARIABLES
 .TP

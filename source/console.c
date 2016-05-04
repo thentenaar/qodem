@@ -827,6 +827,81 @@ void console_keyboard_handler(int keystroke, int flags) {
     Q_HOST_TYPE host_type;
     char * port;
 
+#ifdef Q_PDCURSES
+    int clipboard_rc;
+    long clipboard_length;
+    char * clipboard_contents = NULL;
+    uint32_t last_utf8_state;
+    uint32_t utf8_state = 0;
+    uint32_t utf8_char;
+
+    DLOG(("console_keyboard_handler() Keystroke '%c' %d 0x%x %o flags %d\n",
+            keystroke, keystroke, keystroke, keystroke, flags));
+
+    /*
+     * Special case: If the keystroke is Shift-Ins or Ctrl-Ins, "paste"
+     * whatever might be in the system clipboard (by way of
+     * post_keystroke()'ing each byte).  We honor this regardless of doorway
+     * mode.
+     */
+    if (q_key_code_yes(keystroke) &&
+        ((keystroke == Q_KEY_IC) || (keystroke == Q_KEY_SIC)) &&
+        (((flags & KEY_FLAG_SHIFT) != 0) || ((flags & KEY_FLAG_CTRL) != 0))
+    ) {
+        DLOG(("Shift/Ctrl-Ins: check X11/Win32 clipboard\n"));
+
+        assert(clipboard_contents == NULL);
+        clipboard_rc = PDC_getclipboard(&clipboard_contents, &clipboard_length);
+        DLOG(("   clipboard_rc: %d (%s)\n", clipboard_rc,
+                clipboard_rc == PDC_CLIP_SUCCESS ? "PDC_CLIP_SUCCESS" :
+                clipboard_rc == PDC_CLIP_MEMORY_ERROR ? "PDC_CLIP_MEMORY_ERROR" :
+                clipboard_rc == PDC_CLIP_EMPTY ? "PDC_CLIP_EMPTY" :
+                clipboard_rc == PDC_CLIP_ACCESS_ERROR ? "PDC_CLIP_ACCESS_ERROR" :
+                "UNKNOWN"));
+
+        if (clipboard_rc == PDC_CLIP_SUCCESS) {
+            DLOG(("   got %d bytes from clipboard\n", clipboard_length));
+            last_utf8_state = utf8_state;
+            for (i = 0; i < clipboard_length; i++) {
+                utf8_decode(&utf8_state, &utf8_char,
+                    (unsigned char) clipboard_contents[i]);
+
+                if ((last_utf8_state == utf8_state) &&
+                    (utf8_state != UTF8_ACCEPT)) {
+                    /* Bad character, ignore */
+                    utf8_state = 0;
+                    DLOG(("   -- utf8_decode() failed (i = %d) --\n", i));
+                    continue;
+                }
+
+                if (utf8_state != UTF8_ACCEPT) {
+                    /*
+                     * Not enough characters to convert yet
+                     */
+                    continue;
+                }
+
+                if (utf8_char <= 0x7F) {
+                    DLOG(("   ASCII char: %c\n", utf8_char));
+                    post_keystroke(utf8_char, 0);
+                } else {
+                    DLOG(("   Unicode char: %lc\n", (wchar_t) utf8_char));
+                    post_keystroke((wchar_t) utf8_char, KEY_FLAG_UNICODE);
+                }
+            }
+            PDC_freeclipboard(clipboard_contents);
+            clipboard_contents = NULL;
+            return;
+        }
+    }
+
+#else
+
+    DLOG(("console_keyboard_handler() Keystroke '%c' %d 0x%x %o flags %d\n",
+            keystroke, keystroke, keystroke, keystroke, flags));
+
+#endif
+
     if (q_status.doorway_mode == Q_DOORWAY_MODE_FULL) {
         if ((keystroke == '=') && (flags & KEY_FLAG_ALT)) {
             /*
