@@ -83,11 +83,12 @@ Qodem is designed to help the following kinds of people:
   scrollback, screen dump, capture, keyboard macros, very good VT100
   emulation, and many more functions.
 
-* Windows and X11 desktop users who want a fully capable terminal with
+* Windows and X11 desktop users who want a full-featured terminal with
   a keyboard-driven interface.  The X11 and Windows versions of Qodem
-  combine features of modern terminals including scrollback,
-  select-and-paste, Unicode support, and a resizable window, with
-  BBS-era features like Zmodem, Kermit, and keyboard macros.
+  combine the typical conveniences of modern terminals including
+  scrollback, select-and-paste, Unicode support, and a resizable
+  window, with more rare BBS-era features like Zmodem, Kermit, and
+  keyboard macros.
 
 * Users of telnet/ssh BBSes who would like to use BBS-era features
   such as: a phone book, Avatar and ANSI emulations (including ANSI

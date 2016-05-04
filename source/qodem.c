@@ -871,6 +871,63 @@ static char * version_string() {
 }
 
 /**
+ * Display a multi-line string to the user.  This is used to emit the help
+ * and version text.
+ *
+ * @param str the string
+ */
+static void page_string(const char * str) {
+
+#ifdef Q_PDCURSES
+    int i;
+    char ch;
+    int row = 0;
+    int col = 0;
+
+    screen_setup(25, 80);
+    set_blocking_input(Q_TRUE);
+    screen_clear();
+    screen_move_yx(0, 0);
+
+    for (i = 0; i < strlen(str); i++) {
+        ch = str[i];
+        if (ch == '\n') {
+            row++;
+            col = 0;
+            if (row == 24) {
+                screen_put_str_yx(row, 0, _("Press any key for more..."),
+                    A_NORMAL, 0x38);
+                screen_flush();
+                getch();
+                row = 0;
+                col = 0;
+                screen_clear();
+                screen_move_yx(0, 0);
+            }
+        } else {
+            col++;
+            if (col == 80) {
+                col = 0;
+            }
+            screen_put_char_yx(row, col, ch, A_NORMAL, 0x38);
+        }
+    }
+
+    screen_put_str_yx(row, 0, _("Press any key to exit..."),
+        A_NORMAL, 0x38);
+    screen_flush();
+    getch();
+
+    screen_teardown();
+
+#else
+
+    printf("%s", str);
+
+#endif
+}
+
+/**
  * See if the user asked for help or version information, and if so provide a
  * return code to main().
  *
@@ -886,19 +943,19 @@ static int check_for_help(int argc, char * const argv[]) {
 
         /* Special case: help means exit */
         if (strncmp(argv[i], "--help", strlen("--help")) == 0) {
-            printf("%s", usage_string());
+            page_string(usage_string());
             return EXIT_HELP;
         }
         if (strncmp(argv[i], "-h", strlen("-h")) == 0) {
-            printf("%s", usage_string());
+            page_string(usage_string());
             return EXIT_HELP;
         }
         if (strncmp(argv[i], "-?", strlen("-?")) == 0) {
-            printf("%s", usage_string());
+            page_string(usage_string());
             return EXIT_HELP;
         }
         if (strncmp(argv[i], "--version", strlen("--version")) == 0) {
-            printf("%s", version_string());
+            page_string(version_string());
             return EXIT_VERSION;
         }
     }
@@ -926,13 +983,13 @@ static void process_command_line_option(const char * option,
 
     /* Special case: help means exit */
     if (strncmp(option, "help", strlen("help")) == 0) {
-        printf("%s", usage_string());
+        page_string(usage_string());
         q_program_state = Q_STATE_EXIT;
     }
 
     /* Special case: version means exit */
     if (strncmp(option, "version", strlen("version")) == 0) {
-        printf("%s", version_string());
+        page_string(version_string());
         q_program_state = Q_STATE_EXIT;
     }
 
@@ -2916,14 +2973,6 @@ int qodem_main(int argc, char * const argv[]) {
 #endif /* ENABLE_NLS && HAVE_GETTEXT */
 
     /*
-     * If the user asked for help or version, do that and bail out now.
-     */
-    rc = check_for_help(argc, argv);
-    if (rc != 0) {
-        exit(rc);
-    }
-
-    /*
      * Obtain the user name.
      */
 #ifdef Q_PDCURSES_WIN32
@@ -2983,6 +3032,16 @@ int qodem_main(int argc, char * const argv[]) {
 
     /* Load the options */
     load_options();
+
+    /*
+     * If the user asked for help or version, do that and bail out now.  We
+     * have enough infrastructure in place to display the help/version text
+     * in a PDCurses window.
+     */
+    rc = check_for_help(argc, argv);
+    if (rc != 0) {
+        exit(rc);
+    }
 
     /* Setup MIXED mode doorway */
     setup_doorway_handling();
