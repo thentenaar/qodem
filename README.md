@@ -178,7 +178,7 @@ due to the environments.  This section describes those differences.
 
 X11 VERSION
 
-The X11 version is activated by passing --enable-x11 to configure.
+The X11 version can be built by passing --enable-x11 to configure.
 Due to how the curses libraries are linked, a single Qodem binary
 cannot currently support both text ncurses and X11 PDCurses
 interfaces, therefore the X11 binary is 'qodem-x11', and its man page
