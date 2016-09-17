@@ -1,6 +1,15 @@
 The Qodem Project Work Log
 ==========================
 
+September 16, 2016
+
+I am still alive, and this project is not dead.  My summer has been
+slammed with moving to a new house and several overtime work projects,
+leaving this one no extra time.  I am hoping that I can put more time
+into Qodem in about another two months.  Until then, I am still
+looking at issues and do have plans to clear them all before releasing
+1.0.
+
 April 30, 2016
 
 I merged current 1.0.0-dev back into master yesterday and put some dev
