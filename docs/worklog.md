@@ -1,6 +1,15 @@
 The Qodem Project Work Log
 ==========================
 
+October 26, 2016
+
+Back in business!  I am in the new house and out of the old storage
+units.  I still don't have my workstation set up, but have found time
+to visit the library to borrow their Internet and keep moving along.
+
+Today is a rather neat day.  Qodem just merged its first pull request
+from Github. :-)  Thank you to Tim Hentenaar for your bug fixes.
+
 September 16, 2016
 
 I am still alive, and this project is not dead.  My summer has been

@@ -277,7 +277,7 @@ void play_music(const struct q_music_struct * music,
             first = Q_FALSE;
         }
 
-        if (on_linux == Q_FALSE && sdl_ok == Q_FALSE) {
+        if ((on_linux == Q_FALSE) && (sdl_ok == Q_FALSE)) {
             /*
              * No SDL, no console, no output.
              */
@@ -352,7 +352,7 @@ void play_music(const struct q_music_struct * music,
 #endif
 
 #ifndef Q_PDCURSES_WIN32
-    if (on_linux == Q_TRUE && sdl_ok == Q_FALSE) {
+    if ((on_linux == Q_TRUE) && (sdl_ok == Q_FALSE)) {
         /*
          * Restore the console beep.  The linux defaults are in
          * drivers/char/console.c, as of 2.4.22 it's 750 Hz 250 milliseconds.
@@ -1085,7 +1085,7 @@ music_top:
              */
             if (((buffer[i] >= '0') && (buffer[i] <= '9')) ||
                 (buffer[i] == '.') || (buffer[i] == '+') || (buffer[i] == '-')
-                ) {
+            ) {
                 digital_freq = (int) strtod((char *) buffer + i, &digits_end);
 
                 DLOG(("new frequency: %d\n", digital_freq));
@@ -1109,7 +1109,7 @@ music_top:
              */
             if (((buffer[i] >= '0') && (buffer[i] <= '9')) ||
                 (buffer[i] == '.') || (buffer[i] == '+') || (buffer[i] == '-')
-                ) {
+            ) {
                 digital_duration =
                     (int) strtod((char *) buffer + i, &digits_end);
 
@@ -1134,7 +1134,7 @@ music_top:
              */
             if (((buffer[i] >= '0') && (buffer[i] <= '9')) ||
                 (buffer[i] == '.') || (buffer[i] == '+') || (buffer[i] == '-')
-                ) {
+            ) {
                 digital_cycles = (int) strtod((char *) buffer + i, &digits_end);
 
                 DLOG(("new cycles: %d\n", digital_cycles));
@@ -1158,7 +1158,7 @@ music_top:
              */
             if (((buffer[i] >= '0') && (buffer[i] <= '9')) ||
                 (buffer[i] == '.') || (buffer[i] == '+') || (buffer[i] == '-')
-                ) {
+            ) {
                 digital_cycledelay =
                     (int) strtod((char *) buffer + i, &digits_end);
 
@@ -1183,7 +1183,7 @@ music_top:
              */
             if (((buffer[i] >= '0') && (buffer[i] <= '9')) ||
                 (buffer[i] == '.') || (buffer[i] == '+') || (buffer[i] == '-')
-                ) {
+            ) {
                 digital_variation =
                     (int) strtod((char *) buffer + i, &digits_end);
 
