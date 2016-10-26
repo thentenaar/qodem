@@ -46,7 +46,7 @@ else
         AC_MSG_NOTICE([ *** SDL unavailable *** ])
     else
         AC_MSG_NOTICE([ *** Enable SDL *** ])
-        CFLAGS="$CFLAGS -DQODEM_USE_SDL"
+        CFLAGS="$CFLAGS -DQODEM_USE_SDL -DQ_SOUND_SDL"
         LIBS="-lSDL -lm $LIBS"
     fi
 fi

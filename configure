@@ -4544,7 +4544,7 @@ $as_echo "$as_me:  *** SDL unavailable *** " >&6;}
     else
         { $as_echo "$as_me:${as_lineno-$LINENO}:  *** Enable SDL *** " >&5
 $as_echo "$as_me:  *** Enable SDL *** " >&6;}
-        CFLAGS="$CFLAGS -DQODEM_USE_SDL"
+        CFLAGS="$CFLAGS -DQODEM_USE_SDL -DQ_SOUND_SDL"
         LIBS="-lSDL -lm $LIBS"
     fi
 fi

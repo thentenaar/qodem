@@ -164,7 +164,6 @@ void music_init() {
     /*
      * Initialize the SDL system.
      */
-    SDL_PauseAudio(1);
     if (SDL_Init(SDL_INIT_AUDIO) == 0) {
         SDL_AudioSpec spec;
         sdl_ok = Q_TRUE;
@@ -177,7 +176,9 @@ void music_init() {
         spec.size = 0;
         spec.userdata = 0;
         spec.callback = sdl_callback;
-        if (SDL_OpenAudio(&spec, NULL) == 0) {
+        if (SDL_OpenAudio(&spec, NULL) < 0) {
+            DLOG(("music_init(): SDL error: %s\n", SDL_GetError()));
+            SDL_Quit();
             sdl_ok = Q_FALSE;
         }
     } else {
@@ -200,8 +201,8 @@ void music_teardown() {
 
     if (sdl_ok == Q_TRUE) {
         SDL_CloseAudio();
+        SDL_Quit();
     }
-    SDL_Quit();
 #endif
 
 }
@@ -276,7 +277,7 @@ void play_music(const struct q_music_struct * music,
             first = Q_FALSE;
         }
 
-        if (on_linux == Q_FALSE) {
+        if (on_linux == Q_FALSE && sdl_ok == Q_FALSE) {
             /*
              * No SDL, no console, no output.
              */
@@ -346,11 +347,12 @@ void play_music(const struct q_music_struct * music,
     /*
      * Cease sound
      */
-    SDL_PauseAudio(1);
+    if (sdl_ok == Q_TRUE)
+        SDL_PauseAudio(1);
 #endif
 
 #ifndef Q_PDCURSES_WIN32
-    if (on_linux == Q_TRUE) {
+    if (on_linux == Q_TRUE && sdl_ok == Q_FALSE) {
         /*
          * Restore the console beep.  The linux defaults are in
          * drivers/char/console.c, as of 2.4.22 it's 750 Hz 250 milliseconds.
