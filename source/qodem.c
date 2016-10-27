@@ -1708,6 +1708,7 @@ static void process_incoming_data() {
                 for (i = 0; i < q_buffer_raw_n; i++) {
                     DLOG2(("%c ", q_buffer_raw[i] & 0xFF));
                 }
+                DLOG2(("\n"));
             }
         } /* if (n > 0) */
     } /* if (FD_ISSET(q_child_tty_fd, &readfds)) */

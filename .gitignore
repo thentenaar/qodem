@@ -41,6 +41,7 @@ qodem-x11
 Makefile~
 
 # Build artifacts
+aclocal.m4
 source/.deps/
 source/.dirstamp
 source/config.h

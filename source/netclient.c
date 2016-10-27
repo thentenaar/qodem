@@ -265,22 +265,22 @@ static char local_host_external_full[NI_MAXHOST + NI_MAXSERV + 4];
 #endif
 
 /* Telnet protocol special characters */
-#define TELNET_SE               240
-#define TELNET_NOP              241
-#define TELNET_DM               242
-#define TELNET_BRK              243
-#define TELNET_IP               244
-#define TELNET_AO               245
-#define TELNET_AYT              246
-#define TELNET_EC               247
-#define TELNET_EL               248
-#define TELNET_GA               249
-#define TELNET_SB               250
-#define TELNET_WILL             251
-#define TELNET_WONT             252
-#define TELNET_DO               253
-#define TELNET_DONT             254
-#define TELNET_IAC              255
+#define TELNET_SE               240     /* f0 */
+#define TELNET_NOP              241     /* f1 */
+#define TELNET_DM               242     /* f2 */
+#define TELNET_BRK              243     /* f3 */
+#define TELNET_IP               244     /* f4 */
+#define TELNET_AO               245     /* f5 */
+#define TELNET_AYT              246     /* f6 */
+#define TELNET_EC               247     /* f7 */
+#define TELNET_EL               248     /* f8 */
+#define TELNET_GA               249     /* f9 */
+#define TELNET_SB               250     /* fa */
+#define TELNET_WILL             251     /* fb */
+#define TELNET_WONT             252     /* fc */
+#define TELNET_DO               253     /* fd */
+#define TELNET_DONT             254     /* fe */
+#define TELNET_IAC              255     /* ff */
 
 /* The telnet sub-negotiation data buffer */
 #define SUBNEG_BUFFER_MAX 128
@@ -460,7 +460,7 @@ static Q_BOOL upnp_init() {
 
     DLOG(("upnp_init() : upnpDiscover()\n"));
 
-#if (MINIUPNPC_API_VERSION == 10)
+#if (MINIUPNPC_API_VERSION == 10) || !defined(MINIUPNPC_API_VERSION)
     /*
      * Version 10 API call:
      *
@@ -2016,7 +2016,7 @@ static ssize_t raw_write(const int fd, void * buf, size_t count) {
                 DLOG2(("%02x ", ((char *) buf)[i]));
             }
             DLOG2(("\n"));
-            DLOG(("                             "));
+            DLOG(("              "));
             for (i = 0; i < rc; i++) {
                 DLOG2(("%c  ", ((char *) buf)[i]));
             }
@@ -2201,18 +2201,19 @@ static void telnet_respond(const int fd, unsigned char response,
     DLOG(("telnet_respond() : "));
     switch (response) {
     case TELNET_DO:
-        DLOG(("DO %s\n", telnet_option_string(option)));
+        DLOG2(("DO %s\n", telnet_option_string(option)));
         break;
     case TELNET_DONT:
-        DLOG(("DONT %s\n", telnet_option_string(option)));
+        DLOG2(("DONT %s\n", telnet_option_string(option)));
         break;
     case TELNET_WILL:
-        DLOG(("WILL %s\n", telnet_option_string(option)));
+        DLOG2(("WILL %s\n", telnet_option_string(option)));
         break;
     case TELNET_WONT:
-        DLOG(("WONT %s\n", telnet_option_string(option)));
+        DLOG2(("WONT %s\n", telnet_option_string(option)));
         break;
     }
+    DLOG2(("\n"));
 
     raw_write(fd, buffer, n);
 }
@@ -2613,7 +2614,15 @@ ssize_t telnet_read(const int fd, void * buf, size_t count) {
     int total = 0;
     size_t max_read;
 
-    DLOG(("telnet_read() : %d bytes in read_buffer\n", read_buffer_n));
+    DLOG(("telnet_read() : %d bytes in read_buffer:\n", read_buffer_n));
+    for (i = 0; i < read_buffer_n; i++) {
+        if ((read_buffer[i] & 0xFF) >= 0x80) {
+            DLOG2((" %02x", (read_buffer[i] & 0xFF)));
+        } else {
+            DLOG2((" %c ", (read_buffer[i] & 0xFF)));
+        }
+    }
+    DLOG2(("\n"));
 
     if (state == INIT) {
         /*
@@ -2939,201 +2948,195 @@ ssize_t telnet_read(const int fd, void * buf, size_t count) {
                 nvt.iac = Q_TRUE;
             }
             continue;
-        } else {
-            if (nvt.iac == Q_TRUE) {
+        }
 
-                DLOG(("Telnet command: "));
+        /*
+         * ch is not IAC.
+         */
+        if (nvt.iac == Q_TRUE) {
 
-                switch (ch) {
+            DLOG(("Telnet command: "));
 
-                case TELNET_SE:
-                    DLOG2((" END Sub-Negotiation\n"));
-                    break;
-                case TELNET_NOP:
-                    DLOG2((" NOP\n"));
-                    break;
-                case TELNET_DM:
-                    DLOG2((" Data Mark\n"));
-                    break;
-                case TELNET_BRK:
-                    DLOG2((" Break\n"));
-                    break;
-                case TELNET_IP:
-                    DLOG2((" Interrupt Process\n"));
-                    break;
-                case TELNET_AO:
-                    DLOG2((" Abort Output\n"));
-                    break;
-                case TELNET_AYT:
-                    DLOG2((" Are You There?\n"));
-                    break;
-                case TELNET_EC:
-                    DLOG2((" Erase Character\n"));
-                    break;
-                case TELNET_EL:
-                    DLOG2((" Erase Line\n"));
-                    break;
-                case TELNET_GA:
-                    DLOG2((" Go Ahead\n"));
-                    break;
-                case TELNET_SB:
-                    DLOG2((" START Sub-Negotiation\n"));
-                    /*
-                     * From here we wait for the IAC SE
-                     */
-                    nvt.subneg_end = Q_TRUE;
-                    subneg_buffer_n = 0;
-                    break;
-                case TELNET_WILL:
-                    DLOG2((" WILL\n"));
-                    nvt.dowill = Q_TRUE;
-                    nvt.dowill_type = ch;
-                    break;
-                case TELNET_WONT:
-                    DLOG2((" WON'T\n"));
-                    nvt.dowill = Q_TRUE;
-                    nvt.dowill_type = ch;
-                    break;
-                case TELNET_DO:
-                    DLOG2((" DO\n"));
-                    nvt.dowill = Q_TRUE;
-                    nvt.dowill_type = ch;
+            switch (ch) {
 
-                    if (nvt.binary_mode == Q_TRUE) {
-                        DLOG(("Telnet DO in binary mode\n"));
-                    }
+            case TELNET_SE:
+                DLOG2((" END Sub-Negotiation\n"));
+                break;
+            case TELNET_NOP:
+                DLOG2((" NOP\n"));
+                break;
+            case TELNET_DM:
+                DLOG2((" Data Mark\n"));
+                break;
+            case TELNET_BRK:
+                DLOG2((" Break\n"));
+                break;
+            case TELNET_IP:
+                DLOG2((" Interrupt Process\n"));
+                break;
+            case TELNET_AO:
+                DLOG2((" Abort Output\n"));
+                break;
+            case TELNET_AYT:
+                DLOG2((" Are You There?\n"));
+                break;
+            case TELNET_EC:
+                DLOG2((" Erase Character\n"));
+                break;
+            case TELNET_EL:
+                DLOG2((" Erase Line\n"));
+                break;
+            case TELNET_GA:
+                DLOG2((" Go Ahead\n"));
+                break;
+            case TELNET_SB:
+                DLOG2((" START Sub-Negotiation\n"));
+                /*
+                 * From here we wait for the IAC SE
+                 */
+                nvt.subneg_end = Q_TRUE;
+                subneg_buffer_n = 0;
+                break;
+            case TELNET_WILL:
+                DLOG2((" WILL\n"));
+                nvt.dowill = Q_TRUE;
+                nvt.dowill_type = ch;
+                break;
+            case TELNET_WONT:
+                DLOG2((" WON'T\n"));
+                nvt.dowill = Q_TRUE;
+                nvt.dowill_type = ch;
+                break;
+            case TELNET_DO:
+                DLOG2((" DO\n"));
+                nvt.dowill = Q_TRUE;
+                nvt.dowill_type = ch;
 
-                    break;
-                case TELNET_DONT:
-                    DLOG2((" DON'T\n"));
-                    nvt.dowill = Q_TRUE;
-                    nvt.dowill_type = ch;
-                    break;
-                default:
-
-                    /*
-                     * This should be equivalent to IAC NOP
-                     */
-                    DLOG2((" Unknown: %d \\%03d 0x%02x %c\n", ch, ch, ch, ch));
-                    DLOG(("Will treat as IAC NOP\n"));
-                    break;
+                if (nvt.binary_mode == Q_TRUE) {
+                    DLOG(("Telnet DO in binary mode\n"));
                 }
 
-                nvt.iac = Q_FALSE;
-                continue;
+                break;
+            case TELNET_DONT:
+                DLOG2((" DON'T\n"));
+                nvt.dowill = Q_TRUE;
+                nvt.dowill_type = ch;
+                break;
+            default:
 
-            } /* if (nvt.iac == Q_TRUE) */
+                /*
+                 * This should be equivalent to IAC NOP
+                 */
+                DLOG2((" Unknown: %d \\%03d 0x%02x %c\n", ch, ch, ch, ch));
+                DLOG(("Will treat as IAC NOP\n"));
+                break;
+            }
 
-            /*
-             * All of the regular IAC processing is completed at this point.
-             * Now we need to handle the CR and CR LF cases.
-             *
-             * According to RFC 854, in NVT ASCII mode:
-             *     Bare CR -> CR NUL
-             *     CR LF -> CR LF
-             *
-             */
-            if (nvt.binary_mode == Q_FALSE) {
+            nvt.iac = Q_FALSE;
+            continue;
 
-                if (ch == C_LF) {
-                    if (nvt.read_cr == Q_TRUE) {
-                        DLOG(("CRLF\n"));
-                        /*
-                         * This is CR LF.  Send CR LF and turn the cr flag
-                         * off.
-                         */
-                        ((char *) buf)[total] = C_CR;
-                        total++;
-                        ((char *) buf)[total] = C_LF;
-                        total++;
-                        nvt.read_cr = Q_FALSE;
-                        continue;
-                    }
+        } /* if (nvt.iac == Q_TRUE) */
 
-                    DLOG(("Bare LF\n"));
+        /*
+         * All of the regular IAC processing is completed at this point.  Now
+         * we need to handle the CR and CR LF cases.
+         *
+         * According to RFC 854, in NVT ASCII mode:
+         *     Bare CR -> CR NUL
+         *     CR LF -> CR LF
+         *
+         */
+        if (nvt.binary_mode == Q_FALSE) {
 
-                    /*
-                     * This is bare LF.  Send LF.
-                     */
-                    ((char *) buf)[total] = C_LF;
-                    total++;
-                    continue;
-                }
-
-                if (ch == C_NUL) {
-                    if (nvt.read_cr == Q_TRUE) {
-                        DLOG(("CR NUL\n"));
-                        /*
-                         * This is CR NUL.  Send CR and turn the cr flag off.
-                         */
-                        ((char *) buf)[total] = C_CR;
-                        total++;
-                        nvt.read_cr = Q_FALSE;
-                        continue;
-                    }
-
-                    DLOG(("Bare NUL\n"));
-
-                    /*
-                     * This is bare NUL.  Send NUL.
-                     */
-                    ((char *) buf)[total] = C_NUL;
-                    total++;
-                    continue;
-                }
-
-                if (ch == C_CR) {
-                    if (nvt.read_cr == Q_TRUE) {
-                        DLOG(("CR CR\n"));
-                        /*
-                         * This is CR CR.  Send a CR NUL and leave the cr
-                         * flag on.
-                         */
-                        ((char *) buf)[total] = C_CR;
-                        total++;
-                        ((char *) buf)[total] = C_NUL;
-                        total++;
-                        continue;
-                    }
-                    /*
-                     * This is the first CR.  Set the cr flag.
-                     */
-                    nvt.read_cr = Q_TRUE;
-                    continue;
-                }
-
+            if (ch == C_LF) {
                 if (nvt.read_cr == Q_TRUE) {
-                    DLOG(("Bare CR\n"));
+                    DLOG(("CRLF\n"));
                     /*
-                     * This was a bare CR in the stream.
+                     * This is CR LF.  Send CR LF and turn the cr flag off.
                      */
                     ((char *) buf)[total] = C_CR;
                     total++;
+                    ((char *) buf)[total] = C_LF;
+                    total++;
                     nvt.read_cr = Q_FALSE;
+                    continue;
                 }
 
+                DLOG(("Bare LF\n"));
+
                 /*
-                 * This is a regular character.  Pass it on.
+                 * This is bare LF.  Send LF.
                  */
-                ((char *) buf)[total] = ch;
+                ((char *) buf)[total] = C_LF;
                 total++;
                 continue;
             }
 
-            /*
-             * This is the case for any of:
-             *
-             *     1) A NVT ASCII character that isn't CR, LF,
-             *        or NUL.
-             *
-             *     2) A NVT binary character.
-             *
-             * For all of these cases, we just pass the character on.
-             */
-            ((char *) buf)[total] = ch;
-            total++;
+            if (ch == C_NUL) {
+                if (nvt.read_cr == Q_TRUE) {
+                    DLOG(("CR NUL\n"));
+                    /*
+                     * This is CR NUL.  Send CR and turn the cr flag off.
+                     */
+                    ((char *) buf)[total] = C_CR;
+                    total++;
+                    nvt.read_cr = Q_FALSE;
+                    continue;
+                }
 
-        } /* if (ch == TELNET_IAC) */
+                DLOG(("Bare NUL\n"));
+
+                /*
+                 * This is bare NUL.  As per RFC 854 this is a NOP for the
+                 * printer.  Strip it out.
+                 */
+                continue;
+            }
+
+            if (ch == C_CR) {
+                if (nvt.read_cr == Q_TRUE) {
+                    DLOG(("CR CR\n"));
+                    /*
+                     * This is CR CR.  Send a CR NUL and leave the cr flag
+                     * on.
+                     */
+                    ((char *) buf)[total] = C_CR;
+                    total++;
+                    ((char *) buf)[total] = C_NUL;
+                    total++;
+                    continue;
+                }
+                /*
+                 * This is the first CR.  Set the cr flag.
+                 */
+                nvt.read_cr = Q_TRUE;
+                continue;
+            }
+
+            if (nvt.read_cr == Q_TRUE) {
+                DLOG(("Bare CR\n"));
+                /*
+                 * This was a bare CR in the stream.
+                 */
+                ((char *) buf)[total] = C_CR;
+                total++;
+                nvt.read_cr = Q_FALSE;
+            }
+
+        } /* if (nvt.binary_mode == Q_FALSE) */
+
+        /*
+         * This is the case for any of:
+         *
+         *     1) A NVT ASCII character that isn't CR, LF,
+         *        or NUL.
+         *
+         *     2) A NVT binary character.
+         *
+         * For all of these cases, we just pass the character on.
+         */
+        ((char *) buf)[total] = ch;
+        total++;
 
     } /* for (i = 0; i < read_buffer_n; i++) */
 

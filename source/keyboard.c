@@ -1208,31 +1208,10 @@ void post_keystroke(const int keystroke, const int flags) {
              (q_status.emulation == Q_EMUL_XTERM_UTF8)
             ) && (keystroke == C_CR)
         ) {
-            if ((q_vt100_new_line_mode == Q_TRUE) || (telnet_is_ascii())) {
+            if (q_vt100_new_line_mode == Q_TRUE) {
                 encode_utf8_char(C_LF);
                 qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer),
                             Q_TRUE);
-            }
-        }
-
-        if (((q_status.emulation == Q_EMUL_VT52) ||
-             (q_status.emulation == Q_EMUL_ANSI) ||
-             (q_status.emulation == Q_EMUL_AVATAR) ||
-             (q_status.emulation == Q_EMUL_DEBUG) ||
-             (q_status.emulation == Q_EMUL_TTY)
-            ) && (keystroke == C_CR)
-        ) {
-            if (telnet_is_ascii()) {
-                encode_utf8_char(C_LF);
-                qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer),
-                            Q_TRUE);
-                if (q_status.emulation == Q_EMUL_DEBUG) {
-                    debug_local_echo(C_LF);
-                    /*
-                     * Force the console to refresh
-                     */
-                    q_screen_dirty = Q_TRUE;
-                }
             }
         }
 
