@@ -277,7 +277,11 @@ void play_music(const struct q_music_struct * music,
             first = Q_FALSE;
         }
 
+#ifdef Q_SOUND_SDL
         if ((on_linux == Q_FALSE) && (sdl_ok == Q_FALSE)) {
+#else
+        if (on_linux == Q_FALSE) {
+#endif
             /*
              * No SDL, no console, no output.
              */
@@ -352,8 +356,12 @@ void play_music(const struct q_music_struct * music,
 #endif
 
 #ifndef Q_PDCURSES_WIN32
+#ifdef Q_SOUND_SDL
     if ((on_linux == Q_TRUE) && (sdl_ok == Q_FALSE)) {
-        /*
+#else
+    if (on_linux == Q_TRUE) {
+#endif
+	/*
          * Restore the console beep.  The linux defaults are in
          * drivers/char/console.c, as of 2.4.22 it's 750 Hz 250 milliseconds.
          */

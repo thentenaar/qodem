@@ -825,7 +825,7 @@ void console_keyboard_handler(int keystroke, int flags) {
     struct file_info * batch_upload_file_list;
     int new_keystroke;
     Q_HOST_TYPE host_type;
-    char * port;
+    char * port = NULL;
 
 #ifdef Q_PDCURSES
     int clipboard_rc;
@@ -1160,6 +1160,7 @@ void console_keyboard_handler(int keystroke, int flags) {
                     break;
 #endif
                 }
+                assert(port != NULL);
 
                 /*
                  * Switch state first, because host_start() might switch back
@@ -3677,11 +3678,7 @@ void console_info_refresh() {
                 screen_put_color_str_yx(box_top + 4, box_left + 14,
                                         q_status.remote_port,
                                         Q_COLOR_MENU_COMMAND);
-
-
-#ifndef Q_NO_SERIAL
             }
-#endif
 
 #ifdef Q_SSH_CRYPTLIB
             if ((q_status.dial_method == Q_DIAL_METHOD_SSH) &&

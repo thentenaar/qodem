@@ -10,9 +10,15 @@ NEW FUNCTIONALITY
 
 Fix all marked TODOs in code
 
-
 #26 Handle multiple instances operating on the phonebook
 
+#35 exit_on_disconnect hangs
+
+#38 Be able to run fully portable
+
+#41 PETSCII
+
+#43 clang compiler support
 
 FULL REGRESSION ON EVERY ITEM:
   F10 -> Enter or Alt-Enter
@@ -222,8 +228,6 @@ External protocols
 ---------------------------
 
 Pacing character support
-
-PETSCII
 
 ATASCII
 

@@ -1241,7 +1241,22 @@ static Q_BOOL open_receive_file() {
          * case, seek to the end and tell the sender how much we have.
          */
         if (status.do_resend == Q_TRUE) {
-            snprintf(buffer, sizeof(buffer) - 1, "1_%lu", status.file_position);
+            if (sizeof(status.file_position) == sizeof(int)) {
+                snprintf(buffer, sizeof(buffer) - 1, "1_%u",
+                    (unsigned int) status.file_position);
+            } else if (sizeof(status.file_position) == sizeof(long)) {
+                snprintf(buffer, sizeof(buffer) - 1, "1_%lu",
+                    (unsigned long) status.file_position);
+#ifndef WIN32
+            } else if (sizeof(status.file_position) == sizeof(long long)) {
+                snprintf(buffer, sizeof(buffer) - 1, "1_%llu",
+                    (unsigned long long) status.file_position);
+#endif
+            } else {
+                snprintf(buffer, sizeof(buffer) - 1, "1_%u",
+                    (unsigned int) status.file_position);
+            }
+
             buffer[1] = strlen(buffer) - 2 + 32;
             ack_packet_param(buffer, strlen(buffer));
         } else {
