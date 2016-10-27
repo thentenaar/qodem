@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #if defined(__BORLANDC__) || defined(_MSC_VER)
 typedef int ssize_t;
+#else
+#include <unistd.h>
 #endif
 #include <sys/types.h>
 #if defined(_WIN32) || defined(__amigaos__) || defined(__amigaos4__)

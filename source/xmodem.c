@@ -708,8 +708,30 @@ static void ymodem_construct_block_0() {
         /*
          * Length
          */
-        snprintf(local_buffer, sizeof(local_buffer), "%lu",
-                 upload_file_list[upload_file_list_i].fstats.st_size);
+        if (sizeof(upload_file_list[upload_file_list_i].fstats.st_size) ==
+            sizeof(int)) {
+            snprintf(local_buffer, sizeof(local_buffer), "%u",
+                (unsigned int)
+                    upload_file_list[upload_file_list_i].fstats.st_size);
+        } else if (sizeof(upload_file_list[upload_file_list_i].fstats.st_size)
+            == sizeof(long)) {
+
+            snprintf(local_buffer, sizeof(local_buffer), "%lu",
+                (unsigned long)
+                upload_file_list[upload_file_list_i].fstats.st_size);
+#ifndef WIN32
+        } else if (sizeof(upload_file_list[upload_file_list_i].fstats.st_size)
+            == sizeof(long long)) {
+
+            snprintf(local_buffer, sizeof(local_buffer), "%llu",
+                (unsigned long long)
+                upload_file_list[upload_file_list_i].fstats.st_size);
+#endif
+        } else {
+            snprintf(local_buffer, sizeof(local_buffer), "%u",
+                (unsigned int)
+                    upload_file_list[upload_file_list_i].fstats.st_size);
+        }
         for (i = 0; i < strlen(local_buffer); i++) {
             current_block[current_block_n] = local_buffer[i];
             current_block_n++;

@@ -1319,7 +1319,7 @@ void protocol_menu_refresh() {
         free_kbytes =
             (unsigned long long) buf.f_bavail *
             (unsigned long long) buf.f_bsize / 1024LL;
-        sprintf(size_string, _("%'-Lu k"), free_kbytes);
+        sprintf(size_string, _("%'-llu k"), free_kbytes);
 #endif
     }
 

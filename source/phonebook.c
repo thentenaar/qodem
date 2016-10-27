@@ -49,6 +49,14 @@
 #include "translate.h"
 #include "phonebook.h"
 
+#ifdef __clang__
+/*
+ * Disable the "tautological enum compare" check, because we actually do
+ * assign -1 to enums sometimes, which is legal C.
+ */
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+
 /* Modem dialer ----------------------------------------------------------- */
 
 /* Set this to a not-NULL value to enable debug log. */
@@ -1123,10 +1131,6 @@ void load_phonebook(const Q_BOOL backup_version) {
                  * CODEPAGE
                  */
                 new_entry->codepage = codepage_from_string(begin);
-                if (new_entry->codepage == -1) {
-                    new_entry->codepage =
-                        default_codepage(new_entry->emulation);
-                }
             } else if (strncmp(buffer, "quicklearn",
                     strlen("quicklearn")) == 0) {
                 /*
@@ -8446,7 +8450,11 @@ static void modem_data(unsigned char * input, unsigned int input_n,
         break;
 
     case DIAL_MODEM_CONNECTED:
+        /*
+         * Should never get here.
+         */
         abort();
+        break;
     }
 
 }
@@ -8509,6 +8517,7 @@ void dialer_process_data(unsigned char * input, const unsigned int input_n,
          * BUG - these go straight to CONSOLE
          */
         abort();
+        break;
     }
 
     DLOG(("DIALER: EXITING %d input bytes:  ", *remaining));

@@ -24,6 +24,14 @@
 #include "qodem.h"
 #include "colors.h"
 
+#ifdef __clang__
+/*
+ * Disable the UTF-8 encoding check for this file.  We use TheDraw to make
+ * the info screen, which saves in raw 8-bit bytes.
+ */
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
+#endif
+
 /**
  * The color pair number that is white foreground black background.
  *
