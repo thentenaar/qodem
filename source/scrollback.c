@@ -676,7 +676,9 @@ void print_character(const wchar_t character) {
                 } else {
                     fprintf(q_status.capture_file, " ");
                 }
-                if (q_scrollback_current->double_width == Q_TRUE) {
+                if ((q_scrollback_current->double_width == Q_TRUE) &&
+                    (q_status.emulation != Q_EMUL_PETSCII)
+                ) {
                     fprintf(q_status.capture_file, " ");
                 }
             }
@@ -713,7 +715,9 @@ void print_character(const wchar_t character) {
         /*
          * Double-width
          */
-        if (q_scrollback_current->double_width == Q_TRUE) {
+        if ((q_scrollback_current->double_width == Q_TRUE) &&
+            (q_status.emulation != Q_EMUL_PETSCII)
+        ) {
             fprintf(q_status.capture_file, " ");
             q_status.capture_x++;
         }
@@ -849,7 +853,9 @@ static void save_scrollback_line(FILE * file, struct q_scrolline_struct * line,
              */
             fprintf(file, "%lc", (wint_t) ch);
         }
-        if (line->double_width == Q_TRUE) {
+        if ((line->double_width == Q_TRUE) &&
+            (q_status.emulation != Q_EMUL_PETSCII)
+        ) {
             if (save_type == Q_CAPTURE_TYPE_HTML) {
                 fprintf(file, "&nbsp;");
             } else {

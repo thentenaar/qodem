@@ -1,6 +1,23 @@
 The Qodem Project Work Log
 ==========================
 
+October 28, 2016
+
+I believe I found the hang on exit and have that fixed.  I also
+noticed that SDL_CloseAudio() will sometimes hang too, I think it was
+bumping heads with my background movie audio because it went away
+afterwards.  Weird.
+
+I have stubs in place now for PETSCII as an emulation.  On
+ncurses/xterm it uses double-width 40 columns, which is very slick.  I
+discovered that my xterm double-column trick was screwing up
+non-console screens (input boxes, switching states, etc.) so added
+logic to clear the double-width for those transitions.
+
+Next up is taking the weekend off, and then looking into double-width
+on Win32/X11.  I would REALLY like to get PETSCII looking nice on
+Win32, I think it would be cool as hell.
+
 October 27, 2016
 
 It's been a productive day so far.  My Win32 and Linux dev

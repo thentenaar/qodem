@@ -15,6 +15,8 @@ Fix all marked TODOs in code
 #38 Be able to run fully portable
 
 #41 PETSCII
+    - see if Win32a can do double-width chars, or make it so
+    - see if X11 can do double-width chars, or make it so
 
 #43 clang compiler support
 
