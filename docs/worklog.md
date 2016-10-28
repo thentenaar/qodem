@@ -1,6 +1,25 @@
 The Qodem Project Work Log
 ==========================
 
+October 27, 2016
+
+It's been a productive day so far.  My Win32 and Linux dev
+environments are back up and running.  I found some crazy behavior
+between Qodem and inetutils-telnetd where telnetd was switching back
+to ASCII and then also sending a bunch of C0 where no one else does:
+NUL's and SOH (0x01) in places.  Qodem was definitely doing the wrong
+thing with turning every CR into CRLF in post_keystroke() (but only
+for ASCII telnet), so I got that fixed.  I also ran it against clang,
+eliminating most of the compile issues seen on recent OSX (issue #39).
+
+The C64 / PETSCII request (#41) sounds like it would be really fun to
+do.  I've grabbed a copy of CGTerm and other reference materials, and
+will be poking away at it off and on.  It will need to be its own
+emulation (it's far more than a codepage), and I haven't added one of
+those in a long time so that will be nice too.
+
+Time to wrap today's work and get this pushed out.
+
 October 26, 2016
 
 Back in business!  I am in the new house and out of the old storage
