@@ -4540,10 +4540,12 @@ static Q_CODEPAGE pick_codepage(Q_EMULATION emulation) {
     case Q_EMUL_DEBUG:
     case Q_EMUL_ANSI:
     case Q_EMUL_AVATAR:
+    case Q_EMUL_PETSCII:
     case Q_EMUL_LINUX:
     case Q_EMUL_XTERM:
         codepage_cp437 = Q_TRUE;
         codepage_iso8859_1 = Q_TRUE;
+        break;
         break;
     }
 
@@ -5767,7 +5769,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
     /* SCRIPT_NAME */
     fields[6] = field_malloc(32, 7, 16, Q_FALSE, color_active, color_inactive);
     /* EMULATION */
-    fields[7] = field_malloc(6, 8, 16, Q_TRUE, color_active, color_inactive);
+    fields[7] = field_malloc(7, 8, 16, Q_TRUE, color_active, color_inactive);
     /* CODEPAGE */
     fields[8] = field_malloc(15, 9, 16, Q_TRUE, color_active, color_inactive);
     /* CAPTUREFILE_NAME */

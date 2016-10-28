@@ -437,6 +437,21 @@ struct q_status_struct {
      */
     Q_BOOL avatar_ansi_fallback;
 
+    /* PETSCII features */
+
+    /**
+     * When true, support color ANSI codes for PETSCII which doesn't
+     * officially support that.  Do this even when petscii_ansi_fallback is
+     * false.
+     */
+    Q_BOOL petscii_color;
+
+    /**
+     * When true, send anything PETSCII doesn't understand through the ANSI
+     * emulator.
+     */
+    Q_BOOL petscii_ansi_fallback;
+
     /* VT100 features */
 
     /**

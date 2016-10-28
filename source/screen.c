@@ -172,6 +172,7 @@ attr_t vt100_check_reverse_color(const attr_t color, const Q_BOOL reverse) {
         return color;
     case Q_EMUL_ANSI:
     case Q_EMUL_AVATAR:
+    case Q_EMUL_PETSCII:
     case Q_EMUL_VT100:
     case Q_EMUL_VT102:
     case Q_EMUL_VT220:
@@ -949,6 +950,17 @@ void screen_win_flush(void * win) {
  * Clear the entire screen using the curses werase() call.
  */
 void screen_clear() {
+    int i;
+    if (has_true_doublewidth() == Q_TRUE) {
+        for (i = 0; i < HEIGHT; i++) {
+            screen_move_yx(i, 0);
+            screen_flush();
+            fflush(stdout);
+            fprintf(stdout, "\033#5");
+            fflush(stdout);
+        }
+    }
+
     werase(stdscr);
 }
 
@@ -961,6 +973,17 @@ void screen_really_clear() {
     int i;
     cchar_t ncurses_ch;
     wchar_t wch[2];
+
+    if (has_true_doublewidth() == Q_TRUE) {
+        for (i = 0; i < HEIGHT; i++) {
+            screen_move_yx(i, 0);
+            screen_flush();
+            fflush(stdout);
+            fprintf(stdout, "\033#5");
+            fflush(stdout);
+        }
+    }
+
     wch[0] = ' ';
     wch[1] = 0;
     setcchar(&ncurses_ch, wch, A_NORMAL, 0x1, NULL);
@@ -1017,6 +1040,7 @@ void screen_beep() {
     case Q_EMUL_DEBUG:
     case Q_EMUL_ANSI:
     case Q_EMUL_AVATAR:
+    case Q_EMUL_PETSCII:
     case Q_EMUL_VT52:
     case Q_EMUL_VT100:
     case Q_EMUL_VT102:
@@ -1196,13 +1220,6 @@ void screen_clear_remaining_line(Q_BOOL double_width) {
     int i;
     getyx(stdscr, y, x);
     for (i = x; i < WIDTH; i++) {
-        if (double_width == Q_TRUE) {
-            if ((2 * i) >= WIDTH) {
-                break;
-            } else if (i >= WIDTH) {
-                break;
-            }
-        }
         screen_put_char_yx(y, i, ' ', 0,
                            screen_color(Q_COLOR_CONSOLE_BACKGROUND));
     }
@@ -1377,4 +1394,18 @@ void screen_win_draw_box_color(void * window, const int left, const int top,
     }
     mvwchgat(stdscr, window_top + window_height, window_left + 2, window_length,
              0, q_white_color_pair_num, NULL);
+
+    /*
+     * Switch the lines the box is drawn on to normal-width.
+     */
+    if (has_true_doublewidth() == Q_TRUE) {
+        for (i = 0; i <= window_height; i++) {
+            screen_move_yx(window_top + i, 0);
+            screen_flush();
+            fflush(stdout);
+            fprintf(stdout, "\033#5");
+            fflush(stdout);
+        }
+    }
+
 }

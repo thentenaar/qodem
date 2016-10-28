@@ -72,6 +72,13 @@ HANDLE q_child_thread = NULL;
 /* If set, errors in spawn_process() will be emitted to stderr. */
 /* #define DEBUG_SPAWNPROCESS 1 */
 
+#else
+
+/*
+ * POSIX case: we need to reset the child exited flag before forkpty().
+ */
+extern Q_BOOL q_child_exited;
+
 #endif
 
 /**
@@ -369,6 +376,12 @@ static void spawn_process(char * command_line, Q_EMULATION emulation) {
             columns = WIDTH;
         }
         break;
+    case Q_EMUL_PETSCII:
+        /*
+         * PETSCII is always 40 columns.
+         */
+        columns = 40;
+        break;
     default:
         columns = WIDTH;
         break;
@@ -454,6 +467,11 @@ static void spawn_process(char * command_line, Q_EMULATION emulation) {
      */
 
     /*
+     * Assume the child has not yet exited.
+     */
+    q_child_exited = Q_FALSE;
+
+    /*
      * Fork and put the child on a new tty
      */
     char ** target_argv;
@@ -519,6 +537,12 @@ static void spawn_process(char * command_line, Q_EMULATION emulation) {
             } else {
                 columns = WIDTH;
             }
+            break;
+        case Q_EMUL_PETSCII:
+            /*
+             * PETSCII is always 40 columns.
+             */
+            columns = 40;
             break;
         default:
             columns = WIDTH;

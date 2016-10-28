@@ -140,6 +140,7 @@ $(QODEM_SRC_DIR)/modem.c \
 $(QODEM_SRC_DIR)/music.c \
 $(QODEM_SRC_DIR)/netclient.c\
 $(QODEM_SRC_DIR)/options.c \
+$(QODEM_SRC_DIR)/petscii.c \
 $(QODEM_SRC_DIR)/phonebook.c \
 $(QODEM_SRC_DIR)/protocols.c \
 $(QODEM_SRC_DIR)/qodem.c \
@@ -173,6 +174,7 @@ $(QODEM_OBJS_DIR)/modem.o \
 $(QODEM_OBJS_DIR)/music.o \
 $(QODEM_OBJS_DIR)/netclient.o \
 $(QODEM_OBJS_DIR)/options.o \
+$(QODEM_OBJS_DIR)/petscii.o \
 $(QODEM_OBJS_DIR)/phonebook.o \
 $(QODEM_OBJS_DIR)/protocols.o \
 $(QODEM_OBJS_DIR)/qodem.o \

@@ -302,6 +302,13 @@ void codepage_keyboard_handler(const int keystroke, const int flags) {
         codepage_koi8_r = Q_TRUE;
         codepage_koi8_u = Q_TRUE;
         break;
+
+    case Q_EMUL_PETSCII:
+        /*
+         * PETSCII is a special case, it has no real pluggable codepage
+         * support.
+         */
+        break;
     }
 
     switch (keystroke) {
@@ -579,6 +586,8 @@ void codepage_refresh() {
         codepage_cp1252 = Q_TRUE;
         codepage_koi8_r = Q_TRUE;
         codepage_koi8_u = Q_TRUE;
+        break;
+    case Q_EMUL_PETSCII:
         break;
     }
 

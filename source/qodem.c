@@ -138,6 +138,13 @@ static Q_BOOL q_serial_readable;
 
 #endif /* Q_NO_SERIAL */
 
+#else
+
+/**
+ * If true, we have received a SIGCHLD that matches q_child_pid.
+ */
+Q_BOOL q_child_exited = Q_FALSE;
+
 #endif /* Q_PDCURSES_WIN32 */
 
 /**
@@ -308,6 +315,55 @@ static struct timeval ssh_tv;
  * PDCurses.  data_handler() selects on this to improve latency.
  */
 extern int xc_key_sock;
+#endif
+
+#ifndef WIN32
+
+/**
+ * SIGCHLD signal handler.
+ *
+ * @param sig the signal number
+ */
+static void handle_sigchld(int sig) {
+    pid_t pid;
+    int status;
+
+    if (q_child_pid == -1) {
+        /*
+         * We got SIGCHLD, but think we are offline anyway.  Just say we
+         * exited.
+         */
+        q_child_exited = Q_TRUE;
+    }
+
+    for (;;) {
+        pid = waitpid(-1, &status, WNOHANG);
+        if (pid == -1) {
+            /*
+             * Error in the waitpid() call.
+             */
+            DLOG(("Error in waitpid(): %s (%d)\n", errno, strerror(errno)));
+            break;
+        }
+        if (pid == 0) {
+            /*
+             * Reaped the last zombie, bail out now.
+             */
+            DLOG(("No more zombies\n"));
+            break;
+        }
+        if (pid == q_child_pid) {
+            /*
+             * The connection has closed.
+             */
+            q_child_exited = Q_TRUE;
+            DLOG(("SIGCHLD: CONNECTION CLOSED\n"));
+        }
+
+        DLOG(("Reaped process %d\n", pid));
+    }
+}
+
 #endif
 
 /**
@@ -2036,6 +2092,65 @@ no_data:
 }
 
 /**
+ * See if a child process has exited.  For non-shell connections, this
+ * returns false.
+ *
+ * @return true if the child process has exited
+ */
+static Q_BOOL child_is_dead() {
+
+#ifdef Q_PDCURSES_WIN32
+    DWORD status;
+#endif
+
+#ifdef Q_PDCURSES_WIN32
+
+    /* Win32 case */
+    if (q_child_process == NULL) {
+        /*
+         * This is not a shell connection.
+         */
+        return Q_FALSE;
+    }
+
+    if (GetExitCodeProcess(q_child_process, &status) == TRUE) {
+        /* Got return code */
+        if (status == STILL_ACTIVE) {
+            /*
+             * Process is still running.
+             */
+            return Q_FALSE;
+        } else {
+            /*
+             * Process has died.
+             */
+            return Q_TRUE;
+        }
+    } else {
+        /*
+         * Can't get process exit code, assume it is dead.
+         */
+        return Q_TRUE;
+    }
+
+#else
+
+    /* POSIX case */
+    if (q_child_pid == -1) {
+        /*
+         * This is not a shell connection.
+         */
+        return Q_FALSE;
+    }
+
+    /* See if SIGCHLD was received before. */
+    return q_child_exited;
+
+#endif /* Q_PDCURSES_WIN32 */
+
+}
+
+/**
  * Check various data sources and sinks for data, and dispatch to appropriate
  * handlers.
  */
@@ -2418,14 +2533,13 @@ static void data_handler() {
 #else
 
     rc = select(select_fd_max, &readfds, &writefds, &exceptfds,
-        &listen_timeout);
+                &listen_timeout);
 
 #endif /* Q_PDCURSES_WIN32 */
 
-        /*
-        DLOG(("q_program_state = %d select() returned %d\n",
-            q_program_state, rc));
-         */
+    /*
+    DLOG(("q_program_state = %d select() returned %d\n", q_program_state, rc));
+    */
 
     switch (rc) {
 
@@ -2530,6 +2644,28 @@ static void data_handler() {
                     close_connection();
                 }
             }
+        }
+
+        /*
+         * See if the child process died.  It's possible for the child
+         * process to be defunct but the fd still be active, e.g. if a shell
+         * has a blocked background process with an open handle to its
+         * stdout.
+         */
+        if (child_is_dead() == Q_TRUE) {
+            qlog(_("Child process has exited, closing...\n"));
+            close_connection();
+
+            /*
+             * We need to cleanup immediately, because read() will never
+             * return 0.
+             */
+            cleanup_connection();
+
+            /*
+             * Don't allow the loop to enter process_incoming_data().
+             */
+            break;
         }
 
         /*
@@ -2858,6 +2994,13 @@ static void reset_global_state() {
     q_status.avatar_color           = Q_TRUE;
     q_status.avatar_ansi_fallback   = Q_TRUE;
 
+    /*
+     * I don't think there are any PETSCII emulators that also speak ANSI,
+     * but it comes for mostly free so I will leave it in.
+     */
+    q_status.petscii_color          = Q_TRUE;
+    q_status.petscii_ansi_fallback  = Q_TRUE;
+
 #ifndef Q_NO_SERIAL
     q_status.serial_open            = Q_FALSE;
 #endif /* Q_NO_SERIAL */
@@ -3174,6 +3317,9 @@ int qodem_main(int argc, char * const argv[]) {
 #ifndef Q_PDCURSES_WIN32
     /* Ignore SIGPIPE */
     signal(SIGPIPE, SIG_IGN);
+
+    /* Catch SIGCHLD */
+    signal(SIGCHLD, handle_sigchld);
 #endif
 
     if (q_status.xterm_mode == Q_TRUE) {

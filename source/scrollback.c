@@ -501,6 +501,13 @@ void print_character(const wchar_t character) {
             right_margin = 79;
         }
         break;
+    case Q_EMUL_PETSCII:
+        /*
+         * PETSCII is always 40 columns on screen.  But these are
+         * double-width lines, so the visible right margin is 80 columns.
+         */
+        right_margin = 79;
+        break;
     default:
         /*
          * VT100-ish emulations:  check the actual right margin value
@@ -1626,7 +1633,9 @@ void render_scrollback(const int skip_lines) {
 
             if ((xterm == Q_TRUE) &&
                 ((double_on_last_screen == Q_TRUE) ||
-                 (double_on_this_screen == Q_TRUE))
+                 (double_on_this_screen == Q_TRUE)) &&
+                ((q_program_state == Q_STATE_CONSOLE) ||
+                 (q_program_state == Q_STATE_SCROLLBACK))
             ) {
                 screen_move_yx(row, 0);
                 if ((line->double_width == Q_TRUE) &&
@@ -1684,7 +1693,9 @@ void render_scrollback(const int skip_lines) {
                         if ((2 * i) >= WIDTH) {
                             break;
                         }
-                        if (xterm == Q_FALSE) {
+                        if ((xterm == Q_FALSE) &&
+                            (q_status.emulation != Q_EMUL_PETSCII)
+                        ) {
                             screen_put_scrollback_char_yx(row, (2 * i),
                                 translate_unicode_in(line->chars[i]), color);
                             screen_put_scrollback_char_yx(row, (2 * i) + 1, ' ',

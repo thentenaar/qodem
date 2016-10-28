@@ -286,6 +286,12 @@ void refresh_handler() {
  */
 void switch_state(const Q_PROGRAM_STATE new_state) {
 
+    if ((q_program_state == Q_STATE_CONSOLE) &&
+        (has_true_doublewidth() == Q_TRUE)) {
+
+        screen_clear();
+    }
+
     switch (new_state) {
 
     case Q_STATE_DOWNLOAD_MENU:

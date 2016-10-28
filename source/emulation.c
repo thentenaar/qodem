@@ -28,6 +28,7 @@
 #include "vt52.h"
 #include "vt100.h"
 #include "avatar.h"
+#include "petscii.h"
 #include "keyboard.h"
 #include "states.h"
 #include "options.h"
@@ -95,6 +96,8 @@ Q_EMULATION emulation_from_string(const char * string) {
         return Q_EMUL_XTERM;
     } else if (strncasecmp(string, "X_UTF8", sizeof("X_UTF8")) == 0) {
         return Q_EMUL_XTERM_UTF8;
+    } else if (strncasecmp(string, "PETSCII", sizeof("PETSCII")) == 0) {
+        return Q_EMUL_PETSCII;
     } else if (strncasecmp(string, "DEBUG", sizeof("DEBUG")) == 0) {
         return Q_EMUL_DEBUG;
     }
@@ -144,6 +147,9 @@ const char * emulation_string(const Q_EMULATION emulation) {
     case Q_EMUL_XTERM_UTF8:
         return "X_UTF8";
 
+    case Q_EMUL_PETSCII:
+        return "PETSCII";
+
     case Q_EMUL_DEBUG:
         return "DEBUG";
 
@@ -185,6 +191,7 @@ const char * emulation_term(Q_EMULATION emulation) {
     case Q_EMUL_XTERM_UTF8:
         return "xterm";
     case Q_EMUL_DEBUG:
+    case Q_EMUL_PETSCII:
     default:
         /*
          * No default terminal setting
@@ -333,6 +340,7 @@ Q_CODEPAGE default_codepage(Q_EMULATION emulation) {
     case Q_EMUL_AVATAR:
     case Q_EMUL_LINUX:
     case Q_EMUL_XTERM:
+    case Q_EMUL_PETSCII:
         return Q_CODEPAGE_CP437;
     }
 
@@ -844,6 +852,8 @@ Q_EMULATION_STATUS terminal_emulator(const unsigned char from_modem,
      *
      * AVATAR uses the other control characters as its codes, so we can't
      * process them here.
+     *
+     * PETSCII processes every byte on its own.
      */
     if ((q_status.emulation != Q_EMUL_VT100) &&
         (q_status.emulation != Q_EMUL_VT102) &&
@@ -853,8 +863,9 @@ Q_EMULATION_STATUS terminal_emulator(const unsigned char from_modem,
         (q_status.emulation != Q_EMUL_XTERM) &&
         (q_status.emulation != Q_EMUL_XTERM_UTF8) &&
         (q_status.emulation != Q_EMUL_AVATAR) &&
+        (q_status.emulation != Q_EMUL_PETSCII) &&
         (q_status.emulation != Q_EMUL_DEBUG)
-        ) {
+    ) {
         if (from_modem == C_CR) {
             cursor_carriage_return();
             *to_screen = 1;
@@ -878,6 +889,9 @@ Q_EMULATION_STATUS terminal_emulator(const unsigned char from_modem,
         break;
     case Q_EMUL_AVATAR:
         last_state = avatar(from_modem, to_screen);
+        break;
+    case Q_EMUL_PETSCII:
+        last_state = petscii(from_modem, to_screen);
         break;
     case Q_EMUL_VT100:
     case Q_EMUL_VT102:
@@ -909,6 +923,9 @@ Q_EMULATION_STATUS terminal_emulator(const unsigned char from_modem,
                 break;
             case Q_EMUL_AVATAR:
                 last_state = avatar(q_emul_repeat_state_buffer[i], to_screen);
+                break;
+            case Q_EMUL_PETSCII:
+                last_state = petscii(q_emul_repeat_state_buffer[i], to_screen);
                 break;
             case Q_EMUL_VT100:
             case Q_EMUL_VT102:
@@ -972,6 +989,7 @@ void reset_emulation() {
     ansi_reset();
     vt52_reset();
     avatar_reset();
+    petscii_reset();
     vt100_reset();
     debug_reset();
     q_emulation_right_margin = -1;
@@ -1000,6 +1018,7 @@ void reset_emulation() {
 
     case Q_EMUL_ANSI:
     case Q_EMUL_AVATAR:
+    case Q_EMUL_PETSCII:
     case Q_EMUL_VT52:
     case Q_EMUL_VT100:
     case Q_EMUL_VT102:
@@ -1020,7 +1039,7 @@ void emulation_menu_refresh() {
     int message_left;
     int window_left;
     int window_top;
-    int window_height = 18;
+    int window_height = 19;
     int window_length;
 
     if (q_screen_dirty == Q_FALSE) {
@@ -1123,26 +1142,29 @@ void emulation_menu_refresh() {
     screen_put_color_str_yx(window_top + 9, window_left + 7, "G",
                             Q_COLOR_MENU_COMMAND);
     screen_put_color_printf(Q_COLOR_MENU_TEXT, "  VT220");
-    screen_put_color_str_yx(window_top + 10, window_left + 7, "L",
+    screen_put_color_str_yx(window_top + 10, window_left + 7, "P",
+                            Q_COLOR_MENU_COMMAND);
+    screen_put_color_printf(Q_COLOR_MENU_TEXT, "  PETSCII");
+    screen_put_color_str_yx(window_top + 11, window_left + 7, "L",
                             Q_COLOR_MENU_COMMAND);
     screen_put_color_printf(Q_COLOR_MENU_TEXT, "  LINUX");
-    screen_put_color_str_yx(window_top + 11, window_left + 7, "T",
+    screen_put_color_str_yx(window_top + 12, window_left + 7, "T",
                             Q_COLOR_MENU_COMMAND);
     screen_put_color_printf(Q_COLOR_MENU_TEXT, "  LINUX UTF-8");
-    screen_put_color_str_yx(window_top + 12, window_left + 7, "X",
+    screen_put_color_str_yx(window_top + 13, window_left + 7, "X",
                             Q_COLOR_MENU_COMMAND);
     screen_put_color_printf(Q_COLOR_MENU_TEXT, "  XTERM");
-    screen_put_color_str_yx(window_top + 13, window_left + 7, "8",
+    screen_put_color_str_yx(window_top + 14, window_left + 7, "8",
                             Q_COLOR_MENU_COMMAND);
     screen_put_color_printf(Q_COLOR_MENU_TEXT, "  XTERM UTF-8");
-    screen_put_color_str_yx(window_top + 14, window_left + 7, "U",
+    screen_put_color_str_yx(window_top + 15, window_left + 7, "U",
                             Q_COLOR_MENU_COMMAND);
     screen_put_color_printf(Q_COLOR_MENU_TEXT, "  DEBUG");
 
     /*
      * Prompt
      */
-    screen_put_color_str_yx(window_top + 16, window_left + 2,
+    screen_put_color_str_yx(window_top + 17, window_left + 2,
                             _("Your Choice ? "), Q_COLOR_MENU_COMMAND);
 
     screen_flush();
@@ -1202,6 +1224,11 @@ void emulation_menu_keyboard_handler(const int keystroke, const int flags) {
     case 'L':
     case 'l':
         new_emulation = Q_EMUL_LINUX;
+        break;
+
+    case 'P':
+    case 'p':
+        new_emulation = Q_EMUL_PETSCII;
         break;
 
     case 'T':

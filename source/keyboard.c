@@ -89,6 +89,7 @@
 #include "states.h"
 #include "console.h"
 #include "ansi.h"
+#include "petscii.h"
 #include "vt52.h"
 #include "vt100.h"
 #include "options.h"
@@ -229,6 +230,7 @@ static struct emulation_keyboard terminfo_keyboards[Q_EMULATION_MAX + 1] = {
     {Q_EMUL_VT102, "vt102"},
     {Q_EMUL_VT220, "vt220"},
     {Q_EMUL_AVATAR, "avatar"},
+    {Q_EMUL_PETSCII, "petscii"},
     {Q_EMUL_DEBUG, "tty"},
     {Q_EMUL_LINUX, "linux"},
     {Q_EMUL_LINUX_UTF8, "linux"},
@@ -250,6 +252,7 @@ static struct emulation_keyboard emulation_bound_keyboards[Q_EMULATION_MAX +
     {Q_EMUL_VT102, "vt102"},
     {Q_EMUL_VT220, "vt220"},
     {Q_EMUL_AVATAR, "avatar"},
+    {Q_EMUL_PETSCII, "petscii"},
     {Q_EMUL_DEBUG, "tty"},
     {Q_EMUL_LINUX, "linux"},
     {Q_EMUL_LINUX_UTF8, "linux"},
@@ -1301,6 +1304,9 @@ void post_keystroke(const int keystroke, const int flags) {
         case Q_EMUL_ANSI:
         case Q_EMUL_AVATAR:
             term_string = ansi_keystroke(keystroke);
+            break;
+        case Q_EMUL_PETSCII:
+            term_string = petscii_keystroke(keystroke);
             break;
         case Q_EMUL_VT52:
             term_string = vt52_keystroke(keystroke);

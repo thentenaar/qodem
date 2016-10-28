@@ -12,8 +12,6 @@ Fix all marked TODOs in code
 
 #26 Handle multiple instances operating on the phonebook
 
-#35 exit_on_disconnect hangs
-
 #38 Be able to run fully portable
 
 #41 PETSCII

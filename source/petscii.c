@@ -1,5 +1,5 @@
 /*
- * avatar.c
+ * petscii.c
  *
  * qodem - Qodem Terminal Emulator
  *
@@ -23,12 +23,13 @@
 #include "qodem.h"
 #include "screen.h"
 #include "scrollback.h"
+#include "netclient.h"
 #include "options.h"
 #include "ansi.h"
 #include "avatar.h"
 
 /* Set this to a not-NULL value to enable debug log. */
-/* static const char * DLOGNAME = "avatar"; */
+/* static const char * DLOGNAME = "petscii"; */
 static const char * DLOGNAME = NULL;
 
 /**
@@ -92,7 +93,7 @@ static int ansi_buffer_i;
 /**
  * Reset the emulation state.
  */
-void avatar_reset() {
+void petscii_reset() {
     scan_state = SCAN_NONE;
     if (v_y_chars != NULL) {
         Xfree(v_y_chars, __FILE__, __LINE__);
@@ -100,7 +101,8 @@ void avatar_reset() {
     }
     v_y_chars_i = 0;
     v_y_chars_n = 0;
-    DLOG(("avatar_reset()\n"));
+
+    DLOG(("petscii_reset()\n"));
 }
 
 /**
@@ -137,7 +139,7 @@ static void save_char(unsigned char keep_char, wchar_t * to_screen) {
 }
 
 /*
- * The AVATAR specification defines colors in terms of the CGA bitmask.  This
+ * The PETSCII specification defines colors in terms of the CGA bitmask.  This
  * maps those bits to a curses color number.
  */
 static short pc_to_curses_map[] = {
@@ -177,7 +179,7 @@ static short pc_to_curses_map[] = {
  *
  * @param from_modem one byte from the remote side
  */
-static void avatar_set_color(const unsigned char from_modem) {
+static void petscii_set_color(const unsigned char from_modem) {
     short fg;
     short bg;
     attr_t attr;
@@ -202,7 +204,7 @@ static void avatar_set_color(const unsigned char from_modem) {
 }
 
 /**
- * Push one byte through the AVATAR emulator.
+ * Push one byte through the PETSCII emulator.
  *
  * @param from_modem one byte from the remote side.
  * @param to_screen if the return is Q_EMUL_FSM_ONE_CHAR or
@@ -210,7 +212,9 @@ static void avatar_set_color(const unsigned char from_modem) {
  * the screen.
  * @return one of the Q_EMULATION_STATUS constants.  See emulation.h.
  */
-Q_EMULATION_STATUS avatar(const unsigned char from_modem, wchar_t * to_screen) {
+Q_EMULATION_STATUS petscii(const unsigned char from_modem,
+                           wchar_t * to_screen) {
+
     static unsigned char * count;
     static attr_t attributes;
     Q_EMULATION_STATUS rc;
@@ -221,7 +225,13 @@ Q_EMULATION_STATUS avatar(const unsigned char from_modem, wchar_t * to_screen) {
 
     DLOG(("STATE: %d CHAR: 0x%02x '%c'\n", scan_state, from_modem, from_modem));
 
-avatar_start:
+    /*
+     * PETSCII is always double-width.  Just set it no matter what line we
+     * are writing to.
+     */
+    set_double_width(Q_TRUE);
+
+petscii_start:
 
     switch (scan_state) {
 
@@ -342,7 +352,7 @@ avatar_start:
         /*
          * from_modem has new color attribute.
          */
-        avatar_set_color(from_modem);
+        petscii_set_color(from_modem);
 
         clear_state(to_screen);
         return Q_EMUL_FSM_NO_CHAR_YET;
@@ -413,7 +423,7 @@ repeat_loop:
         y_count--;
 
         /*
-         * Avatar allows repeated single characters to be control characters
+         * PETSCII allows repeated single characters to be control characters
          * too.  They have to be handled but not displayed.
          */
         if (iscntrl(y_char)) {
@@ -585,7 +595,7 @@ repeat_loop:
         old_y = q_status.cursor_y;
 
         for (i = 0; i < from_modem; i++) {
-            avatar_set_color(q_emul_buffer[3]);
+            petscii_set_color(q_emul_buffer[3]);
             fill_line_with_character(q_status.cursor_x,
                                      q_status.cursor_x + q_emul_buffer[4],
                                      q_emul_buffer[2], Q_FALSE);
@@ -764,9 +774,9 @@ repeat_loop:
         save_char(from_modem, to_screen);
 
         if (from_modem == '[') {
-            if (q_status.avatar_color == Q_TRUE) {
+            if (q_status.petscii_color == Q_TRUE) {
                 /*
-                 * Fall into SCAN_CSI only if AVATAR_COLOR is enabled.
+                 * Fall into SCAN_CSI only if PETSCII_COLOR is enabled.
                  */
                 scan_state = SCAN_CSI;
                 return Q_EMUL_FSM_NO_CHAR_YET;
@@ -856,13 +866,12 @@ repeat_loop:
 
     } /* switch (scan_state) */
 
-    if (q_status.avatar_ansi_fallback == Q_TRUE) {
+    if (q_status.petscii_ansi_fallback == Q_TRUE) {
         /*
          * Process through ANSI fallback code.
          *
-         * This is UGLY AS HELL, but lots of BBSes assume that Avatar
-         * emulators will "fallback" to ANSI for sequences they don't
-         * understand.
+         * This is UGLY AS HELL, but lots of BBSes assume that every emulator
+         * will "fallback" to ANSI for sequences they don't understand.
          */
         scan_state = SCAN_ANSI_FALLBACK;
         DLOG(("ANSI FALLBACK BEGIN\n"));
@@ -883,7 +892,7 @@ repeat_loop:
          * Run through the emulator again
          */
         assert(ansi_buffer_n > 0);
-        goto avatar_start;
+        goto petscii_start;
 
     } else {
 
@@ -917,4 +926,155 @@ repeat_loop:
      */
     abort();
     return Q_EMUL_FSM_NO_CHAR_YET;
+}
+
+/**
+ * Generate a sequence of bytes to send to the remote side that correspond to
+ * a keystroke.
+ *
+ * @param keystroke one of the Q_KEY values, OR a Unicode code point.  See
+ * input.h.
+ * @return a wide string that is appropriate to send to the remote side.
+ * Note that ANSI emulation is an 8-bit emulation: only the bottom 8 bits are
+ * transmitted to the remote side.  See post_keystroke().
+ */
+wchar_t * petscii_keystroke(const int keystroke) {
+
+    switch (keystroke) {
+    case Q_KEY_BACKSPACE:
+        if (q_status.hard_backspace == Q_TRUE) {
+            return L"\010";
+        } else {
+            return L"\177";
+        }
+
+    case Q_KEY_LEFT:
+        return L"\033[D";
+
+    case Q_KEY_RIGHT:
+        return L"\033[C";
+
+    case Q_KEY_UP:
+        return L"\033[A";
+
+    case Q_KEY_DOWN:
+        return L"\033[B";
+
+    case Q_KEY_PPAGE:
+        return L"\033[V";
+    case Q_KEY_NPAGE:
+        return L"\033[U";
+    case Q_KEY_IC:
+        return L"\033[@";
+    case Q_KEY_DC:
+        return L"\177";
+    case Q_KEY_SIC:
+    case Q_KEY_SDC:
+        return L"";
+    case Q_KEY_HOME:
+        return L"\033[H";
+    case Q_KEY_END:
+        return L"\033[K";
+    case Q_KEY_F(1):
+        return L"\033OP";
+    case Q_KEY_F(2):
+        return L"\033OQ";
+    case Q_KEY_F(3):
+        return L"\033OR";
+    case Q_KEY_F(4):
+        return L"\033OS";
+    case Q_KEY_F(5):
+        return L"\033Ot";
+    case Q_KEY_F(6):
+        return L"\033[17~";
+    case Q_KEY_F(7):
+        return L"\033[18~";
+    case Q_KEY_F(8):
+        return L"\033[19~";
+    case Q_KEY_F(9):
+        return L"\033[20~";
+    case Q_KEY_F(10):
+        return L"\033[21~";
+    case Q_KEY_F(11):
+        return L"\033[23~";
+    case Q_KEY_F(12):
+        return L"\033[24~";
+    case Q_KEY_F(13):
+    case Q_KEY_F(14):
+    case Q_KEY_F(15):
+    case Q_KEY_F(16):
+    case Q_KEY_F(17):
+    case Q_KEY_F(18):
+    case Q_KEY_F(19):
+    case Q_KEY_F(20):
+    case Q_KEY_F(21):
+    case Q_KEY_F(22):
+    case Q_KEY_F(23):
+    case Q_KEY_F(24):
+    case Q_KEY_F(25):
+    case Q_KEY_F(26):
+    case Q_KEY_F(27):
+    case Q_KEY_F(28):
+    case Q_KEY_F(29):
+    case Q_KEY_F(30):
+    case Q_KEY_F(31):
+    case Q_KEY_F(32):
+    case Q_KEY_F(33):
+    case Q_KEY_F(34):
+    case Q_KEY_F(35):
+    case Q_KEY_F(36):
+        return L"";
+
+    case Q_KEY_PAD0:
+        return L"0";
+    case Q_KEY_C1:
+    case Q_KEY_PAD1:
+        return L"1";
+    case Q_KEY_C2:
+    case Q_KEY_PAD2:
+        return L"2";
+    case Q_KEY_C3:
+    case Q_KEY_PAD3:
+        return L"3";
+    case Q_KEY_B1:
+    case Q_KEY_PAD4:
+        return L"4";
+    case Q_KEY_B2:
+    case Q_KEY_PAD5:
+        return L"5";
+    case Q_KEY_B3:
+    case Q_KEY_PAD6:
+        return L"6";
+    case Q_KEY_A1:
+    case Q_KEY_PAD7:
+        return L"7";
+    case Q_KEY_A2:
+    case Q_KEY_PAD8:
+        return L"8";
+    case Q_KEY_A3:
+    case Q_KEY_PAD9:
+        return L"9";
+    case Q_KEY_PAD_STOP:
+        return L".";
+    case Q_KEY_PAD_SLASH:
+        return L"/";
+    case Q_KEY_PAD_STAR:
+        return L"*";
+    case Q_KEY_PAD_MINUS:
+        return L"-";
+    case Q_KEY_PAD_PLUS:
+        return L"+";
+    case Q_KEY_PAD_ENTER:
+    case Q_KEY_ENTER:
+        if (telnet_is_ascii()) {
+            return L"\015\012";
+        }
+        return L"\015";
+
+    default:
+        break;
+
+    }
+
+    return NULL;
 }
