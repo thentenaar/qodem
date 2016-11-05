@@ -2445,26 +2445,75 @@ static void sgr() {
                     foreground = Q_COLOR_WHITE;
                     break;
                 case 38:
-                    foreground = q_text_colors[Q_COLOR_CONSOLE_TEXT].fg;
-                    if (q_text_colors[Q_COLOR_CONSOLE_TEXT].bold == Q_TRUE) {
-                        q_current_color |= Q_A_BOLD;
-                    }
                     if ((q_status.emulation == Q_EMUL_LINUX_UTF8) ||
                         (q_status.emulation == Q_EMUL_LINUX)
                     ) {
-                        /* Linux console also flips underline */
+                        /*
+                         * Linux console: set underscore on, set default
+                         * foreground color.
+                         */
+                        foreground = q_text_colors[Q_COLOR_CONSOLE_TEXT].fg;
+                        if (q_text_colors[Q_COLOR_CONSOLE_TEXT].bold ==
+                                Q_TRUE) {
+                            q_current_color |= Q_A_BOLD;
+                        }
                         q_current_color |= Q_A_UNDERLINE;
+                    }
+
+                    if ((q_status.emulation == Q_EMUL_XTERM_UTF8) ||
+                        (q_status.emulation == Q_EMUL_XTERM)
+                    ) {
+                        /*
+                         * Xterm supports T.416 / ISO-8613-3 codes to select
+                         * either an indexed color or an RGB value.  (It also
+                         * permits these ISO-8613-3 SGR sequences to be
+                         * separated by colons rather than semicolons.)
+                         *
+                         * We will not support any of these additional color
+                         * codes at this time:
+                         *
+                         * 1. The ncurses API does not expose RGB colors
+                         *    ("direct colors"), PDCurses has A_RGB but only
+                         *    for win32a using its non-standard CHTYPE_LONG =
+                         *    2, so getting Qodem to actually emit RGB values
+                         *    on all of its platforms is non-trivial.
+                         *
+                         * 2. http://invisible-island.net/ncurses/ncurses.faq.html#xterm_16MegaColors
+                         *    has a detailed discussion of the current state
+                         *    of RGB in various terminals, the point of which
+                         *    is that none of them really do the same thing
+                         *    despite all appearing to be "xterm".
+                         *
+                         * 3. As seen in
+                         *    https://bugs.kde.org/show_bug.cgi?id=107487#c3,
+                         *    even supporting just the "indexed mode" of
+                         *    these sequences (which could align easily with
+                         *    existing SGR colors) is assumed to mean full
+                         *    support of 24-bit RGB.  So it is all or
+                         *    nothing.
+                         *
+                         * Finally, these sequences break the assumptions of
+                         * standard ECMA-48 style parsers as pointed out at
+                         * https://bugs.kde.org/show_bug.cgi?id=107487#c11 .
+                         * Therefore in order to keep a clean display, we
+                         * cannot parse anything else in this sequence.
+                         */
+                        return;
                     }
                     break;
                 case 39:
-                    foreground = q_text_colors[Q_COLOR_CONSOLE_TEXT].fg;
-                    if (q_text_colors[Q_COLOR_CONSOLE_TEXT].bold == Q_TRUE) {
-                        q_current_color |= Q_A_BOLD;
-                    }
                     if ((q_status.emulation == Q_EMUL_LINUX_UTF8) ||
                         (q_status.emulation == Q_EMUL_LINUX)
                     ) {
-                        /* Linux console also flips underline */
+                        /*
+                         * Linux console: set underscore off, set default
+                         * foreground color.
+                         */
+                        foreground = q_text_colors[Q_COLOR_CONSOLE_TEXT].fg;
+                        if (q_text_colors[Q_COLOR_CONSOLE_TEXT].bold ==
+                                Q_TRUE) {
+                            q_current_color |= Q_A_BOLD;
+                        }
                         q_current_color &= ~Q_A_UNDERLINE;
                     }
                     break;
@@ -2499,6 +2548,23 @@ static void sgr() {
                 case 47:
                     /* Set white background */
                     background = Q_COLOR_WHITE;
+                    break;
+                case 48:
+                    if ((q_status.emulation == Q_EMUL_XTERM_UTF8) ||
+                        (q_status.emulation == Q_EMUL_XTERM)
+                    ) {
+                        /*
+                         * Xterm supports T.416 / ISO-8613-3 codes to select
+                         * either an indexed color or an RGB value.  (It also
+                         * permits these ISO-8613-3 SGR sequences to be
+                         * separated by colons rather than semicolons.)
+                         *
+                         * We will not support this at this time.  Also, in
+                         * order to keep a clean display, we cannot parse
+                         * anything else in this sequence.
+                         */
+                        return;
+                    }
                     break;
                 case 49:
                     background = q_text_colors[Q_COLOR_CONSOLE_TEXT].bg;

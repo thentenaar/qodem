@@ -2586,7 +2586,7 @@ struct file_info * batch_entry_window(const char * initial_directory,
         /*
          * Support alternate keys
          */
-        if ((keystroke == Q_KEY_ENTER) || (keystroke == 0x0D)) {
+        if ((keystroke == Q_KEY_ENTER) || (keystroke == C_CR)) {
             if (flags & KEY_FLAG_ALT) {
                 keystroke = Q_KEY_F(10);
             } else {
