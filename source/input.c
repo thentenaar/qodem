@@ -2265,18 +2265,24 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
     }
     if (*keystroke == KEY_SFIND) {
         *keystroke = KEY_HOME;
-        *flags = KEY_FLAG_SHIFT;
+        if (flags != NULL) {
+            *flags = KEY_FLAG_SHIFT;
+        }
     }
     if (*keystroke == KEY_SELECT) {
         *keystroke = KEY_END;
     }
     if (*keystroke == KEY_SHOME) {
         *keystroke = KEY_HOME;
-        *flags = KEY_FLAG_SHIFT;
+        if (flags != NULL) {
+            *flags = KEY_FLAG_SHIFT;
+        }
     }
     if (*keystroke == KEY_SEND) {
         *keystroke = KEY_END;
-        *flags = KEY_FLAG_SHIFT;
+        if (flags != NULL) {
+            *flags = KEY_FLAG_SHIFT;
+        }
     }
 
     if (*keystroke != -1) {

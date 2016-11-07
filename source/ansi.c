@@ -2167,9 +2167,6 @@ wchar_t * ansi_keystroke(const int keystroke) {
         return L"+";
     case Q_KEY_PAD_ENTER:
     case Q_KEY_ENTER:
-        if (telnet_is_ascii()) {
-            return L"\015\012";
-        }
         return L"\015";
 
     default:

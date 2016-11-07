@@ -6560,11 +6560,8 @@ wchar_t * vt100_keystroke(const int keystroke) {
         return L"+";
 
     case Q_KEY_PAD_ENTER:
+        /* Number pad Enter, fall through */
     case Q_KEY_ENTER:
-        /* Number pad Enter */
-        if (telnet_is_ascii()) {
-            return L"\015\012";
-        }
         return L"\015";
 
     default:
@@ -7018,11 +7015,8 @@ wchar_t * linux_keystroke(const int keystroke) {
         return L"+";
 
     case Q_KEY_PAD_ENTER:
+        /* Number pad Enter, fall through */
     case Q_KEY_ENTER:
-        /* Number pad Enter */
-        if (telnet_is_ascii()) {
-            return L"\015\012";
-        }
         return L"\015";
 
 
@@ -7582,11 +7576,8 @@ wchar_t * xterm_keystroke(const int keystroke, const int flags) {
         return L"+";
 
     case Q_KEY_PAD_ENTER:
+        /* Number pad Enter, fall through */
     case Q_KEY_ENTER:
-        /* Number pad Enter */
-        if (telnet_is_ascii()) {
-            return L"\015\012";
-        }
         return L"\015";
 
     default:
