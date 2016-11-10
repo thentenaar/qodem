@@ -1488,7 +1488,6 @@ static void printer_functions() {
  */
 static void decswl() {
     DLOG(("decswl()\n"));
-
     set_double_width(Q_FALSE);
 }
 
@@ -3462,8 +3461,8 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
 
     /* 80-8F, 91-97, 99, 9A, 9C --> execute, then switch to SCAN_GROUND */
 
-    /* 0x1B == KEY_ESCAPE */
-    if ((from_modem == KEY_ESCAPE) &&
+    /* 0x1B == C_ESC */
+    if ((from_modem == C_ESC) &&
         (scan_state != SCAN_DCS_ENTRY) &&
         (scan_state != SCAN_DCS_INTERMEDIATE) &&
         (scan_state != SCAN_DCS_IGNORE) &&
@@ -6103,6 +6102,13 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
 wchar_t * vt100_keystroke(const int keystroke) {
 
     switch (keystroke) {
+
+    case Q_KEY_ESCAPE:
+        return L"\033";
+
+    case Q_KEY_TAB:
+        return L"\011";
+
     case Q_KEY_BACKSPACE:
         if ((q_status.hard_backspace == Q_TRUE) &&
             (q_status.emulation != Q_EMUL_VT220)) {
@@ -6585,6 +6591,13 @@ wchar_t * vt100_keystroke(const int keystroke) {
 wchar_t * linux_keystroke(const int keystroke) {
 
     switch (keystroke) {
+
+    case Q_KEY_ESCAPE:
+        return L"\033";
+
+    case Q_KEY_TAB:
+        return L"\011";
+
     case Q_KEY_BACKSPACE:
         if (q_status.hard_backspace == Q_TRUE) {
             return L"\010";
@@ -7112,6 +7125,13 @@ static wchar_t * xterm_build_key_sequence(const wchar_t * ss3,
 wchar_t * xterm_keystroke(const int keystroke, const int flags) {
 
     switch (keystroke) {
+
+    case Q_KEY_ESCAPE:
+        return L"\033";
+
+    case Q_KEY_TAB:
+        return L"\011";
+
     case Q_KEY_BACKSPACE:
         if (q_status.hard_backspace == Q_TRUE) {
             return L"\010";

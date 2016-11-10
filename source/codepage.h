@@ -37,6 +37,8 @@ extern "C" {
 #define C_STX   0x02
 #define C_EOT   0x04
 #define C_ACK   0x06
+#define C_BS    0x08
+#define C_TAB   0x09
 #define C_LF    0x0A
 #define C_CR    0x0D
 #define C_XON   0x11            /* DC1 */

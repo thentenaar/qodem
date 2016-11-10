@@ -2689,7 +2689,7 @@ static char * pick_tag_string() {
         switch (keystroke) {
 
         case '`':
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             /*
              * The abort exit point
              */
@@ -2698,7 +2698,6 @@ static char * pick_tag_string() {
             q_screen_dirty = Q_TRUE;
             return NULL;
         case Q_KEY_BACKSPACE:
-        case 0x08:
             fieldset_backspace(pick_form);
             break;
         case Q_KEY_LEFT:
@@ -2720,7 +2719,6 @@ static char * pick_tag_string() {
             fieldset_delete_char(pick_form);
             break;
         case Q_KEY_ENTER:
-        case C_CR:
             /*
              * The OK exit point
              */
@@ -2730,7 +2728,7 @@ static char * pick_tag_string() {
             q_screen_dirty = Q_TRUE;
             return return_string;
         default:
-            if (!q_key_code_yes(keystroke)) {
+            if ((!q_key_code_yes(keystroke)) && (keystroke != ERR)) {
                 /*
                  * Pass normal keys to form driver
                  */
@@ -2868,7 +2866,7 @@ static Q_BOOL prompt_ssh_password(const wchar_t * initial_username,
         switch (keystroke) {
 
         case '`':
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             /*
              * The abort exit point
              */
@@ -2879,7 +2877,6 @@ static Q_BOOL prompt_ssh_password(const wchar_t * initial_username,
             q_keyboard_blocks = old_keyboard_blocks;
             return Q_FALSE;
         case Q_KEY_BACKSPACE:
-        case 0x08:
             fieldset_backspace(pick_form);
             break;
         case Q_KEY_LEFT:
@@ -2909,7 +2906,6 @@ static Q_BOOL prompt_ssh_password(const wchar_t * initial_username,
             fieldset_render(pick_form);
             break;
         case Q_KEY_ENTER:
-        case C_CR:
             /*
              * The OK exit point
              */
@@ -2936,7 +2932,7 @@ static Q_BOOL prompt_ssh_password(const wchar_t * initial_username,
             q_keyboard_blocks = old_keyboard_blocks;
             return Q_TRUE;
         default:
-            if (!q_key_code_yes(keystroke)) {
+            if ((!q_key_code_yes(keystroke)) && (keystroke != ERR)) {
                 /*
                  * Pass normal keys to form driver
                  */
@@ -3053,7 +3049,7 @@ static char * pick_manual_phone_number() {
         switch (keystroke) {
 
         case '`':
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             /*
              * The abort exit point
              */
@@ -3062,7 +3058,6 @@ static char * pick_manual_phone_number() {
             q_screen_dirty = Q_TRUE;
             return NULL;
         case Q_KEY_BACKSPACE:
-        case 0x08:
             fieldset_backspace(pick_form);
             break;
         case Q_KEY_LEFT:
@@ -3084,7 +3079,6 @@ static char * pick_manual_phone_number() {
             fieldset_delete_char(pick_form);
             break;
         case Q_KEY_ENTER:
-        case C_CR:
             /*
              * The OK exit point
              */
@@ -3094,7 +3088,7 @@ static char * pick_manual_phone_number() {
             q_screen_dirty = Q_TRUE;
             return return_string;
         default:
-            if (!q_key_code_yes(keystroke)) {
+            if ((!q_key_code_yes(keystroke)) && (keystroke != ERR)) {
                 /*
                  * Pass normal keys to form driver
                  */
@@ -3206,7 +3200,7 @@ static char * pick_print_destination() {
         switch (keystroke) {
 
         case '`':
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             /*
              * The abort exit point
              */
@@ -3215,7 +3209,6 @@ static char * pick_print_destination() {
             q_screen_dirty = Q_TRUE;
             return NULL;
         case Q_KEY_BACKSPACE:
-        case 0x08:
             fieldset_backspace(pick_form);
             break;
         case Q_KEY_LEFT:
@@ -3237,7 +3230,6 @@ static char * pick_print_destination() {
             fieldset_delete_char(pick_form);
             break;
         case Q_KEY_ENTER:
-        case C_CR:
             /*
              * The OK exit point
              */
@@ -3247,7 +3239,7 @@ static char * pick_print_destination() {
             q_screen_dirty = Q_TRUE;
             return return_string;
         default:
-            if (!q_key_code_yes(keystroke)) {
+            if ((!q_key_code_yes(keystroke)) && (keystroke != ERR)) {
                 /*
                  * Pass normal keys to form driver
                  */
@@ -3272,7 +3264,7 @@ static void cycle_redialer_number() {
     Q_BOOL wrapped_around;
 
     /*
-     * Note this is identical code to phonebook_keyboard_handler() on C_CR /
+     * Note this is identical code to phonebook_keyboard_handler() on
      * KEY_ENTER.  Keep these two functions in sync.
      */
 
@@ -4450,7 +4442,7 @@ static Q_EMULATION pick_emulation() {
         qodem_win_getch(pick_window, &keystroke, NULL, Q_KEYBOARD_DELAY);
         switch (keystroke) {
         case '`':
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             /*
              * The abort exit point
              */
@@ -4476,7 +4468,6 @@ static Q_EMULATION pick_emulation() {
             break;
         case Q_KEY_ENTER:
         case Q_KEY_F(10):
-        case C_CR:
             /*
              * The OK exit point
              */
@@ -4627,7 +4618,7 @@ static Q_CODEPAGE pick_codepage(Q_EMULATION emulation) {
         qodem_win_getch(pick_window, &keystroke, NULL, Q_KEYBOARD_DELAY);
         switch (keystroke) {
         case '`':
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             /*
              * The abort exit point
              */
@@ -4673,7 +4664,6 @@ static Q_CODEPAGE pick_codepage(Q_EMULATION emulation) {
             break;
         case Q_KEY_ENTER:
         case Q_KEY_F(10):
-        case C_CR:
             /*
              * The OK exit point
              */
@@ -4778,7 +4768,7 @@ static Q_DIAL_METHOD pick_method() {
         qodem_win_getch(pick_window, &keystroke, NULL, Q_KEYBOARD_DELAY);
         switch (keystroke) {
         case '`':
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             /*
              * The abort exit point
              */
@@ -4804,7 +4794,6 @@ static Q_DIAL_METHOD pick_method() {
             break;
         case Q_KEY_ENTER:
         case Q_KEY_F(10):
-        case C_CR:
             /*
              * The OK exit point
              */
@@ -4919,7 +4908,7 @@ static SORT_METHOD pick_sort() {
         qodem_win_getch(pick_window, &keystroke, NULL, Q_KEYBOARD_DELAY);
         switch (keystroke) {
         case '`':
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             /*
              * The abort exit point
              */
@@ -4945,7 +4934,6 @@ static SORT_METHOD pick_sort() {
             break;
         case Q_KEY_ENTER:
         case Q_KEY_F(10):
-        case C_CR:
             /*
              * The OK exit point
              */
@@ -5069,7 +5057,7 @@ static int delete_popup() {
         qodem_win_getch(pick_window, &keystroke, NULL, Q_KEYBOARD_DELAY);
         switch (keystroke) {
         case '`':
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             /*
              * The abort exit point
              */
@@ -5203,7 +5191,7 @@ static Q_DOORWAY pick_doorway() {
         qodem_win_getch(pick_window, &keystroke, NULL, Q_KEYBOARD_DELAY);
         switch (keystroke) {
         case '`':
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             /*
              * The abort exit point
              */
@@ -5230,7 +5218,6 @@ static Q_DOORWAY pick_doorway() {
             break;
         case Q_KEY_ENTER:
         case Q_KEY_F(10):
-        case C_CR:
             /*
              * The OK exit point
              */
@@ -5560,13 +5547,12 @@ static void toggles_form(int * toggles) {
         switch (keystroke) {
 
         case '`':
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             q_screen_dirty = Q_TRUE;
             return;
 
         case Q_KEY_ENTER:
         case Q_KEY_F(10):
-        case C_CR:
 
             /*
              * The OK exit point
@@ -6172,10 +6158,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
         /*
          * Support alternate keys
          */
-        if ((keystroke == Q_KEY_ENTER) ||
-            (keystroke == 0x0A) ||
-            (keystroke == 0x0D)
-        ) {
+        if (keystroke == Q_KEY_ENTER) {
             if (flags & KEY_FLAG_ALT) {
                 keystroke = Q_KEY_F(10);
             }
@@ -6196,7 +6179,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
             real_dirty = Q_TRUE;
             break;
 
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             /*
              * The abort exit point
              */
@@ -6240,7 +6223,6 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
             return;
 
         case Q_KEY_ENTER:
-        case C_CR:
             if (field_number == CLEAR_CALL_INFO) {
                 entry->times_on = 0;
                 entry->last_call = 0;
@@ -6554,7 +6536,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
              *
              * If the default case changes, this might need to also.
              */
-            if (!q_key_code_yes(keystroke)) {
+            if ((!q_key_code_yes(keystroke)) && (keystroke != ERR)) {
                 if (must_use_picklist == Q_FALSE) {
                     /*
                      * Pass normal keys to form driver
@@ -6643,7 +6625,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                             _(" Y-Use the Modem Settings   N-Override the Modem Settings for This Entry "),
                             Q_TRUE, 0.0, "YyNn\r"));
 
-                    if ((keystroke == 'y') || (keystroke == C_CR)) {
+                    if ((keystroke == 'y') || (keystroke == Q_KEY_ENTER)) {
                         use_modem_cfg = Q_TRUE;
                     } else {
                         use_modem_cfg = Q_FALSE;
@@ -6656,7 +6638,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                                 _("DTE Baud"), _("Lock DTE Baud? [Y/n] "),
                                 _(" Y-Lock Serial Port Speed   N-Change Serial Port Speed After CONNECT "),
                                 Q_TRUE, 0.0, "YyNn\r"));
-                        if ((keystroke == 'y') || (keystroke == C_CR)) {
+                        if ((keystroke == 'y') || (keystroke == Q_KEY_ENTER)) {
                             lock_dte_baud = Q_TRUE;
                         } else {
                             lock_dte_baud = Q_FALSE;
@@ -6677,7 +6659,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                             _(" Y-Use the Default Settings   N-Override the Toggles for This Entry "),
                             Q_TRUE, 0.0, "YyNn\r"));
 
-                    if ((keystroke == 'y') || (keystroke == C_CR)) {
+                    if ((keystroke == 'y') || (keystroke == Q_KEY_ENTER)) {
                         use_default_toggles = Q_TRUE;
                         toggles = 0;
                     } else {
@@ -6865,7 +6847,6 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
             break;
 
         case Q_KEY_BACKSPACE:
-        case 0x08:
             if (must_use_picklist == Q_FALSE) {
                 fieldset_backspace(edit_form);
             }
@@ -7076,7 +7057,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
              * This code is also copied in the case ' ' above case F2.  Make
              * sure any changes here are reflected there too.
              */
-            if (!q_key_code_yes(keystroke)) {
+            if ((!q_key_code_yes(keystroke)) && (keystroke != ERR)) {
                 if (must_use_picklist == Q_FALSE) {
                     /*
                      * Pass normal keys to form driver
@@ -7134,7 +7115,7 @@ void phonebook_keyboard_handler(const int keystroke, const int flags) {
         /*
          * Backtick works too
          */
-    case KEY_ESCAPE:
+    case Q_KEY_ESCAPE:
         /*
          * ESC return to TERMINAL mode
          */
@@ -7592,7 +7573,9 @@ void phonebook_keyboard_handler(const int keystroke, const int flags) {
                             _(" Overwrite File? [Y/n] "),
                             _(" Y-Overwrite Script File   N-Do Not Quicklearn "),
                             Q_TRUE, 0.0, "YyNn\r"));
-                    if ((new_keystroke == 'y') || (new_keystroke == C_CR)) {
+                    if ((new_keystroke == 'y') ||
+                        (new_keystroke == Q_KEY_ENTER)
+                    ) {
                         q_phonebook.selected_entry->quicklearn = Q_TRUE;
                         q_phonebook.selected_entry->tagged = Q_TRUE;
                         q_phonebook.tagged++;
@@ -7904,7 +7887,6 @@ void phonebook_keyboard_handler(const int keystroke, const int flags) {
         break;
 
     case Q_KEY_ENTER:
-    case C_CR:
         /*
          * Dial
          */
@@ -8077,7 +8059,7 @@ void dialer_keyboard_handler(const int keystroke, const int flags) {
         /*
          * Backtick works too
          */
-    case KEY_ESCAPE:
+    case Q_KEY_ESCAPE:
         if ((q_dial_state == Q_DIAL_NO_NUMBERS_LEFT)
             || (q_dial_state == Q_DIAL_USER_ABORTED)) {
             close_dial_entry();

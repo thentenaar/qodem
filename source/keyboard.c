@@ -320,6 +320,13 @@ static struct function_key_textbox * editing_textbox = NULL;
 static wchar_t * tty_keystroke(const int keystroke) {
 
     switch (keystroke) {
+
+    case Q_KEY_ESCAPE:
+        return L"\033";
+
+    case Q_KEY_TAB:
+        return L"\011";
+
     case Q_KEY_BACKSPACE:
         if (q_status.hard_backspace == Q_TRUE) {
             return L"\010";
@@ -445,9 +452,6 @@ static wchar_t * terminfo_keystroke(const int keystroke) {
     }
 
     switch (keystroke) {
-
-    case Q_KEY_ENTER:
-        return L"\015";
 
     case Q_KEY_BACKSPACE:
         return terminfo_keyboards[i].kbs;
@@ -1084,7 +1088,7 @@ void post_keystroke(const int keystroke, const int flags) {
             /*
              * Send the ALT ESCAPE character first
              */
-            encode_utf8_char(KEY_ESCAPE);
+            encode_utf8_char(C_ESC);
             qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer),
                         Q_TRUE);
 
@@ -1164,51 +1168,6 @@ void post_keystroke(const int keystroke, const int flags) {
                  * Force the console to refresh
                  */
                 q_screen_dirty = Q_TRUE;
-            }
-        }
-
-#ifdef Q_PDCURSES_WIN32
-
-        /*
-         * Windows special case: local shells (cmd.exe) require CRLF.
-         */
-        if ((q_status.online == Q_TRUE) &&
-            ((q_status.dial_method == Q_DIAL_METHOD_SHELL) ||
-             (q_status.dial_method == Q_DIAL_METHOD_COMMANDLINE))
-            ) {
-            if (keystroke == C_CR) {
-                encode_utf8_char(C_LF);
-                qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer),
-                            Q_TRUE);
-                if (q_status.emulation == Q_EMUL_DEBUG) {
-                    debug_local_echo(C_LF);
-                    /*
-                     * Force the console to refresh
-                     */
-                    q_screen_dirty = Q_TRUE;
-                }
-            }
-        }
-
-#endif
-
-        /*
-         * VT100-ish special case: when new_line_mode is true, post a LF
-         * after a CR.
-         */
-        if (((q_status.emulation == Q_EMUL_VT100) ||
-             (q_status.emulation == Q_EMUL_VT102) ||
-             (q_status.emulation == Q_EMUL_VT220) ||
-             (q_status.emulation == Q_EMUL_LINUX) ||
-             (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
-             (q_status.emulation == Q_EMUL_XTERM) ||
-             (q_status.emulation == Q_EMUL_XTERM_UTF8)
-            ) && (keystroke == C_CR)
-        ) {
-            if (q_vt100_new_line_mode == Q_TRUE) {
-                encode_utf8_char(C_LF);
-                qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer),
-                            Q_TRUE);
             }
         }
 
@@ -1388,6 +1347,51 @@ void post_keystroke(const int keystroke, const int flags) {
                 if (q_status.emulation == Q_EMUL_DEBUG) {
                     for (i = 0; i < strlen(utf8_buffer); i++) {
                         debug_local_echo(utf8_buffer[i]);
+                    }
+                }
+
+#ifdef Q_PDCURSES_WIN32
+
+                /*
+                 * Windows special case: local shells (cmd.exe) require CRLF.
+                 */
+                if ((q_status.online == Q_TRUE) &&
+                    ((q_status.dial_method == Q_DIAL_METHOD_SHELL) ||
+                     (q_status.dial_method == Q_DIAL_METHOD_COMMANDLINE))
+                ) {
+                    if (keystroke == Q_KEY_ENTER) {
+                        encode_utf8_char(C_LF);
+                        qodem_write(q_child_tty_fd, utf8_buffer,
+                            strlen(utf8_buffer), Q_TRUE);
+                        if (q_status.emulation == Q_EMUL_DEBUG) {
+                            debug_local_echo(C_LF);
+                            /*
+                             * Force the console to refresh
+                             */
+                            q_screen_dirty = Q_TRUE;
+                        }
+                    }
+                }
+
+#endif
+
+                /*
+                 * VT100-ish special case: when new_line_mode is true, post a
+                 * LF after a CR.
+                 */
+                if (((q_status.emulation == Q_EMUL_VT100) ||
+                     (q_status.emulation == Q_EMUL_VT102) ||
+                     (q_status.emulation == Q_EMUL_VT220) ||
+                     (q_status.emulation == Q_EMUL_LINUX) ||
+                     (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                     (q_status.emulation == Q_EMUL_XTERM) ||
+                     (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                   ) && (keystroke == Q_KEY_ENTER)
+                ) {
+                    if (q_vt100_new_line_mode == Q_TRUE) {
+                        encode_utf8_char(C_LF);
+                        qodem_write(q_child_tty_fd, utf8_buffer,
+                            strlen(utf8_buffer), Q_TRUE);
                     }
                 }
             }
@@ -2958,7 +2962,7 @@ void function_key_editor_keyboard_handler(const int keystroke,
         /*
          * Fall through ...
          */
-    case KEY_ESCAPE:
+    case Q_KEY_ESCAPE:
         /*
          * ESC return to TERMINAL mode
          */
@@ -3317,7 +3321,6 @@ void function_key_editor_keyboard_handler(const int keystroke,
         break;
 
     case Q_KEY_BACKSPACE:
-    case 0x08:
         if (editing_key == Q_TRUE) {
             fieldset_backspace(edit_keybinding_form);
             return;
@@ -3325,7 +3328,6 @@ void function_key_editor_keyboard_handler(const int keystroke,
         break;
 
     case Q_KEY_ENTER:
-    case C_CR:
         if (editing_key == Q_TRUE) {
             /*
              * The OK exit point

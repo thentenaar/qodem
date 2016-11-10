@@ -1562,7 +1562,7 @@ void script_keyboard_handler(const int keystroke, const int flags) {
         /*
          * Backtick works too
          */
-    case KEY_ESCAPE:
+    case Q_KEY_ESCAPE:
         if (q_running_script.paused == Q_FALSE) {
             /*
              * Kill the script

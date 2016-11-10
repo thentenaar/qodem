@@ -314,7 +314,7 @@ void play_music(const struct q_music_struct * music,
              */
             timeout(music->duration);
             keystroke = getch();
-            if ((keystroke == '`') || (keystroke == KEY_ESCAPE)) {
+            if ((keystroke == '`') || (keystroke == Q_KEY_ESCAPE)) {
                 /*
                  * Ban all music for five seconds.
                  */

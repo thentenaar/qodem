@@ -1302,7 +1302,7 @@ void translate_table_menu_keyboard_handler(const int keystroke,
         /*
          * Backtick works too
          */
-    case KEY_ESCAPE:
+    case Q_KEY_ESCAPE:
         /*
          * ESC return to TERMINAL mode
          */
@@ -1438,7 +1438,7 @@ void translate_table_editor_8bit_keyboard_handler(const int keystroke,
         /*
          * Backtick works too
          */
-    case KEY_ESCAPE:
+    case Q_KEY_ESCAPE:
         /*
          * ESC return to TERMINAL mode
          */
@@ -1468,7 +1468,7 @@ void translate_table_editor_8bit_keyboard_handler(const int keystroke,
                 /*
                  * Save if the user said so
                  */
-                if ((new_keystroke == 'y') || (new_keystroke == C_CR)) {
+                if ((new_keystroke == 'y') || (new_keystroke == Q_KEY_ENTER)) {
                     if (editing_table == INPUT_8BIT) {
                         copy_table_8bit(&editing_table_8bit,
                             &table_8bit_input);
@@ -1538,7 +1538,6 @@ void translate_table_editor_8bit_keyboard_handler(const int keystroke,
         return;
 
     case Q_KEY_BACKSPACE:
-    case 0x08:
         if (editing_entry == Q_TRUE) {
             fieldset_backspace(edit_table_entry_form);
         }
@@ -1569,7 +1568,6 @@ void translate_table_editor_8bit_keyboard_handler(const int keystroke,
         return;
 
     case Q_KEY_ENTER:
-    case C_CR:
         if (editing_entry == Q_FALSE) {
             /*
              * ENTER - Begin editing
@@ -1993,7 +1991,7 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
         /*
          * Backtick works too
          */
-    case KEY_ESCAPE:
+    case Q_KEY_ESCAPE:
         /*
          * ESC return to TERMINAL mode
          */
@@ -2023,7 +2021,7 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
                 /*
                  * Save if the user said so
                  */
-                if ((new_keystroke == 'y') || (new_keystroke == C_CR)) {
+                if ((new_keystroke == 'y') || (new_keystroke == Q_KEY_ENTER)) {
                     if (editing_table == INPUT_UNICODE) {
                         copy_table_unicode(&editing_table_unicode,
                             &table_unicode_input);
@@ -2116,7 +2114,6 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
         return;
 
     case Q_KEY_BACKSPACE:
-    case 0x08:
         if (editing_entry == Q_TRUE) {
             fieldset_backspace(edit_table_entry_form);
         }
@@ -2147,7 +2144,6 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
         return;
 
     case Q_KEY_ENTER:
-    case C_CR:
         if (editing_entry == Q_FALSE) {
             /*
              * ENTER - Begin editing

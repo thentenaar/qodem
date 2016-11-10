@@ -951,13 +951,18 @@ void screen_win_flush(void * win) {
  */
 void screen_clear() {
     int i;
+
     if (has_true_doublewidth() == Q_TRUE) {
         for (i = 0; i < HEIGHT; i++) {
+#ifdef Q_PDCURSES
+            PDC_set_double(i, 0);
+#else
             screen_move_yx(i, 0);
             screen_flush();
             fflush(stdout);
             fprintf(stdout, "\033#5");
             fflush(stdout);
+#endif
         }
     }
 
@@ -976,11 +981,15 @@ void screen_really_clear() {
 
     if (has_true_doublewidth() == Q_TRUE) {
         for (i = 0; i < HEIGHT; i++) {
+#ifdef Q_PDCURSES
+            PDC_set_double(i, 0);
+#else
             screen_move_yx(i, 0);
             screen_flush();
             fflush(stdout);
             fprintf(stdout, "\033#5");
             fflush(stdout);
+#endif
         }
     }
 
@@ -1395,16 +1404,24 @@ void screen_win_draw_box_color(void * window, const int left, const int top,
     mvwchgat(stdscr, window_top + window_height, window_left + 2, window_length,
              0, q_white_color_pair_num, NULL);
 
-    /*
-     * Switch the lines the box is drawn on to normal-width.
-     */
-    if (has_true_doublewidth() == Q_TRUE) {
-        for (i = 0; i <= window_height; i++) {
-            screen_move_yx(window_top + i, 0);
-            screen_flush();
-            fflush(stdout);
-            fprintf(stdout, "\033#5");
-            fflush(stdout);
+    if ((q_program_state == Q_STATE_CONSOLE) ||
+        (q_program_state == Q_STATE_SCROLLBACK)
+    ) {
+        /*
+         * Switch the lines the box is drawn on to normal-width.
+         */
+        if (has_true_doublewidth() == Q_TRUE) {
+            for (i = 0; i <= window_height; i++) {
+#ifdef Q_PDCURSES
+                PDC_set_double(window_top + i, 0);
+#else
+                screen_move_yx(window_top + i, 0);
+                screen_flush();
+                fflush(stdout);
+                fprintf(stdout, "\033#5");
+                fflush(stdout);
+#endif
+            }
         }
     }
 

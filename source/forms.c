@@ -181,7 +181,7 @@ Q_BOOL prompt_listen_port(char ** port) {
         switch (keystroke) {
 
         case '`':
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             if (field_visible == Q_TRUE) {
                 field_visible = Q_FALSE;
                 field->invisible = Q_TRUE;
@@ -205,7 +205,6 @@ Q_BOOL prompt_listen_port(char ** port) {
             q_keyboard_blocks = old_keyboard_blocks;
             return Q_FALSE;
         case Q_KEY_BACKSPACE:
-        case 0x08:
             if (field_visible == Q_TRUE) {
                 fieldset_backspace(pick_form);
             }
@@ -285,7 +284,6 @@ Q_BOOL prompt_listen_port(char ** port) {
             break;
 #endif
         case Q_KEY_ENTER:
-        case C_CR:
             if (field_visible == Q_TRUE) {
                 /*
                  * The OK exit point
@@ -306,7 +304,7 @@ Q_BOOL prompt_listen_port(char ** port) {
             }
         default:
             if (field_visible == Q_TRUE) {
-                if (!q_key_code_yes(keystroke)) {
+                if ((!q_key_code_yes(keystroke)) && (keystroke != ERR)) {
                     /*
                      * Pass normal keys to form driver
                      */
@@ -438,13 +436,12 @@ int alt_code_key(Q_BOOL utf8) {
         }
 
         qodem_win_getch(form_window, &keystroke, NULL, Q_KEYBOARD_DELAY);
-        if ((keystroke == KEY_ESCAPE) || (keystroke == '`')) {
+        if ((keystroke == Q_KEY_ESCAPE) || (keystroke == '`')) {
             keycode = -1;
             break;
         }
         if (keystroke != -1) {
             if ((keystroke == Q_KEY_DC) ||
-                (keystroke == 0x08) ||
                 (keystroke == Q_KEY_BACKSPACE)
             ) {
                 code[0] = '-';
@@ -629,7 +626,7 @@ wchar_t * pick_find_string() {
         switch (keystroke) {
 
         case '`':
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             /*
              * The abort exit point
              */
@@ -639,7 +636,6 @@ wchar_t * pick_find_string() {
             q_keyboard_blocks = old_keyboard_blocks;
             return NULL;
         case Q_KEY_BACKSPACE:
-        case 0x08:
             fieldset_backspace(pick_form);
             break;
         case Q_KEY_LEFT:
@@ -661,7 +657,6 @@ wchar_t * pick_find_string() {
             fieldset_delete_char(pick_form);
             break;
         case Q_KEY_ENTER:
-        case C_CR:
             /*
              * The OK exit point
              */
@@ -701,7 +696,7 @@ wchar_t * pick_find_string() {
             break;
 
         default:
-            if (!q_key_code_yes(keystroke)) {
+            if ((!q_key_code_yes(keystroke)) && (keystroke != -1)) {
                 /*
                  * Pass normal keys to form driver
                  */
@@ -880,6 +875,9 @@ int notify_prompt_form_long(char ** message, const char * prompt,
             if (keystroke == allowed_chars[i]) {
                 goto notify_prompt_form_done;
             }
+            if ((keystroke == Q_KEY_ENTER) && (allowed_chars[i] == C_CR)) {
+                goto notify_prompt_form_done;
+            }
         }
     }
 
@@ -1019,6 +1017,9 @@ int notify_prompt_form(const char * message, const char * prompt,
         qodem_win_getch(form_window, &keystroke, NULL, Q_KEYBOARD_DELAY);
         for (i = 0; i < strlen(allowed_chars); i++) {
             if (keystroke == allowed_chars[i]) {
+                goto notify_prompt_form_done;
+            }
+            if ((keystroke == Q_KEY_ENTER) && (allowed_chars[i] == C_CR)) {
                 goto notify_prompt_form_done;
             }
         }
@@ -1162,7 +1163,7 @@ save_form_top:
             switch (keystroke) {
 
             case '`':
-            case KEY_ESCAPE:
+            case Q_KEY_ESCAPE:
                 /*
                  * The abort exit point
                  */
@@ -1173,7 +1174,6 @@ save_form_top:
                 q_keyboard_blocks = old_keyboard_blocks;
                 return NULL;
             case Q_KEY_BACKSPACE:
-            case 0x08:
                 fieldset_backspace(save_form);
                 break;
             case Q_KEY_LEFT:
@@ -1195,7 +1195,6 @@ save_form_top:
                 fieldset_insert_char(save_form);
                 break;
             case Q_KEY_ENTER:
-            case C_CR:
                 /*
                  * If the file exists and is a directory, pop up a directory
                  * pick box on it.
@@ -1982,7 +1981,7 @@ struct file_info * view_directory(const char * initial_directory,
             switch (keystroke) {
 
             case '`':
-            case KEY_ESCAPE:
+            case Q_KEY_ESCAPE:
                 /*
                  * The abort exit point
                  */
@@ -2085,7 +2084,6 @@ struct file_info * view_directory(const char * initial_directory,
                 break;
 
             case Q_KEY_ENTER:
-            case C_CR:
 
                 if (strcmp(file_list[selected_field].name, ".") == 0) {
                     /*
@@ -2586,7 +2584,7 @@ struct file_info * batch_entry_window(const char * initial_directory,
         /*
          * Support alternate keys
          */
-        if ((keystroke == Q_KEY_ENTER) || (keystroke == 0x0D)) {
+        if (keystroke == Q_KEY_ENTER) {
             if (flags & KEY_FLAG_ALT) {
                 keystroke = Q_KEY_F(10);
             } else {
@@ -2597,7 +2595,7 @@ struct file_info * batch_entry_window(const char * initial_directory,
         switch (keystroke) {
 
         case '`':
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             /*
              * The abort exit point
              */
@@ -2718,7 +2716,6 @@ struct file_info * batch_entry_window(const char * initial_directory,
             }
             break;
         case Q_KEY_BACKSPACE:
-        case 0x08:
             fieldset_backspace(batch_entry_form);
             break;
         case Q_KEY_LEFT:
@@ -2911,7 +2908,7 @@ struct file_info * batch_entry_window(const char * initial_directory,
                  * Since I used memcpy on return_file_list, the pointers in
                  * file_info_list will be directly returned to the caller, so
                  * I can't free them here like I do on Q_KEY_F(4) and
-                 * KEY_ESCAPE.
+                 * Q_KEY_ESCAPE.
                  */
             }
 
@@ -2922,7 +2919,7 @@ struct file_info * batch_entry_window(const char * initial_directory,
 
         default:
 
-            if (!q_key_code_yes(keystroke)) {
+            if ((!q_key_code_yes(keystroke)) && (keystroke != ERR)) {
                 /*
                  * Pass normal keys to form driver
                  */
@@ -3368,13 +3365,12 @@ Q_BOOL comm_settings_form(const char * title, Q_BAUD_RATE * baud,
             break;
 
         case '`':
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             q_screen_dirty = Q_TRUE;
             q_keyboard_blocks = old_keyboard_blocks;
             return Q_FALSE;
 
         case Q_KEY_ENTER:
-        case C_CR:
 
             /*
              * The OK exit point
@@ -3542,7 +3538,7 @@ Q_CAPTURE_TYPE ask_capture_type() {
             /*
              * Backtick works too
              */
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             capture_type = Q_CAPTURE_TYPE_ASK;
             done = Q_TRUE;
             break;
@@ -3699,7 +3695,7 @@ Q_CAPTURE_TYPE ask_save_type() {
             /*
              * Backtick works too
              */
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             capture_type = Q_CAPTURE_TYPE_ASK;
             done = Q_TRUE;
             break;
@@ -3898,7 +3894,7 @@ Q_BOOL ask_host_type(Q_HOST_TYPE * type) {
             /*
              * Backtick works too
              */
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             done = Q_TRUE;
             abort = Q_TRUE;
             break;

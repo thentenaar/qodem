@@ -506,8 +506,8 @@ When connected via modem or serial port, this toggles XON/XOFF on or off.
 .TP
 .B Alt\-2 Backspace/Del Mode
 This selects whether the backspace key on the keyboard sends an ASCII
-backspace (^H) or an ASCII DEL (127) character.  Ctrl\-H can always be
-used to send true backspace; Ctrl\-? can be used to send true DEL.
+backspace (^H) or an ASCII DEL (127) character.  Alt\-\\ 0 0 8 can always be
+used to send true backspace; Alt\-\\ 1 2 7 can be used to send true DEL.
 Note that VT220 emulation always sends DEL when the backspace key is
 pressed.
 .TP

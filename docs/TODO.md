@@ -14,11 +14,22 @@ Fix all marked TODOs in code
 
 #38 Be able to run fully portable
 
+Full 40-column support
+    - Win32a double-width chars
+    - X11 double-width chars
+    - Split-screen and script middle title bar on console
+    - Cursor position
+
 #41 PETSCII
-    - see if Win32a can do double-width chars, or make it so
-    - see if X11 can do double-width chars, or make it so
+    - README, man page, help text
 
 #43 clang compiler support
+
+#48 split-screen unicode support
+    - Also support all control characters via carat notation
+
+ATASCII
+    - Start with Tim H's atari.c
 
 FULL REGRESSION ON EVERY ITEM:
   F10 -> Enter or Alt-Enter
@@ -228,8 +239,6 @@ External protocols
 ---------------------------
 
 Pacing character support
-
-ATASCII
 
 Integrate with I2P
 

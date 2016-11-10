@@ -497,7 +497,10 @@ fifteen bits,  five bits for each of the three channels) and background RGB
 
 
 # define A_ITALIC     A_INVIS
-# define A_PROTECT    (A_UNDERLINE | A_LEFTLINE | A_RIGHTLINE)
+
+// KAL
+// # define A_PROTECT    (A_UNDERLINE | A_LEFTLINE | A_RIGHTLINE)
+# define A_PROTECT    A_LEFTLINE
 
 #else                   /* 16-bit chtypes */
 # define A_BOLD       (chtype)0x0100  /* X/Open */
@@ -1530,6 +1533,8 @@ void    PDC_set_resize_limits( const int new_min_lines,
                                const int new_max_lines,
                                const int new_min_cols,
                                const int new_max_cols);
+void    PDC_set_double(const int y,
+                       const int d);
 
 WINDOW *Xinitscr(int, char **);
 #ifdef XCURSES

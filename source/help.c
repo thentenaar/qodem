@@ -1230,8 +1230,7 @@ reload:
             }
             break;
 
-        case C_CR:
-        case KEY_ENTER:
+        case Q_KEY_ENTER:
             DLOG(("Q_KEY_ENTER\n"));
             if (selected_link != -1) {
                 /*
@@ -1441,7 +1440,7 @@ reload:
             /*
              * Backtick works too
              */
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             done = Q_TRUE;
             break;
 
@@ -1702,8 +1701,8 @@ char * raw_help_text = \
 "\n"
 "@BOLD{Alt-2} Backspace/Del Mode\n"
 "This selects whether the backspace key on the keyboard sends an ASCII\n"
-"backspace (^H) or an ASCII DEL (127) character.  Ctrl-H can always be\n"
-"used to send true backspace; Ctrl-? can be used to send true DEL.\n"
+"backspace (^H) or an ASCII DEL (127) character.  Alt-\\ 0 0 8 can always be\n"
+"used to send true backspace; Alt-\\ 1 2 7 can be used to send true DEL.\n"
 "Note that VT220 emulation always sends DEL when the backspace key is\n"
 "pressed.\n"
 "\n"

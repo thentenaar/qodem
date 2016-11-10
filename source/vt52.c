@@ -207,7 +207,7 @@ vt52_start:
         /*
          * ESC
          */
-        if (from_modem2 == KEY_ESCAPE) {
+        if (from_modem2 == C_ESC) {
             save_char(from_modem2, to_screen);
             scan_state = SCAN_ESC;
             return Q_EMUL_FSM_NO_CHAR_YET;
@@ -619,6 +619,13 @@ vt52_start:
 wchar_t * vt52_keystroke(const int keystroke) {
 
     switch (keystroke) {
+
+    case Q_KEY_ESCAPE:
+        return L"\033";
+
+    case Q_KEY_TAB:
+        return L"\011";
+
     case Q_KEY_BACKSPACE:
         if (q_status.hard_backspace == Q_TRUE) {
             return L"\010";

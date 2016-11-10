@@ -812,6 +812,12 @@ Q_EMULATION_STATUS terminal_emulator(const unsigned char from_modem,
              */
             last_state = avatar(from_modem, to_screen);
             return last_state;
+        } else if (q_status.emulation == Q_EMUL_PETSCII) {
+            /*
+             * PETSCII needs to dump unknown sequences.
+             */
+            last_state = petscii(from_modem, to_screen);
+            return last_state;
         } else {
             /*
              * Everybody else just dumps the string in q_emul_buffer
@@ -1264,7 +1270,7 @@ void emulation_menu_keyboard_handler(const int keystroke, const int flags) {
         /*
          * Backtick works too
          */
-    case KEY_ESCAPE:
+    case Q_KEY_ESCAPE:
         /*
          * ESC return to TERMINAL mode
          */

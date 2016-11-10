@@ -169,7 +169,8 @@
 #define KEY_FLAG_SHIFT          0x0004  /* SHIFT key was pressed */
 #define KEY_FLAG_UNICODE        0x0008  /* Key contains a Unicode character */
 
-#define KEY_ESCAPE              0x1B
+#define Q_KEY_ESCAPE            0x00E5CA9E
+#define Q_KEY_TAB               0x007AB000
 
 #define Q_KEYBOARD_DELAY        10000
 

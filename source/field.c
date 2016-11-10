@@ -122,7 +122,7 @@ void fieldset_keystroke(struct fieldset * fieldset, const int keystroke) {
     /*
      * Disregard enter key
      */
-    if ((keystroke == Q_KEY_ENTER) || (keystroke == C_CR)) {
+    if (keystroke == Q_KEY_ENTER) {
         return;
     }
 

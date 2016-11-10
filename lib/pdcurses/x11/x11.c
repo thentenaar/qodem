@@ -260,6 +260,9 @@ static char *program_name;
 // KAL: we use blank text when drawing blinked-out text
 static XChar2b blank_text[513];
 
+// KAL: we draw to an offscreen pixmap for double-width / double-height text
+static Pixmap dw_pixmap;
+
 #ifdef PDC_WIDE
 # define DEFFONT "-misc-fixed-medium-r-normal--20-200-75-75-c-100-iso10646-1"
 #else
@@ -573,6 +576,9 @@ static int _new_packet(chtype attr, bool rev, int len, int col, int row,
     GC gc;
     int xpos, ypos;
     short fore, back;
+    // KAL double-width / double-height
+    int double_height;
+    int i, sx, sy;
 
     PDC_pair_content(PAIR_NUMBER(attr), &fore, &back);
 
@@ -593,50 +599,381 @@ static int _new_packet(chtype attr, bool rev, int len, int col, int row,
     rev ^= !!(attr & A_REVERSE);
 
     /* Determine which GC to use - normal or italic */
-
     gc = (attr & A_ITALIC) ? italic_gc : normal_gc;
+
+    // KAL
+    /* Double-height support */
+    double_height = *(Xcurscr + XCURSCR_DOUBLE_OFF + row);
 
     /* Draw it */
 
-    XSetForeground(XCURSESDISPLAY, gc, colors[rev ? back : fore]);
-    XSetBackground(XCURSESDISPLAY, gc, colors[rev ? fore : back]);
+    switch (double_height) {
 
-    _make_xy(col, row, &xpos, &ypos);
+    case 0:
+        /* normal-width, normal-height */
 
-    // KAL
-    if ((visible_cursor == FALSE) && ((attr & A_BLINK) != 0)) {
+        /* Set colors */
+        XSetForeground(XCURSESDISPLAY, gc, colors[rev ? back : fore]);
+        XSetBackground(XCURSESDISPLAY, gc, colors[rev ? fore : back]);
+
+        _make_xy(col, row, &xpos, &ypos);
+        if ((visible_cursor == FALSE) && ((attr & A_BLINK) != 0)) {
 
 #ifdef PDC_WIDE
-    XDrawImageString16(
+            XDrawImageString16(
 #else
-    XDrawImageString(
+            XDrawImageString(
 #endif
-                     XCURSESDISPLAY, XCURSESWIN, gc, xpos, ypos, blank_text, len);
-    } else {
+                XCURSESDISPLAY, XCURSESWIN, gc, xpos, ypos, blank_text, len);
+        } else {
 #ifdef PDC_WIDE
-    XDrawImageString16(
+            XDrawImageString16(
 #else
-    XDrawImageString(
+            XDrawImageString(
 #endif
-                     XCURSESDISPLAY, XCURSESWIN, gc, xpos, ypos, text, len);
+                XCURSESDISPLAY, XCURSESWIN, gc, xpos, ypos, text, len);
+        }
+
+        if (((visible_cursor == FALSE) && ((attr & A_BLINK) == 0) &&
+                (attr & (A_LEFTLINE|A_RIGHTLINE|A_UNDERLINE))) ||
+            ((visible_cursor == TRUE) &&
+                (attr & (A_LEFTLINE|A_RIGHTLINE|A_UNDERLINE)))
+        ) {
+            if (SP->line_color != -1)
+                XSetForeground(XCURSESDISPLAY, gc, colors[SP->line_color]);
+
+            if (attr & A_UNDERLINE)     /* UNDER */
+                XDrawLine(XCURSESDISPLAY, XCURSESWIN, gc,
+                    xpos, ypos + 1, xpos + font_width * len, ypos + 1);
+        }
+
+        break;
+
+    case 1:
+        /* double-width, normal-height */
+
+        XSetBackground(XCURSESDISPLAY, gc, colors[rev ? fore : back]);
+        if ((visible_cursor == FALSE) && ((attr & A_BLINK) != 0)) {
+
+            _make_xy(col * 2, row, &xpos, &ypos);
+
+            // Draw a box of the background color
+            XSetForeground(XCURSESDISPLAY, gc, colors[rev ? fore : back]);
+            XFillRectangle(XCURSESDISPLAY, XCURSESWIN, gc,
+                xpos, ypos - font_ascent, font_width * 2 * len, font_height);
+            XSetForeground(XCURSESDISPLAY, gc, colors[rev ? back : fore]);
+
+        } else {
+
+            // Draw each glyph to a Pixmap, stretch it, then copy it to
+            // the window.
+            for (i = 0; i < len; i++) {
+
+                if ((col + i) * 2 > XCursesCOLS) {
+                    /* Do not draw characters wider than the screen */
+                    break;
+                }
+
+                // Draw a box of the background color
+                XSetForeground(XCURSESDISPLAY, gc, colors[rev ? fore : back]);
+                XFillRectangle(XCURSESDISPLAY, dw_pixmap, gc,
+                    0, 0, font_width, font_height);
+
+                XSetForeground(XCURSESDISPLAY, gc, colors[rev ? back : fore]);
+
+                _make_xy((col + i) * 2, row, &xpos, &ypos);
+
+#ifdef PDC_WIDE
+                XDrawImageString16(
+#else
+                XDrawImageString(
+#endif
+                    XCURSESDISPLAY, dw_pixmap, gc, 0, font_ascent, &text[i], 1);
+
+                XImage * src = XGetImage(XCURSESDISPLAY, dw_pixmap, 0, 0,
+                    font_width, font_height, AllPlanes, ZPixmap);
+
+                XSetForeground(XCURSESDISPLAY, gc, colors[rev ? fore : back]);
+                XFillRectangle(XCURSESDISPLAY, dw_pixmap, gc,
+                    0, 0, font_width, font_height);
+                XSetForeground(XCURSESDISPLAY, gc, colors[rev ? back : fore]);
+
+                XImage * dest = XGetImage(XCURSESDISPLAY, dw_pixmap, 0, 0,
+                    font_width * 2, font_height * 2, AllPlanes, ZPixmap);
+
+                int bytes_per_pixel = src->bits_per_pixel / 8;
+                for (sy = 0; sy < font_height; sy++) {
+                    for (sx = 0; sx < font_width; sx++) {
+                        memcpy(dest->data +
+                            (sy * dest->bytes_per_line) +
+                            ((2 * sx) * bytes_per_pixel), src->data +
+                            (sy * src->bytes_per_line) +
+                            (sx * bytes_per_pixel),
+                            bytes_per_pixel);
+                        memcpy(dest->data +
+                            (sy * dest->bytes_per_line) +
+                            ((2 * sx + 1) * bytes_per_pixel), src->data +
+                            (sy * src->bytes_per_line) +
+                            (sx * bytes_per_pixel), bytes_per_pixel);
+                    }
+                }
+
+                XPutImage(XCURSESDISPLAY, dw_pixmap, gc, dest, 0, 0, 0, 0,
+                    font_width * 2, font_height);
+
+                XCopyArea(XCURSESDISPLAY, dw_pixmap, XCURSESWIN, gc,
+                    0, 0, font_width * 2, font_height, xpos, ypos);
+
+                XDestroyImage(src);
+                XDestroyImage(dest);
+            }
+        }
+
+        if (((visible_cursor == FALSE) && ((attr & A_BLINK) == 0) &&
+                (attr & (A_LEFTLINE|A_RIGHTLINE|A_UNDERLINE))) ||
+            ((visible_cursor == TRUE) &&
+                (attr & (A_LEFTLINE|A_RIGHTLINE|A_UNDERLINE)))
+        ) {
+            if (SP->line_color != -1)
+                XSetForeground(XCURSESDISPLAY, gc, colors[SP->line_color]);
+
+            if (attr & A_UNDERLINE)     /* UNDER */
+                XDrawLine(XCURSESDISPLAY, XCURSESWIN, gc,
+                    xpos, ypos + 1, xpos + font_width * len * 2, ypos + 1);
+        }
+
+        break;
+
+    case 2:
+        /* double-width, double-height on the top half */
+
+        XSetBackground(XCURSESDISPLAY, gc, colors[rev ? fore : back]);
+        if ((visible_cursor == FALSE) && ((attr & A_BLINK) != 0)) {
+
+            _make_xy(col * 2, row, &xpos, &ypos);
+
+            // Draw a box of the background color
+            XSetForeground(XCURSESDISPLAY, gc, colors[rev ? fore : back]);
+            XFillRectangle(XCURSESDISPLAY, XCURSESWIN, gc,
+                xpos, ypos - font_ascent, font_width * 2 * len, font_height);
+            XSetForeground(XCURSESDISPLAY, gc, colors[rev ? back : fore]);
+
+        } else {
+
+            // Draw each glyph to a Pixmap, stretch it, then copy it to
+            // the window.
+            for (i = 0; i < len; i++) {
+
+                if ((col + i) * 2 > XCursesCOLS) {
+                    /* Do not draw characters wider than the screen */
+                    break;
+                }
+
+                // Draw a box of the background color
+                XSetForeground(XCURSESDISPLAY, gc, colors[rev ? fore : back]);
+                XFillRectangle(XCURSESDISPLAY, dw_pixmap, gc,
+                    0, 0, font_width, font_height);
+
+                XSetForeground(XCURSESDISPLAY, gc, colors[rev ? back : fore]);
+
+                _make_xy((col + i) * 2, row, &xpos, &ypos);
+
+#ifdef PDC_WIDE
+                XDrawImageString16(
+#else
+                XDrawImageString(
+#endif
+                    XCURSESDISPLAY, dw_pixmap, gc, 0, font_ascent, &text[i], 1);
+
+                XImage * src = XGetImage(XCURSESDISPLAY, dw_pixmap, 0, 0,
+                    font_width, font_height, AllPlanes, ZPixmap);
+
+                XSetForeground(XCURSESDISPLAY, gc, colors[rev ? fore : back]);
+                XFillRectangle(XCURSESDISPLAY, dw_pixmap, gc,
+                    0, 0, font_width, font_height);
+                XSetForeground(XCURSESDISPLAY, gc, colors[rev ? back : fore]);
+
+                XImage * dest = XGetImage(XCURSESDISPLAY, dw_pixmap, 0, 0,
+                    font_width * 2, font_height * 2, AllPlanes, ZPixmap);
+
+                int bytes_per_pixel = src->bits_per_pixel / 8;
+                for (sy = 0; sy < font_height / 2; sy++) {
+                    for (sx = 0; sx < font_width; sx++) {
+                        memcpy(dest->data +
+                            (2 * sy * dest->bytes_per_line) +
+                            ((2 * sx) * bytes_per_pixel), src->data +
+                            (sy * src->bytes_per_line) +
+                            (sx * bytes_per_pixel),
+                            bytes_per_pixel);
+
+                        memcpy(dest->data +
+                            ((2 * sy + 1) * dest->bytes_per_line) +
+                            ((2 * sx) * bytes_per_pixel), src->data +
+                            (sy * src->bytes_per_line) +
+                            (sx * bytes_per_pixel), bytes_per_pixel);
+
+                        memcpy(dest->data +
+                            (2 * sy * dest->bytes_per_line) +
+                            ((2 * sx + 1) * bytes_per_pixel), src->data +
+                            (sy * src->bytes_per_line) +
+                            (sx * bytes_per_pixel),
+                            bytes_per_pixel);
+
+                        memcpy(dest->data +
+                            ((2 * sy + 1) * dest->bytes_per_line) +
+                            ((2 * sx + 1) * bytes_per_pixel), src->data +
+                            (sy * src->bytes_per_line) +
+                            (sx * bytes_per_pixel), bytes_per_pixel);
+                    }
+                }
+
+                XPutImage(XCURSESDISPLAY, dw_pixmap, gc, dest, 0, 0, 0, 0,
+                    font_width * 2, font_height);
+
+                XCopyArea(XCURSESDISPLAY, dw_pixmap, XCURSESWIN, gc,
+                    0, 0, font_width * 2, font_height, xpos, ypos);
+
+                XDestroyImage(src);
+                XDestroyImage(dest);
+            }
+        }
+
+        if (((visible_cursor == FALSE) && ((attr & A_BLINK) == 0) &&
+                (attr & (A_LEFTLINE|A_RIGHTLINE|A_UNDERLINE))) ||
+            ((visible_cursor == TRUE) &&
+                (attr & (A_LEFTLINE|A_RIGHTLINE|A_UNDERLINE)))
+        ) {
+            if (SP->line_color != -1)
+                XSetForeground(XCURSESDISPLAY, gc, colors[SP->line_color]);
+
+            if (attr & A_UNDERLINE)     /* UNDER */
+                XDrawLine(XCURSESDISPLAY, XCURSESWIN, gc,
+                    xpos, ypos + 1, xpos + font_width * len * 2, ypos + 1);
+        }
+
+        break;
+
+    case 3:
+        /* double-width, double-height on the bottom half */
+
+        XSetBackground(XCURSESDISPLAY, gc, colors[rev ? fore : back]);
+        if ((visible_cursor == FALSE) && ((attr & A_BLINK) != 0)) {
+
+            _make_xy(col * 2, row, &xpos, &ypos);
+
+            // Draw a box of the background color
+            XSetForeground(XCURSESDISPLAY, gc, colors[rev ? fore : back]);
+            XFillRectangle(XCURSESDISPLAY, XCURSESWIN, gc,
+                xpos, ypos - font_ascent, font_width * 2 * len, font_height);
+            XSetForeground(XCURSESDISPLAY, gc, colors[rev ? back : fore]);
+
+        } else {
+
+            // Draw each glyph to a Pixmap, stretch it, then copy it to
+            // the window.
+            for (i = 0; i < len; i++) {
+
+                if ((col + i) * 2 > XCursesCOLS) {
+                    /* Do not draw characters wider than the screen */
+                    break;
+                }
+
+                // Draw a box of the background color
+                XSetForeground(XCURSESDISPLAY, gc, colors[rev ? fore : back]);
+                XFillRectangle(XCURSESDISPLAY, dw_pixmap, gc,
+                    0, 0, font_width, font_height);
+
+                XSetForeground(XCURSESDISPLAY, gc, colors[rev ? back : fore]);
+
+                _make_xy((col + i) * 2, row, &xpos, &ypos);
+
+#ifdef PDC_WIDE
+                XDrawImageString16(
+#else
+                XDrawImageString(
+#endif
+                    XCURSESDISPLAY, dw_pixmap, gc, 0, font_ascent, &text[i], 1);
+
+                XImage * src = XGetImage(XCURSESDISPLAY, dw_pixmap, 0, 0,
+                    font_width, font_height, AllPlanes, ZPixmap);
+
+                XSetForeground(XCURSESDISPLAY, gc, colors[rev ? fore : back]);
+                XFillRectangle(XCURSESDISPLAY, dw_pixmap, gc,
+                    0, 0, font_width, font_height);
+                XSetForeground(XCURSESDISPLAY, gc, colors[rev ? back : fore]);
+
+                XImage * dest = XGetImage(XCURSESDISPLAY, dw_pixmap, 0, 0,
+                    font_width * 2, font_height * 2, AllPlanes, ZPixmap);
+
+                int bytes_per_pixel = src->bits_per_pixel / 8;
+                for (sy = 0; sy < font_height / 2; sy++) {
+                    for (sx = 0; sx < font_width; sx++) {
+                        memcpy(dest->data +
+                            (2 * sy * dest->bytes_per_line) +
+                            ((2 * sx) * bytes_per_pixel), src->data +
+                            ((sy + font_height / 2) * src->bytes_per_line) +
+                            (sx * bytes_per_pixel),
+                            bytes_per_pixel);
+                        memcpy(dest->data +
+                            ((2 * sy + 1) * dest->bytes_per_line) +
+                            ((2 * sx) * bytes_per_pixel), src->data +
+                            ((sy + font_height / 2) * src->bytes_per_line) +
+                            (sx * bytes_per_pixel), bytes_per_pixel);
+
+                        memcpy(dest->data +
+                            (2 * sy * dest->bytes_per_line) +
+                            ((2 * sx + 1) * bytes_per_pixel), src->data +
+                            ((sy + font_height / 2) * src->bytes_per_line) +
+                            (sx * bytes_per_pixel),
+                            bytes_per_pixel);
+
+                        memcpy(dest->data +
+                            ((2 * sy + 1) * dest->bytes_per_line) +
+                            ((2 * sx + 1) * bytes_per_pixel), src->data +
+                            ((sy + font_height / 2) * src->bytes_per_line) +
+                            (sx * bytes_per_pixel), bytes_per_pixel);
+                    }
+                }
+
+                XPutImage(XCURSESDISPLAY, dw_pixmap, gc, dest, 0, 0, 0, 0,
+                    font_width * 2, font_height);
+
+                XCopyArea(XCURSESDISPLAY, dw_pixmap, XCURSESWIN, gc,
+                    0, 0, font_width * 2, font_height, xpos, ypos);
+
+                XDestroyImage(src);
+                XDestroyImage(dest);
+            }
+        }
+
+        if (((visible_cursor == FALSE) && ((attr & A_BLINK) == 0) &&
+                (attr & (A_LEFTLINE|A_RIGHTLINE|A_UNDERLINE))) ||
+            ((visible_cursor == TRUE) &&
+                (attr & (A_LEFTLINE|A_RIGHTLINE|A_UNDERLINE)))
+        ) {
+            if (SP->line_color != -1)
+                XSetForeground(XCURSESDISPLAY, gc, colors[SP->line_color]);
+
+            if (attr & A_UNDERLINE)     /* UNDER */
+                XDrawLine(XCURSESDISPLAY, XCURSESWIN, gc,
+                    xpos, ypos + 1, xpos + font_width * len * 2, ypos + 1);
+        }
+
+        break;
+
     }
 
     /* Underline, etc. */
 
-    // KAL
+// KAL : disable LEFTLINE and RIGHTLINE, qodem doesn't use them.
+#if 0
+
     if (((visible_cursor == FALSE) && ((attr & A_BLINK) == 0) &&
             (attr & (A_LEFTLINE|A_RIGHTLINE|A_UNDERLINE))) ||
         ((visible_cursor == TRUE) &&
             (attr & (A_LEFTLINE|A_RIGHTLINE|A_UNDERLINE)))
     ) {
         int k;
-
-        if (SP->line_color != -1)
-            XSetForeground(XCURSESDISPLAY, gc, colors[SP->line_color]);
-
-        if (attr & A_UNDERLINE)     /* UNDER */
-            XDrawLine(XCURSESDISPLAY, XCURSESWIN, gc,
-                      xpos, ypos + 1, xpos + font_width * len, ypos + 1);
 
         if (attr & A_LEFTLINE)      /* LEFT */
             for (k = 0; k < len; k++)
@@ -654,6 +991,8 @@ static int _new_packet(chtype attr, bool rev, int len, int col, int row,
                           x, ypos - font_ascent, x, ypos + font_descent);
             }
     }
+
+#endif
 
     PDC_LOG(("%s:_new_packet() - row: %d col: %d "
              "num_cols: %d fore: %d back: %d text:<%s>\n",
@@ -706,6 +1045,7 @@ static int _display_text(const chtype *ch, int row, int col,
             attr ^= A_REVERSE;
         }
 #endif
+
         if (attr != old_attr)
         {
             if (_new_packet(old_attr, highlight, i, col, row, text) == ERR)
@@ -723,10 +1063,10 @@ static int _display_text(const chtype *ch, int row, int col,
         if ((text[i].byte1 == 0) && (text[i].byte2 == 0)) {
             text[i].byte2 = ' ';
         }
-        i++;
 #else
-        text[i++] = curr & 0xff;
+        text[i] = curr & 0xff;
 #endif
+        i++;
     }
 
     return _new_packet(old_attr, highlight, i, col, row, text);
@@ -2378,6 +2718,8 @@ static void _exit_process(int rc, int sig, char *msg)
     shmctl(shmidSP, IPC_RMID, 0);
     shmctl(shmid_Xcurscr, IPC_RMID, 0);
 
+    XFreePixmap(XCURSESDISPLAY, dw_pixmap);
+
     if (bitmap_file)
     {
         XFreePixmap(XCURSESDISPLAY, icon_bitmap);
@@ -2457,6 +2799,7 @@ static void _resize(void)
     memset(Xcurscr, 0, SP->XcurscrSize);
     xc_atrtab = (short *)(Xcurscr + XCURSCR_ATRTAB_OFF);
     memcpy(xc_atrtab, save_atrtab, sizeof(save_atrtab));
+
 }
 
 /* For PDC_set_title() */
@@ -3208,6 +3551,14 @@ int XCursesSetupX(int argc, char *argv[])
     wm_atom[0] = XInternAtom(XtDisplay(topLevel), "WM_DELETE_WINDOW", False);
 
     XSetWMProtocols(XtDisplay(topLevel), XtWindow(topLevel), wm_atom, 1);
+
+    // KAL: Create an offscreen pixmap to be used for double-width /
+    // double-height characters.
+    XWindowAttributes wa;
+    XGetWindowAttributes(XCURSESDISPLAY, XCURSESWIN, &wa);
+    fprintf(stderr, "wa.depth %d\n", wa.depth);
+    dw_pixmap = XCreatePixmap(XCURSESDISPLAY, XCURSESWIN,
+        font_width * 2, font_height * 2, wa.depth);
 
     /* Create the Graphics Context for drawing. This MUST be done AFTER
        the associated widget has been realized. */

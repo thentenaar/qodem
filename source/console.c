@@ -999,7 +999,7 @@ void console_keyboard_handler(int keystroke, int flags) {
                     _(" Y-Exit Qodem   N-Return to TERMINAL Mode "),
                     Q_TRUE, 0.0, "YyNn\r"));
 
-            if ((new_keystroke == 'y') || (new_keystroke == C_CR)) {
+            if ((new_keystroke == 'y') || (new_keystroke == Q_KEY_ENTER)) {
                 switch_state(Q_STATE_EXIT);
                 return;
             }
@@ -1259,7 +1259,7 @@ void console_keyboard_handler(int keystroke, int flags) {
                 } else {
                     new_keystroke = 'y';
                 }
-                if ((new_keystroke == 'y') || (new_keystroke == C_CR)) {
+                if ((new_keystroke == 'y') || (new_keystroke == Q_KEY_ENTER)) {
                     notify_form(_("Sending Hang-Up command"), 1.5);
                     hangup_modem();
                     if (close_serial_port() == Q_FALSE) {
@@ -1499,7 +1499,7 @@ void console_keyboard_handler(int keystroke, int flags) {
                 } else {
                     new_keystroke = 'y';
                 }
-                if ((new_keystroke == 'y') || (new_keystroke == C_CR)) {
+                if ((new_keystroke == 'y') || (new_keystroke == Q_KEY_ENTER)) {
                     if (Q_SERIAL_OPEN) {
                         notify_form(_("Sending Hang-Up Command"), 1.5);
                         qlog(_("Sending Hang-up Command\n"));
@@ -1708,7 +1708,9 @@ void console_keyboard_handler(int keystroke, int flags) {
                                      _(" Overwrite File? [Y/n] "),
                                      _(" Y-Overwrite Script File   N-Abort Quicklearn "),
                                      Q_TRUE, 0.0, "YyNn\r"));
-                        if ((new_keystroke == 'y') || (new_keystroke == C_CR)) {
+                        if ((new_keystroke == 'y') ||
+                            (new_keystroke == Q_KEY_ENTER)
+                        ) {
                             start_quicklearn(filename);
                         }
                     } else {
@@ -1877,7 +1879,7 @@ void console_keyboard_handler(int keystroke, int flags) {
                     _(" Y-Exit Qodem   N-Return to TERMINAL Mode "),
                     Q_TRUE, 0.0, "YyNn\r"));
 
-            if ((new_keystroke == 'y') || (new_keystroke == C_CR)) {
+            if ((new_keystroke == 'y') || (new_keystroke == Q_KEY_ENTER)) {
                 switch_state(Q_STATE_EXIT);
             }
             return;
@@ -2023,7 +2025,7 @@ void console_keyboard_handler(int keystroke, int flags) {
     /*
      * Split screen: save character UNLESS it's an ENTER
      */
-    if ((keystroke == Q_KEY_ENTER) || (keystroke == C_CR)) {
+    if (keystroke == Q_KEY_ENTER) {
         /*
          * Transmit entire buffer
          */
@@ -2032,7 +2034,7 @@ void console_keyboard_handler(int keystroke, int flags) {
                 (i + 1 < split_screen_buffer_n) &&
                 (split_screen_buffer[i + 1] == 'M')
             ) {
-                post_keystroke(C_CR, 0);
+                post_keystroke(Q_KEY_ENTER, 0);
                 i++;
                 continue;
             }
@@ -2051,8 +2053,7 @@ void console_keyboard_handler(int keystroke, int flags) {
      * Split screen: BACKSPACE
      */
     if ((keystroke == Q_KEY_BACKSPACE) ||
-        (keystroke == 0x08) ||
-        (keystroke == 0x7F)
+        (keystroke == Q_KEY_DC)
     ) {
         if (split_screen_buffer_n > 0) {
 
@@ -2224,6 +2225,9 @@ void console_process_incoming_data(unsigned char * buffer, const int n,
         emulation_rc = terminal_emulator(buffer[i], &emulated_char);
         *remaining -= 1;
 
+        DLOG(("terminal_emulator() (outside) RC %d char '%lc' 0x%x\n",
+                emulation_rc, emulated_char, emulated_char));
+
         for (;;) {
 
             if (emulation_rc == Q_EMUL_FSM_ONE_CHAR) {
@@ -2257,6 +2261,10 @@ void console_process_incoming_data(unsigned char * buffer, const int n,
                  * ...and continue pulling more characters
                  */
                 emulation_rc = terminal_emulator(-1, &emulated_char);
+
+                DLOG(("terminal_emulator() (inside) RC %d char '%lc' 0x%x\n",
+                        emulation_rc, emulated_char, emulated_char));
+
             }
 
         } /* for (;;) */
@@ -3407,7 +3415,7 @@ void console_menu_keyboard_handler(const int keystroke, const int flags) {
         /*
          * Backtick works too
          */
-    case KEY_ESCAPE:
+    case Q_KEY_ESCAPE:
         /*
          * ESC return to TERMINAL mode
          */
@@ -3437,7 +3445,7 @@ void console_info_keyboard_handler(const int keystroke, const int flags) {
         /*
          * Backtick works too
          */
-    case KEY_ESCAPE:
+    case Q_KEY_ESCAPE:
         /*
          * ESC return to TERMINAL mode
          */

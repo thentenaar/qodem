@@ -243,7 +243,8 @@ qodemrc will cause Qodem to use the real right margin.
 
 The backspace key is always mapped to DEL (0x7F) in VT220 emulation to
 match the keyboard of a real VT220.  You can send a true backspace
-(0x08, ^H) by pressing Ctrl-H.
+(0x08, ^H) by pressing Alt-\ 0 0 8 to use the Alt Code Key feature to
+send backspace.
 
 Function keys beyond F4 in VT100/VT102 emulation may not work as
 expected.  Qodem uses a common convention that F5 is "{ESC} O t", F6

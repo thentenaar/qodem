@@ -1,6 +1,65 @@
 The Qodem Project Work Log
 ==========================
 
+November 10, 2016
+
+Whew, there has been a decently large code sweep.  The control keys
+keyboard handling now passes control characters down to the
+emulations.  40-column support is stubbed in the X11 backend, it has
+more glitches than working parts but it is a start.  Gonna pack this
+into a commit and then push it up.
+
+November 6, 2016
+
+Tim has been playing with the code and found several interesting items
+to be looked at.
+
+First, SGR 38/48 are causing crappy output on XTERM/X_UTF8 due the
+awful broken-ECMA48-ness of those sequences.  I've opted to recognize
+them for XTERM but silently discard them because I cannot easily do
+direct RGB on all my backends.  Keeping a faithful VT100/VT220 however
+requires that SGR 38/48 result in blinking off-color text.
+
+Second, Tim put together an ATASCII branch and exposed some issues in
+my keyboard handling of backspace and enter.  The general problem is
+handling of control characters that cannot be directly sent to the
+other side as is.  He chose to remap C_CR to Q_KEY_ENTER and ^H to
+Q_KEY_BACKSPACE in keyboard_handler(), and removed the Q_KEY_ENTER
+cases in terminfo_keystroke() and bound_keyboard_keystroke().  It's an
+interesting find, which will help on PETSCII too.  C_CR can become
+Q_KEY_ENTER pretty easily (after changing notify_prompt_form_long() to
+match '\r' with Q_KEY_ENTER), but ^H and Q_KEY_BACKSPACE will need
+some deeper thought.  (These remappings should also be done in
+qodem_win_getch(), not keyboard_handler().)
+
+On ^H, we have several competing issues: backspace toggle (Alt-2);
+VT220/Linux/xterm mapping the actual backspace key to DEL which I then
+remap to KEY_BACKSPACE (and I just noticed the VT220 terminfo is
+wrong, it has kbs=^H when the VT220 manual defines that key as DEL);
+and the occasional need to send ^H to the remote side (which can also
+be accomplished with Alt Key Code).  Looking closer, I am already
+mapping ^H to KEY_BACKSPACE on PDcurses because it never uses
+KEY_BACKSPACE.  So the best thing here might be just to shove
+everything into KEY_BACKSPACE and eliminate all use of 0x08 in the
+forms code.
+
+To really finish this up though, I also need to look at 0x09 (TAB) and
+0x1B (ESCAPE).  Those are being passed through directly too, and
+KEY_ESCAPE is actually a bit awful in that the emulations are looking
+at it rather than C_ESC.
+
+...It's later, and I think most of the keyboard handling is better.
+Control characters "belong" to the emulations, except for any embedded
+in keyboard macros (which will transmit raw to the other side).  I
+found a couple assertion fails along the way to fix.
+
+Gonna test this a bit more on some systems but it is close to being
+ready for the rest of PETSCII and ATASCII.  When I get around to
+PETSCII/ATASCII limitations in the README / help I will need to note
+that carat control characters (e.g. keyboard macros, modem, split
+screen) are sent raw to the other side, not processed through the
+emulation.
+
 October 28, 2016
 
 I believe I found the hang on exit and have that fixed.  I also

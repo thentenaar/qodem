@@ -479,7 +479,7 @@ void codepage_keyboard_handler(const int keystroke, const int flags) {
         /*
          * Backtick works too
          */
-    case KEY_ESCAPE:
+    case Q_KEY_ESCAPE:
         /*
          * ESC return to TERMINAL mode
          */
@@ -1964,7 +1964,7 @@ wchar_t codepage_map_char(const unsigned char ch) {
         return iso8859_1_chars[ch];
     case Q_CODEPAGE_DEC:
         if (q_status.emulation != Q_EMUL_VT52) {
-            break;
+            return ch;
         }
         /*
          * VT52 will often fall off the tail and rely on q_emul_buffer to

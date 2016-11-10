@@ -785,7 +785,7 @@ static void pdcurses_key(int * key, int * flags) {
         }
         break;
     case CTL_TAB:
-        *key = 0x09;
+        *key = Q_KEY_TAB;
         if (flags != NULL) {
             *flags = KEY_FLAG_CTRL;
         }
@@ -845,7 +845,7 @@ static void pdcurses_key(int * key, int * flags) {
         }
         break;
     case ALT_TAB:
-        *key = 0x09;
+        *key = Q_KEY_TAB;
         if (flags != NULL) {
             *flags = KEY_FLAG_ALT;
         }
@@ -899,7 +899,7 @@ static void pdcurses_key(int * key, int * flags) {
         }
         break;
     case ALT_ESC:
-        *key = KEY_ESCAPE;
+        *key = Q_KEY_ESCAPE;
         if (flags != NULL) {
             *flags = KEY_FLAG_ALT;
         }
@@ -2110,10 +2110,9 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
          */
         *keystroke = KEY_BACKSPACE;
 
-#if defined(Q_PDCURSES) || defined(Q_PDCURSES_WIN32)
     } else if ((*keystroke == 0x08) && (res == OK)) {
         /*
-         * Special case: map DEL to KEY_BACKSPACE, but only if CTRL is not
+         * Special case: map ^H to KEY_BACKSPACE, but only if CTRL is not
          * set.
          */
         if (flags != NULL) {
@@ -2127,6 +2126,7 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
              */
             *keystroke = KEY_BACKSPACE;
         }
+#if defined(Q_PDCURSES) || defined(Q_PDCURSES_WIN32)
     } else if (res == KEY_CODE_YES) {
         /*
          * Handle PDCurses alternate keystrokes
@@ -2147,7 +2147,7 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
         }
 #endif
 
-    } else if (*keystroke == KEY_ESCAPE) {
+    } else if (*keystroke == C_ESC) {
         /*
          * We have some complex ESC handling here due to the multiple ways
          * ESC is used: as Alt-{X}, as a sequence initializer for a function
@@ -2182,7 +2182,7 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
             if (flags != NULL) {
                 *flags &= ~KEY_FLAG_ALT;
             }
-            *keystroke = KEY_ESCAPE;
+            *keystroke = Q_KEY_ESCAPE;
         } else if (res == KEY_CODE_YES) {
             /*
              * This was Alt-{some function key}.  Set ALT.
@@ -2203,7 +2203,7 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
                 *flags = 0;
             }
             assert(keys_in_queue == Q_FALSE);
-            curses_match_keystring(KEY_ESCAPE, keystroke, flags);
+            curses_match_keystring(C_ESC, keystroke, flags);
             curses_match_keystring(utf_keystroke, keystroke, flags);
 
             while ((curses_match_state == 1) && (res == OK)) {
@@ -2246,6 +2246,22 @@ void qodem_win_getch(void * window, int * keystroke, int * flags,
         nodelay((WINDOW *) window, FALSE);
     } else {
         nodelay((WINDOW *) window, TRUE);
+    }
+
+    /*
+     * Special case: remap ASCII carriage return to KEY_ENTER.  Note do this
+     * before the CTRL check.
+     */
+    if ((*keystroke == C_CR) && (res == OK)) {
+        *keystroke = KEY_ENTER;
+    }
+
+    /*
+     * Special case: remap ASCII tab to Q_KEY_TAB.  Note do this before the
+     * CTRL check.
+     */
+    if ((*keystroke == C_TAB) && (res == OK)) {
+        *keystroke = Q_KEY_TAB;
     }
 
     /*
@@ -2380,6 +2396,17 @@ int q_cursor(const int cursor) {
  * @return 1 if this is a special key, 0 otherwise
  */
 int q_key_code_yes(int keystroke) {
+
+    /*
+     * Special cases: we use our own keys for control characters that are
+     * outside the normal curses function key range.
+     */
+    if ((keystroke == Q_KEY_ENTER) ||
+        (keystroke == Q_KEY_ESCAPE) ||
+        (keystroke == Q_KEY_TAB)
+    ) {
+        return 1;
+    }
     if ((keystroke >= Q_KEY_PAD_MIN) && (keystroke <= Q_KEY_PAD_MAX)) {
         return 1;
     }
