@@ -44,7 +44,9 @@ short q_white_color_pair_num;
 
 /**
  * The offset between normal and bolded colors.  screen.c needs to peek at
- * this, so it's not static.
+ * this, so it's not static.  By default set it such that A_BOLD will not be
+ * sent directly to the screen, using instead colors that match the DOS CGA
+ * colors (e.g. bold brown = yellow).
  */
 short q_color_bold_offset = 64;
 
@@ -804,7 +806,9 @@ void q_setup_colors() {
     /*
      * Initialize the 64 curses colors.
      */
-    if ((COLORS >= 16) && (COLOR_PAIRS >= 2 * q_color_bold_offset)) {
+    if ((COLORS >= 16) && (COLOR_PAIRS >= 2 * q_color_bold_offset) &&
+        (can_change_color() == TRUE)
+    ) {
         /*
          * Complete re-map both the colors and color pairs.  Note that the
          * max color value is 1000.  These values are gamma-corrected (gamma
@@ -888,6 +892,9 @@ void q_setup_colors() {
      */
     init_pair(0x38, 0x00, 0x00);
 
+    /*
+     * We will send A_BOLD directly to the screen.
+     */
     q_color_bold_offset = 0;
 
     if (COLOR_PAIRS > 64) {
