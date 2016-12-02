@@ -838,18 +838,7 @@ static int _new_packet(chtype attr, bool rev, int len, int col, int row,
             }
         }
 
-        if (((visible_cursor == FALSE) && ((attr & A_BLINK) == 0) &&
-                (attr & (A_LEFTLINE|A_RIGHTLINE|A_UNDERLINE))) ||
-            ((visible_cursor == TRUE) &&
-                (attr & (A_LEFTLINE|A_RIGHTLINE|A_UNDERLINE)))
-        ) {
-            if (SP->line_color != -1)
-                XSetForeground(XCURSESDISPLAY, gc, colors[SP->line_color]);
-
-            if (attr & A_UNDERLINE)     /* UNDER */
-                XDrawLine(XCURSESDISPLAY, XCURSESWIN, gc,
-                    xpos, ypos + 1, xpos + font_width * len * 2, ypos + 1);
-        }
+        /* Note that we do NOT render the underscore on the top half text. */
 
         break;
 
