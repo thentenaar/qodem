@@ -2847,6 +2847,7 @@ static void reset_global_state() {
     q_status.external_rlogin        = Q_TRUE;
     q_status.external_ssh           = Q_TRUE;
     q_status.xterm_double           = Q_TRUE;
+    q_status.xterm_mouse_reporting  = Q_TRUE;
     q_status.vt100_color            = Q_TRUE;
     q_status.vt52_color             = Q_TRUE;
 

@@ -284,6 +284,11 @@ struct q_status_struct {
      */
     Q_BOOL xterm_double;
 
+    /**
+     * When true, enable xterm mouse reporting.
+     */
+    Q_BOOL xterm_mouse_reporting;
+
     /* Session variables */
 
     /**
