@@ -2051,7 +2051,7 @@ void load_options() {
     }
     q_status.xterm_double = Q_TRUE;
     if (strcasecmp(get_option(Q_OPTION_XTERM_DOUBLE), "false") == 0) {
-        q_status.external_ssh = Q_FALSE;
+        q_status.xterm_double = Q_FALSE;
     }
     q_status.vt100_color = Q_TRUE;
     if (strcasecmp(get_option(Q_OPTION_VT100_COLOR), "false") == 0) {
