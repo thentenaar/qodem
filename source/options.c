@@ -224,6 +224,10 @@ static struct option_struct options[] = {
 "###\n"
 "### This is only used by the text (ncurses) build."},
 
+        {Q_OPTION_XTERM_MOUSE_REPORTING, NULL, "xterm_mouse_reporting", "true", ""
+"### Whether to support xterm mouse reporting.  Value is\n"
+"### 'true' or 'false'."},
+
         {Q_OPTION_START_PHONEBOOK, NULL, "start_in_phonebook", "true", ""
 "### Whether to startup in the phonebook.  Value is 'true' or\n"
 "### 'false'."},
@@ -2052,6 +2056,10 @@ void load_options() {
     q_status.xterm_double = Q_TRUE;
     if (strcasecmp(get_option(Q_OPTION_XTERM_DOUBLE), "false") == 0) {
         q_status.xterm_double = Q_FALSE;
+    }
+    q_status.xterm_mouse_reporting = Q_TRUE;
+    if (strcasecmp(get_option(Q_OPTION_XTERM_MOUSE_REPORTING), "false") ==0) {
+        q_status.xterm_mouse_reporting = Q_FALSE;
     }
     q_status.vt100_color = Q_TRUE;
     if (strcasecmp(get_option(Q_OPTION_VT100_COLOR), "false") == 0) {

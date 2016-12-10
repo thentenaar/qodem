@@ -2808,6 +2808,16 @@ void console_refresh(Q_BOOL status_line) {
         }
     }
 
+    /*
+     * Set xterm mouse reporting
+     */
+    if (q_status.xterm_mouse_reporting == Q_TRUE) {
+        mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
+        mouseinterval(0);
+    } else {
+        mousemask(0, NULL);
+    }
+
     switch (q_program_state) {
     case Q_STATE_CONSOLE:
         screen_flush();
