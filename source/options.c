@@ -524,6 +524,13 @@ static struct option_struct options[] = {
 "### color selection codes will be quietly consumed, as a real VT100-ish\n"
 "### terminal would do."},
 
+         {Q_OPTION_XTERM_MOUSE_REPORTING, NULL, "xterm_mouse_reporting", "true", ""
+"### EMULATION: XTERM -----------------------------------------------------\n"
+"\n"
+"### Whether to support xterm mouse reporting at all.  Note that this only\n"
+"### affects XTERM and X_UTF8 emulations.  Mouse reporting is never sent to\n"
+"### the remote side for non-xterm emulations.  Value is 'true' or 'false'."},
+
 /* Communication protocol: SSH */
 
 #ifdef Q_PDCURSES_WIN32
@@ -2081,6 +2088,10 @@ void load_options() {
     q_status.xterm_double = Q_TRUE;
     if (strcasecmp(get_option(Q_OPTION_XTERM_DOUBLE), "false") == 0) {
         q_status.xterm_double = Q_FALSE;
+    }
+    q_status.xterm_mouse_reporting = Q_TRUE;
+    if (strcasecmp(get_option(Q_OPTION_XTERM_MOUSE_REPORTING), "false") == 0) {
+        q_status.xterm_mouse_reporting = Q_FALSE;
     }
     q_status.vt100_color = Q_TRUE;
     if (strcasecmp(get_option(Q_OPTION_VT100_COLOR), "false") == 0) {

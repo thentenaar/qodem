@@ -1033,6 +1033,26 @@ void reset_emulation() {
         q_status.hard_backspace = Q_TRUE;
         break;
     }
+
+    /*
+     * If xterm mouse reporting is enabled, enable the mouse.  Do not resolve
+     * double and triple clicks.
+     */
+    if ((q_status.xterm_mouse_reporting == Q_TRUE) &&
+        ((q_status.emulation == Q_EMUL_XTERM) ||
+         (q_status.emulation == Q_EMUL_XTERM_UTF8))
+    ) {
+        /*
+         * xterm emulations: listen for the mouse.
+         */
+        mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
+        mouseinterval(0);
+    } else {
+        /*
+         * Non-xterm or mouse disabled, do not listen for the mouse.
+         */
+        mousemask(0, NULL);
+    }
 }
 
 /**
