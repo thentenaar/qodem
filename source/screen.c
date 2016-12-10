@@ -1160,14 +1160,6 @@ void screen_setup(const unsigned char rows, const unsigned char cols) {
      */
     q_current_color = scrollback_full_attr(Q_COLOR_CONSOLE_TEXT);
 
-    /*
-     * If xterm mouse reporting is enabled, enable the mouse.  Do not resolve double and triple clicks.
-     */
-    if (q_status.xterm_mouse_reporting == Q_TRUE) {
-        mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
-        mouseinterval(0);
-    }
-
 #ifdef Q_PDCURSES
     /*
      * For the win32a version, putting this last makes it work.  No idea why

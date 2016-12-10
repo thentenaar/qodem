@@ -1618,6 +1618,27 @@ void console_keyboard_handler(int keystroke, int flags) {
              */
             load_options();
 
+            /*
+             * Explicitly check for the mouse reporting flag.  We need to do
+             * this here and not in load_options() because the first
+             * invocation to load_options() occurs before screen_setup().
+             */
+            if ((q_status.xterm_mouse_reporting == Q_TRUE) &&
+                ((q_status.emulation == Q_EMUL_XTERM) ||
+                 (q_status.emulation == Q_EMUL_XTERM_UTF8))
+            ) {
+                /*
+                 * xterm emulations: listen for the mouse.
+                 */
+                mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
+                mouseinterval(0);
+            } else {
+                /*
+                 * Non-xterm or mouse disabled, do not listen for the mouse.
+                 */
+                mousemask(0, NULL);
+            }
+
             return;
         }
         break;
@@ -2806,16 +2827,6 @@ void console_refresh(Q_BOOL status_line) {
         } else {
             screen_move_yx(q_status.cursor_y, q_status.cursor_x);
         }
-    }
-
-    /*
-     * Set xterm mouse reporting
-     */
-    if (q_status.xterm_mouse_reporting == Q_TRUE) {
-        mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
-        mouseinterval(0);
-    } else {
-        mousemask(0, NULL);
     }
 
     switch (q_program_state) {
