@@ -7150,7 +7150,7 @@ static wchar_t * xterm_keystroke_suffix(const int flags) {
  * @param first the first character, usually a number.
  * @param first the last character, one of the following: ~ A B C D F H
  * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.  See input.h.
- @ @return the buffer with the full key sequence
+ * @return the buffer with the full key sequence
  */
 static wchar_t * xterm_build_key_sequence(const wchar_t * ss3,
                                           const wchar_t first,
