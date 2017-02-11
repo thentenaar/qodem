@@ -2335,7 +2335,7 @@ void initialize_keyboard() {
     }
     fclose(dev_null);
 
-#if !defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32)
+#if !defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32) && !defined(Q_NO_NEWTERM)
     set_term(q_main_screen);
 #endif
 
