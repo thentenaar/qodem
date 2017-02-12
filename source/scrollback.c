@@ -1512,11 +1512,16 @@ keep_moving:
  * characters and qodem is using a trick to do so.
  */
 Q_BOOL has_true_doublewidth() {
-#if defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32)
+#if defined(Q_PDCURSES_WIN32)
+    /* Use PDC_set_double() for X11.  The Win32 version is still WIP. */
+    return Q_FALSE;
+#else
+#  if defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32)
     /* Use PDC_set_double() for X11.  The Win32 version is still WIP. */
     return Q_TRUE;
-#else
+#  else
     return xterm;
+#  endif
 #endif
 }
 
@@ -1707,6 +1712,8 @@ void render_scrollback(const int skip_lines) {
 #ifdef Q_PDCURSES
             if ((has_true_doublewidth() == Q_TRUE) &&
                 (q_program_state == Q_STATE_CONSOLE) ||
+                (q_program_state == Q_STATE_SCRIPT_EXECUTE) ||
+                (q_program_state == Q_STATE_HOST) ||
                 (q_program_state == Q_STATE_SCROLLBACK)
             ) {
                 if ((line->double_width == Q_TRUE) &&
@@ -1729,6 +1736,8 @@ void render_scrollback(const int skip_lines) {
                 ((double_on_last_screen == Q_TRUE) ||
                  (double_on_this_screen == Q_TRUE)) &&
                 ((q_program_state == Q_STATE_CONSOLE) ||
+                 (q_program_state == Q_STATE_SCRIPT_EXECUTE) ||
+                 (q_program_state == Q_STATE_HOST) ||
                  (q_program_state == Q_STATE_SCROLLBACK))
             ) {
                 screen_move_yx(row, 0);
@@ -1778,6 +1787,7 @@ void render_scrollback(const int skip_lines) {
         screen_move_yx(row, 0);
 
 #ifdef Q_PDCURSES
+        PDC_set_double(row, 0);
         screen_clear_remaining_line(Q_FALSE);
 #else
         if ((xterm == Q_TRUE) &&

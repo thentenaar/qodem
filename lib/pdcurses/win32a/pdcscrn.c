@@ -2479,3 +2479,39 @@ int PDC_init_color( short color, short red, short green, short blue)
     }
     return OK;
 }
+
+/* Set a row as double-width, double-height (top-half / bottom-half), or
+ * normal.
+ *
+ * y     : row number, 0 is the top row
+ * d = 0 : set this line to normal-width, normal-height
+ * d = 1 : set this line to double-width, normal-height
+ * d = 2 : set this line to double-width, double-height on the top half
+ * d = 3 : set this line to double-width, double-height on the bottom half
+ */
+void PDC_set_double(const int y, const int d)
+{
+    // KAL - TODO
+
+#if 0
+
+    int old_d;
+
+    XC_get_line_lock(y);
+
+    old_d = *(Xcurscr + XCURSCR_DOUBLE_OFF + y);
+    if (old_d != d) {
+        *(Xcurscr + XCURSCR_DOUBLE_OFF + y) = d;
+        *(Xcurscr + XCURSCR_START_OFF + y) = 0;
+        *(Xcurscr + XCURSCR_LENGTH_OFF + y) = XCursesCOLS;
+    }
+
+    XC_release_line_lock(y);
+
+    if (old_d != d) {
+        XCursesInstructAndWait(CURSES_REFRESH);
+    }
+
+#endif
+
+}

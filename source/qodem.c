@@ -319,6 +319,12 @@ extern int xc_key_sock;
 
 #ifndef WIN32
 
+/*
+ * The final return code retrieved when the script exited, stored in
+ * script.c.
+ */
+extern int script_rc;
+
 /**
  * SIGCHLD signal handler.
  *
@@ -358,6 +364,22 @@ static void handle_sigchld(int sig) {
              */
             q_child_exited = Q_TRUE;
             DLOG(("SIGCHLD: CONNECTION CLOSED\n"));
+        }
+        if (pid == q_running_script.script_pid) {
+            /*
+             * The script has exited.
+             */
+            DLOG(("SIGCHLD: SCRIPT DONE\n"));
+
+            if (WIFEXITED(status)) {
+                qlog(_("Script exited with RC=%u\n"),
+                    (WEXITSTATUS(status) & 0xFF));
+                script_rc = (WEXITSTATUS(status) & 0xFF);
+            } else if (WIFSIGNALED(status)) {
+                qlog(_("Script exited with signal=%u\n"), WTERMSIG(status));
+                script_rc = WTERMSIG(status) + 128;
+            }
+            q_running_script.script_pid = -1;
         }
 
         DLOG(("Reaped process %d\n", pid));
@@ -1890,17 +1912,15 @@ no_data:
                     &q_transfer_buffer_raw_n, sizeof(q_transfer_buffer_raw));
             } else if (q_program_state == Q_STATE_SCRIPT_EXECUTE) {
                 /* Script data handler */
-                if (q_running_script.running == Q_TRUE) {
-                    script_process_data(q_buffer_raw, q_buffer_raw_n,
-                        &unprocessed_n, q_transfer_buffer_raw,
-                        &q_transfer_buffer_raw_n,
-                        sizeof(q_transfer_buffer_raw));
-                    /*
-                     * Reset the flags so the second call is a timeout type.
-                     */
-                    q_running_script.stdout_readable = Q_FALSE;
-                    q_running_script.stdin_writeable = Q_FALSE;
-                }
+                script_process_data(q_buffer_raw, q_buffer_raw_n,
+                    &unprocessed_n, q_transfer_buffer_raw,
+                    &q_transfer_buffer_raw_n,
+                    sizeof(q_transfer_buffer_raw));
+                /*
+                 * Reset the flags so the second call is a timeout type.
+                 */
+                q_running_script.stdout_readable = Q_FALSE;
+                q_running_script.stdin_writeable = Q_FALSE;
             } else if (q_program_state == Q_STATE_HOST) {
                 /* Host mode data handler */
                 host_process_data(q_buffer_raw, q_buffer_raw_n, &unprocessed_n,

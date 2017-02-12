@@ -16,8 +16,6 @@ Fix all marked TODOs in code
 
 Full 40-column support
     - Win32a double-width chars
-    - X11 double-width chars
-    - Split-screen and script middle title bar on console
     - Cursor position
 
 #41 PETSCII

@@ -1,6 +1,12 @@
 The Qodem Project Work Log
 ==========================
 
+February 12, 2017
+
+Double-width/height appear to be working on X11 now.  I had to add a
+cache for performance to not totally suck, but it is there now and
+will be a model for the Win32 version.
+
 November 10, 2016
 
 Whew, there has been a decently large code sweep.  The control keys

@@ -118,7 +118,7 @@ uint32_t stdout_utf8_state;
 uint32_t stderr_utf8_state;
 
 /* The final return code retrieved when the script exited. */
-static int script_rc;
+int script_rc = -1;
 
 /**
  * Figure out the appropriate full and empty print buffer state exposed to
@@ -306,8 +306,6 @@ void script_process_data(unsigned char * input, const unsigned int input_n,
     struct pollfd pfd;
 #endif
     Q_BOOL check_stderr = Q_FALSE;
-
-    assert(q_running_script.running == Q_TRUE);
 
     DLOG(("script.c: buffer_full %s buffer_empty %s running %s paused %s\n",
          (q_running_script.print_buffer_full == Q_TRUE ? "true" : "false"),
@@ -1306,6 +1304,7 @@ void script_start(const char * script_filename) {
      * Parent qodem process
      */
     q_running_script.script_pid = child_pid;
+    qlog(_("[child] PID is %d\n"), child_pid);
 
     /*
      * Record start time
@@ -1492,7 +1491,14 @@ void script_stop() {
      * Reap process
      */
     if (q_running_script.script_pid != -1) {
-        wait4(q_running_script.script_pid, &status, WNOHANG, NULL);
+        if (wait4(q_running_script.script_pid, &status, WNOHANG, NULL) !=
+            q_running_script.script_pid) {
+
+            qlog(_("Script failed to start! (errno = %d: %s)\n"), errno,
+                strerror(errno));
+            status = -1;
+        }
+
         if (WIFEXITED(status)) {
             qlog(_("Script exited with RC=%u\n"), (WEXITSTATUS(status) & 0xFF));
             script_rc = (WEXITSTATUS(status) & 0xFF);
