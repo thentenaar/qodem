@@ -160,13 +160,20 @@ int PDC_init_color(short color, short red, short green, short blue)
  */
 void PDC_set_double(const int y, const int d)
 {
+    int old_d;
+
     XC_get_line_lock(y);
 
-    *(Xcurscr + XCURSCR_DOUBLE_OFF + y) = d;
-    *(Xcurscr + XCURSCR_START_OFF + y) = 0;
-    *(Xcurscr + XCURSCR_LENGTH_OFF + y) = XCursesCOLS;
+    old_d = *(Xcurscr + XCURSCR_DOUBLE_OFF + y);
+    if (old_d != d) {
+        *(Xcurscr + XCURSCR_DOUBLE_OFF + y) = d;
+        *(Xcurscr + XCURSCR_START_OFF + y) = 0;
+        *(Xcurscr + XCURSCR_LENGTH_OFF + y) = XCursesCOLS;
+    }
 
     XC_release_line_lock(y);
 
-    XCursesInstructAndWait(CURSES_REFRESH);
+    if (old_d != d) {
+        XCursesInstructAndWait(CURSES_REFRESH);
+    }
 }

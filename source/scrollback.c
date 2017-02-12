@@ -1512,9 +1512,9 @@ keep_moving:
  * characters and qodem is using a trick to do so.
  */
 Q_BOOL has_true_doublewidth() {
-#ifdef Q_PDCURSES
-    /* Use PDC_set_double().  Disabled for now, this is WIP. */
-    return Q_FALSE;
+#if defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32)
+    /* Use PDC_set_double() for X11.  The Win32 version is still WIP. */
+    return Q_TRUE;
 #else
     return xterm;
 #endif
@@ -1646,66 +1646,6 @@ void render_scrollback(const int skip_lines) {
          * rendering to a larger scrollback region (ala Turbo Vision).
          */
         if ((line->dirty == Q_TRUE) || Q_TRUE) {
-#ifdef Q_PDCURSES
-            if ((has_true_doublewidth() == Q_TRUE) &&
-                (q_program_state == Q_STATE_CONSOLE) ||
-                (q_program_state == Q_STATE_SCROLLBACK)
-            ) {
-                if ((line->double_width == Q_TRUE) &&
-                    (line->double_height == 0)
-                ) {
-                    PDC_set_double(row, 1);
-                } else if (line->double_height == 1) {
-                    PDC_set_double(row, 2);
-                } else if (line->double_height == 2) {
-                    PDC_set_double(row, 3);
-                } else {
-                    assert(line->double_width == Q_FALSE);
-                    assert(line->double_height == 0);
-                    PDC_set_double(row, 0);
-                }
-            }
-#else
-            if ((xterm == Q_TRUE) &&
-                ((double_on_last_screen == Q_TRUE) ||
-                 (double_on_this_screen == Q_TRUE)) &&
-                ((q_program_state == Q_STATE_CONSOLE) ||
-                 (q_program_state == Q_STATE_SCROLLBACK))
-            ) {
-                screen_move_yx(row, 0);
-                if ((line->double_width == Q_TRUE) &&
-                    (line->double_height == 0)
-                ) {
-                    odd_line = Q_TRUE;
-                    screen_flush();
-                    fflush(stdout);
-                    fprintf(stdout, "\033#6");
-                    fflush(stdout);
-                } else if (line->double_height == 1) {
-                    assert(line->double_width == Q_TRUE);
-                    odd_line = Q_TRUE;
-                    screen_flush();
-                    fflush(stdout);
-                    fprintf(stdout, "\033#3");
-                    fflush(stdout);
-                } else if (line->double_height == 2) {
-                    assert(line->double_width == Q_TRUE);
-                    odd_line = Q_TRUE;
-                    screen_flush();
-                    fflush(stdout);
-                    fprintf(stdout, "\033#4");
-                    fflush(stdout);
-                } else {
-                    assert(line->double_width == Q_FALSE);
-                    assert(line->double_height == 0);
-                    odd_line = Q_TRUE;
-                    screen_flush();
-                    fflush(stdout);
-                    fprintf(stdout, "\033#5");
-                    fflush(stdout);
-                }
-            }
-#endif
             if (line->length > 0) {
                 for (i = 0; i < line->length; i++) {
                     attr_t color = line->colors[i];
@@ -1763,6 +1703,68 @@ void render_scrollback(const int skip_lines) {
              * Clear remainder of line
              */
             screen_clear_remaining_line(line->double_width);
+
+#ifdef Q_PDCURSES
+            if ((has_true_doublewidth() == Q_TRUE) &&
+                (q_program_state == Q_STATE_CONSOLE) ||
+                (q_program_state == Q_STATE_SCROLLBACK)
+            ) {
+                if ((line->double_width == Q_TRUE) &&
+                    (line->double_height == 0)
+                ) {
+                    PDC_set_double(row, 1);
+                } else if (line->double_height == 1) {
+                    PDC_set_double(row, 2);
+                } else if (line->double_height == 2) {
+                    PDC_set_double(row, 3);
+                } else {
+                    assert(line->double_width == Q_FALSE);
+                    assert(line->double_height == 0);
+                    PDC_set_double(row, 0);
+                }
+            }
+
+#else
+            if ((xterm == Q_TRUE) &&
+                ((double_on_last_screen == Q_TRUE) ||
+                 (double_on_this_screen == Q_TRUE)) &&
+                ((q_program_state == Q_STATE_CONSOLE) ||
+                 (q_program_state == Q_STATE_SCROLLBACK))
+            ) {
+                screen_move_yx(row, 0);
+                if ((line->double_width == Q_TRUE) &&
+                    (line->double_height == 0)
+                ) {
+                    odd_line = Q_TRUE;
+                    screen_flush();
+                    fflush(stdout);
+                    fprintf(stdout, "\033#6");
+                    fflush(stdout);
+                } else if (line->double_height == 1) {
+                    assert(line->double_width == Q_TRUE);
+                    odd_line = Q_TRUE;
+                    screen_flush();
+                    fflush(stdout);
+                    fprintf(stdout, "\033#3");
+                    fflush(stdout);
+                } else if (line->double_height == 2) {
+                    assert(line->double_width == Q_TRUE);
+                    odd_line = Q_TRUE;
+                    screen_flush();
+                    fflush(stdout);
+                    fprintf(stdout, "\033#4");
+                    fflush(stdout);
+                } else {
+                    assert(line->double_width == Q_FALSE);
+                    assert(line->double_height == 0);
+                    odd_line = Q_TRUE;
+                    screen_flush();
+                    fflush(stdout);
+                    fprintf(stdout, "\033#5");
+                    fflush(stdout);
+                }
+            }
+#endif
 
             line->dirty = Q_FALSE;
 
