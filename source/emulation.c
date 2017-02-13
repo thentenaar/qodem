@@ -187,11 +187,12 @@ const char * emulation_term(Q_EMULATION emulation) {
     case Q_EMUL_LINUX:
     case Q_EMUL_LINUX_UTF8:
         return "linux";
+    case Q_EMUL_PETSCII:
+        return "commodore";
     case Q_EMUL_XTERM:
     case Q_EMUL_XTERM_UTF8:
         return "xterm";
     case Q_EMUL_DEBUG:
-    case Q_EMUL_PETSCII:
     default:
         /*
          * No default terminal setting
@@ -1093,7 +1094,7 @@ void emulation_menu_refresh() {
     screen_put_color_str_yx(HEIGHT - 1, status_left_stop, status_string,
                             Q_COLOR_STATUS);
 
-    window_length = 20;
+    window_length = 27;
 
     /*
      * Add room for border + 1 space on each side
@@ -1168,15 +1169,15 @@ void emulation_menu_refresh() {
     screen_put_color_str_yx(window_top + 9, window_left + 7, "G",
                             Q_COLOR_MENU_COMMAND);
     screen_put_color_printf(Q_COLOR_MENU_TEXT, "  VT220");
-    screen_put_color_str_yx(window_top + 10, window_left + 7, "P",
-                            Q_COLOR_MENU_COMMAND);
-    screen_put_color_printf(Q_COLOR_MENU_TEXT, "  PETSCII");
     screen_put_color_str_yx(window_top + 11, window_left + 7, "L",
                             Q_COLOR_MENU_COMMAND);
     screen_put_color_printf(Q_COLOR_MENU_TEXT, "  LINUX");
     screen_put_color_str_yx(window_top + 12, window_left + 7, "T",
                             Q_COLOR_MENU_COMMAND);
     screen_put_color_printf(Q_COLOR_MENU_TEXT, "  LINUX UTF-8");
+    screen_put_color_str_yx(window_top + 10, window_left + 7, "P",
+                            Q_COLOR_MENU_COMMAND);
+    screen_put_color_printf(Q_COLOR_MENU_TEXT, "  PETSCII (Commodore)");
     screen_put_color_str_yx(window_top + 13, window_left + 7, "X",
                             Q_COLOR_MENU_COMMAND);
     screen_put_color_printf(Q_COLOR_MENU_TEXT, "  XTERM");

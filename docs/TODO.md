@@ -19,6 +19,7 @@ Full 40-column support
     - Cursor position
 
 #41 PETSCII
+    - Find font with C64 glyphs
     - README, man page, help text
 
 #43 clang compiler support

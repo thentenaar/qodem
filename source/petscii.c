@@ -25,7 +25,7 @@
 #include "scrollback.h"
 #include "options.h"
 #include "ansi.h"
-#include "avatar.h"
+#include "petscii.h"
 
 /* Set this to a not-NULL value to enable debug log. */
 /* static const char * DLOGNAME = "petscii"; */
@@ -36,26 +36,6 @@ static const char * DLOGNAME = NULL;
  */
 typedef enum SCAN_STATES {
     SCAN_NONE,
-    SCAN_V,
-    SCAN_H_1,
-    SCAN_H_2,
-    SCAN_A_1,
-    SCAN_Y_1,
-    SCAN_Y_2,
-    SCAN_Y_EMIT,
-    SCAN_V_Y_1,
-    SCAN_V_Y_2,
-    SCAN_V_Y_3,
-    SCAN_V_Y_EMIT,
-    SCAN_V_M_1,
-    SCAN_V_M_2,
-    SCAN_V_M_3,
-    SCAN_V_M_4,
-    SCAN_V_JK_1,
-    SCAN_V_JK_2,
-    SCAN_V_JK_3,
-    SCAN_V_JK_4,
-    SCAN_V_JK_5,
     SCAN_ESC,
     SCAN_CSI,
     SCAN_CSI_PARAM,
@@ -66,20 +46,22 @@ typedef enum SCAN_STATES {
 /* Current scanning state. */
 static SCAN_STATE scan_state;
 
-/* For the ^Y and ^V^Y sequences. */
-static unsigned char y_char;
-static int y_count;
-static unsigned char * v_y_chars = NULL;
-static int v_y_chars_i;
-static int v_y_chars_n;
+/**
+ * State change flags for the Commodore keyboard/screen.
+ */
+struct commodore_state {
+    /**
+     * If true, the keyboard is in uppercase.
+     */
+    Q_BOOL uppercase;
+};
 
-/* For the ^V^J and ^V^K sequences. */
-static Q_BOOL v_jk_scrollup;
-static int v_jk_numlines;
-static int v_jk_upper;
-static int v_jk_left;
-static int v_jk_lower;
-static int v_jk_right;
+/**
+ * The current keyboard/screen state.
+ */
+struct commodore_state state = {
+    Q_TRUE
+};
 
 /**
  * ANSI fallback: the unknown escape sequence is copied here and then run
@@ -90,17 +72,87 @@ static int ansi_buffer_n;
 static int ansi_buffer_i;
 
 /**
+ * The C64/128 characters in uppercase mode.
+ */
+static wchar_t c64_uppercase_chars[] = {
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xF100, 0x0000, 0x0000,
+    0xF118, 0xF119, 0x0000, 0x0000, 0x0000, 0x000D, 0x000E, 0x0000,
+    0x0000, 0xF11C, 0xF11A, 0xF120, 0x007F, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000, 0xF101, 0xF11D, 0xF102, 0xF103,
+    0x0020, 0x0021, 0x0022, 0x0023, 0x0024, 0x0025, 0x0026, 0x0027,
+    0x0028, 0x0029, 0x002A, 0x002B, 0x002C, 0x002D, 0x002E, 0x002F,
+    0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037,
+    0x0038, 0x0039, 0x003A, 0x003B, 0x003C, 0x003D, 0x003E, 0x003F,
+    0x0040, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047,
+    0x0048, 0x0049, 0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F,
+    0x0050, 0x0051, 0x0052, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057,
+    0x0058, 0x0059, 0x005A, 0x005B, 0x00A3, 0x005D, 0x2191, 0x2190,
+    0x2501, 0x2660, 0x2502, 0x2501, 0xF122, 0xF123, 0xF124, 0xF126,
+    0xF128, 0x256E, 0x2570, 0x256F, 0xF12A, 0x2572, 0x2571, 0xF12B,
+    0xF12C, 0x25CF, 0xF125, 0x2665, 0xF127, 0x256D, 0x2573, 0x25CB,
+    0x2663, 0xF129, 0x2666, 0x253C, 0xF12E, 0x2502, 0x03C0, 0x25E5,
+    0x0000, 0xF104, 0x0000, 0x0000, 0x0000, 0xF110, 0xF112, 0xF114,
+    0xF116, 0xF111, 0xF113, 0xF115, 0xF117, 0x000A, 0x000F, 0x0000,
+    0xF105, 0xF11E, 0xF11B, 0x000C, 0xF121, 0xF106, 0xF107, 0xF108,
+    0xF109, 0xF10A, 0xF10B, 0xF10C, 0xF10D, 0xF11D, 0xF10E, 0xF10F,
+    0x00A0, 0x258C, 0x2584, 0x2594, 0x2581, 0x258F, 0x2592, 0x2595,
+    0xF12F, 0x25E4, 0xF130, 0x251C, 0xF134, 0x2514, 0x2510, 0x2582,
+    0x250C, 0x2534, 0x252C, 0x2524, 0x258E, 0x258D, 0xF131, 0xF132,
+    0xF133, 0x2583, 0xF12D, 0xF135, 0xF136, 0x2518, 0xF137, 0xF138,
+    0x2501, 0x2660, 0x2502, 0x2501, 0xF122, 0xF123, 0xF124, 0xF126,
+    0xF128, 0x256E, 0x2570, 0x256F, 0xF12A, 0x2572, 0x2571, 0xF12B,
+    0xF12C, 0x25CF, 0xF125, 0x2665, 0xF127, 0x256D, 0x2573, 0x25CB,
+    0x2663, 0xF129, 0x2666, 0x253C, 0xF12E, 0x2502, 0x03C0, 0x25E5,
+    0x00A0, 0x258C, 0x2584, 0x2594, 0x2581, 0x258F, 0x2592, 0x2595,
+    0xF12F, 0x25E4, 0xF130, 0x251C, 0xF134, 0x2514, 0x2510, 0x2582,
+    0x250C, 0x2534, 0x252C, 0x2524, 0x258E, 0x258D, 0xF131, 0xF132,
+    0xF133, 0x2583, 0xF12D, 0xF135, 0xF136, 0x2518, 0xF137, 0x03C0
+};
+
+/**
+ * The C64/128 characters in lowercase mode.
+ */
+static wchar_t c64_lowercase_chars[] = {
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xF100, 0x0000, 0x0000,
+    0xF118, 0xF119, 0x0000, 0x0000, 0x0000, 0x000D, 0x000E, 0x0000,
+    0x0000, 0xF11C, 0xF11A, 0xF120, 0x007F, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000, 0xF101, 0xF11D, 0xF102, 0xF103,
+    0x0020, 0x0021, 0x0022, 0x0023, 0x0024, 0x0025, 0x0026, 0x0027,
+    0x0028, 0x0029, 0x002A, 0x002B, 0x002C, 0x002D, 0x002E, 0x002F,
+    0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037,
+    0x0038, 0x0039, 0x003A, 0x003B, 0x003C, 0x003D, 0x003E, 0x003F,
+    0x0040, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065, 0x0066, 0x0067,
+    0x0068, 0x0069, 0x006A, 0x006B, 0x006C, 0x006D, 0x006E, 0x006F,
+    0x0070, 0x0071, 0x0072, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077,
+    0x0078, 0x0079, 0x007A, 0x005B, 0x00A3, 0x005D, 0x2191, 0x2190,
+    0x2501, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047,
+    0x0048, 0x0049, 0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F,
+    0x0050, 0x0051, 0x0052, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057,
+    0x0058, 0x0059, 0x005A, 0x253C, 0xF12E, 0x2502, 0x2592, 0xF139,
+    0x0000, 0xF104, 0x0000, 0x0000, 0x0000, 0xF110, 0xF112, 0xF114,
+    0xF116, 0xF111, 0xF113, 0xF115, 0xF117, 0x000A, 0x000F, 0x0000,
+    0xF105, 0xF11E, 0xF11B, 0x000C, 0xF121, 0xF106, 0xF107, 0xF108,
+    0xF109, 0xF10A, 0xF10B, 0xF10C, 0xF10D, 0xF11D, 0xF10E, 0xF10F,
+    0x00A0, 0x258C, 0x2584, 0x2594, 0x2581, 0x258F, 0x2592, 0x2595,
+    0xF12F, 0xF13A, 0xF130, 0x251C, 0xF134, 0x2514, 0x2510, 0x2582,
+    0x250C, 0x2534, 0x252C, 0x2524, 0x258E, 0x258D, 0xF131, 0xF132,
+    0xF133, 0x2583, 0x2713, 0xF135, 0xF136, 0x2518, 0xF137, 0xF138,
+    0x2501, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047,
+    0x0048, 0x0049, 0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F,
+    0x0050, 0x0051, 0x0052, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057,
+    0x0058, 0x0059, 0x005A, 0x253C, 0xF12E, 0x2502, 0x2592, 0xF139,
+    0x00A0, 0x258C, 0x2584, 0x2594, 0x2581, 0x258F, 0x2592, 0x2595,
+    0xF12F, 0xF13A, 0xF130, 0x251C, 0xF134, 0x2514, 0x2510, 0x2582,
+    0x250C, 0x2534, 0x252C, 0x2524, 0x258E, 0x258D, 0xF131, 0xF132,
+    0xF133, 0x2583, 0x2713, 0xF135, 0xF136, 0x2518, 0xF137, 0x2592
+};
+
+/**
  * Reset the emulation state.
  */
 void petscii_reset() {
     scan_state = SCAN_NONE;
-    if (v_y_chars != NULL) {
-        Xfree(v_y_chars, __FILE__, __LINE__);
-        v_y_chars = NULL;
-    }
-    v_y_chars_i = 0;
-    v_y_chars_n = 0;
-
+    state.uppercase = Q_FALSE;
     DLOG(("petscii_reset()\n"));
 }
 
@@ -116,13 +168,6 @@ static void clear_state(wchar_t * to_screen) {
     memset(q_emul_buffer, 0, sizeof(q_emul_buffer));
     scan_state = SCAN_NONE;
     *to_screen = 1;
-
-    if (v_y_chars != NULL) {
-        Xfree(v_y_chars, __FILE__, __LINE__);
-        v_y_chars = NULL;
-        v_y_chars_i = 0;
-        v_y_chars_n = 0;
-    }
 }
 
 /**
@@ -135,71 +180,6 @@ static void save_char(unsigned char keep_char, wchar_t * to_screen) {
     q_emul_buffer[q_emul_buffer_n] = keep_char;
     q_emul_buffer_n++;
     *to_screen = 1;
-}
-
-/*
- * The PETSCII specification defines colors in terms of the CGA bitmask.  This
- * maps those bits to a curses color number.
- */
-static short pc_to_curses_map[] = {
-    Q_COLOR_BLACK,
-    Q_COLOR_BLUE,
-    Q_COLOR_GREEN,
-    Q_COLOR_CYAN,
-    Q_COLOR_RED,
-    Q_COLOR_MAGENTA,
-
-    /*
-     * This is really brown
-     */
-    Q_COLOR_YELLOW,
-
-    /*
-     * Really light gray
-     */
-    Q_COLOR_WHITE
-
-    /*
-     * The bold colors are:
-     *
-     * dark gray
-     * light blue
-     * light green
-     * light cyan
-     * light red
-     * light magenta
-     * yellow
-     * white
-     */
-};
-
-/**
- * Set the current drawing color based on PC attribute.
- *
- * @param from_modem one byte from the remote side
- */
-static void petscii_set_color(const unsigned char from_modem) {
-    short fg;
-    short bg;
-    attr_t attr;
-
-    /*
-     * Set color
-     */
-    attr = Q_A_NORMAL;
-    fg = from_modem & 0x07;
-    bg = (from_modem >> 4) & 0x07;
-    fg = pc_to_curses_map[fg];
-    bg = pc_to_curses_map[bg];
-    if ((from_modem & 0x08) != 0) {
-        attr |= Q_A_BOLD;
-    }
-    if ((from_modem & 0x80) != 0) {
-        attr |= Q_A_BLINK;
-    }
-    q_current_color = attr | color_to_attr((short) ((fg << 3) | bg));
-
-    DLOG(("new color: %04x\n", (unsigned int) q_current_color));
 }
 
 /**
@@ -217,10 +197,6 @@ Q_EMULATION_STATUS petscii(const unsigned char from_modem,
     static unsigned char * count;
     static attr_t attributes;
     Q_EMULATION_STATUS rc;
-    attr_t old_color;
-    int old_x;
-    int old_y;
-    int i;
 
     DLOG(("STATE: %d CHAR: 0x%02x '%c'\n", scan_state, from_modem, from_modem));
 
@@ -233,6 +209,8 @@ Q_EMULATION_STATUS petscii(const unsigned char from_modem,
 petscii_start:
 
     switch (scan_state) {
+
+    /* ANSI Fallback ------------------------------------------------------- */
 
     case SCAN_ANSI_FALLBACK:
 
@@ -292,489 +270,31 @@ petscii_start:
 
         return rc;
 
-    case SCAN_NONE:
-        /*
-         * ESC
-         */
-        if (from_modem == C_ESC) {
-            save_char(from_modem, to_screen);
-            scan_state = SCAN_ESC;
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
+    case DUMP_UNKNOWN_SEQUENCE:
+
+        DLOG(("DUMP_UNKNOWN_SEQUENCE q_emul_buffer_i %d q_emul_buffer_n %d\n",
+                q_emul_buffer_i, q_emul_buffer_n));
 
         /*
-         * ^V
+         * Dump the string in q_emul_buffer
          */
-        if (from_modem == 0x16) {
-            save_char(from_modem, to_screen);
-            scan_state = SCAN_V;
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
+        assert(q_emul_buffer_n > 0);
 
-        /*
-         * ^L
-         */
-        if (from_modem == 0x0C) {
-
-            DLOG(("clear screen, home cursor\n"));
-
+        *to_screen = codepage_map_char(q_emul_buffer[q_emul_buffer_i]);
+        q_emul_buffer_i++;
+        if (q_emul_buffer_i == q_emul_buffer_n) {
             /*
-             * Cursor position to (0,0) and erase entire screen.
+             * This was the last character.
              */
-            cursor_formfeed();
-            q_current_color =
-                Q_A_NORMAL | scrollback_full_attr(Q_COLOR_CONSOLE_TEXT);
+            q_emul_buffer_n = 0;
+            q_emul_buffer_i = 0;
+            memset(q_emul_buffer, 0, sizeof(q_emul_buffer));
+            scan_state = SCAN_NONE;
+            return Q_EMUL_FSM_ONE_CHAR;
 
-            clear_state(to_screen);
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        /*
-         * ^Y
-         */
-        if (from_modem == 0x19) {
-            save_char(from_modem, to_screen);
-            scan_state = SCAN_Y_1;
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        /*
-         * Other control characters
-         */
-        if (iscntrl(from_modem)) {
-
-            DLOG(("generic_handle_control_char(): control_char = 0x%02x\n",
-                 from_modem));
-
-            generic_handle_control_char(from_modem);
-            *to_screen = 1;
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        *to_screen = codepage_map_char(from_modem);
-        return Q_EMUL_FSM_ONE_CHAR;
-
-    case SCAN_A_1:
-        /*
-         * from_modem has new color attribute.
-         */
-        petscii_set_color(from_modem);
-
-        clear_state(to_screen);
-        return Q_EMUL_FSM_NO_CHAR_YET;
-
-    case SCAN_H_1:
-        save_char(from_modem, to_screen);
-        scan_state = SCAN_H_2;
-        return Q_EMUL_FSM_NO_CHAR_YET;
-
-    case SCAN_H_2:
-        /*
-         * from_modem has new column value.
-         */
-
-        /*
-         * Cursor position
-         */
-
-        DLOG(("cursor_position() %d %d\n", q_emul_buffer[2] - 1,
-             from_modem - 1));
-
-        old_y = q_emul_buffer[2] - 1;
-        old_x = from_modem - 1;
-        if (old_x < 0) {
-            old_x = 0;
-        }
-        if (old_y < 0) {
-            old_y = 0;
-        }
-        cursor_position(old_y, old_x);
-
-        clear_state(to_screen);
-        return Q_EMUL_FSM_NO_CHAR_YET;
-
-    case SCAN_Y_1:
-        save_char(from_modem, to_screen);
-        y_char = from_modem;
-        scan_state = SCAN_Y_2;
-        return Q_EMUL_FSM_NO_CHAR_YET;
-
-    case SCAN_Y_2:
-        y_count = from_modem;
-
-        DLOG(("RLE char '%c' count=%d\n", y_char, y_count));
-
-        scan_state = SCAN_Y_EMIT;
-        /*
-         * Fall through ...
-         */
-repeat_loop:
-
-    case SCAN_Y_EMIT:
-        if (y_count == 0) {
-            if (q_status.insert_mode == Q_TRUE) {
-                /*
-                 * Since clear_state() resets insert mode, we have to change
-                 * it back after.
-                 */
-                clear_state(to_screen);
-                q_status.insert_mode = Q_TRUE;
-            } else {
-                clear_state(to_screen);
-            }
-
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        y_count--;
-
-        /*
-         * PETSCII allows repeated single characters to be control characters
-         * too.  They have to be handled but not displayed.
-         */
-        if (iscntrl(y_char)) {
-
-            DLOG(("REPEAT generic_handle_control_char(): control_char = 0x%02x\n",
-                 y_char));
-
-            generic_handle_control_char(y_char);
-            goto repeat_loop;
-        }
-
-        *to_screen = codepage_map_char(y_char);
-        return Q_EMUL_FSM_MANY_CHARS;
-
-    case SCAN_V_JK_1:
-        v_jk_numlines = from_modem;
-        save_char(from_modem, to_screen);
-        scan_state = SCAN_V_JK_2;
-        return Q_EMUL_FSM_NO_CHAR_YET;
-
-    case SCAN_V_JK_2:
-        v_jk_upper = from_modem;
-        save_char(from_modem, to_screen);
-        scan_state = SCAN_V_JK_3;
-        return Q_EMUL_FSM_NO_CHAR_YET;
-
-    case SCAN_V_JK_3:
-        v_jk_left = from_modem;
-        save_char(from_modem, to_screen);
-        scan_state = SCAN_V_JK_4;
-        return Q_EMUL_FSM_NO_CHAR_YET;
-
-    case SCAN_V_JK_4:
-        v_jk_lower = from_modem;
-        save_char(from_modem, to_screen);
-        scan_state = SCAN_V_JK_5;
-        return Q_EMUL_FSM_NO_CHAR_YET;
-
-    case SCAN_V_JK_5:
-        v_jk_right = from_modem;
-
-        /*
-         * Scroll a rectangular region.
-         */
-        DLOG(("scroll_rectangle() %s %d %d %d %d %d\n",
-             (v_jk_scrollup == Q_TRUE ? "true" : "false"), v_jk_numlines,
-             v_jk_upper, v_jk_left, v_jk_lower, v_jk_right));
-
-        if ((v_jk_numlines == 0) || (v_jk_numlines > HEIGHT - STATUS_HEIGHT)) {
-            erase_screen(0, 0, HEIGHT - STATUS_HEIGHT - 1, WIDTH - 1, Q_FALSE);
         } else {
-            if (v_jk_upper > 0) {
-                v_jk_upper--;
-            }
-            if (v_jk_left > 0) {
-                v_jk_left--;
-            }
-            if (v_jk_lower > 0) {
-                v_jk_lower--;
-            }
-            if (v_jk_right > 0) {
-                v_jk_right--;
-            }
-
-            if (v_jk_scrollup == Q_TRUE) {
-                rectangle_scroll_up(v_jk_upper, v_jk_left, v_jk_lower,
-                                    v_jk_right, v_jk_numlines);
-            } else {
-                rectangle_scroll_down(v_jk_upper, v_jk_left, v_jk_lower,
-                                      v_jk_right, v_jk_numlines);
-            }
+            return Q_EMUL_FSM_MANY_CHARS;
         }
-
-        clear_state(to_screen);
-        return Q_EMUL_FSM_NO_CHAR_YET;
-
-    case SCAN_V_Y_1:
-        save_char(from_modem, to_screen);
-        v_y_chars_n = from_modem;
-        v_y_chars =
-            (unsigned char *) Xmalloc(sizeof(unsigned char) * (v_y_chars_n + 1),
-                                      __FILE__, __LINE__);
-        memset(v_y_chars, 0, sizeof(unsigned char) * (v_y_chars_n + 1));
-        v_y_chars_i = 0;
-
-        scan_state = SCAN_V_Y_2;
-        return Q_EMUL_FSM_NO_CHAR_YET;
-
-    case SCAN_V_Y_2:
-        save_char(from_modem, to_screen);
-        v_y_chars[v_y_chars_i] = from_modem;
-        v_y_chars_i++;
-        if (v_y_chars_i == v_y_chars_n) {
-            scan_state = SCAN_V_Y_3;
-        }
-        return Q_EMUL_FSM_NO_CHAR_YET;
-
-    case SCAN_V_Y_3:
-        y_count = from_modem;
-        v_y_chars_i = 0;
-
-        DLOG(("RLE pattern '%s' count=%d\n", v_y_chars, y_count));
-        scan_state = SCAN_V_Y_EMIT;
-
-        /*
-         * Fall through ...
-         */
-    case SCAN_V_Y_EMIT:
-
-        /*
-         * It's possible to repeat the entire state machine...ick.
-         */
-        q_emul_repeat_state_count = v_y_chars_n * y_count;
-        q_emul_repeat_state_buffer =
-            (unsigned char *) Xmalloc(sizeof(unsigned char) *
-                                      q_emul_repeat_state_count, __FILE__,
-                                      __LINE__);
-        while (y_count > 0) {
-            memcpy(q_emul_repeat_state_buffer + (v_y_chars_n * (y_count - 1)),
-                   v_y_chars, v_y_chars_n);
-            y_count--;
-        }
-        Xfree(v_y_chars, __FILE__, __LINE__);
-        v_y_chars = NULL;
-
-        if (q_status.insert_mode == Q_TRUE) {
-            /*
-             * Since clear_state() resets insert mode, we have to change it
-             * back after.
-             */
-            clear_state(to_screen);
-            q_status.insert_mode = Q_TRUE;
-        } else {
-            clear_state(to_screen);
-        }
-        return Q_EMUL_FSM_REPEAT_STATE;
-
-    case SCAN_V_M_1:
-        save_char(from_modem, to_screen);
-        scan_state = SCAN_V_M_2;
-        return Q_EMUL_FSM_NO_CHAR_YET;
-
-    case SCAN_V_M_2:
-        save_char(from_modem, to_screen);
-        scan_state = SCAN_V_M_3;
-        return Q_EMUL_FSM_NO_CHAR_YET;
-
-    case SCAN_V_M_3:
-        save_char(from_modem, to_screen);
-        scan_state = SCAN_V_M_4;
-        return Q_EMUL_FSM_NO_CHAR_YET;
-
-    case SCAN_V_M_4:
-        /*
-         * q_emul_buffer contains all the parameters:
-         *
-         * ^M
-         * attr
-         * lines
-         * cols
-         */
-        assert(q_emul_buffer_n >= 5);
-        DLOG(("clear area char='%c' attr=%02x lines=%d cols=%d\n",
-             q_emul_buffer[2], q_emul_buffer[3], q_emul_buffer[4],
-             from_modem));
-
-        old_color = q_current_color;
-        old_x = q_status.cursor_x;
-        old_y = q_status.cursor_y;
-
-        for (i = 0; i < from_modem; i++) {
-            petscii_set_color(q_emul_buffer[3]);
-            fill_line_with_character(q_status.cursor_x,
-                                     q_status.cursor_x + q_emul_buffer[4],
-                                     q_emul_buffer[2], Q_FALSE);
-            q_current_color = old_color;
-            if (q_status.cursor_y <= HEIGHT - STATUS_HEIGHT - 1) {
-                cursor_down(1, Q_FALSE);
-            }
-        }
-
-        q_current_color = old_color;
-        cursor_position(old_y, old_x);
-
-        clear_state(to_screen);
-        return Q_EMUL_FSM_NO_CHAR_YET;
-
-    case SCAN_V:
-
-        /*
-         * ^A
-         */
-        if (from_modem == 0x01) {
-            save_char(from_modem, to_screen);
-            scan_state = SCAN_A_1;
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        /*
-         * ^B
-         */
-        if (from_modem == 0x02) {
-            q_current_color |= Q_A_BLINK;
-            clear_state(to_screen);
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        /*
-         * ^C
-         */
-        if (from_modem == 0x03) {
-            cursor_up(1, Q_FALSE);
-            clear_state(to_screen);
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        /*
-         * ^D
-         */
-        if (from_modem == 0x04) {
-            cursor_down(1, Q_FALSE);
-            clear_state(to_screen);
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        /*
-         * ^E
-         */
-        if (from_modem == 0x05) {
-            cursor_left(1, Q_FALSE);
-            clear_state(to_screen);
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        /*
-         * ^F
-         */
-        if (from_modem == 0x06) {
-            cursor_right(1, Q_FALSE);
-            clear_state(to_screen);
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        /*
-         * ^G
-         */
-        if (from_modem == 0x07) {
-            /*
-             * Erase from here to end of line.
-             */
-            erase_line(q_status.cursor_x, WIDTH - 1, Q_FALSE);
-            clear_state(to_screen);
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        /*
-         * ^H
-         */
-        if (from_modem == 0x08) {
-            /*
-             * First byte of a cursor position command.
-             */
-            save_char(from_modem, to_screen);
-            scan_state = SCAN_H_1;
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        /*
-         * ^I
-         */
-        if (from_modem == 0x09) {
-            /*
-             * Enable insert mode.  Call clear_state() first, then overwrite
-             * the insert_mode flag.
-             */
-            clear_state(to_screen);
-            q_status.insert_mode = Q_TRUE;
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        /*
-         * ^J or ^K
-         */
-        if ((from_modem == 0x0a) || (from_modem == 0x0b)) {
-            if (from_modem == 0x0a) {
-                v_jk_scrollup = Q_TRUE;
-            } else {
-                v_jk_scrollup = Q_FALSE;
-            }
-            save_char(from_modem, to_screen);
-            save_char(' ', to_screen);
-            scan_state = SCAN_V_JK_1;
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        /*
-         * ^L
-         */
-        if (from_modem == 0x0c) {
-            save_char(from_modem, to_screen);
-            save_char(' ', to_screen);
-            scan_state = SCAN_V_M_2;
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        /*
-         * ^M
-         */
-        if (from_modem == 0x0d) {
-            save_char(from_modem, to_screen);
-            scan_state = SCAN_V_M_1;
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        /*
-         * ^N
-         */
-        if (from_modem == 0x0e) {
-            delete_character(1);
-            clear_state(to_screen);
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        /*
-         * ^P
-         */
-        if (from_modem == 0x10) {
-            /*
-             * Disable insert mode.  We actually don't need to do anything
-             * because clear_state() disables it anyway.
-             */
-            clear_state(to_screen);
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        /*
-         * ^Y
-         */
-        if (from_modem == 0x19) {
-            save_char(from_modem, to_screen);
-            scan_state = SCAN_V_Y_1;
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        break;
 
     case SCAN_ESC:
         save_char(from_modem, to_screen);
@@ -788,6 +308,10 @@ repeat_loop:
                 return Q_EMUL_FSM_NO_CHAR_YET;
             }
         }
+
+        /*
+         * Fall-through to ANSI fallback.
+         */
         break;
 
     case SCAN_CSI:
@@ -816,6 +340,10 @@ repeat_loop:
             clear_state(to_screen);
             return Q_EMUL_FSM_NO_CHAR_YET;
         }
+
+        /*
+         * Fall-through to ANSI fallback.
+         */
         break;
 
     case SCAN_CSI_PARAM:
@@ -846,33 +374,29 @@ repeat_loop:
             return Q_EMUL_FSM_NO_CHAR_YET;
         }
 
+        /*
+         * Fall-through to ANSI fallback.
+         */
         break;
 
-    case DUMP_UNKNOWN_SEQUENCE:
+    /* PETSCII ------------------------------------------------------------- */
 
-        DLOG(("DUMP_UNKNOWN_SEQUENCE q_emul_buffer_i %d q_emul_buffer_n %d\n",
-                q_emul_buffer_i, q_emul_buffer_n));
-
+    case SCAN_NONE:
         /*
-         * Dump the string in q_emul_buffer
+         * ESC
          */
-        assert(q_emul_buffer_n > 0);
-
-        *to_screen = codepage_map_char(q_emul_buffer[q_emul_buffer_i]);
-        q_emul_buffer_i++;
-        if (q_emul_buffer_i == q_emul_buffer_n) {
-            /*
-             * This was the last character.
-             */
-            q_emul_buffer_n = 0;
-            q_emul_buffer_i = 0;
-            memset(q_emul_buffer, 0, sizeof(q_emul_buffer));
-            scan_state = SCAN_NONE;
-            return Q_EMUL_FSM_ONE_CHAR;
-
-        } else {
-            return Q_EMUL_FSM_MANY_CHARS;
+        if (from_modem == C_ESC) {
+            save_char(from_modem, to_screen);
+            scan_state = SCAN_ESC;
+            return Q_EMUL_FSM_NO_CHAR_YET;
         }
+
+        if (state.uppercase == Q_TRUE) {
+            *to_screen = c64_uppercase_chars[from_modem];
+        } else {
+            *to_screen = c64_lowercase_chars[from_modem];
+        }
+        return Q_EMUL_FSM_ONE_CHAR;
 
     } /* switch (scan_state) */
 
