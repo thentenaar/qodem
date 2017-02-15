@@ -22,8 +22,6 @@ Full 40-column support
     - Find font with C64 glyphs
     - README, man page, help text
 
-#43 clang compiler support
-
 #48 split-screen unicode support
     - Also support all control characters via carat notation
 

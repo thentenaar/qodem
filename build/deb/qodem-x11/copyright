@@ -9,60 +9,113 @@ Upstream Author:
 
 Copyright:
 
-    Copyright 2003-2012 Kevin Lamonte
+    This work was written 2003-2017 by Kevin Lamonte.  It was
+    dedicated to the public domain on May 26, 2015.
 
 License:
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    To the extent possible under law, the author(s) of Qodem have
+    dedicated all copyright and related and neighboring rights to
+    Qodem to the public domain worldwide. This software is distributed
+    without any warranty.  This COPYING file describes this intent,
+    and provides a public license fallback for those jurisdictions
+    that do not recognize the public domain.
 
-The Debian packaging is Copyright 2009, Kevin Lamonte
-<kevin.lamonte@gmail.com> and is licensed under the GPL, see
-`/usr/share/common-licenses/GPL-2'.
+The Debian packaging was written 2009-2016 by. Kevin Lamonte
+<kevin.lamonte@gmail.com> and has been dedicated to the public domain.
 
-Qodem is linked to the libssh2 library available at
-http://www.libssh2.org/ .  libssh2's GPL-compatible license terms are
+Qodem is linked to miniupnpc and cryptlib.  Those licenses are
 reproduced below:
-/* Copyright (c) 2004-2007 Sara Golemon <sarag@libssh2.org>
- * Copyright (c) 2005,2006 Mikhail Gusarov <dottedmag@dottedmag.net>
- * Copyright (c) 2006-2007 The Written Word, Inc.
- * Copyright (c) 2007 Eli Fant <elifantu@mail.ru>
- * Copyright (c) 2009 Daniel Stenberg
- * Copyright (C) 2008, 2009 Simon Josefsson
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms,
- * with or without modification, are permitted provided
- * that the following conditions are met:
- *
- *   Redistributions of source code must retain the above
- *   copyright notice, this list of conditions and the
- *   following disclaimer.
- *
- *   Redistributions in binary form must reproduce the above
- *   copyright notice, this list of conditions and the following
- *   disclaimer in the documentation and/or other materials
- *   provided with the distribution.
- *
- *   Neither the name of the copyright holder nor the names
- *   of any other contributors may be used to endorse or
- *   promote products derived from this software without
- *   specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
- * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
- * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
- * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
- * OF SUCH DAMAGE.
- */
+
+MiniUPnPc
+---------
+
+MiniUPnPc
+Copyright (c) 2005-2015, Thomas BERNARD
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.
+    * The name of the author may not be used to endorse or promote products
+          derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+cryptlib
+--------
+
+This file contains the usage terms for cryptlib.  The full details of cryptlib
+usage are provided on the cryptlib home page; although this file and the
+information on the web page should be identical, in case of any dispute the
+web page takes precedence.  This file is included because some distributions
+require the presence of a COPYING file.
+
+cryptlib is distributed under a dual license that allows free, open-source use
+under a GPL-compatible license and closed-source use under a standard
+commercial license.  The GPL-compatible license (a.k.a. the Sleepycat license)
+is given below.  Further details on this license are available from the
+cryptlib home page.
+
+  Copyright 1992-2013 Peter Gutmann. All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice, this
+     list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
+     and/or other materials provided with the distribution.
+
+  3. Redistributions in any form must be accompanied by information on how to
+     obtain complete source code for the cryptlib software and any accompanying
+     software that uses the cryptlib software.  The source code must either be
+     included in the distribution or be available for no more than the cost of
+     distribution, and must be freely redistributable under reasonable
+     conditions.  For an executable file, complete source code means the source
+     code for all modules it contains or uses.  It does not include source code
+     for modules or files that typically accompany the major components of the
+     operating system on which the executable file runs.  Note that decoupling
+     the software from the user, for example by running in a SaaS configuration,
+     does not exempt you from these requirements.
+
+  THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+  INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT, ARE DISCLAIMED.  IN NO
+  EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+  OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+  IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+  OF SUCH DAMAGE.
+
+If you're unable to comply with the above license then the following,
+alternate usage conditions apply:
+
+  Any large-scale commercial use of cryptlib requires a license.  "Large-scale
+  commercial use" means any revenue-generating purpose such as use for
+  company-internal purposes, or use of cryptlib in an application or product,
+  with a total gross revenue of over US$5,000.  This allows cryptlib to be
+  used in freeware and shareware applications, for evaluation and research
+  purposes, and for non-revenue-generating or personal use without charge.  In
+  addition the author reserves the right to grant free licenses for commercial
+  use in special cases (for example where there is a general benefit to the
+  public), contact the author for details if you think you qualify.

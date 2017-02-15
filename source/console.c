@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2016 by Kevin Lamonte
+ * Written 2003-2017 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -2344,7 +2344,7 @@ void console_refresh(Q_BOOL status_line) {
         }
 
         new_scrollback_line();
-        sprintf(header_string, _("Written 2003-2016 by %s"), Q_AUTHOR);
+        sprintf(header_string, _("Written 2003-2017 by %s"), Q_AUTHOR);
         q_scrollback_last->length = strlen(header_string);
         for (i = 0; i < q_scrollback_last->length; i++) {
             q_scrollback_last->chars[i] =

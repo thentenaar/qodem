@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Qodem"
-#define MyAppVersion "1.0beta"
+#define MyAppVersion "1.0.0"
 #define MyAppPublisher "Kevin Lamonte"
 #define MyAppURL "http://qodem.sourceforge.net"
 #define MyAppExeName "qodem.exe"
