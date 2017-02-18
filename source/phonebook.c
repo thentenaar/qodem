@@ -4508,41 +4508,31 @@ static Q_CODEPAGE pick_codepage(Q_EMULATION emulation) {
     int i;
     int selected_field;
 
-    Q_BOOL codepage_cp437 = Q_FALSE;
-    Q_BOOL codepage_iso8859_1 = Q_FALSE;
-    Q_BOOL codepage_dec = Q_FALSE;
-
     /*
-     * Only enable a codepage for this emulation
+     * Do not permit selecting a codepage for those emulations that provide
+     * their own codepage support.
      */
     switch (emulation) {
-    case Q_EMUL_TTY:
-        codepage_cp437 = Q_TRUE;
-        codepage_iso8859_1 = Q_TRUE;
-        break;
     case Q_EMUL_VT52:
     case Q_EMUL_VT100:
     case Q_EMUL_VT102:
     case Q_EMUL_VT220:
     case Q_EMUL_LINUX_UTF8:
     case Q_EMUL_XTERM_UTF8:
-        codepage_dec = Q_TRUE;
-        break;
+    case Q_EMUL_PETSCII:
+        return -1;
+    case Q_EMUL_TTY:
     case Q_EMUL_DEBUG:
     case Q_EMUL_ANSI:
     case Q_EMUL_AVATAR:
-    case Q_EMUL_PETSCII:
     case Q_EMUL_LINUX:
     case Q_EMUL_XTERM:
-        codepage_cp437 = Q_TRUE;
-        codepage_iso8859_1 = Q_TRUE;
-        break;
         break;
     }
 
     title = _("Codepages");
 
-    window_height = Q_CODEPAGE_MAX + 2;
+    window_height = Q_CODEPAGE_PHONEBOOK_MAX + 2;
     window_length = strlen(codepage_string(Q_CODEPAGE_ISO8859_1)) + 4;
 
     window_left = WIDTH - 1 - window_length;
@@ -4579,19 +4569,7 @@ static Q_CODEPAGE pick_codepage(Q_EMULATION emulation) {
 
     for (;;) {
 
-        if ((codepage_cp437 == Q_FALSE) &&
-            (selected_field == Q_CODEPAGE_CP437)) {
-            selected_field++;
-        }
-        if ((codepage_iso8859_1 == Q_FALSE)
-            && (selected_field == Q_CODEPAGE_ISO8859_1)) {
-            selected_field++;
-        }
-        if ((codepage_dec == Q_FALSE) && (selected_field == Q_CODEPAGE_DEC)) {
-            selected_field--;
-        }
-
-        for (i = 0; i < Q_CODEPAGE_MAX; i++) {
+        for (i = 0; i < Q_CODEPAGE_PHONEBOOK_MAX; i++) {
 
             snprintf(selection_buffer, sizeof(selection_buffer), " %s",
                      codepage_string(i));
@@ -4625,42 +4603,22 @@ static Q_CODEPAGE pick_codepage(Q_EMULATION emulation) {
             screen_delwin(pick_window);
             return -1;
         case Q_KEY_DOWN:
-            if (codepage_dec == Q_FALSE) {
-                selected_field++;
-                if (selected_field == Q_CODEPAGE_MAX) {
-                    selected_field = 0;
-                }
-                /*
-                 * Skip over DEC
-                 */
-                if (selected_field == Q_CODEPAGE_DEC) {
-                    selected_field++;
-                }
-            }
-            break;
-        case Q_KEY_UP:
-            if (codepage_dec == Q_FALSE) {
-                selected_field--;
-                /*
-                 * Skip over DEC
-                 */
-                if (selected_field == Q_CODEPAGE_DEC) {
-                    selected_field--;
-                }
-                if (selected_field < 0) {
-                    selected_field = Q_CODEPAGE_MAX - 1;
-                }
-            }
-            break;
-        case Q_KEY_HOME:
-            if (codepage_dec == Q_FALSE) {
+            selected_field++;
+            if (selected_field == Q_CODEPAGE_PHONEBOOK_MAX) {
                 selected_field = 0;
             }
             break;
-        case Q_KEY_END:
-            if (codepage_dec == Q_FALSE) {
-                selected_field = Q_CODEPAGE_MAX - 1;
+        case Q_KEY_UP:
+            selected_field--;
+            if (selected_field < 0) {
+                selected_field = Q_CODEPAGE_PHONEBOOK_MAX - 1;
             }
+            break;
+        case Q_KEY_HOME:
+            selected_field = 0;
+            break;
+        case Q_KEY_END:
+            selected_field = Q_CODEPAGE_PHONEBOOK_MAX - 1;
             break;
         case Q_KEY_ENTER:
         case Q_KEY_F(10):

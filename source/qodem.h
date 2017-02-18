@@ -457,6 +457,18 @@ struct q_status_struct {
      */
     Q_BOOL petscii_ansi_fallback;
 
+    /**
+     * When true, PETSCII can assume that it has a wide font and does not
+     * need to set every line to double-width.
+     */
+    Q_BOOL petscii_has_wide_font;
+
+    /**
+     * When true, PETSCII uses Commodore 64 control codes.  When false, it
+     * uses Commodore 128 control codes.
+     */
+    Q_BOOL petscii_is_c64;
+
     /* VT100 features */
 
     /**

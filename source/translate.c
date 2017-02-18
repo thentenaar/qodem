@@ -911,6 +911,17 @@ unsigned char translate_unicode_to_8bit(const wchar_t in,
         return '?';
     }
 
+    if (codepage == Q_CODEPAGE_PETSCII) {
+        /*
+         * PETSCII is specifically hardcoded to the C64 Pro Mono font
+         * developed by Style, which uses the private use area of Unicode to
+         * provide pixel-perfect reproduction of the actual C64/128 glyphs.
+         * Users who try to put in a Unicode char (e.g. via Alt Code Key) are
+         * just out of luck.
+         */
+        return '?';
+    }
+
     /*
      * We have a Unicode code point.
      *

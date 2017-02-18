@@ -3021,6 +3021,8 @@ static void reset_global_state() {
      */
     q_status.petscii_color          = Q_TRUE;
     q_status.petscii_ansi_fallback  = Q_TRUE;
+    q_status.petscii_has_wide_font  = Q_TRUE;
+    q_status.petscii_is_c64         = Q_TRUE;
 
 #ifndef Q_NO_SERIAL
     q_status.serial_open            = Q_FALSE;

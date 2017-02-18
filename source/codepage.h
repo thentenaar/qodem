@@ -178,7 +178,6 @@ extern wchar_t dec_swiss_chars[128];
 typedef enum Q_CODEPAGES {
     Q_CODEPAGE_CP437,           /* PC VGA */
     Q_CODEPAGE_ISO8859_1,       /* ISO-8859-1 */
-    Q_CODEPAGE_DEC,             /* DEC character sets for VT10x/VT220 */
 
     /*
      * DOS codepages
@@ -208,8 +207,15 @@ typedef enum Q_CODEPAGES {
     Q_CODEPAGE_KOI8_R,          /* Russian */
     Q_CODEPAGE_KOI8_U,          /* Ukrainian */
 
+    /*
+     * Non-selectable codepages in the phonebook picklist.
+     */
+    Q_CODEPAGE_DEC,             /* DEC character sets for VT10x/VT220 */
+    Q_CODEPAGE_PETSCII,         /* PETSCII, treated like DEC */
+
 } Q_CODEPAGE;
-#define Q_CODEPAGE_MAX (Q_CODEPAGE_KOI8_U + 1)
+#define Q_CODEPAGE_PHONEBOOK_MAX (Q_CODEPAGE_KOI8_U + 1)
+#define Q_CODEPAGE_MAX (Q_CODEPAGE_PETSCII + 1)
 
 #define UTF8_ACCEPT 0
 #define UTF8_REJECT 1

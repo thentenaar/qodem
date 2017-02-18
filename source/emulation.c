@@ -212,6 +212,9 @@ const char * emulation_lang(Q_EMULATION emulation) {
     case Q_EMUL_XTERM_UTF8:
     case Q_EMUL_LINUX_UTF8:
         return get_option(Q_OPTION_UTF8_LANG);
+    case Q_EMUL_PETSCII:
+        /* PETSCII is always 8-bit with no codepage translation. */
+        return "C";
     default:
         return get_option(Q_OPTION_ISO8859_LANG);
     }
@@ -341,8 +344,9 @@ Q_CODEPAGE default_codepage(Q_EMULATION emulation) {
     case Q_EMUL_AVATAR:
     case Q_EMUL_LINUX:
     case Q_EMUL_XTERM:
-    case Q_EMUL_PETSCII:
         return Q_CODEPAGE_CP437;
+    case Q_EMUL_PETSCII:
+        return Q_CODEPAGE_PETSCII;
     }
 
     /*
@@ -1033,6 +1037,12 @@ void reset_emulation() {
     case Q_EMUL_DEBUG:
         q_status.hard_backspace = Q_TRUE;
         break;
+    }
+
+    if (q_status.emulation == Q_EMUL_PETSCII) {
+        /* Commodore starts as bright-blue on blue. */
+        q_current_color = color_to_attr((Q_COLOR_BLUE << 3) | Q_COLOR_BLUE);
+        q_current_color |= Q_A_BOLD;
     }
 
     /*

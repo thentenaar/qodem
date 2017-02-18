@@ -1,6 +1,19 @@
 The Qodem Project Work Log
 ==========================
 
+February 17, 2017
+
+I asked the great Internet what PETSCII font makes the most sense, and
+the answer is C64 Pro Mono from STYLE.  So I will be using that as my
+standard baseline.  Interestingly though, it appears that xterm
+recognizes that font as a double-width font anyway, and fails to
+"double the double", opting instead to put spaces in between each
+glyph -- the same thing Qodem does when it does not assume its
+terminal can do double-width.  So my PETSCII emulation needs to
+support both 40-column-with-a-good-C64-font (which means NOT setting
+double-width) and 40-column-with-a-narrow-non-C64-font (which means
+setting double-width).  Fun fun.
+
 February 12, 2017
 
 Double-width/height appear to be working on X11 now.  I had to add a

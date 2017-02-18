@@ -71,6 +71,15 @@ depending on whether or not it was linked to cryptlib:
     modified into a SaaS style architecture), and there is no
     warranty.
 
+Qodem also ships an unmodified copy of the C64 TrueType fonts as
+developed by Style available at http://style64.org/c64-truetype/.
+These fonts are permitted to be redistributed as part of a software
+package "if said software package is freely provided to end users".
+Entities wishing to ship packages that are not "freely provided to end
+users" will need to either remove this font, or negotiate a separate
+license agreement by contacting Style at
+http://style64.org/contact-style .
+
 
 
 INTENDED AUDIENCE

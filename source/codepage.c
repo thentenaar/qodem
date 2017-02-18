@@ -41,6 +41,8 @@ char * codepage_string(Q_CODEPAGE codepage) {
         return "ISO 8859-1";
     case Q_CODEPAGE_DEC:
         return "DEC";
+    case Q_CODEPAGE_PETSCII:
+        return "PETSCII";
     case Q_CODEPAGE_CP720:
         return "CP720";
     case Q_CODEPAGE_CP737:
@@ -102,6 +104,7 @@ Q_CODEPAGE codepage_from_string(const char * string) {
         return Q_CODEPAGE_ISO8859_1;
     }
     MATCH_CODEPAGE(DEC, "DEC");
+    MATCH_CODEPAGE(PETSCII, "PETSCII");
     MATCH_CODEPAGE(CP437, "CP437");
     MATCH_CODEPAGE(CP720, "CP720");
     MATCH_CODEPAGE(CP737, "CP737");
@@ -241,7 +244,6 @@ uint32_t utf8_decode(uint32_t * state, uint32_t * codep, uint32_t byte) {
 void codepage_keyboard_handler(const int keystroke, const int flags) {
     Q_BOOL codepage_cp437 = Q_FALSE;
     Q_BOOL codepage_iso8859_1 = Q_FALSE;
-    Q_BOOL codepage_dec = Q_FALSE;
     Q_BOOL codepage_cp720 = Q_FALSE;
     Q_BOOL codepage_cp737 = Q_FALSE;
     Q_BOOL codepage_cp775 = Q_FALSE;
@@ -274,7 +276,7 @@ void codepage_keyboard_handler(const int keystroke, const int flags) {
     case Q_EMUL_VT220:
     case Q_EMUL_LINUX_UTF8:
     case Q_EMUL_XTERM_UTF8:
-        codepage_dec = Q_TRUE;
+    case Q_EMUL_PETSCII:
         break;
 
     case Q_EMUL_TTY:
@@ -302,13 +304,6 @@ void codepage_keyboard_handler(const int keystroke, const int flags) {
         codepage_koi8_r = Q_TRUE;
         codepage_koi8_u = Q_TRUE;
         break;
-
-    case Q_EMUL_PETSCII:
-        /*
-         * PETSCII is a special case, it has no real pluggable codepage
-         * support.
-         */
-        break;
     }
 
     switch (keystroke) {
@@ -330,134 +325,126 @@ void codepage_keyboard_handler(const int keystroke, const int flags) {
         break;
     case 'C':
     case 'c':
-        if (codepage_dec == Q_TRUE) {
-            new_codepage = Q_CODEPAGE_DEC;
-        } else {
-            return;
-        }
-        break;
-    case 'D':
-    case 'd':
         if (codepage_cp720 == Q_TRUE) {
             new_codepage = Q_CODEPAGE_CP720;
         } else {
             return;
         }
         break;
-    case 'E':
-    case 'e':
+    case 'D':
+    case 'd':
         if (codepage_cp737 == Q_TRUE) {
             new_codepage = Q_CODEPAGE_CP737;
         } else {
             return;
         }
         break;
-    case 'F':
-    case 'f':
+    case 'E':
+    case 'e':
         if (codepage_cp775 == Q_TRUE) {
             new_codepage = Q_CODEPAGE_CP775;
         } else {
             return;
         }
         break;
-    case 'G':
-    case 'g':
+    case 'F':
+    case 'f':
         if (codepage_cp850 == Q_TRUE) {
             new_codepage = Q_CODEPAGE_CP850;
         } else {
             return;
         }
         break;
-    case 'H':
-    case 'h':
+    case 'G':
+    case 'g':
         if (codepage_cp852 == Q_TRUE) {
             new_codepage = Q_CODEPAGE_CP852;
         } else {
             return;
         }
         break;
-    case 'I':
-    case 'i':
+    case 'H':
+    case 'h':
         if (codepage_cp857 == Q_TRUE) {
             new_codepage = Q_CODEPAGE_CP857;
         } else {
             return;
         }
         break;
-    case 'J':
-    case 'j':
+    case 'I':
+    case 'i':
         if (codepage_cp858 == Q_TRUE) {
             new_codepage = Q_CODEPAGE_CP858;
         } else {
             return;
         }
         break;
-    case 'K':
-    case 'k':
+    case 'J':
+    case 'j':
         if (codepage_cp860 == Q_TRUE) {
             new_codepage = Q_CODEPAGE_CP860;
         } else {
             return;
         }
         break;
-    case 'L':
-    case 'l':
+    case 'K':
+    case 'k':
         if (codepage_cp862 == Q_TRUE) {
             new_codepage = Q_CODEPAGE_CP862;
         } else {
             return;
         }
         break;
-    case 'M':
-    case 'm':
+    case 'L':
+    case 'l':
         if (codepage_cp863 == Q_TRUE) {
             new_codepage = Q_CODEPAGE_CP863;
         } else {
             return;
         }
         break;
-    case 'N':
-    case 'n':
+    case 'M':
+    case 'm':
         if (codepage_cp866 == Q_TRUE) {
             new_codepage = Q_CODEPAGE_CP866;
         } else {
             return;
         }
         break;
-    case 'O':
-    case 'o':
+    case 'N':
+    case 'n':
         if (codepage_cp1250 == Q_TRUE) {
             new_codepage = Q_CODEPAGE_CP1250;
         } else {
             return;
         }
         break;
-    case 'P':
-    case 'p':
+    case 'O':
+    case 'o':
         if (codepage_cp1251 == Q_TRUE) {
             new_codepage = Q_CODEPAGE_CP1251;
         } else {
             return;
         }
         break;
-    case 'Q':
-    case 'q':
+    case 'P':
+    case 'p':
         if (codepage_cp1252 == Q_TRUE) {
             new_codepage = Q_CODEPAGE_CP1252;
         } else {
             return;
         }
         break;
-    case 'R':
-    case 'r':
+    case 'Q':
+    case 'q':
         if (codepage_koi8_r == Q_TRUE) {
             new_codepage = Q_CODEPAGE_KOI8_R;
         } else {
             return;
         }
         break;
-    case 'S':
-    case 's':
+    case 'R':
+    case 'r':
         if (codepage_koi8_u == Q_TRUE) {
             new_codepage = Q_CODEPAGE_KOI8_U;
         } else {
@@ -523,7 +510,6 @@ void codepage_refresh() {
     int i;
     Q_BOOL codepage_cp437 = Q_FALSE;
     Q_BOOL codepage_iso8859_1 = Q_FALSE;
-    Q_BOOL codepage_dec = Q_FALSE;
     Q_BOOL codepage_cp720 = Q_FALSE;
     Q_BOOL codepage_cp737 = Q_FALSE;
     Q_BOOL codepage_cp775 = Q_FALSE;
@@ -560,7 +546,7 @@ void codepage_refresh() {
     case Q_EMUL_VT220:
     case Q_EMUL_LINUX_UTF8:
     case Q_EMUL_XTERM_UTF8:
-        codepage_dec = Q_TRUE;
+    case Q_EMUL_PETSCII:
         break;
     case Q_EMUL_TTY:
     case Q_EMUL_DEBUG:
@@ -586,8 +572,6 @@ void codepage_refresh() {
         codepage_cp1252 = Q_TRUE;
         codepage_koi8_r = Q_TRUE;
         codepage_koi8_u = Q_TRUE;
-        break;
-    case Q_EMUL_PETSCII:
         break;
     }
 
@@ -638,70 +622,62 @@ void codepage_refresh() {
     screen_put_color_printf(Q_COLOR_MENU_COMMAND, "%s",
                             codepage_string(q_status.codepage));
 
+    i = 3;
     if (codepage_cp437 == Q_TRUE) {
-        screen_put_color_str_yx(window_top + 3, window_left + 2, "A",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "A",
                                 Q_COLOR_MENU_COMMAND);
     } else {
-        screen_put_color_str_yx(window_top + 3, window_left + 2, "A",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "A",
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
     screen_put_color_printf(Q_COLOR_MENU_TEXT, _("  CP437 (DOS VGA)"));
+    i++;
 
     if (codepage_iso8859_1 == Q_TRUE) {
-        screen_put_color_str_yx(window_top + 4, window_left + 2, "B",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "B",
                                 Q_COLOR_MENU_COMMAND);
     } else {
-        screen_put_color_str_yx(window_top + 4, window_left + 2, "B",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "B",
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
-
     screen_put_color_printf(Q_COLOR_MENU_TEXT, _("  ISO-8859-1"));
-
-    if (codepage_dec == Q_TRUE) {
-        screen_put_color_str_yx(window_top + 5, window_left + 2, "C",
-                                Q_COLOR_MENU_COMMAND);
-    } else {
-        screen_put_color_str_yx(window_top + 5, window_left + 2, "C",
-                                Q_COLOR_MENU_COMMAND_UNAVAILABLE);
-    }
-    screen_put_color_printf(Q_COLOR_MENU_TEXT, _("  DEC VT100/VT220"));
-    i = 6;
+    i++;
 
     if (codepage_cp720 == Q_TRUE) {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "D",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "C",
                                 Q_COLOR_MENU_COMMAND);
     } else {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "D",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "C",
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
     screen_put_color_printf(Q_COLOR_MENU_TEXT, _("  CP720 (DOS Arabic)"));
     i++;
 
     if (codepage_cp737 == Q_TRUE) {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "E",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "D",
                                 Q_COLOR_MENU_COMMAND);
     } else {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "E",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "D",
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
     screen_put_color_printf(Q_COLOR_MENU_TEXT, _("  CP737 (DOS Greek)"));
     i++;
 
     if (codepage_cp775 == Q_TRUE) {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "F",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "E",
                                 Q_COLOR_MENU_COMMAND);
     } else {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "F",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "E",
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
     screen_put_color_printf(Q_COLOR_MENU_TEXT, _("  CP775 (DOS Baltic Rim)"));
     i++;
 
     if (codepage_cp850 == Q_TRUE) {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "G",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "F",
                                 Q_COLOR_MENU_COMMAND);
     } else {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "G",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "F",
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
     screen_put_color_printf(Q_COLOR_MENU_TEXT,
@@ -709,10 +685,10 @@ void codepage_refresh() {
     i++;
 
     if (codepage_cp852 == Q_TRUE) {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "H",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "G",
                                 Q_COLOR_MENU_COMMAND);
     } else {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "H",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "G",
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
     screen_put_color_printf(Q_COLOR_MENU_TEXT,
@@ -720,20 +696,20 @@ void codepage_refresh() {
     i++;
 
     if (codepage_cp857 == Q_TRUE) {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "I",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "H",
                                 Q_COLOR_MENU_COMMAND);
     } else {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "I",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "H",
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
     screen_put_color_printf(Q_COLOR_MENU_TEXT, _("  CP857 (DOS Turkish)"));
     i++;
 
     if (codepage_cp858 == Q_TRUE) {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "J",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "I",
                                 Q_COLOR_MENU_COMMAND);
     } else {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "J",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "I",
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
     screen_put_color_printf(Q_COLOR_MENU_TEXT,
@@ -741,50 +717,50 @@ void codepage_refresh() {
     i++;
 
     if (codepage_cp860 == Q_TRUE) {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "K",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "J",
                                 Q_COLOR_MENU_COMMAND);
     } else {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "K",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "J",
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
     screen_put_color_printf(Q_COLOR_MENU_TEXT, _("  CP860 (DOS Portuguese)"));
     i++;
 
     if (codepage_cp862 == Q_TRUE) {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "L",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "K",
                                 Q_COLOR_MENU_COMMAND);
     } else {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "L",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "K",
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
     screen_put_color_printf(Q_COLOR_MENU_TEXT, _("  CP862 (DOS Hebrew)"));
     i++;
 
     if (codepage_cp863 == Q_TRUE) {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "M",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "L",
                                 Q_COLOR_MENU_COMMAND);
     } else {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "M",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "L",
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
     screen_put_color_printf(Q_COLOR_MENU_TEXT, _("  CP863 (DOS Quebecois)"));
     i++;
 
     if (codepage_cp866 == Q_TRUE) {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "N",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "M",
                                 Q_COLOR_MENU_COMMAND);
     } else {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "N",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "M",
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
     screen_put_color_printf(Q_COLOR_MENU_TEXT, _("  CP866 (DOS Cyrillic)"));
     i++;
 
     if (codepage_cp1250 == Q_TRUE) {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "O",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "N",
                                 Q_COLOR_MENU_COMMAND);
     } else {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "O",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "N",
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
     screen_put_color_printf(Q_COLOR_MENU_TEXT,
@@ -792,20 +768,20 @@ void codepage_refresh() {
     i++;
 
     if (codepage_cp1251 == Q_TRUE) {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "P",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "O",
                                 Q_COLOR_MENU_COMMAND);
     } else {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "P",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "O",
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
     screen_put_color_printf(Q_COLOR_MENU_TEXT, _("  Windows-1251 (Cyrillic)"));
     i++;
 
     if (codepage_cp1252 == Q_TRUE) {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "Q",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "P",
                                 Q_COLOR_MENU_COMMAND);
     } else {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "Q",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "P",
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
     screen_put_color_printf(Q_COLOR_MENU_TEXT,
@@ -813,20 +789,20 @@ void codepage_refresh() {
     i++;
 
     if (codepage_koi8_r == Q_TRUE) {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "R",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "Q",
                                 Q_COLOR_MENU_COMMAND);
     } else {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "R",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "Q",
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
     screen_put_color_printf(Q_COLOR_MENU_TEXT, _("  KOI8-R (Russian)"));
     i++;
 
     if (codepage_koi8_u == Q_TRUE) {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "S",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "R",
                                 Q_COLOR_MENU_COMMAND);
     } else {
-        screen_put_color_str_yx(window_top + i, window_left + 2, "S",
+        screen_put_color_str_yx(window_top + i, window_left + 2, "R",
                                 Q_COLOR_MENU_COMMAND_UNAVAILABLE);
     }
     screen_put_color_printf(Q_COLOR_MENU_TEXT, _("  KOI8-U (Ukrainian)"));
@@ -1958,6 +1934,9 @@ static wchar_t koi8_u_chars[256] = {
  */
 wchar_t codepage_map_char(const unsigned char ch) {
     switch (q_status.codepage) {
+    case Q_CODEPAGE_PETSCII:
+        return ch;
+
     case Q_CODEPAGE_CP437:
         return cp437_chars[ch];
     case Q_CODEPAGE_ISO8859_1:
@@ -2047,6 +2026,7 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
         }
         return 0;
     case Q_CODEPAGE_DEC:
+    case Q_CODEPAGE_PETSCII:
         /*
          * BUG: should never get here
          */

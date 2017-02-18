@@ -506,10 +506,21 @@ void print_character(const wchar_t character) {
         break;
     case Q_EMUL_PETSCII:
         /*
-         * PETSCII is always 40 columns on screen.  But these are
+         * PETSCII is always 40 columns on screen.  But these might be
          * double-width lines, so the visible right margin is 80 columns.
          */
-        right_margin = 79;
+        if (q_status.petscii_has_wide_font == Q_FALSE) {
+            /*
+             * We think we are running with a narrow font, so will need to
+             * use double-width characters.
+             */
+            right_margin = 79;
+        } else {
+            /*
+             * We already have a wide font, so restrict to 40 columns.
+             */
+            right_margin = 39;
+        }
         break;
     default:
         /*

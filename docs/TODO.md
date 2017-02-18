@@ -12,21 +12,48 @@ Fix all marked TODOs in code
 
 #26 Handle multiple instances operating on the phonebook
 
-#38 Be able to run fully portable
+#38 Be able to run fully portable:
 
-Full 40-column support
+    - A --config command line option to read qodemrc from
+      user-supplied file. If given, NO OTHER option file locations are
+      read.
+
+    - Be able to load and run phonebook, scripts, modem cfg, color
+      cfg, keyfiles, etc. from read-only media. The media is checked
+      for write access, and if not found save operations fail with a
+      notification. If script_stderr cannot be created, scripts are
+      disabled for that session.
+
+    - A --read-only command line option that disables all save
+        operations entirely. This will require some re-work for config
+        files that auto-create themselves. Also:
+          - script_stderr cannot be created hence scripts are disabled on POSIX.
+          - host mode uploads are disabled.
+          - downloads and zmodem/kermit autostart are disabled.
+          - session log, capture, screen dump, and scrollback save are disabled.
+
+#54 Full 40-column support
     - Win32a double-width chars
-    - Cursor position
+    - Cursor position - clamp to margin 39 on double-width rows
 
 #41 PETSCII
-    - Find font with C64 glyphs
+    - Find font with C64 glyphs - "C64 Pro Mono"
     - README, man page, help text
+
+    aubbs.zapto.org port 2300
+    borderlinebbs.dyndns.org port 6400
+
 
 #48 split-screen unicode support
     - Also support all control characters via carat notation
 
-ATASCII
+#52 bracketed paste mode
+
+#47 ATASCII
     - Start with Tim H's atari.c
+
+#53 Xmodem/G Ymodem/G error
+
 
 FULL REGRESSION ON EVERY ITEM:
   F10 -> Enter or Alt-Enter
@@ -126,6 +153,8 @@ FULL REGRESSION ON EVERY ITEM:
       ANSI fallback
         ANSI music
     DEBUG
+    PETSCII
+    ATASCII
   Command-line switches:
     --connect
     --connect-method
