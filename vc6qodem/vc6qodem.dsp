@@ -170,6 +170,10 @@ SOURCE=..\source\options.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\source\petscii.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\source\phonebook.c
 # End Source File
 # Begin Source File

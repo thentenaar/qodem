@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2016 by Kevin Lamonte
+ * Written 2003-2017 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -4425,7 +4425,7 @@ static int ssh_setup_connection(int fd, const char * host, const char * port) {
             Q_TRUE, 0.0, "YyNnZz\r", 4));
         q_cursor_off();
 
-        if ((keystroke == 'y') || (keystroke == C_CR)) {
+        if ((keystroke == 'y') || (keystroke == Q_KEY_ENTER)) {
             cryptStatus = cryptGetAttributeString(cryptSession,
                 CRYPT_SESSINFO_SERVER_FINGERPRINT_SHA1,
                 fingerprint, &fingerprint_n);

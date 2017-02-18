@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2016 by Kevin Lamonte
+ * Written 2003-2017 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -137,10 +137,13 @@ Q_BOOL q_scrollback_highlight_search_string = Q_FALSE;
  */
 static Q_BOOL vt100_wrap_line_flag = Q_FALSE;
 
+#ifndef Q_PDCURSES
 /**
- * If true, this console can display true double-width characters.
+ * If true, this console can display true double-width characters by
+ * inserting VT100 sequences in the ncurses output.
  */
 static Q_BOOL xterm = Q_FALSE;
+#endif
 
 /**
  * Find the scrollback line that corresponds to the top line of the screen.
@@ -501,6 +504,24 @@ void print_character(const wchar_t character) {
             right_margin = 79;
         }
         break;
+    case Q_EMUL_PETSCII:
+        /*
+         * PETSCII is always 40 columns on screen.  But these might be
+         * double-width lines, so the visible right margin is 80 columns.
+         */
+        if (q_status.petscii_has_wide_font == Q_FALSE) {
+            /*
+             * We think we are running with a narrow font, so will need to
+             * use double-width characters.
+             */
+            right_margin = 79;
+        } else {
+            /*
+             * We already have a wide font, so restrict to 40 columns.
+             */
+            right_margin = 39;
+        }
+        break;
     default:
         /*
          * VT100-ish emulations:  check the actual right margin value
@@ -669,7 +690,9 @@ void print_character(const wchar_t character) {
                 } else {
                     fprintf(q_status.capture_file, " ");
                 }
-                if (q_scrollback_current->double_width == Q_TRUE) {
+                if ((q_scrollback_current->double_width == Q_TRUE) &&
+                    (q_status.emulation != Q_EMUL_PETSCII)
+                ) {
                     fprintf(q_status.capture_file, " ");
                 }
             }
@@ -706,7 +729,9 @@ void print_character(const wchar_t character) {
         /*
          * Double-width
          */
-        if (q_scrollback_current->double_width == Q_TRUE) {
+        if ((q_scrollback_current->double_width == Q_TRUE) &&
+            (q_status.emulation != Q_EMUL_PETSCII)
+        ) {
             fprintf(q_status.capture_file, " ");
             q_status.capture_x++;
         }
@@ -842,7 +867,9 @@ static void save_scrollback_line(FILE * file, struct q_scrolline_struct * line,
              */
             fprintf(file, "%lc", (wint_t) ch);
         }
-        if (line->double_width == Q_TRUE) {
+        if ((line->double_width == Q_TRUE) &&
+            (q_status.emulation != Q_EMUL_PETSCII)
+        ) {
             if (save_type == Q_CAPTURE_TYPE_HTML) {
                 fprintf(file, "&nbsp;");
             } else {
@@ -1402,7 +1429,7 @@ keep_moving:
         break;
 
     case '`':
-    case KEY_ESCAPE:
+    case Q_KEY_ESCAPE:
         /*
          * Return to console
          */
@@ -1496,7 +1523,17 @@ keep_moving:
  * characters and qodem is using a trick to do so.
  */
 Q_BOOL has_true_doublewidth() {
+#if defined(Q_PDCURSES_WIN32)
+    /* Use PDC_set_double() for X11.  The Win32 version is still WIP. */
+    return Q_FALSE;
+#else
+#  if defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32)
+    /* Use PDC_set_double() for X11.  The Win32 version is still WIP. */
+    return Q_TRUE;
+#  else
     return xterm;
+#  endif
+#endif
 }
 
 /**
@@ -1511,6 +1548,7 @@ void render_scrollback(const int skip_lines) {
     int renderable_lines;
     int i;
 
+#ifndef Q_PDCURSES
     /*
      * Double-height double-width characters can be emitted to the host
      * xterm and get the correct output on screen.
@@ -1519,17 +1557,16 @@ void render_scrollback(const int skip_lines) {
      * double-width / double-height lines, so we only use this method
      * when we actually see double-width / double-height on screen.
      */
+    struct q_scrolline_struct * top_line;
     static Q_BOOL first = Q_TRUE;
     static Q_BOOL double_on_last_screen = Q_FALSE;
     Q_BOOL double_on_this_screen = Q_FALSE;
     Q_BOOL odd_line = Q_FALSE;
-    struct q_scrolline_struct * top_line;
-#ifndef Q_PDCURSES
     char * term;
 #endif
 
-    if (first == Q_TRUE) {
 #ifndef Q_PDCURSES
+    if (first == Q_TRUE) {
         if (q_status.xterm_double == Q_TRUE) {
             term = getenv("TERM");
             if (term != NULL) {
@@ -1538,9 +1575,9 @@ void render_scrollback(const int skip_lines) {
                 }
             }
         }
-#endif
         first = Q_FALSE;
     }
+#endif
 
     row = HEIGHT - 1;
 
@@ -1596,6 +1633,7 @@ void render_scrollback(const int skip_lines) {
         line = line->next;
     }
 
+#ifndef Q_PDCURSES
     /*
      * See if there are any double-width / double-height lines.
      */
@@ -1610,6 +1648,7 @@ void render_scrollback(const int skip_lines) {
         line = line->next;
     }
     line = top_line;
+#endif
 
     /*
      * Now loop from line onward
@@ -1623,10 +1662,94 @@ void render_scrollback(const int skip_lines) {
          * rendering to a larger scrollback region (ala Turbo Vision).
          */
         if ((line->dirty == Q_TRUE) || Q_TRUE) {
+            if (line->length > 0) {
+                for (i = 0; i < line->length; i++) {
+                    attr_t color = line->colors[i];
 
+                    /*
+                     * Check how reverse color needs to be rendered
+                     */
+                    color =
+                        vt100_check_reverse_color(color, line->reverse_color);
+
+                    if ((line->search_match == Q_TRUE) &&
+                        ((q_scrollback_search_string != NULL) ||
+                         (q_scrollback_highlight_search_string == Q_TRUE)) &&
+                        (q_program_state == Q_STATE_SCROLLBACK)
+                    ) {
+                        color = line->search_colors[i];
+                    }
+
+                    if (line->double_width == Q_TRUE) {
+                        if ((2 * i) >= WIDTH) {
+                            break;
+                        }
+                        if ((has_true_doublewidth() == Q_FALSE) &&
+                            (q_status.emulation != Q_EMUL_PETSCII)
+                        ) {
+                            screen_put_scrollback_char_yx(row, (2 * i),
+                                translate_unicode_in(line->chars[i]), color);
+                            screen_put_scrollback_char_yx(row, (2 * i) + 1, ' ',
+                                                          color);
+                        } else {
+                            screen_put_scrollback_char_yx(row, i,
+                                translate_unicode_in(line->chars[i]), color);
+                        }
+
+                    } else {
+                        assert(line->double_height == 0);
+                        if (i >= WIDTH) {
+                            break;
+                        }
+                        screen_put_scrollback_char_yx(row, i,
+                            translate_unicode_in(line->chars[i]), color);
+                    }
+                }
+#ifndef Q_PDCURSES
+                if ((xterm == Q_TRUE) && (odd_line == Q_TRUE)) {
+                    screen_flush();
+                    fflush(stdout);
+                }
+#endif
+            } else {
+                screen_move_yx(row, 0);
+            }
+
+            /*
+             * Clear remainder of line
+             */
+            screen_clear_remaining_line(line->double_width);
+
+#ifdef Q_PDCURSES
+            if ((has_true_doublewidth() == Q_TRUE) &&
+                (q_program_state == Q_STATE_CONSOLE) ||
+                (q_program_state == Q_STATE_SCRIPT_EXECUTE) ||
+                (q_program_state == Q_STATE_HOST) ||
+                (q_program_state == Q_STATE_SCROLLBACK)
+            ) {
+                if ((line->double_width == Q_TRUE) &&
+                    (line->double_height == 0)
+                ) {
+                    PDC_set_double(row, 1);
+                } else if (line->double_height == 1) {
+                    PDC_set_double(row, 2);
+                } else if (line->double_height == 2) {
+                    PDC_set_double(row, 3);
+                } else {
+                    assert(line->double_width == Q_FALSE);
+                    assert(line->double_height == 0);
+                    PDC_set_double(row, 0);
+                }
+            }
+
+#else
             if ((xterm == Q_TRUE) &&
                 ((double_on_last_screen == Q_TRUE) ||
-                 (double_on_this_screen == Q_TRUE))
+                 (double_on_this_screen == Q_TRUE)) &&
+                ((q_program_state == Q_STATE_CONSOLE) ||
+                 (q_program_state == Q_STATE_SCRIPT_EXECUTE) ||
+                 (q_program_state == Q_STATE_HOST) ||
+                 (q_program_state == Q_STATE_SCROLLBACK))
             ) {
                 screen_move_yx(row, 0);
                 if ((line->double_width == Q_TRUE) &&
@@ -1661,60 +1784,7 @@ void render_scrollback(const int skip_lines) {
                     fflush(stdout);
                 }
             }
-
-            if (line->length > 0) {
-                for (i = 0; i < line->length; i++) {
-                    attr_t color = line->colors[i];
-
-                    /*
-                     * Check how reverse color needs to be rendered
-                     */
-                    color =
-                        vt100_check_reverse_color(color, line->reverse_color);
-
-                    if ((line->search_match == Q_TRUE) &&
-                        ((q_scrollback_search_string != NULL) ||
-                         (q_scrollback_highlight_search_string == Q_TRUE)) &&
-                        (q_program_state == Q_STATE_SCROLLBACK)
-                    ) {
-                        color = line->search_colors[i];
-                    }
-
-                    if (line->double_width == Q_TRUE) {
-                        if ((2 * i) >= WIDTH) {
-                            break;
-                        }
-                        if (xterm == Q_FALSE) {
-                            screen_put_scrollback_char_yx(row, (2 * i),
-                                translate_unicode_in(line->chars[i]), color);
-                            screen_put_scrollback_char_yx(row, (2 * i) + 1, ' ',
-                                                          color);
-                        } else {
-                            screen_put_scrollback_char_yx(row, i,
-                                translate_unicode_in(line->chars[i]), color);
-                        }
-
-                    } else {
-                        assert(line->double_height == 0);
-                        if (i >= WIDTH) {
-                            break;
-                        }
-                        screen_put_scrollback_char_yx(row, i,
-                            translate_unicode_in(line->chars[i]), color);
-                    }
-                }
-                if ((xterm == Q_TRUE) && (odd_line == Q_TRUE)) {
-                    screen_flush();
-                    fflush(stdout);
-                }
-            } else {
-                screen_move_yx(row, 0);
-            }
-
-            /*
-             * Clear remainder of line
-             */
-            screen_clear_remaining_line(line->double_width);
+#endif
 
             line->dirty = Q_FALSE;
 
@@ -1727,6 +1797,10 @@ void render_scrollback(const int skip_lines) {
     for (row = renderable_lines; row < HEIGHT - STATUS_HEIGHT; row++) {
         screen_move_yx(row, 0);
 
+#ifdef Q_PDCURSES
+        PDC_set_double(row, 0);
+        screen_clear_remaining_line(Q_FALSE);
+#else
         if ((xterm == Q_TRUE) &&
             ((double_on_last_screen == Q_TRUE) ||
              (double_on_this_screen == Q_TRUE))
@@ -1738,13 +1812,16 @@ void render_scrollback(const int skip_lines) {
         } else {
             screen_clear_remaining_line(Q_FALSE);
         }
+#endif
     }
 
+#ifndef Q_PDCURSES
     if (double_on_this_screen == Q_TRUE) {
         double_on_last_screen = Q_TRUE;
     } else {
         double_on_last_screen = Q_FALSE;
     }
+#endif
 }
 
 /**

@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2016 by Kevin Lamonte
+ * Written 2003-2017 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -460,6 +460,53 @@ static struct option_struct options[] = {
 "### If this value is set to true the AVATAR emulation will recognize both\n"
 "### Avatar and ANSI.  If this value is false then unknown ANSI sequences\n"
 "### will be visible in the output, as a real Avatar-only emulator would do."},
+
+/* Emulation: PETSCII */
+
+         {Q_OPTION_PETSCII_C64, NULL, "petscii_c64", "true", ""
+"### EMULATION: PETSCII ---------------------------------------------------\n"
+"\n"
+"### PETSCII supports two modes: Commodore 64, and 40-column Commodore 128.\n"
+"### This option allows one to select between these modes.  True means behave\n"
+"### as a Commodore 64; false means behave like a 40-column Commodore 128."},
+
+        {Q_OPTION_PETSCII_COLOR, NULL, "petscii_ansi_color", "true", ""
+"### Whether or not ANSI.SYS-style color selection commands will be\n"
+"### supported with the PETSCII emulation.  Value is 'true' or 'false'.\n"
+"###\n"
+"### PETSCII emulation has its own color selection command, but some\n"
+"### programs (like 'ls') may send it ANSY.SYS-style color commands\n"
+"### instead.  If this value is set to true the PETSCII emulation will\n"
+"### honor the ANSI.SYS-style color selection codes.  If this value is\n"
+"### false the color selection codes will be visible in the output, as a\n"
+"### real Commodore would do."},
+
+         {Q_OPTION_PETSCII_ANSI_FALLBACK, NULL,
+          "petscii_ansi_fallback", "true", ""
+"### Whether or not PETSCII will fallback to ANSI.SYS for anything it does\n"
+"### not recognize.  Value is 'true' or 'false'.\n"
+"###\n"
+"### Real Commodore machines do not recognize ANSI style escape sequences,\n"
+"### but many BBS systems send them anyway.  This feature enables PETSCII to\n"
+"### use both the Commodore and ANSI color and cursor movement commands,\n"
+"### which for most people will lead to a smoother experience.\n"
+"###\n"
+"### If this value is set to true the PETSCII emulation will recognize both\n"
+"### PETSCII and ANSI.  If this value is false then unknown ANSI sequences\n"
+"### will be visible in the output, as a real Commodore would do."},
+
+         {Q_OPTION_PETSCII_WIDE_FONT, NULL, "petscii_has_wide_font", "true", ""
+"### Whether or not PETSCII is being used with a 40-column font (e.g. C64\n"
+"### Pro Mono).  Value is 'true' or 'false'.\n"
+"###\n"
+"### Qodem's PETSCII emulation is designed to work with C64 Pro Mono,\n"
+"### available at http://style64.org/c64-truetype/ .  (Run Qodem inside\n"
+"### xterm via 'xterm -fn \"C64 Pro Mono\"' to see this.)  This font is\n"
+"### already at the 40-column aspect ratio (square glyphs), so Qodem does\n"
+"### not need to enable double-width lines.\n"
+"###\n"
+"### If you see either large gaps between characters, or very narrow\n"
+"### characters squished onto the left side, try changing this option."},
 
 /* Emulation: VT52 */
 
@@ -2079,6 +2126,22 @@ void load_options() {
     q_status.avatar_ansi_fallback = Q_TRUE;
     if (strcasecmp(get_option(Q_OPTION_AVATAR_ANSI_FALLBACK), "false") == 0) {
         q_status.avatar_ansi_fallback = Q_FALSE;
+    }
+    q_status.petscii_is_c64 = Q_TRUE;
+    if (strcasecmp(get_option(Q_OPTION_PETSCII_C64), "false") == 0) {
+        q_status.petscii_is_c64 = Q_FALSE;
+    }
+    q_status.petscii_color = Q_TRUE;
+    if (strcasecmp(get_option(Q_OPTION_PETSCII_COLOR), "false") == 0) {
+        q_status.petscii_color = Q_FALSE;
+    }
+    q_status.petscii_ansi_fallback = Q_TRUE;
+    if (strcasecmp(get_option(Q_OPTION_PETSCII_ANSI_FALLBACK), "false") == 0) {
+        q_status.petscii_ansi_fallback = Q_FALSE;
+    }
+    q_status.petscii_has_wide_font = Q_TRUE;
+    if (strcasecmp(get_option(Q_OPTION_PETSCII_WIDE_FONT), "false") == 0) {
+        q_status.petscii_has_wide_font = Q_FALSE;
     }
 
 }

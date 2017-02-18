@@ -1,4 +1,4 @@
-.TH qodem-x11 1 "July 4, 2016"
+.TH qodem-x11 1 "April 27, 2017"
 
 .SH NAME
 qodem-x11 \- Qodem Terminal Emulator (X11 Version)
@@ -74,7 +74,8 @@ The major features of Qodem are:
   * Connection methods: serial, local shell, command line, telnet,
     ssh, rlogin, raw socket
 
-  * Emulations: ANSI, Avatar, VT52, VT100/102, VT220, Linux, and XTerm
+  * Emulations: ANSI, Avatar, VT52, VT100/102, VT220, Linux, XTerm,
+    PETSCII (Commodore), and ATASCII (Atari).
 
   * Transfer protocols: Xmodem, Ymodem, Zmodem, and Kermit
 
@@ -112,7 +113,7 @@ Example: "CP437", "CP850", "Windows\-1252", etc.
 .B \-\-emulation EMULATION
 Select emulation EMULATION.  Valid values are "ansi", "avatar",
 "debug", "vt52", "vt100", "vt102", "vt220", "linux", "l_utf8",
-"xterm", and "x_utf8".
+"xterm", "x_utf8", "petscii", and "atascii".
 .TP
 .B \-\-status\-line { on | off }
 If "on" enable status line.  If "off" disable status line.
@@ -315,6 +316,19 @@ It does not support most of the advanced features unique to XTerm such
 as Tektronix 4014 mode, alternate screen buffer, and many more.  It is
 intended to support XTerm applications that only use the sequences in
 the 'xterm' terminfo entry.
+.TP
+.B
+PETSCII
+This very loosely emulates a 40-column Commodore 64/128.  Colors are
+not quite right due to the IBM CGA colors being unable to match the
+Commodore colors.  Uppercase/lowercase affect new characters rather
+than the whole screen.  This emulation requires the C64 Pro Mono font
+from Style, available at http://style64.org/c64-truetype/ .  (Note
+that this font is only licensed to software packages that are "freely
+provided to end users".  Entities wishing to ship packages that are
+not "freely provided to end users" will need to either remove this
+font, or negotiate a separate license agreement by contacting Style at
+http://style64.org/contact-style .)
 
 .SH "FILE TRANSFER PROTOCOLS"
 Protocols supported by Qodem and their status follows:
@@ -424,7 +438,7 @@ Unicode character (L_UTF8 and X_UTF8 only).
 .B Alt\-; Codepage
 This brings up a dialog to change the current codepage.  Codepages are
 limited by the current emulation.  VT52, VT100, VT102, VT220, L_UTF8,
-and X_UTF8 can only be set to the DEC codepage; LINUX, XTERM, ANSI,
+X_UTF8, PETSCII, and ATASCII have their own codepage; LINUX, XTERM, ANSI,
 AVATAR, TTY, and DEBUG emulations can be set to: CP437 (VGA),
 ISO\-8859\-1, CP720 (Arabic), CP737 (Greek), CP775 (Baltic Rim), CP850
 (Western European), CP852 (Central European), CP857 (Turkish), CP858
@@ -506,8 +520,8 @@ When connected via modem or serial port, this toggles XON/XOFF on or off.
 .TP
 .B Alt\-2 Backspace/Del Mode
 This selects whether the backspace key on the keyboard sends an ASCII
-backspace (^H) or an ASCII DEL (127) character.  Ctrl\-H can always be
-used to send true backspace; Ctrl\-? can be used to send true DEL.
+backspace (^H) or an ASCII DEL (127) character.  Alt\-\\ 0 0 8 can always be
+used to send true backspace; Alt\-\\ 1 2 7 can be used to send true DEL.
 Note that VT220 emulation always sends DEL when the backspace key is
 pressed.
 .TP
@@ -701,7 +715,7 @@ The Qodem homepage is at <http://qodem.sourceforge.net>.  The code
 repository is hosted at <https://github.com/klamonte/qodem>.
 
 .SH PUBLIC DOMAIN NOTICE
-Written 2003-2016 by Kevin Lamonte
+Written 2003\-2017 by Kevin Lamonte
 .PP
 To the extent possible under law, the author(s) have dedicated all
 copyright and related and neighboring rights to this software to the

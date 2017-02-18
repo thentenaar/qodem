@@ -2,7 +2,7 @@
 #
 # qodem - Qodem Terminal Emulator
 #
-# Written 2003-2016 by Kevin Lamonte
+# Written 2003-2017 by Kevin Lamonte
 #
 # To the extent possible under law, the author(s) have dedicated all
 # copyright and related and neighboring rights to this software to the
@@ -105,6 +105,7 @@ $(QODEM_SRC_DIR)/modem.c \
 $(QODEM_SRC_DIR)/music.c \
 $(QODEM_SRC_DIR)/netclient.c\
 $(QODEM_SRC_DIR)/options.c \
+$(QODEM_SRC_DIR)/petscii.c \
 $(QODEM_SRC_DIR)/phonebook.c \
 $(QODEM_SRC_DIR)/protocols.c \
 $(QODEM_SRC_DIR)/qodem.c \
@@ -138,6 +139,7 @@ $(QODEM_OBJS_DIR)/modem.obj \
 $(QODEM_OBJS_DIR)/music.obj \
 $(QODEM_OBJS_DIR)/netclient.obj \
 $(QODEM_OBJS_DIR)/options.obj \
+$(QODEM_OBJS_DIR)/petscii.obj \
 $(QODEM_OBJS_DIR)/phonebook.obj \
 $(QODEM_OBJS_DIR)/protocols.obj \
 $(QODEM_OBJS_DIR)/qodem.obj \

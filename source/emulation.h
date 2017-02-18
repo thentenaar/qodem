@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2016 by Kevin Lamonte
+ * Written 2003-2017 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -39,6 +39,7 @@ typedef enum Q_EMULATIONS {
     Q_EMUL_VT102,               /* VT102 */
     Q_EMUL_VT220,               /* VT220 */
     Q_EMUL_AVATAR,              /* Avatar */
+    Q_EMUL_PETSCII,             /* PETSCII (Commodore) */
     Q_EMUL_DEBUG,               /* DEBUG */
     Q_EMUL_LINUX,               /* Linux console */
     Q_EMUL_LINUX_UTF8,          /* Linux console (UTF-8) */

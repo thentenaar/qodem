@@ -71,6 +71,15 @@ depending on whether or not it was linked to cryptlib:
     modified into a SaaS style architecture), and there is no
     warranty.
 
+Qodem also ships an unmodified copy of the C64 TrueType fonts as
+developed by Style available at http://style64.org/c64-truetype/ .
+These fonts are permitted to be redistributed as part of a software
+package "if said software package is freely provided to end users".
+Entities wishing to ship packages that are not "freely provided to end
+users" will need to either remove this font, or negotiate a separate
+license agreement by contacting Style at
+http://style64.org/contact-style .
+
 
 
 INTENDED AUDIENCE
@@ -243,7 +252,8 @@ qodemrc will cause Qodem to use the real right margin.
 
 The backspace key is always mapped to DEL (0x7F) in VT220 emulation to
 match the keyboard of a real VT220.  You can send a true backspace
-(0x08, ^H) by pressing Ctrl-H.
+(0x08, ^H) by pressing Alt-\ 0 0 8 to use the Alt Code Key feature to
+send backspace.
 
 Function keys beyond F4 in VT100/VT102 emulation may not work as
 expected.  Qodem uses a common convention that F5 is "{ESC} O t", F6
@@ -467,6 +477,11 @@ VT220.  It does not support most of the advanced features unique to
 XTerm such as Tektronix 4014 mode, alternate screen buffer, and many
 more.  It is intended to support XTerm applications that only use the
 sequences in the 'xterm' terminfo entry.
+
+PETSCII colors do not exactly match true Commodore colors, especially
+for background colors for which CGA only had eight possibilities.
+Also, uppercase/lowercase switches new incoming characters but does
+not change the existing characters on the screen.
 
 
 

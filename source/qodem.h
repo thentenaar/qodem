@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2016 by Kevin Lamonte
+ * Written 2003-2017 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -441,6 +441,33 @@ struct q_status_struct {
      * emulator.
      */
     Q_BOOL avatar_ansi_fallback;
+
+    /* PETSCII features */
+
+    /**
+     * When true, support color ANSI codes for PETSCII which doesn't
+     * officially support that.  Do this even when petscii_ansi_fallback is
+     * false.
+     */
+    Q_BOOL petscii_color;
+
+    /**
+     * When true, send anything PETSCII doesn't understand through the ANSI
+     * emulator.
+     */
+    Q_BOOL petscii_ansi_fallback;
+
+    /**
+     * When true, PETSCII can assume that it has a wide font and does not
+     * need to set every line to double-width.
+     */
+    Q_BOOL petscii_has_wide_font;
+
+    /**
+     * When true, PETSCII uses Commodore 64 control codes.  When false, it
+     * uses Commodore 128 control codes.
+     */
+    Q_BOOL petscii_is_c64;
 
     /* VT100 features */
 

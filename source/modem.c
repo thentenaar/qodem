@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2016 by Kevin Lamonte
+ * Written 2003-2017 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -1161,7 +1161,6 @@ void modem_config_keyboard_handler(const int keystroke, const int flags) {
         return;
 
     case Q_KEY_BACKSPACE:
-    case 0x08:
         if (highlighted_row != M_NONE) {
             fieldset_backspace(modem_config_entry_form);
         }
@@ -1208,7 +1207,7 @@ exit_dialog:
         /*
          * Backtick works too
          */
-    case KEY_ESCAPE:
+    case Q_KEY_ESCAPE:
         if (highlighted_row != M_NONE) {
             /*
              * Done editing
@@ -1242,7 +1241,7 @@ exit_dialog:
             /*
              * Save if the user said so.
              */
-            if ((new_keystroke == 'y') || (new_keystroke == C_CR)) {
+            if ((new_keystroke == 'y') || (new_keystroke == Q_KEY_ENTER)) {
                 save_modem_config();
             } else {
                 /*
@@ -1260,7 +1259,6 @@ exit_dialog:
         return;
 
     case Q_KEY_ENTER:
-    case C_CR:
         if (highlighted_row != M_NONE) {
             /*
              * The OK exit point.
@@ -2242,7 +2240,7 @@ Q_BOOL open_serial_port() {
             _("Attention!"), notify_message,
             _(" Y-Proceed Without a Lock File   N-Do Not Open Serial Port "),
             Q_TRUE, 0.0, "YyNn\r"));
-        if ((keystroke == 'y') || (keystroke == C_CR)) {
+        if ((keystroke == 'y') || (keystroke == Q_KEY_ENTER)) {
             memset(lock_filename, 0, sizeof(lock_filename));
         } else {
             return Q_FALSE;
@@ -2330,7 +2328,7 @@ Q_BOOL open_serial_port() {
                 _("Attention!"), notify_message,
                 _(" Y-Proceed Without a Lock File   N-Do Not Open Serial Port "),
                 Q_TRUE, 0.0, "YyNn\r"));
-            if ((keystroke == 'y') || (keystroke == C_CR)) {
+            if ((keystroke == 'y') || (keystroke == Q_KEY_ENTER)) {
                 memset(lock_filename, 0, sizeof(lock_filename));
             } else {
                 return Q_FALSE;

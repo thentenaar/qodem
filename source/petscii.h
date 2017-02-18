@@ -1,5 +1,5 @@
 /*
- * vt52.h
+ * petscii.h
  *
  * qodem - Qodem Terminal Emulator
  *
@@ -15,30 +15,25 @@
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 
-#ifndef __VT52_H__
-#define __VT52_H__
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef __PETSCII_H__
+#define __PETSCII_H__
 
 /* Includes --------------------------------------------------------------- */
 
 #include "emulation.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Defines ---------------------------------------------------------------- */
 
 /* Globals ---------------------------------------------------------------- */
 
-/**
- * True means alternate keypad mode, false means numeric keypad mode.
- */
-extern Q_BOOL q_vt52_alternate_keypad_mode;
-
 /* Functions -------------------------------------------------------------- */
 
 /**
- * Push one byte through the VT52 emulator.
+ * Push one byte through the PETSCII emulator.
  *
  * @param from_modem one byte from the remote side.
  * @param to_screen if the return is Q_EMUL_FSM_ONE_CHAR or
@@ -46,13 +41,13 @@ extern Q_BOOL q_vt52_alternate_keypad_mode;
  * the screen.
  * @return one of the Q_EMULATION_STATUS constants.  See emulation.h.
  */
-extern Q_EMULATION_STATUS vt52(const unsigned char from_modem,
-                               wchar_t * to_screen);
+extern Q_EMULATION_STATUS petscii(const unsigned char from_modem,
+                                  wchar_t * to_screen);
 
 /**
  * Reset the emulation state.
  */
-extern void vt52_reset();
+extern void petscii_reset();
 
 /**
  * Generate a sequence of bytes to send to the remote side that correspond to
@@ -61,13 +56,13 @@ extern void vt52_reset();
  * @param keystroke one of the Q_KEY values, OR a Unicode code point.  See
  * input.h.
  * @return a wide string that is appropriate to send to the remote side.
- * Note that VT52 emulation is a 7-bit emulation: only the bottom 7 bits are
+ * Note that ANSI emulation is an 8-bit emulation: only the bottom 8 bits are
  * transmitted to the remote side.  See post_keystroke().
  */
-extern wchar_t * vt52_keystroke(const int keystroke);
+extern wchar_t * petscii_keystroke(const int keystroke);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __VT52_H__ */
+#endif /* __PETSCII_H__ */

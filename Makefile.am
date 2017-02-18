@@ -27,6 +27,7 @@ source/modem.c \
 source/music.c \
 source/netclient.c \
 source/options.c \
+source/petscii.c \
 source/phonebook.c \
 source/protocols.c \
 source/qodem.c \
@@ -58,6 +59,7 @@ source/modem.h \
 source/music.h \
 source/netclient.h \
 source/options.h \
+source/petscii.h \
 source/phonebook.h \
 source/protocols.h \
 source/qodem.h \

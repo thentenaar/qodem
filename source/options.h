@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2016 by Kevin Lamonte
+ * Written 2003-2017 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -88,6 +88,10 @@ typedef enum Q_OPTIONS {
     Q_OPTION_ANSI_ANIMATE,
     Q_OPTION_AVATAR_COLOR,
     Q_OPTION_AVATAR_ANSI_FALLBACK,
+    Q_OPTION_PETSCII_C64,
+    Q_OPTION_PETSCII_COLOR,
+    Q_OPTION_PETSCII_ANSI_FALLBACK,
+    Q_OPTION_PETSCII_WIDE_FONT,
     Q_OPTION_VT52_COLOR,
     Q_OPTION_VT100_COLOR,
     Q_OPTION_XTERM_MOUSE_REPORTING,

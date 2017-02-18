@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2016 by Kevin Lamonte
+ * Written 2003-2017 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -137,6 +137,13 @@ extern HANDLE q_serial_handle;
 static Q_BOOL q_serial_readable;
 
 #endif /* Q_NO_SERIAL */
+
+#else
+
+/**
+ * If true, we have received a SIGCHLD that matches q_child_pid.
+ */
+Q_BOOL q_child_exited = Q_FALSE;
 
 #endif /* Q_PDCURSES_WIN32 */
 
@@ -308,6 +315,77 @@ static struct timeval ssh_tv;
  * PDCurses.  data_handler() selects on this to improve latency.
  */
 extern int xc_key_sock;
+#endif
+
+#ifndef WIN32
+
+/*
+ * The final return code retrieved when the script exited, stored in
+ * script.c.
+ */
+extern int script_rc;
+
+/**
+ * SIGCHLD signal handler.
+ *
+ * @param sig the signal number
+ */
+static void handle_sigchld(int sig) {
+    pid_t pid;
+    int status;
+
+    if (q_child_pid == -1) {
+        /*
+         * We got SIGCHLD, but think we are offline anyway.  Just say we
+         * exited.
+         */
+        q_child_exited = Q_TRUE;
+    }
+
+    for (;;) {
+        pid = waitpid(-1, &status, WNOHANG);
+        if (pid == -1) {
+            /*
+             * Error in the waitpid() call.
+             */
+            DLOG(("Error in waitpid(): %s (%d)\n", errno, strerror(errno)));
+            break;
+        }
+        if (pid == 0) {
+            /*
+             * Reaped the last zombie, bail out now.
+             */
+            DLOG(("No more zombies\n"));
+            break;
+        }
+        if (pid == q_child_pid) {
+            /*
+             * The connection has closed.
+             */
+            q_child_exited = Q_TRUE;
+            DLOG(("SIGCHLD: CONNECTION CLOSED\n"));
+        }
+        if (pid == q_running_script.script_pid) {
+            /*
+             * The script has exited.
+             */
+            DLOG(("SIGCHLD: SCRIPT DONE\n"));
+
+            if (WIFEXITED(status)) {
+                qlog(_("Script exited with RC=%u\n"),
+                    (WEXITSTATUS(status) & 0xFF));
+                script_rc = (WEXITSTATUS(status) & 0xFF);
+            } else if (WIFSIGNALED(status)) {
+                qlog(_("Script exited with signal=%u\n"), WTERMSIG(status));
+                script_rc = WTERMSIG(status) + 128;
+            }
+            q_running_script.script_pid = -1;
+        }
+
+        DLOG(("Reaped process %d\n", pid));
+    }
+}
+
 #endif
 
 /**
@@ -797,48 +875,41 @@ serial_read_result:
  */
 static char * usage_string() {
         return _(""
-"'qodem' is a terminal connection manager with scrollback, capture,\n"
-"and basic scripting support.\n"
+"'qodem' is a terminal emulator with support for scrollback, capture, file\n"
+"transfers, keyboard macros, scripting, and more.  This is version 1.0.0.\n"
 "\n"
 "Usage: qodem [OPTIONS] { [ --dial N ] | [ --connect ] | [ command line ] }\n"
 "\n"
 "Options:\n"
 "\n"
-"If a long option shows an argument as mandatory, then it is mandatory\n"
-"for the equivalent short option also.  Similarly for optional arguments.\n"
-"\n"
 "      --dial N                    Immediately connect to the phonebook\n"
 "                                  entry numbered N.\n"
-"\n"
 "      --connect HOST              Immediately open a connection to HOST.\n"
 "                                  The default connection method is \"ssh"
 "\".\n"
 "      --connect-method METHOD     Use METHOD to connect for the --connect\n"
-"                                  option.  Valid values are \"ssh\",\n"
-"                                  \"rlogin\", \"telnet,\", and \"shell\".\n"
+"                                  option.  Valid values are \"ssh\", \"rlogin\",\n"
+"                                  \"telnet,\", and \"shell\".\n"
 "      --username USERNAME         Log in as USERNAME\n"
 "      --capfile FILENAME          Capture the entire session and save to\n"
 "                                  FILENAME.\n"
 "      --logfile FILENAME          Enable the session log and save to FILENAME.\n"
 "      --keyfile FILENAME          Load keyboard macros from FILENAME\n"
 "      --xl8file FILENAME          Load 8-bit translate tables from FILENAME.\n"
-"      --xlufile FILENAME          Load Unicode translate tables from\n"
-"                                  FILENAME.\n"
+"      --xlufile FILENAME          Load Unicode translate tables from FILENAME.\n"
 "      --srcfile FILENAME          Start script FILENAME after connect.\n"
 "  -x, --exit-on-completion        Exit after connection/command finishes.\n"
 "      --doorway MODE              Select doorway MODE.  Valid values for\n"
-"                                  MODE are \"doorway\", \"mixed\", and\n"
-"                                  \"off\".\n"
+"                                  MODE are \"doorway\", \"mixed\", and \"off\".\n"
 "      --codepage CODEPAGE         Select codepage CODEPAGE.  See Alt-; list\n"
 "                                  for valid codepages.  Example: \"CP437\",\n"
 "                                  \"CP850\", \"Windows-1252\", etc.\n"
-"      --emulation EMULATION       Select emulation EMULATION.  Valid values\n"
-"                                  are \"ansi\", \"avatar\", \"debug\",\n"
-"                                  \"vt52\", \"vt100\", \"vt102\", \"vt220\",\n"
-"                                  \"linux\", \"l_utf8\", \"xterm\", and\n"
-"                                  \"x_utf8\".\n"
-"      --status-line { on | off }  If \"on\" enable status line.  If \"off\"\n"
-"                                  disable status line.\n"
+"      --emulation EMULATION       Select emulation EMULATION.  Valid values are\n"
+"                                  \"ansi\", \"avatar\", \"debug\", \"vt52\", \"vt100\",\n"
+"                                  \"vt102\", \"vt220\", \"linux\", \"l_utf8\", \"xterm\",\n"
+"                                  \"petscii\", and \"atascii\".\n"
+"      --status-line { on | off }  If \"on\" enable status line.  If \"off\" disable\n"
+"                                  status line.\n"
 "      --play MUSIC                Play MUSIC as ANSI Music\n"
 "      --play-exit                 Immediately exit after playing MUSIC\n"
 "      --geometry COLSxROWS        Request text window size COLS x ROWS\n"
@@ -846,10 +917,9 @@ static char * usage_string() {
 "      --version                   Display program version\n"
 "  -h, --help                      This help screen\n"
 "\n"
-"qodem can also open a raw shell with the command line given.\n"
-"So for example 'qodem --connect my.host --connect-method ssh' is\n"
-"equivalent to 'qodem ssh my.host' .  The --connect option cannot\n"
-"be used if a command line is specified.\n"
+"qodem can also open a raw shell with the command line given.  For example\n"
+"'qodem --connect my.host --connect-method ssh' is equivalent to 'qodem ssh\n"
+"my.host' .\n"
 "\n");
 }
 
@@ -861,7 +931,7 @@ static char * usage_string() {
 static char * version_string() {
     return _(""
 "qodem version 1.0.0\n"
-"Written 2003-2016 by Kevin Lamonte\n"
+"Written 2003-2017 by Kevin Lamonte\n"
 "\n"
 "To the extent possible under law, the author(s) have dedicated all\n"
 "copyright and related and neighboring rights to this software to the\n"
@@ -1834,17 +1904,15 @@ no_data:
                     &q_transfer_buffer_raw_n, sizeof(q_transfer_buffer_raw));
             } else if (q_program_state == Q_STATE_SCRIPT_EXECUTE) {
                 /* Script data handler */
-                if (q_running_script.running == Q_TRUE) {
-                    script_process_data(q_buffer_raw, q_buffer_raw_n,
-                        &unprocessed_n, q_transfer_buffer_raw,
-                        &q_transfer_buffer_raw_n,
-                        sizeof(q_transfer_buffer_raw));
-                    /*
-                     * Reset the flags so the second call is a timeout type.
-                     */
-                    q_running_script.stdout_readable = Q_FALSE;
-                    q_running_script.stdin_writeable = Q_FALSE;
-                }
+                script_process_data(q_buffer_raw, q_buffer_raw_n,
+                    &unprocessed_n, q_transfer_buffer_raw,
+                    &q_transfer_buffer_raw_n,
+                    sizeof(q_transfer_buffer_raw));
+                /*
+                 * Reset the flags so the second call is a timeout type.
+                 */
+                q_running_script.stdout_readable = Q_FALSE;
+                q_running_script.stdin_writeable = Q_FALSE;
             } else if (q_program_state == Q_STATE_HOST) {
                 /* Host mode data handler */
                 host_process_data(q_buffer_raw, q_buffer_raw_n, &unprocessed_n,
@@ -2033,6 +2101,65 @@ no_data:
             q_transfer_buffer_raw_n -= rc;
         }
     }
+}
+
+/**
+ * See if a child process has exited.  For non-shell connections, this
+ * returns false.
+ *
+ * @return true if the child process has exited
+ */
+static Q_BOOL child_is_dead() {
+
+#ifdef Q_PDCURSES_WIN32
+    DWORD status;
+#endif
+
+#ifdef Q_PDCURSES_WIN32
+
+    /* Win32 case */
+    if (q_child_process == NULL) {
+        /*
+         * This is not a shell connection.
+         */
+        return Q_FALSE;
+    }
+
+    if (GetExitCodeProcess(q_child_process, &status) == TRUE) {
+        /* Got return code */
+        if (status == STILL_ACTIVE) {
+            /*
+             * Process is still running.
+             */
+            return Q_FALSE;
+        } else {
+            /*
+             * Process has died.
+             */
+            return Q_TRUE;
+        }
+    } else {
+        /*
+         * Can't get process exit code, assume it is dead.
+         */
+        return Q_TRUE;
+    }
+
+#else
+
+    /* POSIX case */
+    if (q_child_pid == -1) {
+        /*
+         * This is not a shell connection.
+         */
+        return Q_FALSE;
+    }
+
+    /* See if SIGCHLD was received before. */
+    return q_child_exited;
+
+#endif /* Q_PDCURSES_WIN32 */
+
 }
 
 /**
@@ -2418,14 +2545,13 @@ static void data_handler() {
 #else
 
     rc = select(select_fd_max, &readfds, &writefds, &exceptfds,
-        &listen_timeout);
+                &listen_timeout);
 
 #endif /* Q_PDCURSES_WIN32 */
 
-        /*
-        DLOG(("q_program_state = %d select() returned %d\n",
-            q_program_state, rc));
-         */
+    /*
+    DLOG(("q_program_state = %d select() returned %d\n", q_program_state, rc));
+    */
 
     switch (rc) {
 
@@ -2530,6 +2656,28 @@ static void data_handler() {
                     close_connection();
                 }
             }
+        }
+
+        /*
+         * See if the child process died.  It's possible for the child
+         * process to be defunct but the fd still be active, e.g. if a shell
+         * has a blocked background process with an open handle to its
+         * stdout.
+         */
+        if (child_is_dead() == Q_TRUE) {
+            qlog(_("Child process has exited, closing...\n"));
+            close_connection();
+
+            /*
+             * We need to cleanup immediately, because read() will never
+             * return 0.
+             */
+            cleanup_connection();
+
+            /*
+             * Don't allow the loop to enter process_incoming_data().
+             */
+            break;
         }
 
         /*
@@ -2859,6 +3007,15 @@ static void reset_global_state() {
     q_status.avatar_color           = Q_TRUE;
     q_status.avatar_ansi_fallback   = Q_TRUE;
 
+    /*
+     * I don't think there are any PETSCII emulators that also speak ANSI,
+     * but it comes for mostly free so I will leave it in.
+     */
+    q_status.petscii_color          = Q_TRUE;
+    q_status.petscii_ansi_fallback  = Q_TRUE;
+    q_status.petscii_has_wide_font  = Q_TRUE;
+    q_status.petscii_is_c64         = Q_TRUE;
+
 #ifndef Q_NO_SERIAL
     q_status.serial_open            = Q_FALSE;
 #endif /* Q_NO_SERIAL */
@@ -3175,6 +3332,9 @@ int qodem_main(int argc, char * const argv[]) {
 #ifndef Q_PDCURSES_WIN32
     /* Ignore SIGPIPE */
     signal(SIGPIPE, SIG_IGN);
+
+    /* Catch SIGCHLD */
+    signal(SIGCHLD, handle_sigchld);
 #endif
 
     if (q_status.xterm_mode == Q_TRUE) {

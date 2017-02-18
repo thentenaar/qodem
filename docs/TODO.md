@@ -12,13 +12,49 @@ Fix all marked TODOs in code
 
 #26 Handle multiple instances operating on the phonebook
 
-#35 exit_on_disconnect hangs
+#38 Be able to run fully portable:
 
-#38 Be able to run fully portable
+    - A --config command line option to read qodemrc from
+      user-supplied file. If given, NO OTHER option file locations are
+      read.
+
+    - Be able to load and run phonebook, scripts, modem cfg, color
+      cfg, keyfiles, etc. from read-only media. The media is checked
+      for write access, and if not found save operations fail with a
+      notification. If script_stderr cannot be created, scripts are
+      disabled for that session.
+
+    - A --read-only command line option that disables all save
+        operations entirely. This will require some re-work for config
+        files that auto-create themselves. Also:
+          - script_stderr cannot be created hence scripts are disabled on POSIX.
+          - host mode uploads are disabled.
+          - downloads and zmodem/kermit autostart are disabled.
+          - session log, capture, screen dump, and scrollback save are disabled.
+
+#54 Full 40-column support
+    - Win32a double-width chars
+    - Cursor position - clamp to margin 39 on double-width rows
 
 #41 PETSCII
+    - Fallback to double-width on narrow fonts
+    - README, man page, help text
 
-#43 clang compiler support
+    aubbs.zapto.org port 2300
+    borderlinebbs.dyndns.org port 6400
+
+
+#48 split-screen unicode support
+    - Also support all control characters via carat notation
+
+#52 bracketed paste mode
+
+#47 ATASCII
+    - Start with Tim H's atari.c
+    - README, man page, help text
+
+#53 Xmodem/G Ymodem/G error
+
 
 FULL REGRESSION ON EVERY ITEM:
   F10 -> Enter or Alt-Enter
@@ -118,6 +154,8 @@ FULL REGRESSION ON EVERY ITEM:
       ANSI fallback
         ANSI music
     DEBUG
+    PETSCII
+    ATASCII
   Command-line switches:
     --connect
     --connect-method
@@ -134,7 +172,7 @@ Release:
   Update Telnet BBS List --> put into setup
   Check dates on web pages:
     index.html screenshots.html getting_started.html
-  Sync up text in help.c and man pages and README
+  Sync up text in help.c and man pages and README and www/index.html
   Rebuild man page HTML:
     groff -mandoc `man -w docs/qodem.1` -T html > qodem.1.html
   Copy qodem.1 -> qodem-x11.1
@@ -228,8 +266,6 @@ External protocols
 ---------------------------
 
 Pacing character support
-
-ATASCII
 
 Integrate with I2P
 

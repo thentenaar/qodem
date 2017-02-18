@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Qodem"
-#define MyAppVersion "1.0beta"
+#define MyAppVersion "1.0.0"
 #define MyAppPublisher "Kevin Lamonte"
 #define MyAppURL "http://qodem.sourceforge.net"
 #define MyAppExeName "qodem.exe"
@@ -40,6 +40,7 @@ Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescrip
 Source: "E:\qodem2k\git\qodem\bin\qodem.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 Source: "E:\qodem2k\git\qodem\misc\fonts\VGAMedium.ttf"; DestDir: "{fonts}"; FontInstall: "VGA"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "E:\qodem2k\git\qodem\misc\fonts\C64_Pro_Mono-STYLE.ttf"; DestDir: "{fonts}"; FontInstall: "C64 Pro Mono"; Flags: onlyifdoesntexist uninsneveruninstall
 Source: "E:\qodem2k\git\qodem\README.md"; DestDir: "{app}"; DestName: "README.txt"
 Source: "E:\qodem2k\git\qodem\ChangeLog"; DestDir: "{app}"; DestName: "ChangeLog.txt"
 Source: "E:\qodem2k\git\qodem\CREDITS"; DestDir: "{app}"; DestName: "CREDITS.txt"

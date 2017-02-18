@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2016 by Kevin Lamonte
+ * Written 2003-2017 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -211,7 +211,7 @@ static void avatar_set_color(const unsigned char from_modem) {
  * @return one of the Q_EMULATION_STATUS constants.  See emulation.h.
  */
 Q_EMULATION_STATUS avatar(const unsigned char from_modem, wchar_t * to_screen) {
-    static unsigned char *count;
+    static unsigned char * count;
     static attr_t attributes;
     Q_EMULATION_STATUS rc;
     attr_t old_color;
@@ -232,6 +232,11 @@ avatar_start:
          * Q_EMUL_FSM_NO_CHAR_YET.
          */
 
+        DLOG(("ANSI FALLBACK ansi_buffer_i %d ansi_buffer_n %d\n",
+                ansi_buffer_i, ansi_buffer_n));
+        DLOG(("              q_emul_buffer_i %d q_emul_buffer_n %d\n",
+                q_emul_buffer_i, q_emul_buffer_n));
+
         if (ansi_buffer_n == 0) {
             assert(ansi_buffer_i == 0);
             /*
@@ -247,6 +252,8 @@ avatar_start:
         rc = Q_EMUL_FSM_NO_CHAR_YET;
         while (rc == Q_EMUL_FSM_NO_CHAR_YET) {
             rc = ansi(ansi_buffer[ansi_buffer_i], to_screen);
+
+            DLOG(("ANSI FALLBACK ansi() RC %d\n", rc));
 
             if (rc != Q_EMUL_FSM_NO_CHAR_YET) {
                 /*
@@ -280,7 +287,7 @@ avatar_start:
         /*
          * ESC
          */
-        if (from_modem == KEY_ESCAPE) {
+        if (from_modem == C_ESC) {
             save_char(from_modem, to_screen);
             scan_state = SCAN_ESC;
             return Q_EMUL_FSM_NO_CHAR_YET;
@@ -833,6 +840,10 @@ repeat_loop:
         break;
 
     case DUMP_UNKNOWN_SEQUENCE:
+
+        DLOG(("DUMP_UNKNOWN_SEQUENCE q_emul_buffer_i %d q_emul_buffer_n %d\n",
+                q_emul_buffer_i, q_emul_buffer_n));
+
         /*
          * Dump the string in q_emul_buffer
          */

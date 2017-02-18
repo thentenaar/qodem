@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2016 by Kevin Lamonte
+ * Written 2003-2017 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -286,6 +286,12 @@ void refresh_handler() {
  */
 void switch_state(const Q_PROGRAM_STATE new_state) {
 
+    if ((q_program_state == Q_STATE_CONSOLE) &&
+        (has_true_doublewidth() == Q_TRUE)) {
+
+        screen_clear();
+    }
+
     switch (new_state) {
 
     case Q_STATE_DOWNLOAD_MENU:
@@ -409,7 +415,7 @@ Q_PROGRAM_STATE original_state;
  */
 void screensaver_keyboard_handler(const int keystroke, const int flags) {
 
-    if ((keystroke == Q_KEY_ENTER) || (keystroke == C_CR)) {
+    if (keystroke == Q_KEY_ENTER) {
         if (password_buffer_n > 0) {
             if (strcmp(password_buffer,
                        get_option(Q_OPTION_SCREENSAVER_PASSWORD)) == 0) {

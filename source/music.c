@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2016 by Kevin Lamonte
+ * Written 2003-2017 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -314,7 +314,7 @@ void play_music(const struct q_music_struct * music,
              */
             timeout(music->duration);
             keystroke = getch();
-            if ((keystroke == '`') || (keystroke == KEY_ESCAPE)) {
+            if ((keystroke == '`') || (keystroke == Q_KEY_ESCAPE)) {
                 /*
                  * Ban all music for five seconds.
                  */

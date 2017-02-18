@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2016 by Kevin Lamonte
+ * Written 2003-2017 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -1239,7 +1239,7 @@ Q_EMULATION_STATUS ansi(const unsigned char from_modem, wchar_t * to_screen) {
         /*
          * ESC
          */
-        if (from_modem == KEY_ESCAPE) {
+        if (from_modem == C_ESC) {
             save_char(from_modem, to_screen);
             scan_state = SCAN_ESC;
             attributes = q_current_color;
@@ -1305,7 +1305,7 @@ Q_EMULATION_STATUS ansi(const unsigned char from_modem, wchar_t * to_screen) {
          * Believe it or not I actually saw a site use ESC CSI <code>.  So if
          * we see ESC again, stay in SCAN_ESC state.
          */
-        if (from_modem == KEY_ESCAPE) {
+        if (from_modem == C_ESC) {
             *to_screen = 1;
             return Q_EMUL_FSM_NO_CHAR_YET;
         }
@@ -2011,7 +2011,8 @@ Q_EMULATION_STATUS ansi(const unsigned char from_modem, wchar_t * to_screen) {
      */
     q_emul_buffer[q_emul_buffer_n] = from_modem;
     q_emul_buffer_n++;
-    DLOG(("UNKNOWN SEQUENCE: \"%s\"\n", q_emul_buffer));
+    DLOG(("UNKNOWN SEQUENCE (length %d): \"%s\"\n", q_emul_buffer_n,
+            q_emul_buffer));
 
     *to_screen = q_emul_buffer[q_emul_buffer_i];
     q_emul_buffer_i++;
@@ -2042,6 +2043,13 @@ Q_EMULATION_STATUS ansi(const unsigned char from_modem, wchar_t * to_screen) {
 wchar_t * ansi_keystroke(const int keystroke) {
 
     switch (keystroke) {
+
+    case Q_KEY_ESCAPE:
+        return L"\033";
+
+    case Q_KEY_TAB:
+        return L"\011";
+
     case Q_KEY_BACKSPACE:
         if (q_status.hard_backspace == Q_TRUE) {
             return L"\010";
@@ -2167,9 +2175,6 @@ wchar_t * ansi_keystroke(const int keystroke) {
         return L"+";
     case Q_KEY_PAD_ENTER:
     case Q_KEY_ENTER:
-        if (telnet_is_ascii()) {
-            return L"\015\012";
-        }
         return L"\015";
 
     default:

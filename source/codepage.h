@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2016 by Kevin Lamonte
+ * Written 2003-2017 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -37,6 +37,8 @@ extern "C" {
 #define C_STX   0x02
 #define C_EOT   0x04
 #define C_ACK   0x06
+#define C_BS    0x08
+#define C_TAB   0x09
 #define C_LF    0x0A
 #define C_CR    0x0D
 #define C_XON   0x11            /* DC1 */
@@ -176,7 +178,6 @@ extern wchar_t dec_swiss_chars[128];
 typedef enum Q_CODEPAGES {
     Q_CODEPAGE_CP437,           /* PC VGA */
     Q_CODEPAGE_ISO8859_1,       /* ISO-8859-1 */
-    Q_CODEPAGE_DEC,             /* DEC character sets for VT10x/VT220 */
 
     /*
      * DOS codepages
@@ -206,8 +207,15 @@ typedef enum Q_CODEPAGES {
     Q_CODEPAGE_KOI8_R,          /* Russian */
     Q_CODEPAGE_KOI8_U,          /* Ukrainian */
 
+    /*
+     * Non-selectable codepages in the phonebook picklist.
+     */
+    Q_CODEPAGE_DEC,             /* DEC character sets for VT10x/VT220 */
+    Q_CODEPAGE_PETSCII,         /* PETSCII, treated like DEC */
+
 } Q_CODEPAGE;
-#define Q_CODEPAGE_MAX (Q_CODEPAGE_KOI8_U + 1)
+#define Q_CODEPAGE_PHONEBOOK_MAX (Q_CODEPAGE_KOI8_U + 1)
+#define Q_CODEPAGE_MAX (Q_CODEPAGE_PETSCII + 1)
 
 #define UTF8_ACCEPT 0
 #define UTF8_REJECT 1

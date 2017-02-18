@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2016 by Kevin Lamonte
+ * Written 2003-2017 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -911,6 +911,22 @@ unsigned char translate_unicode_to_8bit(const wchar_t in,
         return '?';
     }
 
+    if (codepage == Q_CODEPAGE_PETSCII) {
+        /*
+         * PETSCII is specifically hardcoded to the C64 Pro Mono font
+         * developed by Style, which uses the private use area of Unicode to
+         * provide pixel-perfect reproduction of the actual C64/128 glyphs.
+         * Users who try to put in a Unicode char (e.g. via Alt Code Key) are
+         * just out of luck.
+         */
+        if (in < 0x100) {
+            /* 8-bit byte, send it exactly as-is. */
+            return (in & 0xFF);
+        }
+        /* Unicode code point: sorry, you are out of luck. */
+        return '?';
+    }
+
     /*
      * We have a Unicode code point.
      *
@@ -1302,7 +1318,7 @@ void translate_table_menu_keyboard_handler(const int keystroke,
         /*
          * Backtick works too
          */
-    case KEY_ESCAPE:
+    case Q_KEY_ESCAPE:
         /*
          * ESC return to TERMINAL mode
          */
@@ -1438,7 +1454,7 @@ void translate_table_editor_8bit_keyboard_handler(const int keystroke,
         /*
          * Backtick works too
          */
-    case KEY_ESCAPE:
+    case Q_KEY_ESCAPE:
         /*
          * ESC return to TERMINAL mode
          */
@@ -1468,7 +1484,7 @@ void translate_table_editor_8bit_keyboard_handler(const int keystroke,
                 /*
                  * Save if the user said so
                  */
-                if ((new_keystroke == 'y') || (new_keystroke == C_CR)) {
+                if ((new_keystroke == 'y') || (new_keystroke == Q_KEY_ENTER)) {
                     if (editing_table == INPUT_8BIT) {
                         copy_table_8bit(&editing_table_8bit,
                             &table_8bit_input);
@@ -1538,7 +1554,6 @@ void translate_table_editor_8bit_keyboard_handler(const int keystroke,
         return;
 
     case Q_KEY_BACKSPACE:
-    case 0x08:
         if (editing_entry == Q_TRUE) {
             fieldset_backspace(edit_table_entry_form);
         }
@@ -1569,7 +1584,6 @@ void translate_table_editor_8bit_keyboard_handler(const int keystroke,
         return;
 
     case Q_KEY_ENTER:
-    case C_CR:
         if (editing_entry == Q_FALSE) {
             /*
              * ENTER - Begin editing
@@ -1993,7 +2007,7 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
         /*
          * Backtick works too
          */
-    case KEY_ESCAPE:
+    case Q_KEY_ESCAPE:
         /*
          * ESC return to TERMINAL mode
          */
@@ -2023,7 +2037,7 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
                 /*
                  * Save if the user said so
                  */
-                if ((new_keystroke == 'y') || (new_keystroke == C_CR)) {
+                if ((new_keystroke == 'y') || (new_keystroke == Q_KEY_ENTER)) {
                     if (editing_table == INPUT_UNICODE) {
                         copy_table_unicode(&editing_table_unicode,
                             &table_unicode_input);
@@ -2116,7 +2130,6 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
         return;
 
     case Q_KEY_BACKSPACE:
-    case 0x08:
         if (editing_entry == Q_TRUE) {
             fieldset_backspace(edit_table_entry_form);
         }
@@ -2147,7 +2160,6 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
         return;
 
     case Q_KEY_ENTER:
-    case C_CR:
         if (editing_entry == Q_FALSE) {
             /*
              * ENTER - Begin editing

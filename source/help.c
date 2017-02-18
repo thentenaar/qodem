@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2016 by Kevin Lamonte
+ * Written 2003-2017 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -1230,8 +1230,7 @@ reload:
             }
             break;
 
-        case C_CR:
-        case KEY_ENTER:
+        case Q_KEY_ENTER:
             DLOG(("Q_KEY_ENTER\n"));
             if (selected_link != -1) {
                 /*
@@ -1441,7 +1440,7 @@ reload:
             /*
              * Backtick works too
              */
-        case KEY_ESCAPE:
+        case Q_KEY_ESCAPE:
             done = Q_TRUE;
             break;
 
@@ -1626,7 +1625,7 @@ char * raw_help_text = \
 "@BOLD{Alt-;} Codepage @LINK{CODEPAGE,Codepages  ,40}\n"
 "This brings up a dialog to change the current codepage.  Codepages are\n"
 "limited by the current emulation.  VT52, VT100, VT102, VT220, L_UTF8,\n"
-"and X_UTF8 can only be set to the DEC codepage; LINUX, XTERM, ANSI,\n"
+"X_UTF8, PETSCII, and ATASCII have their own codepage; LINUX, XTERM, ANSI,\n"
 "AVATAR, TTY, and DEBUG emulations can be set to CP437 (DOS VGA), ISO-8859-1,\n"
 "CP720 (DOS Arabic), CP737 (DOS Greek), CP775 (DOS Baltic Rim), CP850 (DOS\n"
 "West European), CP852 (DOS Central European), CP857 (DOS Turkish), CP858\n"
@@ -1702,8 +1701,8 @@ char * raw_help_text = \
 "\n"
 "@BOLD{Alt-2} Backspace/Del Mode\n"
 "This selects whether the backspace key on the keyboard sends an ASCII\n"
-"backspace (^H) or an ASCII DEL (127) character.  Ctrl-H can always be\n"
-"used to send true backspace; Ctrl-? can be used to send true DEL.\n"
+"backspace (^H) or an ASCII DEL (127) character.  Alt-\\ 0 0 8 can always be\n"
+"used to send true backspace; Alt-\\ 1 2 7 can be used to send true DEL.\n"
 "Note that VT220 emulation always sends DEL when the backspace key is\n"
 "pressed.\n"
 "\n"
@@ -2133,7 +2132,7 @@ char * raw_help_text = \
 "\n"
 "@TOPIC{REFERENCE_97_COPYRIGHT,Reference - Copyright}\n"
 "@BOLD{Qodem Terminal Emulator}\n"
-"Written 2003-2016 by Kevin Lamonte\n"
+"Written 2003-2017 by Kevin Lamonte\n"
 "\n"
 "To the extent possible under law, the author(s) have dedicated all\n"
 "copyright and related and neighboring rights to this software to the\n"
@@ -2550,7 +2549,7 @@ char * raw_help_text = \
 "(0x00 - 0x1F, 0x7F) are mapped to the equivalent CP437 glyphs when there\n"
 "are no glyphs defined in that range for the set codepage.\n"
 "\n"
-"@BOLD{ANSI}   - This is the DOS-based \"ANSI.SYS\" emulation plus a few more codes\n"
+"@BOLD{ANSI}    - This is the DOS-based \"ANSI.SYS\" emulation plus a few more codes\n"
 "than the original ANSI.SYS.  It supports DSR 6 (Cursor Position) which many\n"
 "BBSes used to \"autodetect\" ANSI, and also the following ANSI X3.64\n"
 "functions: ICH, DCH, IL, DL, VPA, CHA, CHT, and REP.  It also supports\n"
@@ -2558,21 +2557,21 @@ char * raw_help_text = \
 "these tones either directly on the Linux console using its console beep, or\n"
 "the Simple DirectMedia Layer (SDL) library.\n"
 "\n"
-"@BOLD{AVATAR} - This is the BBS-era Avatar (\"Advanced Video Attribute Terminal\n"
+"@BOLD{AVATAR}  - This is the BBS-era Avatar (\"Advanced Video Attribute Terminal\n"
 "Assembler and Recreator\") emulation.  It supports all of the \"Extended\n"
 "AVT/0\" commands as per George A. Stanislav's 1 May 1989 document except for\n"
 "transmitting PC keyboard scan codes.  It also includes ANSI fallback\n"
 "capability.\n"
 "\n"
-"@BOLD{VT52}   - This is a fairly complete VT52.  It does not support HOLD SCREEN\n"
+"@BOLD{VT52}    - This is a fairly complete VT52.  It does not support HOLD SCREEN\n"
 "mode.  Since the original specified some graphics mode glyphs that do not\n"
 "have direct Unicode equivalents (yet), those characters are rendered as a\n"
 "hatch (&#x2592;).\n"
 "\n"
-"@BOLD{VT100}  - This is identical to @BOLD{VT102} except in how it responds to the\n"
+"@BOLD{VT100}   - This is identical to @BOLD{VT102} except in how it responds to the\n"
 "Device Attributes function.\n"
 "\n"
-"@BOLD{VT102}  - This is a fairly complete VT102.  The text version displays\n"
+"@BOLD{VT102}   - This is a fairly complete VT102.  The text version displays\n"
 "double-width and double-height characters correctly when run under xterm,\n"
 "but when run on the raw Linux console or the X11 build Qodem displays\n"
 "double-width / double-height with a character followed by a space.  Qodem\n"
@@ -2583,32 +2582,43 @@ char * raw_help_text = \
 "columns or wider; Qodem does not issue resize commands to the host console\n"
 "for 80/132 column switching codes.\n"
 "\n"
-"@BOLD{VT220}  - This is fairly complete VT220.  It converts the National\n"
+"@BOLD{VT220}   - This is fairly complete VT220.  It converts the National\n"
 "Replacement Character sets and DEC Supplemental Graphics characters to\n"
 "Unicode.  In addition to the limitations of VT102, also the following VT220\n"
 "features are not supported: user-defined keys (DECUDK), downloadable fonts\n"
 "(DECDLD), VT100/ANSI compatibility mode (DECSCL).\n"
 "\n"
-"@BOLD{TTY}    - This emulation supports bare control character handling (backspace,\n"
-"newline, etc.) and litte else.  Characters that would be overwritten with\n"
-"underscores are instead made underlined as an old teletype would do.\n"
+"@BOLD{TTY}     - This emulation supports bare control character handling\n"
+"(backspace, newline, etc.) and litte else.  Characters that would be\n"
+"overwritten with underscores are instead made underlined as an old teletype\n"
+"would do.\n"
 "\n"
-"@BOLD{DEBUG}  - This emulation displays all incoming characters in a format similar\n"
-"to a programmer's hex dump.\n"
+"@BOLD{DEBUG}   - This emulation displays all incoming characters in a format\n"
+"similar to a programmer's hex dump.\n"
 "\n"
-"@BOLD{LINUX}  - This emulation has two modes: PC VGA (@BOLD{LINUX}) and UTF-8 (@BOLD{L_UTF8}).\n"
+"@BOLD{LINUX}   - This emulation has two modes: PC VGA (@BOLD{LINUX}) and UTF-8 (@BOLD{L_UTF8}).\n"
 "This emulation is similar to VT102 but also recognizes the Linux private\n"
 "mode sequences and ECMA-48 sequences VPA, CNL, CPL, ECH, CHA, VPA, VPR, and\n"
 "HPA.  In addition to VT102 limitations, also the following Linux console\n"
 "features are not supported: selecting ISO 646/ISO 8859-1/UTF-8, character\n"
 "sets, X11 mouse reporting, and setting the scroll/caps/numlock leds.\n"
 "\n"
-"@BOLD{XTERM}  - This emulation has two modes: PC VGA (@BOLD{XTERM}) and UTF-8 (@BOLD{X_UTF8}).\n"
+"@BOLD{XTERM}   - This emulation has two modes: PC VGA (@BOLD{XTERM}) and UTF-8 (@BOLD{X_UTF8}).\n"
 "It recognizes everything in LINUX, VT220, and a few more XTerm sequences.\n"
 "It does not support most of the advanced features unique to XTerm such\n"
 "as Tektronix 4014 mode, alternate screen buffer, and many more.  It is\n"
 "intended to support XTerm applications that only use the sequences in\n"
 "the 'xterm' terminfo entry.\n"
+"\n"
+"@BOLD{PETSCII} - This very loosely emulates a 40-column Commodore 64/128.  Colors\n"
+"are not quite right due to the IBM CGA colors being unable to match the\n"
+"Commodore colors.  Uppercase/lowercase affect new characters rather than\n"
+"the whole screen.  This emulation requires the C64 Pro Mono font from Style,\n"
+"available at @BOLD{http://style64.org/c64-truetype/} .  (Note that this font is\n"
+"only licensed to software packages that are \"freely provided to end users\".\n"
+"Entities wishing to ship packages that are not \"freely provided to end\n"
+"users\" will need to either remove this font, or negotiate a separate\n"
+"license agreement by contacting Style at @BOLD{http://style64.org/contact-style} .)\n"
 "\n"
 "\n"
 "\n"
@@ -2631,7 +2641,7 @@ char * raw_help_text = \
 "of many 8-bit codepages including both CP437 and ISO-8859-1.\n"
 "VT52, VT100, and VT102 emulations are defined by their standards\n"
 "to be 7-bit only, so only ASCII characters and DEC Special Graphics\n"
-"characters will be seen.\n"
+"characters will be seen.  PETSCII and ATASCII also have fixed codepages.\n"
 "\n"
 "VT220 emulation uses 8-bit characters but has multiple defined\n"
 "codepages for the high-bit characters (DEC multinational\n"
@@ -2753,7 +2763,7 @@ char * raw_help_text = \
 "@BOLD{--emulation} EMULATION\n"
 "    Select emulation EMULATION.  Valid values are \"ansi\", \"avatar\",\n"
 "    \"debug\", \"vt52\", \"vt100\", \"vt102\", \"vt220\", \"linux\", \"l_utf8\",\n"
-"    \"xterm\", and \"x_utf8\".\n"
+"    \"xterm\", \"x_utf8\", \"petscii\", and \"atascii\".\n"
 "\n"
 "@BOLD{--status-line} { on | off }\n"
 "    If \"on\" enable status line.  If \"off\" disable status line.\n"

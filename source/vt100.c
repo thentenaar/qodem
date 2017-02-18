@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2016 by Kevin Lamonte
+ * Written 2003-2017 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -1488,7 +1488,6 @@ static void printer_functions() {
  */
 static void decswl() {
     DLOG(("decswl()\n"));
-
     set_double_width(Q_FALSE);
 }
 
@@ -3528,8 +3527,8 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
 
     /* 80-8F, 91-97, 99, 9A, 9C --> execute, then switch to SCAN_GROUND */
 
-    /* 0x1B == KEY_ESCAPE */
-    if ((from_modem == KEY_ESCAPE) &&
+    /* 0x1B == C_ESC */
+    if ((from_modem == C_ESC) &&
         (scan_state != SCAN_DCS_ENTRY) &&
         (scan_state != SCAN_DCS_INTERMEDIATE) &&
         (scan_state != SCAN_DCS_IGNORE) &&
@@ -6169,6 +6168,13 @@ Q_EMULATION_STATUS vt100(const unsigned char from_modem1, wchar_t * to_screen) {
 wchar_t * vt100_keystroke(const int keystroke) {
 
     switch (keystroke) {
+
+    case Q_KEY_ESCAPE:
+        return L"\033";
+
+    case Q_KEY_TAB:
+        return L"\011";
+
     case Q_KEY_BACKSPACE:
         if ((q_status.hard_backspace == Q_TRUE) &&
             (q_status.emulation != Q_EMUL_VT220)) {
@@ -6626,11 +6632,8 @@ wchar_t * vt100_keystroke(const int keystroke) {
         return L"+";
 
     case Q_KEY_PAD_ENTER:
+        /* Number pad Enter, fall through */
     case Q_KEY_ENTER:
-        /* Number pad Enter */
-        if (telnet_is_ascii()) {
-            return L"\015\012";
-        }
         return L"\015";
 
     default:
@@ -6654,6 +6657,13 @@ wchar_t * vt100_keystroke(const int keystroke) {
 wchar_t * linux_keystroke(const int keystroke) {
 
     switch (keystroke) {
+
+    case Q_KEY_ESCAPE:
+        return L"\033";
+
+    case Q_KEY_TAB:
+        return L"\011";
+
     case Q_KEY_BACKSPACE:
         if (q_status.hard_backspace == Q_TRUE) {
             return L"\010";
@@ -7084,11 +7094,8 @@ wchar_t * linux_keystroke(const int keystroke) {
         return L"+";
 
     case Q_KEY_PAD_ENTER:
+        /* Number pad Enter, fall through */
     case Q_KEY_ENTER:
-        /* Number pad Enter */
-        if (telnet_is_ascii()) {
-            return L"\015\012";
-        }
         return L"\015";
 
 
@@ -7143,7 +7150,7 @@ static wchar_t * xterm_keystroke_suffix(const int flags) {
  * @param first the first character, usually a number.
  * @param first the last character, one of the following: ~ A B C D F H
  * @param flags KEY_FLAG_ALT, KEY_FLAG_CTRL, etc.  See input.h.
- @ @return the buffer with the full key sequence
+ * @return the buffer with the full key sequence
  */
 static wchar_t * xterm_build_key_sequence(const wchar_t * ss3,
                                           const wchar_t first,
@@ -7184,6 +7191,13 @@ static wchar_t * xterm_build_key_sequence(const wchar_t * ss3,
 wchar_t * xterm_keystroke(const int keystroke, const int flags) {
 
     switch (keystroke) {
+
+    case Q_KEY_ESCAPE:
+        return L"\033";
+
+    case Q_KEY_TAB:
+        return L"\011";
+
     case Q_KEY_BACKSPACE:
         if (q_status.hard_backspace == Q_TRUE) {
             return L"\010";
@@ -7648,11 +7662,8 @@ wchar_t * xterm_keystroke(const int keystroke, const int flags) {
         return L"+";
 
     case Q_KEY_PAD_ENTER:
+        /* Number pad Enter, fall through */
     case Q_KEY_ENTER:
-        /* Number pad Enter */
-        if (telnet_is_ascii()) {
-            return L"\015\012";
-        }
         return L"\015";
 
     default:

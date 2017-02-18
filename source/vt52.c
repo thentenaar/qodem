@@ -3,7 +3,7 @@
  *
  * qodem - Qodem Terminal Emulator
  *
- * Written 2003-2016 by Kevin Lamonte
+ * Written 2003-2017 by Kevin Lamonte
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
@@ -207,7 +207,7 @@ vt52_start:
         /*
          * ESC
          */
-        if (from_modem2 == KEY_ESCAPE) {
+        if (from_modem2 == C_ESC) {
             save_char(from_modem2, to_screen);
             scan_state = SCAN_ESC;
             return Q_EMUL_FSM_NO_CHAR_YET;
@@ -619,6 +619,13 @@ vt52_start:
 wchar_t * vt52_keystroke(const int keystroke) {
 
     switch (keystroke) {
+
+    case Q_KEY_ESCAPE:
+        return L"\033";
+
+    case Q_KEY_TAB:
+        return L"\011";
+
     case Q_KEY_BACKSPACE:
         if (q_status.hard_backspace == Q_TRUE) {
             return L"\010";
@@ -868,13 +875,8 @@ wchar_t * vt52_keystroke(const int keystroke) {
         return L"+";
 
     case Q_KEY_PAD_ENTER:
+        /* Number pad Enter, fall through */
     case Q_KEY_ENTER:
-        /*
-         * Number pad Enter
-         */
-        if (telnet_is_ascii()) {
-            return L"\015\012";
-        }
         return L"\015";
 
     default:
