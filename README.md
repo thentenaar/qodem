@@ -478,10 +478,9 @@ XTerm such as Tektronix 4014 mode, alternate screen buffer, and many
 more.  It is intended to support XTerm applications that only use the
 sequences in the 'xterm' terminfo entry.
 
-PETSCII colors do not exactly match true Commodore colors, especially
-for background colors for which CGA only had eight possibilities.
-Also, uppercase/lowercase switches new incoming characters but does
-not change the existing characters on the screen.
+PETSCII colors do not exactly match true Commodore colors.  Also,
+uppercase/lowercase switches new incoming characters but does not
+change the existing characters on the screen.
 
 
 

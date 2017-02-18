@@ -43,6 +43,8 @@ char * codepage_string(Q_CODEPAGE codepage) {
         return "DEC";
     case Q_CODEPAGE_PETSCII:
         return "PETSCII";
+    case Q_CODEPAGE_ATASCII:
+        return "ATASCII";
     case Q_CODEPAGE_CP720:
         return "CP720";
     case Q_CODEPAGE_CP737:
@@ -105,6 +107,7 @@ Q_CODEPAGE codepage_from_string(const char * string) {
     }
     MATCH_CODEPAGE(DEC, "DEC");
     MATCH_CODEPAGE(PETSCII, "PETSCII");
+    MATCH_CODEPAGE(ATASCII, "ATASCII");
     MATCH_CODEPAGE(CP437, "CP437");
     MATCH_CODEPAGE(CP720, "CP720");
     MATCH_CODEPAGE(CP737, "CP737");
@@ -277,6 +280,7 @@ void codepage_keyboard_handler(const int keystroke, const int flags) {
     case Q_EMUL_LINUX_UTF8:
     case Q_EMUL_XTERM_UTF8:
     case Q_EMUL_PETSCII:
+    case Q_EMUL_ATASCII:
         break;
 
     case Q_EMUL_TTY:
@@ -547,6 +551,7 @@ void codepage_refresh() {
     case Q_EMUL_LINUX_UTF8:
     case Q_EMUL_XTERM_UTF8:
     case Q_EMUL_PETSCII:
+    case Q_EMUL_ATASCII:
         break;
     case Q_EMUL_TTY:
     case Q_EMUL_DEBUG:
@@ -1935,6 +1940,7 @@ static wchar_t koi8_u_chars[256] = {
 wchar_t codepage_map_char(const unsigned char ch) {
     switch (q_status.codepage) {
     case Q_CODEPAGE_PETSCII:
+    case Q_CODEPAGE_ATASCII:
         return ch;
 
     case Q_CODEPAGE_CP437:
@@ -2027,6 +2033,7 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
         return 0;
     case Q_CODEPAGE_DEC:
     case Q_CODEPAGE_PETSCII:
+    case Q_CODEPAGE_ATASCII:
         /*
          * BUG: should never get here
          */

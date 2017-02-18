@@ -173,6 +173,7 @@ attr_t vt100_check_reverse_color(const attr_t color, const Q_BOOL reverse) {
     case Q_EMUL_ANSI:
     case Q_EMUL_AVATAR:
     case Q_EMUL_PETSCII:
+    case Q_EMUL_ATASCII:
     case Q_EMUL_VT100:
     case Q_EMUL_VT102:
     case Q_EMUL_VT220:
@@ -1050,6 +1051,7 @@ void screen_beep() {
     case Q_EMUL_ANSI:
     case Q_EMUL_AVATAR:
     case Q_EMUL_PETSCII:
+    case Q_EMUL_ATASCII:
     case Q_EMUL_VT52:
     case Q_EMUL_VT100:
     case Q_EMUL_VT102:

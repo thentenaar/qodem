@@ -3008,13 +3008,16 @@ static void reset_global_state() {
     q_status.avatar_ansi_fallback   = Q_TRUE;
 
     /*
-     * I don't think there are any PETSCII emulators that also speak ANSI,
-     * but it comes for mostly free so I will leave it in.
+     * I don't think there are any PETSCII or ATASCII emulators that also
+     * speak ANSI, but it comes for mostly free so I will leave it in.
      */
     q_status.petscii_color          = Q_TRUE;
     q_status.petscii_ansi_fallback  = Q_TRUE;
     q_status.petscii_has_wide_font  = Q_TRUE;
     q_status.petscii_is_c64         = Q_TRUE;
+    q_status.atascii_color          = Q_TRUE;
+    q_status.atascii_ansi_fallback  = Q_TRUE;
+    q_status.atascii_has_wide_font  = Q_TRUE;
 
 #ifndef Q_NO_SERIAL
     q_status.serial_open            = Q_FALSE;

@@ -377,8 +377,9 @@ static void spawn_process(char * command_line, Q_EMULATION emulation) {
         }
         break;
     case Q_EMUL_PETSCII:
+    case Q_EMUL_ATASCII:
         /*
-         * PETSCII is always 40 columns.
+         * PETSCII and ATASCII are always 40 columns.
          */
         columns = 40;
         break;
@@ -539,8 +540,9 @@ static void spawn_process(char * command_line, Q_EMULATION emulation) {
             }
             break;
         case Q_EMUL_PETSCII:
+        case Q_EMUL_ATASCII:
             /*
-             * PETSCII is always 40 columns.
+             * PETSCII and ATASCII are always 40 columns.
              */
             columns = 40;
             break;

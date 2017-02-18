@@ -4520,6 +4520,7 @@ static Q_CODEPAGE pick_codepage(Q_EMULATION emulation) {
     case Q_EMUL_LINUX_UTF8:
     case Q_EMUL_XTERM_UTF8:
     case Q_EMUL_PETSCII:
+    case Q_EMUL_ATASCII:
         return -1;
     case Q_EMUL_TTY:
     case Q_EMUL_DEBUG:

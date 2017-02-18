@@ -64,7 +64,7 @@ struct commodore_state {
 /**
  * The current keyboard/screen state.
  */
-struct commodore_state state = {
+static struct commodore_state state = {
     Q_FALSE,
     Q_FALSE
 };
