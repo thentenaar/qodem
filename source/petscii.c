@@ -65,7 +65,7 @@ struct commodore_state {
  * The current keyboard/screen state.
  */
 struct commodore_state state = {
-    Q_TRUE,
+    Q_FALSE,
     Q_FALSE
 };
 
@@ -252,7 +252,7 @@ void petscii_reset() {
     DLOG(("petscii_reset()\n"));
 
     scan_state = SCAN_NONE;
-    state.uppercase = Q_TRUE;
+    state.uppercase = Q_FALSE;
     state.reverse = Q_FALSE;
 }
 
@@ -304,12 +304,8 @@ static void petscii_handle_control_char(const unsigned char control_char) {
         /*
          * Change color to white.
          */
-        if (state.reverse == Q_TRUE) {
-            background = Q_COLOR_WHITE;
-        } else {
-            foreground = Q_COLOR_WHITE;
-            attributes |= Q_A_BOLD;
-        }
+        foreground = Q_COLOR_WHITE;
+        attributes |= Q_A_BOLD;
         break;
 
     case 0x07:
@@ -448,11 +444,7 @@ static void petscii_handle_control_char(const unsigned char control_char) {
         /*
          * Red.
          */
-        if (state.reverse == Q_TRUE) {
-            background = Q_COLOR_RED;
-        } else {
-            foreground = Q_COLOR_RED;
-        }
+        foreground = Q_COLOR_RED;
         break;
 
     case 0x1D:
@@ -471,34 +463,22 @@ static void petscii_handle_control_char(const unsigned char control_char) {
         /*
          * Green.
          */
-        if (state.reverse == Q_TRUE) {
-            background = Q_COLOR_GREEN;
-        } else {
-            foreground = Q_COLOR_GREEN;
-        }
+        foreground = Q_COLOR_GREEN;
         break;
 
     case 0x1F:
         /*
          * Blue.
          */
-        if (state.reverse == Q_TRUE) {
-            background = Q_COLOR_BLUE;
-        } else {
-            foreground = Q_COLOR_BLUE;
-        }
+        foreground = Q_COLOR_BLUE;
         break;
 
     case 0x81:
         /*
          * Orange.  Can't quite match it, so try bold red.
          */
-        if (state.reverse == Q_TRUE) {
-            background = Q_COLOR_RED;
-        } else {
-            foreground = Q_COLOR_RED;
-            attributes |= Q_A_BOLD;
-        }
+        foreground = Q_COLOR_RED;
+        attributes |= Q_A_BOLD;
         break;
 
     case 0x85:
@@ -568,11 +548,7 @@ static void petscii_handle_control_char(const unsigned char control_char) {
         /*
          * Black.
          */
-        if (state.reverse == Q_TRUE) {
-            background = Q_COLOR_BLACK;
-        } else {
-            foreground = Q_COLOR_BLACK;
-        }
+        foreground = Q_COLOR_BLACK;
         break;
 
     case 0x91:
@@ -608,96 +584,64 @@ static void petscii_handle_control_char(const unsigned char control_char) {
         /*
          * Brown.
          */
-        if (state.reverse == Q_TRUE) {
-            background = Q_COLOR_YELLOW;
-        } else {
-            foreground = Q_COLOR_YELLOW;
-            attributes &= ~Q_A_BOLD;
-        }
+        foreground = Q_COLOR_YELLOW;
+        attributes &= ~Q_A_BOLD;
         break;
 
     case 0x96:
         /*
          * Pink.  Try bold magenta.
          */
-        if (state.reverse == Q_TRUE) {
-            background = Q_COLOR_MAGENTA;
-        } else {
-            foreground = Q_COLOR_MAGENTA;
-            attributes |= Q_A_BOLD;
-        }
+        foreground = Q_COLOR_MAGENTA;
+        attributes |= Q_A_BOLD;
         break;
 
     case 0x97:
         /*
          * Dark grey.  Try bold black.
          */
-        if (state.reverse == Q_TRUE) {
-            background = Q_COLOR_BLACK;
-        } else {
-            foreground = Q_COLOR_BLACK;
-            attributes |= Q_A_BOLD;
-        }
+        foreground = Q_COLOR_BLACK;
+        attributes |= Q_A_BOLD;
         break;
 
     case 0x98:
         /*
          * Medium grey.
          */
-        if (state.reverse == Q_TRUE) {
-            background = Q_COLOR_WHITE;
-        } else {
-            foreground = Q_COLOR_WHITE;
-            attributes &= ~Q_A_BOLD;
-        }
+        foreground = Q_COLOR_WHITE;
+        attributes &= ~Q_A_BOLD;
         break;
 
     case 0x99:
         /*
          * Light green.
          */
-        if (state.reverse == Q_TRUE) {
-            background = Q_COLOR_GREEN;
-        } else {
-            foreground = Q_COLOR_GREEN;
-            attributes |= Q_A_BOLD;
-        }
+        foreground = Q_COLOR_GREEN;
+        attributes |= Q_A_BOLD;
         break;
 
     case 0x9A:
         /*
          * Light blue.
          */
-        if (state.reverse == Q_TRUE) {
-            background = Q_COLOR_BLUE;
-        } else {
-            foreground = Q_COLOR_BLUE;
-            attributes |= Q_A_BOLD;
-        }
+        foreground = Q_COLOR_BLUE;
+        attributes |= Q_A_BOLD;
         break;
 
     case 0x9B:
         /*
          * Light grey.  This is the same as medium grey.
          */
-        if (state.reverse == Q_TRUE) {
-            background = Q_COLOR_WHITE;
-        } else {
-            foreground = Q_COLOR_WHITE;
-            attributes &= ~Q_A_BOLD;
-        }
+        foreground = Q_COLOR_WHITE;
+        attributes &= ~Q_A_BOLD;
         break;
 
     case 0x9C:
         /*
          * Purple.
          */
-        if (state.reverse == Q_TRUE) {
-            background = Q_COLOR_MAGENTA;
-        } else {
-            foreground = Q_COLOR_MAGENTA;
-            attributes &= ~Q_A_BOLD;
-        }
+        foreground = Q_COLOR_MAGENTA;
+        attributes &= ~Q_A_BOLD;
         break;
 
     case 0x9D:
@@ -716,24 +660,16 @@ static void petscii_handle_control_char(const unsigned char control_char) {
         /*
          * Yellow.
          */
-        if (state.reverse == Q_TRUE) {
-            background = Q_COLOR_YELLOW;
-        } else {
-            foreground = Q_COLOR_YELLOW;
-            attributes |= Q_A_BOLD;
-        }
+        foreground = Q_COLOR_YELLOW;
+        attributes |= Q_A_BOLD;
         break;
 
     case 0x9F:
         /*
          * Cyan.
          */
-        if (state.reverse == Q_TRUE) {
-            background = Q_COLOR_CYAN;
-        } else {
-            foreground = Q_COLOR_CYAN;
-            attributes &= ~Q_A_BOLD;
-        }
+        foreground = Q_COLOR_CYAN;
+        attributes &= ~Q_A_BOLD;
         break;
 
     }

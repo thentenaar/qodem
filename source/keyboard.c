@@ -984,6 +984,7 @@ static void substitute_ctrl_char(unsigned char ch) {
 static void postprocess_keyboard_macro(wchar_t ** macro_string) {
     wchar_t * substituted_string;
     unsigned char control_ch;
+    int i;
 
     assert(macro_string != NULL);
     assert(*macro_string != NULL);
@@ -1038,6 +1039,24 @@ static void postprocess_keyboard_macro(wchar_t ** macro_string) {
         Xfree(substituted_string, __FILE__, __LINE__);
     }
 
+    /*
+     * ...and we are not quite done!  PETSCII maps uppercase and lowercase in
+     * reverse from ASCII, so perform that flip here.
+     */
+    if (q_status.emulation == Q_EMUL_PETSCII) {
+        for (i = 0; i < wcslen(macro_output_buffer); i++) {
+            if ((macro_output_buffer[i] >= 'A') &&
+                (macro_output_buffer[i] <= 'Z')
+            ) {
+                macro_output_buffer[i] += 32;
+            } else if ((macro_output_buffer[i] >= 'a') &&
+                (macro_output_buffer[i] <= 'z')
+            ) {
+                macro_output_buffer[i] -= 32;
+            }
+        }
+    }
+
     *macro_string = macro_output_buffer;
 }
 
@@ -1072,6 +1091,7 @@ void post_keystroke(const int keystroke, const int flags) {
 
     wchar_t * term_string = L"";
     unsigned int i;
+    int keystroke2 = keystroke;
 
     /*
      * Be a NOP if not connected to anything
@@ -1080,7 +1100,18 @@ void post_keystroke(const int keystroke, const int flags) {
         return;
     }
 
-    if (!q_key_code_yes(keystroke) || ((flags & KEY_FLAG_UNICODE) != 0)) {
+    /*
+     * We need to do some PETSCII processing separately from everything else.
+     */
+    if (q_status.emulation == Q_EMUL_PETSCII) {
+        if ((keystroke2 >= 'A') && (keystroke2 <= 'Z')) {
+            keystroke2 += 32;
+        } else if ((keystroke2 >= 'a') && (keystroke2 <= 'z')) {
+            keystroke2 -= 32;
+        }
+    }
+
+    if (!q_key_code_yes(keystroke2) || ((flags & KEY_FLAG_UNICODE) != 0)) {
         /*
          * Normal key, pass on
          */
@@ -1106,7 +1137,7 @@ void post_keystroke(const int keystroke, const int flags) {
         /*
          * Special case: ^@
          */
-        if ((keystroke == 0) && (flags & KEY_FLAG_CTRL)) {
+        if ((keystroke2 == 0) && (flags & KEY_FLAG_CTRL)) {
             qodem_write(q_child_tty_fd, "\0", 1, Q_TRUE);
             if (q_status.emulation == Q_EMUL_DEBUG) {
                 debug_local_echo('\0');
@@ -1123,13 +1154,13 @@ void post_keystroke(const int keystroke, const int flags) {
                  * UTF-8 emulations: encode outbound keystroke, after running
                  * it through the direct Unicode translation map.
                  */
-                encode_utf8_char(translate_unicode_out((wchar_t) keystroke));
+                encode_utf8_char(translate_unicode_out((wchar_t) keystroke2));
             } else {
                 /*
                  * Everyone else: try to backmap to the codepage, including
                  * allowing Unicode synonyms.
                  */
-                utf8_buffer[0] = translate_unicode_to_8bit((wchar_t) keystroke,
+                utf8_buffer[0] = translate_unicode_to_8bit((wchar_t) keystroke2,
                     q_status.codepage);
                 utf8_buffer[1] = 0;
             }
@@ -1155,13 +1186,13 @@ void post_keystroke(const int keystroke, const int flags) {
                  * If this is a control character, process it like it came
                  * from the remote side.
                  */
-                if (keystroke < 0x20) {
-                    generic_handle_control_char((unsigned char) keystroke);
+                if (keystroke2 < 0x20) {
+                    generic_handle_control_char((unsigned char) keystroke2);
                 } else {
                     /*
                      * Local echo for everything else
                      */
-                    print_character((wchar_t) keystroke);
+                    print_character((wchar_t) keystroke2);
                 }
 
                 /*
@@ -1176,7 +1207,7 @@ void post_keystroke(const int keystroke, const int flags) {
          */
         return;
 
-    } /* if (!q_key_code_yes(keystroke) || ((flags & KEY_FLAG_UNICODE) != 0)) */
+    } /* if (!q_key_code_yes(keystroke2) || ((flags & KEY_FLAG_UNICODE) != 0)) */
 
     /*
      * Bind keystroke only if doorway mode is OFF or MIXED

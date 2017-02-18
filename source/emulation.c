@@ -1043,8 +1043,8 @@ void reset_emulation() {
     }
 
     if (q_status.emulation == Q_EMUL_PETSCII) {
-        /* Commodore starts as bright-blue on blue. */
-        q_current_color = color_to_attr((Q_COLOR_BLUE << 3) | Q_COLOR_BLUE);
+        /* Commodore starts as bright-white on black. */
+        q_current_color = color_to_attr((Q_COLOR_WHITE << 3) | Q_COLOR_BLACK);
         q_current_color |= Q_A_BOLD;
     }
 
