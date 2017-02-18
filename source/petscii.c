@@ -84,8 +84,10 @@ static wchar_t c64_uppercase_normal_chars[] = {
     /* Non-printable C0 set */
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
     /* Private use area matching C64 Pro Mono STYLE font */
-    0xE020, 0xE021, 0xE022, 0xE023, 0xE024, 0xE025, 0xE026, 0xE027,
+    0x0020, 0xE021, 0xE022, 0xE023, 0xE024, 0xE025, 0xE026, 0xE027,
     0xE028, 0xE029, 0xE02A, 0xE02B, 0xE02C, 0xE02D, 0xE02E, 0xE02F,
     0xE030, 0xE031, 0xE032, 0xE033, 0xE034, 0xE035, 0xE036, 0xE037,
     0xE038, 0xE039, 0xE03A, 0xE03B, 0xE03C, 0xE03D, 0xE03E, 0xE03F,
@@ -96,12 +98,14 @@ static wchar_t c64_uppercase_normal_chars[] = {
     0xE060, 0xE061, 0xE062, 0xE063, 0xE064, 0xE065, 0xE066, 0xE067,
     0xE068, 0xE069, 0xE06A, 0xE06B, 0xE06C, 0xE06D, 0xE06E, 0xE06F,
     0xE070, 0xE071, 0xE072, 0xE073, 0xE074, 0xE075, 0xE076, 0xE077,
-    0xE058, 0xE079, 0xE07A, 0xE07B, 0xE07C, 0xE07D, 0xE07E, 0xE07F,
+    0xE078, 0xE079, 0xE07A, 0xE07B, 0xE07C, 0xE07D, 0xE07E, 0xE07F,
     /* Non-printable C1 set */
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
     /* Private use area matching C64 Pro Mono STYLE font */
-    0xE0A0, 0xE0A1, 0xE0A2, 0xE0A3, 0xE0A4, 0xE0A5, 0xE0A6, 0xE0A7,
+    0x0020, 0xE0A1, 0xE0A2, 0xE0A3, 0xE0A4, 0xE0A5, 0xE0A6, 0xE0A7,
     0xE0A8, 0xE0A9, 0xE0AA, 0xE0AB, 0xE0AC, 0xE0AD, 0xE0AE, 0xE0AF,
     0xE0B0, 0xE0B1, 0xE0B2, 0xE0B3, 0xE0B4, 0xE0B5, 0xE0B6, 0xE0B7,
     0xE0B8, 0xE0B9, 0xE0BA, 0xE0BB, 0xE0BC, 0xE0BD, 0xE0BE, 0xE0BF,
@@ -122,6 +126,8 @@ static wchar_t c64_uppercase_reverse_chars[] = {
     /* Non-printable C0 set */
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
     /* Private use area matching C64 Pro Mono STYLE font */
     0xE220, 0xE221, 0xE222, 0xE223, 0xE224, 0xE225, 0xE226, 0xE227,
     0xE228, 0xE229, 0xE22A, 0xE22B, 0xE22C, 0xE22D, 0xE22E, 0xE22F,
@@ -134,8 +140,10 @@ static wchar_t c64_uppercase_reverse_chars[] = {
     0xE260, 0xE261, 0xE262, 0xE263, 0xE264, 0xE265, 0xE266, 0xE267,
     0xE268, 0xE269, 0xE26A, 0xE26B, 0xE26C, 0xE26D, 0xE26E, 0xE26F,
     0xE270, 0xE271, 0xE272, 0xE273, 0xE274, 0xE275, 0xE276, 0xE277,
-    0xE258, 0xE279, 0xE27A, 0xE27B, 0xE27C, 0xE27D, 0xE27E, 0xE27F,
+    0xE278, 0xE279, 0xE27A, 0xE27B, 0xE27C, 0xE27D, 0xE27E, 0xE27F,
     /* Non-printable C1 set */
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
     /* Private use area matching C64 Pro Mono STYLE font */
@@ -160,8 +168,10 @@ static wchar_t c64_lowercase_normal_chars[] = {
     /* Non-printable C0 set */
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
     /* Private use area matching C64 Pro Mono STYLE font */
-    0xE120, 0xE121, 0xE122, 0xE123, 0xE124, 0xE125, 0xE126, 0xE127,
+    0x0020, 0xE121, 0xE122, 0xE123, 0xE124, 0xE125, 0xE126, 0xE127,
     0xE128, 0xE129, 0xE12A, 0xE12B, 0xE12C, 0xE12D, 0xE12E, 0xE12F,
     0xE130, 0xE131, 0xE132, 0xE133, 0xE134, 0xE135, 0xE136, 0xE137,
     0xE138, 0xE139, 0xE13A, 0xE13B, 0xE13C, 0xE13D, 0xE13E, 0xE13F,
@@ -172,12 +182,14 @@ static wchar_t c64_lowercase_normal_chars[] = {
     0xE160, 0xE161, 0xE162, 0xE163, 0xE164, 0xE165, 0xE166, 0xE167,
     0xE168, 0xE169, 0xE16A, 0xE16B, 0xE16C, 0xE16D, 0xE16E, 0xE16F,
     0xE170, 0xE171, 0xE172, 0xE173, 0xE174, 0xE175, 0xE176, 0xE177,
-    0xE158, 0xE179, 0xE17A, 0xE17B, 0xE17C, 0xE17D, 0xE17E, 0xE17F,
+    0xE178, 0xE179, 0xE17A, 0xE17B, 0xE17C, 0xE17D, 0xE17E, 0xE17F,
     /* Non-printable C1 set */
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
     /* Private use area matching C64 Pro Mono STYLE font */
-    0xE1A0, 0xE1A1, 0xE1A2, 0xE1A3, 0xE1A4, 0xE1A5, 0xE1A6, 0xE1A7,
+    0x0020, 0xE1A1, 0xE1A2, 0xE1A3, 0xE1A4, 0xE1A5, 0xE1A6, 0xE1A7,
     0xE1A8, 0xE1A9, 0xE1AA, 0xE1AB, 0xE1AC, 0xE1AD, 0xE1AE, 0xE1AF,
     0xE1B0, 0xE1B1, 0xE1B2, 0xE1B3, 0xE1B4, 0xE1B5, 0xE1B6, 0xE1B7,
     0xE1B8, 0xE1B9, 0xE1BA, 0xE1BB, 0xE1BC, 0xE1BD, 0xE1BE, 0xE1BF,
@@ -198,6 +210,8 @@ static wchar_t c64_lowercase_reverse_chars[] = {
     /* Non-printable C0 set */
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
     /* Private use area matching C64 Pro Mono STYLE font */
     0xE320, 0xE321, 0xE322, 0xE323, 0xE324, 0xE325, 0xE326, 0xE327,
     0xE328, 0xE329, 0xE32A, 0xE32B, 0xE32C, 0xE32D, 0xE32E, 0xE32F,
@@ -210,8 +224,10 @@ static wchar_t c64_lowercase_reverse_chars[] = {
     0xE360, 0xE361, 0xE362, 0xE363, 0xE364, 0xE365, 0xE366, 0xE367,
     0xE368, 0xE369, 0xE36A, 0xE36B, 0xE36C, 0xE36D, 0xE36E, 0xE36F,
     0xE370, 0xE371, 0xE372, 0xE373, 0xE374, 0xE375, 0xE376, 0xE377,
-    0xE358, 0xE379, 0xE37A, 0xE37B, 0xE37C, 0xE37D, 0xE37E, 0xE37F,
+    0xE378, 0xE379, 0xE37A, 0xE37B, 0xE37C, 0xE37D, 0xE37E, 0xE37F,
     /* Non-printable C1 set */
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
     /* Private use area matching C64 Pro Mono STYLE font */
@@ -288,8 +304,12 @@ static void petscii_handle_control_char(const unsigned char control_char) {
         /*
          * Change color to white.
          */
-        foreground = Q_COLOR_WHITE;
-        attributes |= Q_A_BOLD;
+        if (state.reverse == Q_TRUE) {
+            background = Q_COLOR_WHITE;
+        } else {
+            foreground = Q_COLOR_WHITE;
+            attributes |= Q_A_BOLD;
+        }
         break;
 
     case 0x07:
@@ -355,9 +375,9 @@ static void petscii_handle_control_char(const unsigned char control_char) {
 
     case 0x0D:
         /*
-         * Carriage return.
+         * Carriage return + linefeed.
          */
-        cursor_carriage_return();
+        cursor_linefeed(Q_TRUE);
         break;
 
     case 0x0E:
@@ -371,9 +391,10 @@ static void petscii_handle_control_char(const unsigned char control_char) {
 
     case 0x11:
         /*
-         * Cursor down.
+         * Cursor down.  Do it like a linefeed though, so that the screen
+         * scrolls.
          */
-        cursor_down(1, Q_FALSE);
+        cursor_linefeed(Q_FALSE);
         break;
 
     case 0x12:
@@ -408,7 +429,17 @@ static void petscii_handle_control_char(const unsigned char control_char) {
     case 0x1B:
         if (q_status.petscii_is_c64 == Q_FALSE) {
             /*
-             * C16/C128: ESC.  TODO.
+             * C16/C128: ESC.
+             *
+             * According to Compute's "Programming the Commodore 64: The
+             * Definitive Guide" on page 159:
+             *
+             *   An especially useful combination is CTRL-[ (open bracket, or
+             *   SHIFTed :), which is CHR$(27).  This is a special printer
+             *   code, called ESCape, which triggers features like underline,
+             *   double strike, and emphasized.
+             *
+             * So...what do I do here?
              */
         }
         break;
@@ -417,89 +448,112 @@ static void petscii_handle_control_char(const unsigned char control_char) {
         /*
          * Red.
          */
-        foreground = Q_COLOR_RED;
+        if (state.reverse == Q_TRUE) {
+            background = Q_COLOR_RED;
+        } else {
+            foreground = Q_COLOR_RED;
+        }
         break;
 
     case 0x1D:
         /*
          * Cursor right.
          */
-        cursor_right(1, Q_FALSE);
+        if (q_status.cursor_x == 39) {
+            /* Newline, including scrolling the screen */
+            cursor_linefeed(Q_TRUE);
+        } else {
+            cursor_right(1, Q_FALSE);
+        }
         break;
 
     case 0x1E:
         /*
          * Green.
          */
-        foreground = Q_COLOR_GREEN;
+        if (state.reverse == Q_TRUE) {
+            background = Q_COLOR_GREEN;
+        } else {
+            foreground = Q_COLOR_GREEN;
+        }
         break;
 
     case 0x1F:
         /*
          * Blue.
          */
-        foreground = Q_COLOR_BLUE;
+        if (state.reverse == Q_TRUE) {
+            background = Q_COLOR_BLUE;
+        } else {
+            foreground = Q_COLOR_BLUE;
+        }
         break;
 
     case 0x81:
         /*
-         * Orange.  WTF do I do to get orange?  Let's try bold red.
+         * Orange.  Can't quite match it, so try bold red.
          */
-        foreground = Q_COLOR_RED;
-        attributes |= Q_A_BOLD;
+        if (state.reverse == Q_TRUE) {
+            background = Q_COLOR_RED;
+        } else {
+            foreground = Q_COLOR_RED;
+            attributes |= Q_A_BOLD;
+        }
         break;
 
     case 0x85:
         /*
-         * F1.  TODO.
+         * F1.  Ignore.
          */
         break;
 
     case 0x86:
         /*
-         * F3.  TODO.
+         * F3.  Ignore.
          */
         break;
 
     case 0x87:
         /*
-         * F5.  TODO.
+         * F5.  Ignore.
          */
         break;
 
     case 0x88:
         /*
-         * F7.  TODO.
+         * F7.  Ignore.
          */
         break;
 
     case 0x89:
         /*
-         * F2.  TODO.
+         * F2.  Ignore.
          */
         break;
 
     case 0x8A:
         /*
-         * F4.  TODO.
+         * F4.  Ignore.
          */
         break;
 
     case 0x8B:
         /*
-         * F6.  TODO.
+         * F6.  Ignore.
          */
         break;
 
     case 0x8C:
         /*
-         * F8.  TODO.
+         * F8.  Ignore.
          */
         break;
 
     case 0x8D:
         /*
-         * Shift-Return.  TODO.
+         * Shift-Return.  This is supposed to move to the next line in BASIC
+         * but not execute it.  For now, do nothing.  We will see if BBSes
+         * use it later.
          */
         break;
 
@@ -514,7 +568,11 @@ static void petscii_handle_control_char(const unsigned char control_char) {
         /*
          * Black.
          */
-        foreground = Q_COLOR_BLACK;
+        if (state.reverse == Q_TRUE) {
+            background = Q_COLOR_BLACK;
+        } else {
+            foreground = Q_COLOR_BLACK;
+        }
         break;
 
     case 0x91:
@@ -533,102 +591,149 @@ static void petscii_handle_control_char(const unsigned char control_char) {
 
     case 0x93:
         /*
-         * Clear.
+         * Clear.  Erase screen and home cursor.
          */
         erase_screen(0, 0, HEIGHT - STATUS_HEIGHT - 1, WIDTH - 1, Q_FALSE);
+        cursor_position(0, 0);
         break;
 
     case 0x94:
         /*
-         * INST.  What is that?  TODO.
+         * INST: insert.
          */
+        insert_blanks(1);
         break;
 
     case 0x95:
         /*
          * Brown.
          */
-        foreground = Q_COLOR_YELLOW;
-        attributes &= ~Q_A_BOLD;
+        if (state.reverse == Q_TRUE) {
+            background = Q_COLOR_YELLOW;
+        } else {
+            foreground = Q_COLOR_YELLOW;
+            attributes &= ~Q_A_BOLD;
+        }
         break;
 
     case 0x96:
         /*
-         * Pink.
+         * Pink.  Try bold magenta.
          */
-        foreground = Q_COLOR_MAGENTA;
-        attributes |= Q_A_BOLD;
+        if (state.reverse == Q_TRUE) {
+            background = Q_COLOR_MAGENTA;
+        } else {
+            foreground = Q_COLOR_MAGENTA;
+            attributes |= Q_A_BOLD;
+        }
         break;
 
     case 0x97:
         /*
-         * Dark grey.
+         * Dark grey.  Try bold black.
          */
-        foreground = Q_COLOR_BLACK;
-        attributes |= Q_A_BOLD;
+        if (state.reverse == Q_TRUE) {
+            background = Q_COLOR_BLACK;
+        } else {
+            foreground = Q_COLOR_BLACK;
+            attributes |= Q_A_BOLD;
+        }
         break;
 
     case 0x98:
         /*
          * Medium grey.
          */
-        foreground = Q_COLOR_WHITE;
-        attributes &= ~Q_A_BOLD;
+        if (state.reverse == Q_TRUE) {
+            background = Q_COLOR_WHITE;
+        } else {
+            foreground = Q_COLOR_WHITE;
+            attributes &= ~Q_A_BOLD;
+        }
         break;
 
     case 0x99:
         /*
          * Light green.
          */
-        foreground = Q_COLOR_GREEN;
-        attributes |= Q_A_BOLD;
+        if (state.reverse == Q_TRUE) {
+            background = Q_COLOR_GREEN;
+        } else {
+            foreground = Q_COLOR_GREEN;
+            attributes |= Q_A_BOLD;
+        }
         break;
 
     case 0x9A:
         /*
          * Light blue.
          */
-        foreground = Q_COLOR_BLUE;
-        attributes |= Q_A_BOLD;
+        if (state.reverse == Q_TRUE) {
+            background = Q_COLOR_BLUE;
+        } else {
+            foreground = Q_COLOR_BLUE;
+            attributes |= Q_A_BOLD;
+        }
         break;
 
     case 0x9B:
         /*
          * Light grey.  This is the same as medium grey.
          */
-        foreground = Q_COLOR_WHITE;
-        attributes &= ~Q_A_BOLD;
+        if (state.reverse == Q_TRUE) {
+            background = Q_COLOR_WHITE;
+        } else {
+            foreground = Q_COLOR_WHITE;
+            attributes &= ~Q_A_BOLD;
+        }
         break;
 
     case 0x9C:
         /*
          * Purple.
          */
-        foreground = Q_COLOR_MAGENTA;
-        attributes &= ~Q_A_BOLD;
+        if (state.reverse == Q_TRUE) {
+            background = Q_COLOR_MAGENTA;
+        } else {
+            foreground = Q_COLOR_MAGENTA;
+            attributes &= ~Q_A_BOLD;
+        }
         break;
 
     case 0x9D:
         /*
          * Cursor left.
          */
-        cursor_left(1, Q_FALSE);
+        if ((q_status.cursor_x == 0) && (q_status.cursor_y > 0)) {
+            /* Go to the previous line, last column */
+            cursor_position(q_status.cursor_y - 1, 39);
+        } else {
+            cursor_left(1, Q_FALSE);
+        }
         break;
 
     case 0x9E:
         /*
          * Yellow.
          */
-        foreground = Q_COLOR_YELLOW;
-        attributes |= Q_A_BOLD;
+        if (state.reverse == Q_TRUE) {
+            background = Q_COLOR_YELLOW;
+        } else {
+            foreground = Q_COLOR_YELLOW;
+            attributes |= Q_A_BOLD;
+        }
         break;
 
     case 0x9F:
         /*
          * Cyan.
          */
-        foreground = Q_COLOR_CYAN;
-        attributes &= ~Q_A_BOLD;
+        if (state.reverse == Q_TRUE) {
+            background = Q_COLOR_CYAN;
+        } else {
+            foreground = Q_COLOR_CYAN;
+            attributes &= ~Q_A_BOLD;
+        }
         break;
 
     }
@@ -865,6 +970,7 @@ petscii_start:
         }
 
         /* This is a printable character, send it out. */
+#if 1
         if ((state.uppercase == Q_TRUE) && (state.reverse == Q_TRUE)) {
             *to_screen = c64_uppercase_reverse_chars[from_modem];
         } else if ((state.uppercase == Q_TRUE) && (state.reverse == Q_FALSE)) {
@@ -875,6 +981,20 @@ petscii_start:
             assert((state.uppercase == Q_FALSE) && (state.reverse == Q_FALSE));
             *to_screen = c64_lowercase_normal_chars[from_modem];
         }
+#else
+        if ((state.uppercase == Q_TRUE) && (state.reverse == Q_TRUE)) {
+            *to_screen = from_modem + 0xE200;
+        } else if ((state.uppercase == Q_TRUE) && (state.reverse == Q_FALSE)) {
+            *to_screen = from_modem + 0xE000;
+        } else if ((state.uppercase == Q_FALSE) && (state.reverse == Q_TRUE)) {
+            *to_screen = from_modem + 0xE300;
+        } else {
+            assert((state.uppercase == Q_FALSE) && (state.reverse == Q_FALSE));
+            *to_screen = from_modem + 0xE100;
+        }
+
+#endif
+
         return Q_EMUL_FSM_ONE_CHAR;
 
     } /* switch (scan_state) */
@@ -962,63 +1082,54 @@ wchar_t * petscii_keystroke(const int keystroke) {
         return L"\011";
 
     case Q_KEY_BACKSPACE:
-        if (q_status.hard_backspace == Q_TRUE) {
-            return L"\010";
-        } else {
-            return L"\177";
-        }
+        return L"\024";
 
     case Q_KEY_LEFT:
-        return L"\033[D";
+        return L"\235";
 
     case Q_KEY_RIGHT:
-        return L"\033[C";
+        return L"\035";
 
     case Q_KEY_UP:
-        return L"\033[A";
+        return L"\221";
 
     case Q_KEY_DOWN:
-        return L"\033[B";
+        return L"\021";
 
     case Q_KEY_PPAGE:
-        return L"\033[V";
     case Q_KEY_NPAGE:
-        return L"\033[U";
+        return L"";
     case Q_KEY_IC:
-        return L"\033[@";
+        return L"\224";
     case Q_KEY_DC:
-        return L"\177";
+        return L"\024";
     case Q_KEY_SIC:
     case Q_KEY_SDC:
         return L"";
     case Q_KEY_HOME:
-        return L"\033[H";
+        return L"\023";
     case Q_KEY_END:
-        return L"\033[K";
+        return L"";
     case Q_KEY_F(1):
-        return L"\033OP";
+        return L"\205";
     case Q_KEY_F(2):
-        return L"\033OQ";
+        return L"\211";
     case Q_KEY_F(3):
-        return L"\033OR";
+        return L"\206";
     case Q_KEY_F(4):
-        return L"\033OS";
+        return L"\212";
     case Q_KEY_F(5):
-        return L"\033Ot";
+        return L"\207";
     case Q_KEY_F(6):
-        return L"\033[17~";
+        return L"\213";
     case Q_KEY_F(7):
-        return L"\033[18~";
+        return L"\210";
     case Q_KEY_F(8):
-        return L"\033[19~";
+        return L"\214";
     case Q_KEY_F(9):
-        return L"\033[20~";
     case Q_KEY_F(10):
-        return L"\033[21~";
     case Q_KEY_F(11):
-        return L"\033[23~";
     case Q_KEY_F(12):
-        return L"\033[24~";
     case Q_KEY_F(13):
     case Q_KEY_F(14):
     case Q_KEY_F(15):
@@ -1043,47 +1154,32 @@ wchar_t * petscii_keystroke(const int keystroke) {
     case Q_KEY_F(34):
     case Q_KEY_F(35):
     case Q_KEY_F(36):
-        return L"";
-
     case Q_KEY_PAD0:
-        return L"0";
     case Q_KEY_C1:
     case Q_KEY_PAD1:
-        return L"1";
     case Q_KEY_C2:
     case Q_KEY_PAD2:
-        return L"2";
     case Q_KEY_C3:
     case Q_KEY_PAD3:
-        return L"3";
     case Q_KEY_B1:
     case Q_KEY_PAD4:
-        return L"4";
     case Q_KEY_B2:
     case Q_KEY_PAD5:
-        return L"5";
     case Q_KEY_B3:
     case Q_KEY_PAD6:
-        return L"6";
     case Q_KEY_A1:
     case Q_KEY_PAD7:
-        return L"7";
     case Q_KEY_A2:
     case Q_KEY_PAD8:
-        return L"8";
     case Q_KEY_A3:
     case Q_KEY_PAD9:
-        return L"9";
     case Q_KEY_PAD_STOP:
-        return L".";
     case Q_KEY_PAD_SLASH:
-        return L"/";
     case Q_KEY_PAD_STAR:
-        return L"*";
     case Q_KEY_PAD_MINUS:
-        return L"-";
     case Q_KEY_PAD_PLUS:
-        return L"+";
+        return L"";
+
     case Q_KEY_PAD_ENTER:
     case Q_KEY_ENTER:
         return L"\015";

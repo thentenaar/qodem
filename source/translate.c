@@ -919,6 +919,11 @@ unsigned char translate_unicode_to_8bit(const wchar_t in,
          * Users who try to put in a Unicode char (e.g. via Alt Code Key) are
          * just out of luck.
          */
+        if (in < 0x100) {
+            /* 8-bit byte, send it exactly as-is. */
+            return (in & 0xFF);
+        }
+        /* Unicode code point: sorry, you are out of luck. */
         return '?';
     }
 

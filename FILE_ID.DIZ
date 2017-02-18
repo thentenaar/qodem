@@ -3,9 +3,10 @@ domain clone of Qmodem(tm) 5.0, updated for
 the modern age! Connect with telnet, ssh,
 rlogin, serial port, modem, or command line.
 Both VGA and Unicode characters. ANSI.SYS,
-Avatar, VT102, VT220, Linux emulation. Plays
-ANSI Music through SDL. Host mode with raw
-socket, ssh, and telnet daemons.  X/Y/Zmodem,
-Kermit, macros, scripts, capture, screen dump.
+Avatar, VT102, VT220, Xterm, Linux, PETSCII,
+and ATASCII emulations. Plays ANSI Music
+through SDL. Host mode with raw socket, ssh,
+and telnet daemons.  X/Y/Zmodem, Kermit,
+macros, scripts, capture, screen dump.
 http://qodem.sourceforge.net
 https://github.com/klamonte/qodem

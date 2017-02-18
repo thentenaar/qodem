@@ -37,7 +37,7 @@ Fix all marked TODOs in code
     - Cursor position - clamp to margin 39 on double-width rows
 
 #41 PETSCII
-    - Find font with C64 glyphs - "C64 Pro Mono"
+    - Fallback to double-width on narrow fonts
     - README, man page, help text
 
     aubbs.zapto.org port 2300
@@ -51,6 +51,7 @@ Fix all marked TODOs in code
 
 #47 ATASCII
     - Start with Tim H's atari.c
+    - README, man page, help text
 
 #53 Xmodem/G Ymodem/G error
 
@@ -171,7 +172,7 @@ Release:
   Update Telnet BBS List --> put into setup
   Check dates on web pages:
     index.html screenshots.html getting_started.html
-  Sync up text in help.c and man pages and README
+  Sync up text in help.c and man pages and README and www/index.html
   Rebuild man page HTML:
     groff -mandoc `man -w docs/qodem.1` -T html > qodem.1.html
   Copy qodem.1 -> qodem-x11.1

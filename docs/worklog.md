@@ -1,6 +1,17 @@
 The Qodem Project Work Log
 ==========================
 
+February 18, 2017
+
+We are closing in on PETSCII.  It is fascinating reading about and
+playing with C64 via VICE.  I often wish I was just a few years older
+and could have done the 8-bit computer thing as a teenager.  (Even
+better would have been graduating with my CompSci degree in the early
+1990's rather than 2000, my whole life would have so much better
+financially.  Ah well, at least I won't be taken by surprise by the
+re-rise of the new feudalism.)  This afternoon I'll try a couple C64
+BBSes.  If it goes well then I can move over to ATASCII.
+
 February 17, 2017
 
 I asked the great Internet what PETSCII font makes the most sense, and

@@ -98,6 +98,9 @@ Q_EMULATION emulation_from_string(const char * string) {
         return Q_EMUL_XTERM_UTF8;
     } else if (strncasecmp(string, "PETSCII", sizeof("PETSCII")) == 0) {
         return Q_EMUL_PETSCII;
+    } else if (strncasecmp(string, "ATASCII", sizeof("ATASCII")) == 0) {
+        // TODO
+        return Q_EMUL_PETSCII;
     } else if (strncasecmp(string, "DEBUG", sizeof("DEBUG")) == 0) {
         return Q_EMUL_DEBUG;
     }
