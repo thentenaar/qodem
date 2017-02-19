@@ -2620,6 +2620,8 @@ char * raw_help_text = \
 "users\" will need to either remove this font, or negotiate a separate\n"
 "license agreement by contacting Style at @BOLD{http://style64.org/contact-style} .)\n"
 "\n"
+"@BOLD{ATASCII} - This emulates the 8-bit Atari 400/800 series.\n"
+"\n"
 "\n"
 "\n"
 "See Also: @LINK{CODEPAGE,Codepages              ,12}\n"

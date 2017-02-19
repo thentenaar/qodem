@@ -499,14 +499,30 @@ static struct option_struct options[] = {
 "### Whether or not PETSCII is being used with a 40-column font (e.g. C64\n"
 "### Pro Mono).  Value is 'true' or 'false'.\n"
 "###\n"
-"### Qodem's PETSCII emulation is designed to work with C64 Pro Mono,\n"
+"### Qodem's PETSCII emulation is intended to work with C64 Pro Mono,\n"
 "### available at http://style64.org/c64-truetype/ .  (Run Qodem inside\n"
-"### xterm via 'xterm -fn \"C64 Pro Mono\"' to see this.)  This font is\n"
-"### already at the 40-column aspect ratio (square glyphs), so Qodem does\n"
-"### not need to enable double-width lines.\n"
+"### xterm via 'xterm -fn \"C64 Pro Mono\"', or on Windows switch font, to\n"
+"### see this.)\n"
+"###\n"
+"### This font is already at the 40-column aspect ratio (square glyphs), so\n"
+"### Qodem does not need to enable double-width lines.\n"
 "###\n"
 "### If you see either large gaps between characters, or very narrow\n"
 "### characters squished onto the left side, try changing this option."},
+
+         {Q_OPTION_PETSCII_UNICODE, NULL, "petscii_use_unicode", "false", ""
+"### Whether or not PETSCII is being used with an 80-column Unicode font.\n"
+"### Value is 'true' or 'false'.\n"
+"###\n"
+"### Qodem's PETSCII emulation is intended to work with C64 Pro Mono,\n"
+"### available at http://style64.org/c64-truetype/ .  However, it can be\n"
+"### inconvenient to switch to this font just for PETSCII systems.  This\n"
+"### option permits Qodem to map byte to the relatively few PETSCII glyphs\n"
+"### that are defined in Unicode, enabling the use of a typical Unicode font\n"
+"### like Terminus or uni_vga.\n"
+"###\n"
+"### Note that enabling this option also disables the 'petscii_has_wide_font'\n"
+"### option above.\n"},
 
 /* Emulation: ATASCII */
 
@@ -2152,6 +2168,11 @@ void load_options() {
     }
     q_status.petscii_has_wide_font = Q_TRUE;
     if (strcasecmp(get_option(Q_OPTION_PETSCII_WIDE_FONT), "false") == 0) {
+        q_status.petscii_has_wide_font = Q_FALSE;
+    }
+    q_status.petscii_use_unicode = Q_FALSE;
+    if (strcasecmp(get_option(Q_OPTION_PETSCII_UNICODE), "true") == 0) {
+        q_status.petscii_use_unicode = Q_TRUE;
         q_status.petscii_has_wide_font = Q_FALSE;
     }
     q_status.atascii_has_wide_font = Q_FALSE;

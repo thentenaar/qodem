@@ -61,6 +61,15 @@ extern void petscii_reset();
  */
 extern wchar_t * petscii_keystroke(const int keystroke);
 
+/**
+ * Convert a printable ASCII character into a PETSCII printable character.
+ *
+ * @param ascii a value in the range of 0x20 - 0x7E, inclusive
+ * @return a byte that can be transmitted to a PETSCII system, reflecting the
+ * current shift state
+ */
+extern unsigned char petscii_ascii_to_petscii(const unsigned char ascii);
+
 #ifdef __cplusplus
 }
 #endif

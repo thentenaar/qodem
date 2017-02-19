@@ -62,7 +62,7 @@ struct atari_state {
  */
 static struct atari_state state = {
     Q_FALSE,
-    Q_TRUE,
+    Q_FALSE,
     0,
     NULL
 };
@@ -194,7 +194,7 @@ void atascii_reset() {
     DLOG(("atascii_reset()\n"));
 
     state.reverse = Q_FALSE;
-    state.print_control_char = Q_TRUE;
+    state.print_control_char = Q_FALSE;
     reset_tab_stops();
 }
 
@@ -340,8 +340,10 @@ Q_EMULATION_STATUS atascii(const unsigned char from_modem,
      */
     if (from_modem == C_ESC) {
         if (state.print_control_char == Q_TRUE) {
+            DLOG(("STOP printing control characters"));
             state.print_control_char = Q_FALSE;
         } else {
+            DLOG(("Start PRINTING control characters"));
             state.print_control_char = Q_TRUE;
         }
         return Q_EMUL_FSM_NO_CHAR_YET;
@@ -354,6 +356,15 @@ Q_EMULATION_STATUS atascii(const unsigned char from_modem,
         return Q_EMUL_FSM_NO_CHAR_YET;
     }
 
+    if ((state.print_control_char == Q_FALSE) && ((from_modem & 0x7F) < 0x20)) {
+        /*
+         * This is a control character, but we are not printing them.  Make
+         * it vanish.
+         */
+        DLOG(("Control character, IGNORE"));
+        return Q_EMUL_FSM_NO_CHAR_YET;
+    }
+
     /* This is a printable character, send it out. */
     if ((from_modem & 0x80) != 0) {
         /* Reverse for this character */
@@ -363,6 +374,7 @@ Q_EMULATION_STATUS atascii(const unsigned char from_modem,
         q_current_color &= ~Q_A_REVERSE;
     }
     *to_screen = atascii_chars[from_modem & 0x7F];
+    DLOG(("Send to screen: '%c'", *to_screen));
     return Q_EMUL_FSM_ONE_CHAR;
 }
 

@@ -469,6 +469,12 @@ struct q_status_struct {
      */
     Q_BOOL petscii_is_c64;
 
+    /**
+     * When true, PETSCII will try to map to Unicode rather than use the C64
+     * Pro Mono font.
+     */
+    Q_BOOL petscii_use_unicode;
+
     /* ATASCII features */
 
     /**

@@ -36,25 +36,10 @@ Fix all marked TODOs in code
     - Win32a double-width chars
     - Cursor position - clamp to margin 39 on double-width rows
 
-#41 PETSCII
-    - Fallback to double-width on narrow fonts
-    - Remap curses ASCII to lowercase C64 for all other keystrokes
-      (punctuation etc)
-    - README, man page, help text
-
-    aubbs.zapto.org port 2300
-    borderlinebbs.dyndns.org port 6400
-
-
 #48 split-screen unicode support
     - Also support all control characters via carat notation
 
 #52 bracketed paste mode
-
-#47 ATASCII
-    - README, man page, help text
-    - Remap curses ASCII to ATASCII for all other keystrokes
-      (punctuation etc)
 
 #53 Xmodem/G Ymodem/G error
 

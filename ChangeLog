@@ -33,6 +33,7 @@ qodem (1.0.0-1) unstable; urgency=low
   * --exit-on-completion (-x) command line option
   * X11: Double-height / double-width line support
   * PETSCII Commodore 64 emulation
+  * ATASCII Atari 400/800 emulation
 
  -- Kevin Lamonte <lamonte@users.sourceforge.net>  Thu, 27 Apr 2017 18:50:00 -0500
 

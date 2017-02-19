@@ -1048,14 +1048,11 @@ static void postprocess_keyboard_macro(wchar_t ** macro_string) {
      */
     if (q_status.emulation == Q_EMUL_PETSCII) {
         for (i = 0; i < wcslen(macro_output_buffer); i++) {
-            if ((macro_output_buffer[i] >= 'A') &&
-                (macro_output_buffer[i] <= 'Z')
+            if ((macro_output_buffer[i] > 0x20) &&
+                (macro_output_buffer[i] < 0x7F)
             ) {
-                macro_output_buffer[i] += 32;
-            } else if ((macro_output_buffer[i] >= 'a') &&
-                (macro_output_buffer[i] <= 'z')
-            ) {
-                macro_output_buffer[i] -= 32;
+                macro_output_buffer[i] = petscii_ascii_to_petscii(
+                                                macro_output_buffer[i]);
             }
         }
     }
@@ -1107,10 +1104,8 @@ void post_keystroke(const int keystroke, const int flags) {
      * We need to do some PETSCII processing separately from everything else.
      */
     if (q_status.emulation == Q_EMUL_PETSCII) {
-        if ((keystroke2 >= 'A') && (keystroke2 <= 'Z')) {
-            keystroke2 += 32;
-        } else if ((keystroke2 >= 'a') && (keystroke2 <= 'z')) {
-            keystroke2 -= 32;
+        if ((keystroke2 > 0x20) && (keystroke2 < 0x7F)) {
+            keystroke2 = petscii_ascii_to_petscii(keystroke2);
         }
     }
 
