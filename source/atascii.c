@@ -32,21 +32,6 @@
 static const char * DLOGNAME = NULL;
 
 /**
- * Scan states for the parser state machine.
- */
-typedef enum SCAN_STATES {
-    SCAN_NONE,
-    SCAN_ESC,
-    SCAN_CSI,
-    SCAN_CSI_PARAM,
-    SCAN_ANSI_FALLBACK,
-    DUMP_UNKNOWN_SEQUENCE
-} SCAN_STATE;
-
-/* Current scanning state. */
-static SCAN_STATE scan_state;
-
-/**
  * State change flags for the Commodore keyboard/screen.
  */
 struct atari_state {
@@ -54,6 +39,22 @@ struct atari_state {
      * If true, reverse video is enabled.
      */
     Q_BOOL reverse;
+
+    /**
+     * ESC is used to toggle between printing and interpreting control
+     * characters.
+     */
+    Q_BOOL print_control_char;
+
+    /**
+     * tab_stops_n is the number of elements in tab_stops, so it begins as 0.
+     */
+    int tab_stops_n;
+
+    /**
+     * The list of defined tab stops.
+     */
+    int * tab_stops;
 };
 
 /**
@@ -61,20 +62,15 @@ struct atari_state {
  */
 static struct atari_state state = {
     Q_FALSE,
+    Q_TRUE,
+    0,
+    NULL
 };
-
-/**
- * ANSI fallback: the unknown escape sequence is copied here and then run
- * through the ANSI emulator.
- */
-static unsigned char ansi_buffer[sizeof(q_emul_buffer)];
-static int ansi_buffer_n;
-static int ansi_buffer_i;
 
 /**
  * ATASCII (Atari) to Unicode map.
  */
-static wchar_t atascii_chars[128] = {
+wchar_t atascii_chars[128] = {
     0x2665, 0x251C, 0x23B9, 0x2518, 0x2524, 0x2510, 0x2571, 0x2572,
     0x25E2, 0x2597, 0x25E3, 0x259D, 0x2598, 0x23BA, 0x23BD, 0x2596,
     0x2663, 0x250C, 0x2500, 0x253C, 0x25CF, 0x2584, 0x23B8, 0x252C,
@@ -94,69 +90,224 @@ static wchar_t atascii_chars[128] = {
 };
 
 /**
+ * Advance the cursor to the next tab stop.
+ */
+static void advance_to_next_tab_stop() {
+    int i;
+    if (state.tab_stops == NULL) {
+        /* Go to the rightmost column */
+        cursor_right(WIDTH - 1 - q_status.cursor_x, Q_FALSE);
+        return;
+    }
+    for (i = 0; i < state.tab_stops_n; i++) {
+        if (state.tab_stops[i] > q_status.cursor_x) {
+            cursor_right(state.tab_stops[i] - q_status.cursor_x, Q_FALSE);
+            return;
+        }
+    }
+    /*
+     * If we got here then there isn't a tab stop beyond the current cursor
+     * position.  Place the cursor of the right-most edge of the screen.
+     */
+    cursor_right(WIDTH - 1 - q_status.cursor_x, Q_FALSE);
+}
+
+/**
+ * Reset the tab stops list.
+ */
+static void reset_tab_stops() {
+    int i;
+    if (state.tab_stops != NULL) {
+        Xfree(state.tab_stops, __FILE__, __LINE__);
+        state.tab_stops = NULL;
+        state.tab_stops_n = 0;
+    }
+    for (i = 0; (i * 8) < WIDTH; i++) {
+        state.tab_stops = (int *) Xrealloc(state.tab_stops,
+            (state.tab_stops_n + 1) * sizeof(int), __FILE__, __LINE__);
+        state.tab_stops[i] = i * 8;
+        state.tab_stops_n++;
+    }
+}
+
+/**
+ * Set a tab stop at the current position.
+ */
+static void set_tab_stop() {
+    int i;
+
+    for (i = 0; i < state.tab_stops_n; i++) {
+        if (state.tab_stops[i] == q_status.cursor_x) {
+            /* Already have a tab stop here */
+            return;
+        }
+        if (state.tab_stops[i] > q_status.cursor_x) {
+            /* Insert a tab stop */
+            state.tab_stops = (int *) Xrealloc(state.tab_stops,
+                (state.tab_stops_n + 1) * sizeof(int), __FILE__, __LINE__);
+            memmove(&state.tab_stops[i + 1], &state.tab_stops[i],
+                (state.tab_stops_n - i) * sizeof(int));
+            state.tab_stops_n++;
+            state.tab_stops[i] = q_status.cursor_x;
+            return;
+        }
+    }
+
+    /* If we get here, we need to append a tab stop to the end of the array */
+    state.tab_stops = (int *) Xrealloc(state.tab_stops,
+        (state.tab_stops_n + 1) * sizeof(int), __FILE__, __LINE__);
+    state.tab_stops[state.tab_stops_n] = q_status.cursor_x;
+    state.tab_stops_n++;
+}
+
+/**
+ * Remove a tab stop at the current position.
+ */
+static void clear_tab_stop() {
+    int i;
+
+    /* Clear the tab stop at this position */
+    for (i = 0; i < state.tab_stops_n; i++) {
+        if (state.tab_stops[i] > q_status.cursor_x) {
+            /* No tab stop here */
+            return;
+        }
+        if (state.tab_stops[i] == q_status.cursor_x) {
+            /* Remove this tab stop */
+            memmove(&state.tab_stops[i], &state.tab_stops[i + 1],
+                (state.tab_stops_n - i - 1) * sizeof(int));
+            state.tab_stops = (int *) Xrealloc(state.tab_stops,
+                (state.tab_stops_n - 1) * sizeof(int), __FILE__, __LINE__);
+            state.tab_stops_n--;
+            return;
+        }
+    }
+
+    /* If we get here, the array ended before we found a tab stop. */
+    /* NOP */
+}
+
+/**
  * Reset the emulation state.
  */
 void atascii_reset() {
     DLOG(("atascii_reset()\n"));
 
-    scan_state = SCAN_NONE;
     state.reverse = Q_FALSE;
+    state.print_control_char = Q_TRUE;
+    reset_tab_stops();
 }
 
 /**
- * Reset the scan state for a new sequence.
+ * Process a special ATASCII control character.
  *
- * @param to_screen one of the Q_EMULATION_STATUS constants.  See emulation.h.
+ * @param control_char a byte that could be interpreted as a control byte
+ * @return true if it was consumed and should not be printed
  */
-static void clear_state(wchar_t * to_screen) {
-    q_status.insert_mode = Q_FALSE;
-    q_emul_buffer_n = 0;
-    q_emul_buffer_i = 0;
-    memset(q_emul_buffer, 0, sizeof(q_emul_buffer));
-    scan_state = SCAN_NONE;
-    *to_screen = 1;
-}
-
-/**
- * Hang onto one character in the buffer.
- *
- * @param keep_char the character to save into q_emul_buffer
- * @param to_screen one of the Q_EMULATION_STATUS constants.  See emulation.h.
- */
-static void save_char(unsigned char keep_char, wchar_t * to_screen) {
-    q_emul_buffer[q_emul_buffer_n] = keep_char;
-    q_emul_buffer_n++;
-    *to_screen = 1;
-}
-
-/**
- * Process a control character.
- *
- * @param control_char a byte in the C0 or C1 range.
- */
-static void atascii_handle_control_char(const unsigned char control_char) {
-    short foreground, background;
-    short curses_color;
-    attr_t attributes = q_current_color & NO_COLOR_MASK;
-
-    /*
-     * Pull the current foreground and background.
-     */
-    curses_color = color_from_attr(q_current_color);
-    foreground = (curses_color & 0x38) >> 3;
-    background = curses_color & 0x07;
+static Q_BOOL atascii_handle_control_char(const unsigned char control_char) {
 
     switch (control_char) {
-        // TODO
+    case 0x1C:
+        /*
+         * Cursor up (CTRL + -)
+         */
+        cursor_up(1, Q_FALSE);
+        return Q_TRUE;
+    case 0x1D:
+        /*
+         * Cursor down (CTRL + =)
+         */
+        cursor_down(1, Q_FALSE);
+        return Q_TRUE;
+    case 0x1E:
+        /*
+         * Cursor left (CTRL + +)
+         */
+        cursor_left(1, Q_FALSE);
+        return Q_TRUE;
+    case 0x1F:
+        /*
+         * Cursor right (CTRL + *)
+         */
+        cursor_right(1, Q_FALSE);
+        return Q_TRUE;
+    case 0x7D:
+        /*
+         * Clear screen (CTRL + < or SHIFT + <)
+         */
+        erase_screen(0, 0, HEIGHT - STATUS_HEIGHT - 1, WIDTH - 1, Q_FALSE);
+        cursor_position(0, 0);
+        return Q_TRUE;
+    case 0x7E:
+        /*
+         * Backspace
+         */
+        cursor_left(1, Q_FALSE);
+        delete_character(1);
+        return Q_TRUE;
+    case 0x7F:
+        /*
+         * Tab
+         */
+        advance_to_next_tab_stop();
+        return Q_TRUE;
+    case 0x9B:
+        /*
+         * Return
+         */
+        cursor_linefeed(Q_TRUE);
+        return Q_TRUE;
+    case 0x9C:
+        /*
+         * Delete line (SHIFT + Backspace)
+         */
+        erase_line(q_status.cursor_x, WIDTH - 1, Q_FALSE);
+        return Q_TRUE;
+    case 0x9D:
+        /*
+         * Insert line (SHIFT + >)
+         */
+        scrolling_region_scroll_down(q_status.cursor_y,
+            HEIGHT - STATUS_HEIGHT - 1, 1);
+        return Q_TRUE;
+    case 0x9E:
+        /*
+         * Clear tabstop (CTRL + Tab)
+         */
+        clear_tab_stop();
+        return Q_TRUE;
+    case 0x9F:
+        /*
+         * Set Tabstop (SHIFT + Tab)
+         */
+        set_tab_stop();
+        return Q_TRUE;
+    case 0xFD:
+        /*
+         * Bell (CTRL + 2)
+         */
+        screen_beep();
+        return Q_TRUE;
+    case 0xFE:
+        /*
+         * Delete (CTRL + Backspace)
+         */
+        delete_character(1);
+        return Q_TRUE;
+    case 0xFF:
+        /*
+         * Insert (CTRL + >)
+         */
+        insert_blanks(1);
+        return Q_TRUE;
     default:
         break;
     }
 
-    /* Change to whatever attribute was selected. */
-    curses_color = (foreground << 3) | background;
-    attributes |= color_to_attr(curses_color);
-    q_current_color = attributes;
-
+    /*
+     * We did not consume it, let it be printed.
+     */
+    return Q_FALSE;
 }
 
 /**
@@ -171,11 +322,10 @@ static void atascii_handle_control_char(const unsigned char control_char) {
 Q_EMULATION_STATUS atascii(const unsigned char from_modem,
                            wchar_t * to_screen) {
 
-    static unsigned char * count;
-    static attr_t attributes;
-    Q_EMULATION_STATUS rc;
-
-    DLOG(("STATE: %d CHAR: 0x%02x '%c'\n", scan_state, from_modem, from_modem));
+    DLOG(("ESC: %s REVERSE %s CHAR: 0x%02x '%c'\n",
+            (state.print_control_char == Q_TRUE ? "true" : "false"),
+            (state.reverse == Q_TRUE ? "true" : "false"),
+            from_modem, from_modem));
 
     if (q_status.atascii_has_wide_font == Q_FALSE) {
         /*
@@ -185,270 +335,35 @@ Q_EMULATION_STATUS atascii(const unsigned char from_modem,
         set_double_width(Q_TRUE);
     }
 
-atascii_start:
-
-    switch (scan_state) {
-
-    /* ANSI Fallback ------------------------------------------------------- */
-
-    case SCAN_ANSI_FALLBACK:
-
-        /*
-         * From here on out we pass through ANSI until we don't get
-         * Q_EMUL_FSM_NO_CHAR_YET.
-         */
-
-        DLOG(("ANSI FALLBACK ansi_buffer_i %d ansi_buffer_n %d\n",
-                ansi_buffer_i, ansi_buffer_n));
-        DLOG(("              q_emul_buffer_i %d q_emul_buffer_n %d\n",
-                q_emul_buffer_i, q_emul_buffer_n));
-
-        if (ansi_buffer_n == 0) {
-            assert(ansi_buffer_i == 0);
-            /*
-             * We have already cleared the old buffer, now push one byte at a
-             * time through ansi until it is finished with its state machine.
-             */
-            ansi_buffer[ansi_buffer_n] = from_modem;
-            ansi_buffer_n++;
-        }
-
-        DLOG(("ANSI FALLBACK ansi()\n"));
-
-        rc = Q_EMUL_FSM_NO_CHAR_YET;
-        while (rc == Q_EMUL_FSM_NO_CHAR_YET) {
-            rc = ansi(ansi_buffer[ansi_buffer_i], to_screen);
-
-            DLOG(("ANSI FALLBACK ansi() RC %d\n", rc));
-
-            if (rc != Q_EMUL_FSM_NO_CHAR_YET) {
-                /*
-                 * We can be ourselves again now.
-                 */
-                DLOG(("ANSI FALLBACK END\n"));
-                scan_state = SCAN_NONE;
-            }
-
-            ansi_buffer_i++;
-            if (ansi_buffer_i == ansi_buffer_n) {
-                /*
-                 * No more characters to send through ANSI.
-                 */
-                ansi_buffer_n = 0;
-                ansi_buffer_i = 0;
-                break;
-            }
-        }
-
-        if (rc == Q_EMUL_FSM_MANY_CHARS) {
-            /*
-             * ANSI is dumping q_emul_buffer.  Finish the job.
-             */
-            scan_state = DUMP_UNKNOWN_SEQUENCE;
-        }
-
-        return rc;
-
-    case DUMP_UNKNOWN_SEQUENCE:
-
-        DLOG(("DUMP_UNKNOWN_SEQUENCE q_emul_buffer_i %d q_emul_buffer_n %d\n",
-                q_emul_buffer_i, q_emul_buffer_n));
-
-        /*
-         * Dump the string in q_emul_buffer
-         */
-        assert(q_emul_buffer_n > 0);
-
-        *to_screen = codepage_map_char(q_emul_buffer[q_emul_buffer_i]);
-        q_emul_buffer_i++;
-        if (q_emul_buffer_i == q_emul_buffer_n) {
-            /*
-             * This was the last character.
-             */
-            q_emul_buffer_n = 0;
-            q_emul_buffer_i = 0;
-            memset(q_emul_buffer, 0, sizeof(q_emul_buffer));
-            scan_state = SCAN_NONE;
-            return Q_EMUL_FSM_ONE_CHAR;
-
+    /*
+     * ESC
+     */
+    if (from_modem == C_ESC) {
+        if (state.print_control_char == Q_TRUE) {
+            state.print_control_char = Q_FALSE;
         } else {
-            return Q_EMUL_FSM_MANY_CHARS;
+            state.print_control_char = Q_TRUE;
         }
-
-    case SCAN_ESC:
-        save_char(from_modem, to_screen);
-
-        if (from_modem == '[') {
-            if (q_status.atascii_color == Q_TRUE) {
-                /*
-                 * Fall into SCAN_CSI only if ATASCII_COLOR is enabled.
-                 */
-                scan_state = SCAN_CSI;
-                return Q_EMUL_FSM_NO_CHAR_YET;
-            }
-        }
-
-        /*
-         * Fall-through to ANSI fallback.
-         */
-        break;
-
-    case SCAN_CSI:
-        save_char(from_modem, to_screen);
-
-        /*
-         * We are only going to support CSI Pn [ ; Pn ... ] m a.k.a. ANSI
-         * Select Graphics Rendition.  We can see only a digit or 'm'.
-         */
-        if (q_isdigit(from_modem)) {
-            /*
-             * Save the position for the counter.
-             */
-            count = q_emul_buffer + q_emul_buffer_n - 1;
-            scan_state = SCAN_CSI_PARAM;
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        if (from_modem == 'm') {
-            /*
-             * ESC [ m mean ESC [ 0 m, all attributes off.
-             */
-            q_current_color =
-                Q_A_NORMAL | scrollback_full_attr(Q_COLOR_CONSOLE_TEXT);
-
-            clear_state(to_screen);
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        /*
-         * Fall-through to ANSI fallback.
-         */
-        break;
-
-    case SCAN_CSI_PARAM:
-        save_char(from_modem, to_screen);
-        /*
-         * Following through on the SGR code, we are now looking only for a
-         * digit, semicolon, or 'm'.
-         */
-        if ((q_isdigit(from_modem)) || (from_modem == ';')) {
-            scan_state = SCAN_CSI_PARAM;
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        if (from_modem == 'm') {
-
-            DLOG(("ANSI SGR: change text attributes\n"));
-
-            /*
-             * Text attributes
-             */
-            if (ansi_color(&attributes, &count) == Q_TRUE) {
-                q_current_color = attributes;
-            } else {
-                break;
-            }
-
-            clear_state(to_screen);
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        /*
-         * Fall-through to ANSI fallback.
-         */
-        break;
-
-    /* ATASCII ------------------------------------------------------------- */
-
-    case SCAN_NONE:
-        /*
-         * ESC
-         */
-        if (from_modem == C_ESC) {
-            if ((q_status.atascii_color == Q_TRUE) ||
-                (q_status.atascii_ansi_fallback == Q_TRUE)
-            ) {
-                /* Permit parsing of ANSI escape sequences. */
-                save_char(from_modem, to_screen);
-                scan_state = SCAN_ESC;
-                return Q_EMUL_FSM_NO_CHAR_YET;
-            }
-        }
-
-        if ((from_modem < 0x20) ||
-            ((from_modem >= 0x80) && (from_modem < 0xA0))
-        ) {
-            /* This is a C0/C1 control character, process it there. */
-            atascii_handle_control_char(from_modem);
-            return Q_EMUL_FSM_NO_CHAR_YET;
-        }
-
-        /* This is a printable character, send it out. */
-        *to_screen = atascii_chars[from_modem & 0x7F];
-        return Q_EMUL_FSM_ONE_CHAR;
-
-    } /* switch (scan_state) */
-
-    if (q_status.atascii_ansi_fallback == Q_TRUE) {
-        /*
-         * Process through ANSI fallback code.
-         *
-         * This is UGLY AS HELL, but lots of BBSes assume that every emulator
-         * will "fallback" to ANSI for sequences they don't understand.
-         */
-        scan_state = SCAN_ANSI_FALLBACK;
-        DLOG(("ANSI FALLBACK BEGIN\n"));
-
-        /*
-         * From here on out we pass through ANSI until we don't get
-         * Q_EMUL_FSM_NO_CHAR_YET.
-         */
-        memcpy(ansi_buffer, q_emul_buffer, q_emul_buffer_n);
-        ansi_buffer_i = 0;
-        ansi_buffer_n = q_emul_buffer_n;
-        q_emul_buffer_i = 0;
-        q_emul_buffer_n = 0;
-
-        DLOG(("ANSI FALLBACK ansi()\n"));
-
-        /*
-         * Run through the emulator again
-         */
-        assert(ansi_buffer_n > 0);
-        goto atascii_start;
-
-    } else {
-
-        DLOG(("Unknown sequence, and no ANSI fallback\n"));
-        scan_state = DUMP_UNKNOWN_SEQUENCE;
-
-        /*
-         * This point means we got most, but not all, of a sequence.
-         */
-        *to_screen = codepage_map_char(q_emul_buffer[q_emul_buffer_i]);
-        q_emul_buffer_i++;
-
-        /*
-         * Special case: one character returns Q_EMUL_FSM_ONE_CHAR.
-         */
-        if (q_emul_buffer_n == 1) {
-            q_emul_buffer_i = 0;
-            q_emul_buffer_n = 0;
-            return Q_EMUL_FSM_ONE_CHAR;
-        }
-
-        /*
-         * Tell the emulator layer that I need to be called many more times
-         * to dump the string in q_emul_buffer.
-         */
-        return Q_EMUL_FSM_MANY_CHARS;
+        return Q_EMUL_FSM_NO_CHAR_YET;
     }
 
-    /*
-     * Should never get here.
-     */
-    abort();
-    return Q_EMUL_FSM_NO_CHAR_YET;
+    if (atascii_handle_control_char(from_modem) == Q_TRUE) {
+        /*
+         * This byte was consumed, it does not need to be printed.
+         */
+        return Q_EMUL_FSM_NO_CHAR_YET;
+    }
+
+    /* This is a printable character, send it out. */
+    if ((from_modem & 0x80) != 0) {
+        /* Reverse for this character */
+        q_current_color |= Q_A_REVERSE;
+    } else {
+        /* Normal for this character */
+        q_current_color &= ~Q_A_REVERSE;
+    }
+    *to_screen = atascii_chars[from_modem & 0x7F];
+    return Q_EMUL_FSM_ONE_CHAR;
 }
 
 /**
@@ -465,57 +380,52 @@ wchar_t * atascii_keystroke(const int keystroke) {
 
     switch (keystroke) {
 
+    case Q_KEY_BACKSPACE:
+        return L"\176";
+    case Q_KEY_UP:
+        return L"\034";
+    case Q_KEY_DOWN:
+        return L"\035";
+    case Q_KEY_LEFT:
+        return L"\036";
+    case Q_KEY_RIGHT:
+        return L"\037";
+    case Q_KEY_DC:
+        return L"\376";
+    case Q_KEY_IC:
+        return L"\377";
+    case Q_KEY_DL:
+        return L"\234";
+    case Q_KEY_IL:
+        return L"\235";
+    case Q_KEY_PAD_ENTER:
+    case Q_KEY_ENTER:
+        return L"\233";
+    case Q_KEY_CTAB:
+        return L"\236";
+    case Q_KEY_STAB:
+        return L"\237";
+    case Q_KEY_CLEAR:
+        return L"\175";
+    case Q_KEY_TAB:
+        return L"\177";
     case Q_KEY_ESCAPE:
         return L"\033";
 
-    case Q_KEY_TAB:
-        return L"\011";
-
-    case Q_KEY_BACKSPACE:
-        return L"\024";
-
-    case Q_KEY_LEFT:
-        return L"\235";
-
-    case Q_KEY_RIGHT:
-        return L"\035";
-
-    case Q_KEY_UP:
-        return L"\221";
-
-    case Q_KEY_DOWN:
-        return L"\021";
-
     case Q_KEY_PPAGE:
     case Q_KEY_NPAGE:
-        return L"";
-    case Q_KEY_IC:
-        return L"\224";
-    case Q_KEY_DC:
-        return L"\024";
     case Q_KEY_SIC:
     case Q_KEY_SDC:
-        return L"";
     case Q_KEY_HOME:
-        return L"\023";
     case Q_KEY_END:
-        return L"";
     case Q_KEY_F(1):
-        return L"\205";
     case Q_KEY_F(2):
-        return L"\211";
     case Q_KEY_F(3):
-        return L"\206";
     case Q_KEY_F(4):
-        return L"\212";
     case Q_KEY_F(5):
-        return L"\207";
     case Q_KEY_F(6):
-        return L"\213";
     case Q_KEY_F(7):
-        return L"\210";
     case Q_KEY_F(8):
-        return L"\214";
     case Q_KEY_F(9):
     case Q_KEY_F(10):
     case Q_KEY_F(11):
@@ -569,10 +479,6 @@ wchar_t * atascii_keystroke(const int keystroke) {
     case Q_KEY_PAD_MINUS:
     case Q_KEY_PAD_PLUS:
         return L"";
-
-    case Q_KEY_PAD_ENTER:
-    case Q_KEY_ENTER:
-        return L"\015";
 
     default:
         break;

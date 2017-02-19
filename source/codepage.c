@@ -1931,6 +1931,11 @@ static wchar_t koi8_u_chars[256] = {
 };
 
 /**
+ * ATASCII translation map is stored in atascii.c.
+ */
+extern wchar_t atascii_chars[128];
+
+/**
  * Map a character in q_current_codepage's character set to its equivalent
  * Unicode code point / glyph.
  *
@@ -2016,7 +2021,7 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
 
     switch (codepage) {
     case Q_CODEPAGE_CP437:
-        for (i = 0; i < 255; i++) {
+        for (i = 0; i < 256; i++) {
             if (cp437_chars[i] == ch) {
                 *success = Q_TRUE;
                 return i;
@@ -2024,7 +2029,7 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
         }
         return 0;
     case Q_CODEPAGE_ISO8859_1:
-        for (i = 0; i < 255; i++) {
+        for (i = 0; i < 256; i++) {
             if (iso8859_1_chars[i] == ch) {
                 *success = Q_TRUE;
                 return i;
@@ -2033,14 +2038,13 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
         return 0;
     case Q_CODEPAGE_DEC:
     case Q_CODEPAGE_PETSCII:
-    case Q_CODEPAGE_ATASCII:
         /*
          * BUG: should never get here
          */
         abort();
         return 0;
     case Q_CODEPAGE_CP720:
-        for (i = 0; i < 255; i++) {
+        for (i = 0; i < 256; i++) {
             if (cp720_chars[i] == ch) {
                 *success = Q_TRUE;
                 return i;
@@ -2048,7 +2052,7 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
         }
         return 0;
     case Q_CODEPAGE_CP737:
-        for (i = 0; i < 255; i++) {
+        for (i = 0; i < 256; i++) {
             if (cp737_chars[i] == ch) {
                 *success = Q_TRUE;
                 return i;
@@ -2056,7 +2060,7 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
         }
         return 0;
     case Q_CODEPAGE_CP775:
-        for (i = 0; i < 255; i++) {
+        for (i = 0; i < 256; i++) {
             if (cp775_chars[i] == ch) {
                 *success = Q_TRUE;
                 return i;
@@ -2064,7 +2068,7 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
         }
         return 0;
     case Q_CODEPAGE_CP850:
-        for (i = 0; i < 255; i++) {
+        for (i = 0; i < 256; i++) {
             if (cp850_chars[i] == ch) {
                 *success = Q_TRUE;
                 return i;
@@ -2072,7 +2076,7 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
         }
         return 0;
     case Q_CODEPAGE_CP852:
-        for (i = 0; i < 255; i++) {
+        for (i = 0; i < 256; i++) {
             if (cp852_chars[i] == ch) {
                 *success = Q_TRUE;
                 return i;
@@ -2080,7 +2084,7 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
         }
         return 0;
     case Q_CODEPAGE_CP857:
-        for (i = 0; i < 255; i++) {
+        for (i = 0; i < 256; i++) {
             if (cp857_chars[i] == ch) {
                 *success = Q_TRUE;
                 return i;
@@ -2088,7 +2092,7 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
         }
         return 0;
     case Q_CODEPAGE_CP858:
-        for (i = 0; i < 255; i++) {
+        for (i = 0; i < 256; i++) {
             if (cp858_chars[i] == ch) {
                 *success = Q_TRUE;
                 return i;
@@ -2096,7 +2100,7 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
         }
         return 0;
     case Q_CODEPAGE_CP860:
-        for (i = 0; i < 255; i++) {
+        for (i = 0; i < 256; i++) {
             if (cp860_chars[i] == ch) {
                 *success = Q_TRUE;
                 return i;
@@ -2104,7 +2108,7 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
         }
         return 0;
     case Q_CODEPAGE_CP862:
-        for (i = 0; i < 255; i++) {
+        for (i = 0; i < 256; i++) {
             if (cp862_chars[i] == ch) {
                 *success = Q_TRUE;
                 return i;
@@ -2112,7 +2116,7 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
         }
         return 0;
     case Q_CODEPAGE_CP863:
-        for (i = 0; i < 255; i++) {
+        for (i = 0; i < 256; i++) {
             if (cp863_chars[i] == ch) {
                 *success = Q_TRUE;
                 return i;
@@ -2120,7 +2124,7 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
         }
         return 0;
     case Q_CODEPAGE_CP866:
-        for (i = 0; i < 255; i++) {
+        for (i = 0; i < 256; i++) {
             if (cp866_chars[i] == ch) {
                 *success = Q_TRUE;
                 return i;
@@ -2128,7 +2132,7 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
         }
         return 0;
     case Q_CODEPAGE_CP1250:
-        for (i = 0; i < 255; i++) {
+        for (i = 0; i < 256; i++) {
             if (cp1250_chars[i] == ch) {
                 *success = Q_TRUE;
                 return i;
@@ -2136,7 +2140,7 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
         }
         return 0;
     case Q_CODEPAGE_CP1251:
-        for (i = 0; i < 255; i++) {
+        for (i = 0; i < 256; i++) {
             if (cp1251_chars[i] == ch) {
                 *success = Q_TRUE;
                 return i;
@@ -2144,7 +2148,7 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
         }
         return 0;
     case Q_CODEPAGE_CP1252:
-        for (i = 0; i < 255; i++) {
+        for (i = 0; i < 256; i++) {
             if (cp1252_chars[i] == ch) {
                 *success = Q_TRUE;
                 return i;
@@ -2152,7 +2156,7 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
         }
         return 0;
     case Q_CODEPAGE_KOI8_R:
-        for (i = 0; i < 255; i++) {
+        for (i = 0; i < 256; i++) {
             if (koi8_r_chars[i] == ch) {
                 *success = Q_TRUE;
                 return i;
@@ -2160,8 +2164,16 @@ extern wchar_t codepage_unmap_byte(const wchar_t ch, const Q_CODEPAGE codepage,
         }
         return 0;
     case Q_CODEPAGE_KOI8_U:
-        for (i = 0; i < 255; i++) {
+        for (i = 0; i < 256; i++) {
             if (koi8_u_chars[i] == ch) {
+                *success = Q_TRUE;
+                return i;
+            }
+        }
+        return 0;
+    case Q_CODEPAGE_ATASCII:
+        for (i = 0; i < 128; i++) {
+            if (atascii_chars[i] == (ch & 0x7F)) {
                 *success = Q_TRUE;
                 return i;
             }

@@ -510,34 +510,9 @@ static struct option_struct options[] = {
 
 /* Emulation: ATASCII */
 
-        {Q_OPTION_ATASCII_COLOR, NULL, "atascii_ansi_color", "true", ""
+         {Q_OPTION_ATASCII_WIDE_FONT, NULL, "atascii_has_wide_font", "false", ""
 "### EMULATION: ATASCII ---------------------------------------------------\n"
 "\n"
-"### Whether or not ANSI.SYS-style color selection commands will be\n"
-"### supported with the ATASCII emulation.  Value is 'true' or 'false'.\n"
-"###\n"
-"### ATASCII emulation has its own color selection command, but some\n"
-"### programs (like 'ls') may send it ANSY.SYS-style color commands\n"
-"### instead.  If this value is set to true the ATASCII emulation will\n"
-"### honor the ANSI.SYS-style color selection codes.  If this value is\n"
-"### false the color selection codes will be visible in the output, as a\n"
-"### real Commodore would do."},
-
-         {Q_OPTION_ATASCII_ANSI_FALLBACK, NULL,
-          "atascii_ansi_fallback", "true", ""
-"### Whether or not ATASCII will fallback to ANSI.SYS for anything it does\n"
-"### not recognize.  Value is 'true' or 'false'.\n"
-"###\n"
-"### Real Commodore machines do not recognize ANSI style escape sequences,\n"
-"### but many BBS systems send them anyway.  This feature enables ATASCII to\n"
-"### use both the Commodore and ANSI color and cursor movement commands,\n"
-"### which for most people will lead to a smoother experience.\n"
-"###\n"
-"### If this value is set to true the ATASCII emulation will recognize both\n"
-"### ATASCII and ANSI.  If this value is false then unknown ANSI sequences\n"
-"### will be visible in the output, as a real Commodore would do."},
-
-         {Q_OPTION_ATASCII_WIDE_FONT, NULL, "atascii_has_wide_font", "true", ""
 "### Whether or not ATASCII is being used with a 40-column font.  Value is\n"
 "### 'true' or 'false'.\n"
 "###\n"
@@ -2179,17 +2154,9 @@ void load_options() {
     if (strcasecmp(get_option(Q_OPTION_PETSCII_WIDE_FONT), "false") == 0) {
         q_status.petscii_has_wide_font = Q_FALSE;
     }
-    q_status.atascii_color = Q_TRUE;
-    if (strcasecmp(get_option(Q_OPTION_ATASCII_COLOR), "false") == 0) {
-        q_status.atascii_color = Q_FALSE;
-    }
-    q_status.atascii_ansi_fallback = Q_TRUE;
-    if (strcasecmp(get_option(Q_OPTION_ATASCII_ANSI_FALLBACK), "false") == 0) {
-        q_status.atascii_ansi_fallback = Q_FALSE;
-    }
-    q_status.atascii_has_wide_font = Q_TRUE;
-    if (strcasecmp(get_option(Q_OPTION_ATASCII_WIDE_FONT), "false") == 0) {
-        q_status.atascii_has_wide_font = Q_FALSE;
+    q_status.atascii_has_wide_font = Q_FALSE;
+    if (strcasecmp(get_option(Q_OPTION_ATASCII_WIDE_FONT), "true") == 0) {
+        q_status.atascii_has_wide_font = Q_TRUE;
     }
 
 }

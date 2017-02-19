@@ -472,19 +472,6 @@ struct q_status_struct {
     /* ATASCII features */
 
     /**
-     * When true, support color ANSI codes for ATASCII which doesn't
-     * officially support that.  Do this even when atascii_ansi_fallback is
-     * false.
-     */
-    Q_BOOL atascii_color;
-
-    /**
-     * When true, send anything ATASCII doesn't understand through the ANSI
-     * emulator.
-     */
-    Q_BOOL atascii_ansi_fallback;
-
-    /**
      * When true, ATASCII can assume that it has a wide font and does not
      * need to set every line to double-width.
      */

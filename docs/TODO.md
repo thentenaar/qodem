@@ -38,6 +38,8 @@ Fix all marked TODOs in code
 
 #41 PETSCII
     - Fallback to double-width on narrow fonts
+    - Remap curses ASCII to lowercase C64 for all other keystrokes
+      (punctuation etc)
     - README, man page, help text
 
     aubbs.zapto.org port 2300
@@ -50,8 +52,9 @@ Fix all marked TODOs in code
 #52 bracketed paste mode
 
 #47 ATASCII
-    - Start with Tim H's atari.c
     - README, man page, help text
+    - Remap curses ASCII to ATASCII for all other keystrokes
+      (punctuation etc)
 
 #53 Xmodem/G Ymodem/G error
 

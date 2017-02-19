@@ -775,3 +775,5 @@ We'd like to thank the following individuals:
   source compatible license.
 
 * Nathanael Culver for obtaining Qmodem 2.3, 4.2f, and QmodemPro 1.50.
+
+* Tim Hentenaar for the original version of the ATASCII code.
