@@ -90,6 +90,7 @@
 #include "console.h"
 #include "ansi.h"
 #include "petscii.h"
+#include "atascii.h"
 #include "vt52.h"
 #include "vt100.h"
 #include "options.h"
@@ -231,6 +232,7 @@ static struct emulation_keyboard terminfo_keyboards[Q_EMULATION_MAX + 1] = {
     {Q_EMUL_VT220, "vt220"},
     {Q_EMUL_AVATAR, "avatar"},
     {Q_EMUL_PETSCII, "petscii"},
+    {Q_EMUL_ATASCII, "atascii"},
     {Q_EMUL_DEBUG, "tty"},
     {Q_EMUL_LINUX, "linux"},
     {Q_EMUL_LINUX_UTF8, "linux"},
@@ -253,6 +255,7 @@ static struct emulation_keyboard emulation_bound_keyboards[Q_EMULATION_MAX +
     {Q_EMUL_VT220, "vt220"},
     {Q_EMUL_AVATAR, "avatar"},
     {Q_EMUL_PETSCII, "petscii"},
+    {Q_EMUL_ATASCII, "atascii"},
     {Q_EMUL_DEBUG, "tty"},
     {Q_EMUL_LINUX, "linux"},
     {Q_EMUL_LINUX_UTF8, "linux"},
@@ -1045,14 +1048,11 @@ static void postprocess_keyboard_macro(wchar_t ** macro_string) {
      */
     if (q_status.emulation == Q_EMUL_PETSCII) {
         for (i = 0; i < wcslen(macro_output_buffer); i++) {
-            if ((macro_output_buffer[i] >= 'A') &&
-                (macro_output_buffer[i] <= 'Z')
+            if ((macro_output_buffer[i] > 0x20) &&
+                (macro_output_buffer[i] < 0x7F)
             ) {
-                macro_output_buffer[i] += 32;
-            } else if ((macro_output_buffer[i] >= 'a') &&
-                (macro_output_buffer[i] <= 'z')
-            ) {
-                macro_output_buffer[i] -= 32;
+                macro_output_buffer[i] = petscii_ascii_to_petscii(
+                                                macro_output_buffer[i]);
             }
         }
     }
@@ -1104,10 +1104,8 @@ void post_keystroke(const int keystroke, const int flags) {
      * We need to do some PETSCII processing separately from everything else.
      */
     if (q_status.emulation == Q_EMUL_PETSCII) {
-        if ((keystroke2 >= 'A') && (keystroke2 <= 'Z')) {
-            keystroke2 += 32;
-        } else if ((keystroke2 >= 'a') && (keystroke2 <= 'z')) {
-            keystroke2 -= 32;
+        if ((keystroke2 > 0x20) && (keystroke2 < 0x7F)) {
+            keystroke2 = petscii_ascii_to_petscii(keystroke2);
         }
     }
 
@@ -1291,6 +1289,9 @@ void post_keystroke(const int keystroke, const int flags) {
             break;
         case Q_EMUL_PETSCII:
             term_string = petscii_keystroke(keystroke);
+            break;
+        case Q_EMUL_ATASCII:
+            term_string = atascii_keystroke(keystroke);
             break;
         case Q_EMUL_VT52:
             term_string = vt52_keystroke(keystroke);

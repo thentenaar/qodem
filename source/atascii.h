@@ -1,5 +1,5 @@
 /*
- * petscii.h
+ * atascii.h
  *
  * qodem - Qodem Terminal Emulator
  *
@@ -15,8 +15,8 @@
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 
-#ifndef __PETSCII_H__
-#define __PETSCII_H__
+#ifndef __ATASCII_H__
+#define __ATASCII_H__
 
 /* Includes --------------------------------------------------------------- */
 
@@ -33,7 +33,7 @@ extern "C" {
 /* Functions -------------------------------------------------------------- */
 
 /**
- * Push one byte through the PETSCII emulator.
+ * Push one byte through the ATASCII emulator.
  *
  * @param from_modem one byte from the remote side.
  * @param to_screen if the return is Q_EMUL_FSM_ONE_CHAR or
@@ -41,13 +41,13 @@ extern "C" {
  * the screen.
  * @return one of the Q_EMULATION_STATUS constants.  See emulation.h.
  */
-extern Q_EMULATION_STATUS petscii(const unsigned char from_modem,
+extern Q_EMULATION_STATUS atascii(const unsigned char from_modem,
                                   wchar_t * to_screen);
 
 /**
  * Reset the emulation state.
  */
-extern void petscii_reset();
+extern void atascii_reset();
 
 /**
  * Generate a sequence of bytes to send to the remote side that correspond to
@@ -59,19 +59,10 @@ extern void petscii_reset();
  * Note that ANSI emulation is an 8-bit emulation: only the bottom 8 bits are
  * transmitted to the remote side.  See post_keystroke().
  */
-extern wchar_t * petscii_keystroke(const int keystroke);
-
-/**
- * Convert a printable ASCII character into a PETSCII printable character.
- *
- * @param ascii a value in the range of 0x20 - 0x7E, inclusive
- * @return a byte that can be transmitted to a PETSCII system, reflecting the
- * current shift state
- */
-extern unsigned char petscii_ascii_to_petscii(const unsigned char ascii);
+extern wchar_t * atascii_keystroke(const int keystroke);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __PETSCII_H__ */
+#endif /* __ATASCII_H__ */

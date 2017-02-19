@@ -478,10 +478,9 @@ XTerm such as Tektronix 4014 mode, alternate screen buffer, and many
 more.  It is intended to support XTerm applications that only use the
 sequences in the 'xterm' terminfo entry.
 
-PETSCII colors do not exactly match true Commodore colors, especially
-for background colors for which CGA only had eight possibilities.
-Also, uppercase/lowercase switches new incoming characters but does
-not change the existing characters on the screen.
+PETSCII colors do not exactly match true Commodore colors.  Also,
+uppercase/lowercase switches new incoming characters but does not
+change the existing characters on the screen.
 
 
 
@@ -776,3 +775,5 @@ We'd like to thank the following individuals:
   source compatible license.
 
 * Nathanael Culver for obtaining Qmodem 2.3, 4.2f, and QmodemPro 1.50.
+
+* Tim Hentenaar for the original version of the ATASCII code.

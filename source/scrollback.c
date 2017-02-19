@@ -504,6 +504,24 @@ void print_character(const wchar_t character) {
             right_margin = 79;
         }
         break;
+    case Q_EMUL_ATASCII:
+        /*
+         * ATASCII is always 40 columns on screen.  But these might be
+         * double-width lines, so the visible right margin is 80 columns.
+         */
+        if (q_status.atascii_has_wide_font == Q_FALSE) {
+            /*
+             * We think we are running with a narrow font, so will need to
+             * use double-width characters.
+             */
+            right_margin = 79;
+        } else {
+            /*
+             * We already have a wide font, so restrict to 40 columns.
+             */
+            right_margin = 39;
+        }
+        break;
     case Q_EMUL_PETSCII:
         /*
          * PETSCII is always 40 columns on screen.  But these might be
@@ -691,7 +709,8 @@ void print_character(const wchar_t character) {
                     fprintf(q_status.capture_file, " ");
                 }
                 if ((q_scrollback_current->double_width == Q_TRUE) &&
-                    (q_status.emulation != Q_EMUL_PETSCII)
+                    (q_status.emulation != Q_EMUL_PETSCII) &&
+                    (q_status.emulation != Q_EMUL_ATASCII)
                 ) {
                     fprintf(q_status.capture_file, " ");
                 }
@@ -730,7 +749,8 @@ void print_character(const wchar_t character) {
          * Double-width
          */
         if ((q_scrollback_current->double_width == Q_TRUE) &&
-            (q_status.emulation != Q_EMUL_PETSCII)
+            (q_status.emulation != Q_EMUL_PETSCII) &&
+            (q_status.emulation != Q_EMUL_ATASCII)
         ) {
             fprintf(q_status.capture_file, " ");
             q_status.capture_x++;
@@ -868,7 +888,8 @@ static void save_scrollback_line(FILE * file, struct q_scrolline_struct * line,
             fprintf(file, "%lc", (wint_t) ch);
         }
         if ((line->double_width == Q_TRUE) &&
-            (q_status.emulation != Q_EMUL_PETSCII)
+            (q_status.emulation != Q_EMUL_PETSCII) &&
+            (q_status.emulation != Q_EMUL_ATASCII)
         ) {
             if (save_type == Q_CAPTURE_TYPE_HTML) {
                 fprintf(file, "&nbsp;");
@@ -1685,7 +1706,8 @@ void render_scrollback(const int skip_lines) {
                             break;
                         }
                         if ((has_true_doublewidth() == Q_FALSE) &&
-                            (q_status.emulation != Q_EMUL_PETSCII)
+                            (q_status.emulation != Q_EMUL_PETSCII) &&
+                            (q_status.emulation != Q_EMUL_ATASCII)
                         ) {
                             screen_put_scrollback_char_yx(row, (2 * i),
                                 translate_unicode_in(line->chars[i]), color);

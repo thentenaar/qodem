@@ -1297,12 +1297,16 @@ static void cleanup_connection() {
         case Q_DIAL_METHOD_SSH:
             /* Fall through... */
 
+            /*
+             * The remote side initiated the close, this is the ideal closing
+             * sequence.
+             */
             if (net_is_connected() == Q_TRUE) {
-                /*
-                 * The remote side initiated the close, this is the ideal
-                 * closing sequence.
-                 */
-                net_close();
+                if (q_status.dial_method == Q_DIAL_METHOD_SOCKET) {
+                    net_force_close();
+                } else {
+                    net_close();
+                }
             }
 
 #ifdef Q_PDCURSES_WIN32
@@ -1408,8 +1412,18 @@ void close_connection() {
 
     /* How to close depends on the connection method */
     if (net_is_connected() == Q_TRUE) {
-        /* Telnet, Rlogin, SOCKET, SSH */
-        net_close();
+        /*
+         * Telnet, Rlogin, and SSH read() functions have set connected to
+         * false.  Socket does not, so treat it like host mode.
+         */
+        if ((q_program_state != Q_STATE_HOST) &&
+            (q_status.dial_method == Q_DIAL_METHOD_SOCKET)
+        ) {
+            cleanup_connection();
+            net_force_close();
+        } else {
+            net_close();
+        }
         if (q_program_state == Q_STATE_HOST) {
             /*
              * Host mode has called host_stop().  Cleanup the connection
@@ -3014,7 +3028,10 @@ static void reset_global_state() {
     q_status.petscii_color          = Q_TRUE;
     q_status.petscii_ansi_fallback  = Q_TRUE;
     q_status.petscii_has_wide_font  = Q_TRUE;
+    q_status.petscii_use_unicode    = Q_FALSE;
     q_status.petscii_is_c64         = Q_TRUE;
+
+    q_status.atascii_has_wide_font  = Q_FALSE;
 
 #ifndef Q_NO_SERIAL
     q_status.serial_open            = Q_FALSE;

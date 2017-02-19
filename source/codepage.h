@@ -212,6 +212,7 @@ typedef enum Q_CODEPAGES {
      */
     Q_CODEPAGE_DEC,             /* DEC character sets for VT10x/VT220 */
     Q_CODEPAGE_PETSCII,         /* PETSCII, treated like DEC */
+    Q_CODEPAGE_ATASCII,         /* ATASCII, treated like DEC */
 
 } Q_CODEPAGE;
 #define Q_CODEPAGE_PHONEBOOK_MAX (Q_CODEPAGE_KOI8_U + 1)

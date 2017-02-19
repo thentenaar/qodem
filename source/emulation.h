@@ -40,6 +40,7 @@ typedef enum Q_EMULATIONS {
     Q_EMUL_VT220,               /* VT220 */
     Q_EMUL_AVATAR,              /* Avatar */
     Q_EMUL_PETSCII,             /* PETSCII (Commodore) */
+    Q_EMUL_ATASCII,             /* ATASCII (Atari) */
     Q_EMUL_DEBUG,               /* DEBUG */
     Q_EMUL_LINUX,               /* Linux console */
     Q_EMUL_LINUX_UTF8,          /* Linux console (UTF-8) */

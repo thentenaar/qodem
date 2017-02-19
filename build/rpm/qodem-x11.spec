@@ -19,14 +19,15 @@ shareware communications package, updated for more modern uses.
 Major features include:
     * Unicode display: translation of CP437 (PC VGA), VT100 DEC
       Special Graphics characters, VT220 National Replacement
-      Character sets, etc., to Unicode
+      Character sets, ATASCII, etc., to Unicode
     * Terminal interface conveniences: scrollback buffer, capture
       file, screen dump, dialing directory, keyboard macros, script
       support
     * Connection methods: serial, local shell, command line, telnet,
       ssh, rlogin, raw socket
     * Emulations: ANSI.SYS (including "ANSI music"), Avatar, VT52,
-      VT100/102, VT220, Linux, and XTerm
+      VT100/102, VT220, Linux, XTerm, PETSCII (Commodore), and ATASCII
+      (Atari)
     * Transfer protocols: Xmodem, Ymodem, Zmodem, and Kermit
     * External script support.  Any program that reads stdin and
       writes to stdout and stderr can be run as a script.

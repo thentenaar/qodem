@@ -9,6 +9,7 @@ endif
 
 qodem_SOURCES = \
 source/ansi.c \
+source/atascii.c \
 source/avatar.c \
 source/codepage.c \
 source/colors.c \
@@ -41,6 +42,7 @@ source/vt52.c \
 source/xmodem.c \
 source/zmodem.c \
 source/ansi.h \
+source/atascii.h \
 source/avatar.h \
 source/codepage.h \
 source/colors.h \

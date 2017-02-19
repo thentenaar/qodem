@@ -469,6 +469,20 @@ struct q_status_struct {
      */
     Q_BOOL petscii_is_c64;
 
+    /**
+     * When true, PETSCII will try to map to Unicode rather than use the C64
+     * Pro Mono font.
+     */
+    Q_BOOL petscii_use_unicode;
+
+    /* ATASCII features */
+
+    /**
+     * When true, ATASCII can assume that it has a wide font and does not
+     * need to set every line to double-width.
+     */
+    Q_BOOL atascii_has_wide_font;
+
     /* VT100 features */
 
     /**

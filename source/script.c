@@ -706,6 +706,7 @@ void script_process_data(unsigned char * input, const unsigned int input_n,
             case Q_EMUL_ANSI:
             case Q_EMUL_AVATAR:
             case Q_EMUL_PETSCII:
+            case Q_EMUL_ATASCII:
             case Q_EMUL_DEBUG:
             case Q_EMUL_VT52:
             case Q_EMUL_VT100:
@@ -1014,8 +1015,9 @@ void script_start(const char * script_filename) {
         }
         break;
     case Q_EMUL_PETSCII:
+    case Q_EMUL_ATASCII:
         /*
-         * PETSCII is always 40 columns.
+         * PETSCII and ATASCII are always 40 columns.
          */
         columns = 40;
         break;
@@ -1240,8 +1242,9 @@ void script_start(const char * script_filename) {
             }
             break;
         case Q_EMUL_PETSCII:
+        case Q_EMUL_ATASCII:
             /*
-             * PETSCII is always 40 columns.
+             * PETSCII and ATASCII are always 40 columns.
              */
             columns = 40;
             break;

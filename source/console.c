@@ -2828,7 +2828,8 @@ void console_refresh(Q_BOOL status_line) {
     } else {
         if (q_scrollback_current->double_width == Q_TRUE) {
             if ((has_true_doublewidth() == Q_FALSE) &&
-                (q_status.emulation != Q_EMUL_PETSCII)
+                (q_status.emulation != Q_EMUL_PETSCII) &&
+                (q_status.emulation != Q_EMUL_ATASCII)
             ) {
                 screen_move_yx(q_status.cursor_y, (2 * q_status.cursor_x));
             } else {
