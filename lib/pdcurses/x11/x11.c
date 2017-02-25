@@ -3699,14 +3699,18 @@ int XCursesSetupX(int argc, char *argv[])
             fprintf(stderr, "Found normalFont, switch '%s' to '%s'\n",
                 app_resources[i].default_addr, get_option(Q_OPTION_X11_FONT));
              */
-            app_resources[i].default_addr = strdup(get_option(Q_OPTION_X11_FONT));
+            if (get_option(Q_OPTION_X11_FONT) != NULL) {
+                app_resources[i].default_addr = strdup(get_option(Q_OPTION_X11_FONT));
+            }
         }
         if (strcmp(app_resources[i].resource_name, "italicFont") == 0) {
             /*
             fprintf(stderr, "Found italicFont, switch '%s' to '%s'\n",
                 app_resources[i].default_addr, get_option(Q_OPTION_X11_FONT));
              */
-            app_resources[i].default_addr = strdup(get_option(Q_OPTION_X11_FONT));
+            if (get_option(Q_OPTION_X11_FONT) != NULL) {
+                app_resources[i].default_addr = strdup(get_option(Q_OPTION_X11_FONT));
+            }
         }
     }
 

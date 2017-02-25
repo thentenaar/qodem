@@ -14,15 +14,19 @@ Fix all marked TODOs in code
 
 #38 Be able to run fully portable:
 
+    - keyboard.c and option.c: switch from fprintf(stderr, ...) to
+      notify_form() for failing to write files.
+
     - A --config command line option to read qodemrc from
       user-supplied file. If given, NO OTHER option file locations are
-      read.
+      read.  CODE done.  Needs doc: man pages, help text
 
     - Be able to load and run phonebook, scripts, modem cfg, color
       cfg, keyfiles, etc. from read-only media. The media is checked
       for write access, and if not found save operations fail with a
       notification. If script_stderr cannot be created, scripts are
-      disabled for that session.
+      disabled for that session.  PARTIAL: --dotqodem-dir option in
+      code, needs doc: man pages, help text.
 
     - A --read-only command line option that disables all save
         operations entirely. This will require some re-work for config

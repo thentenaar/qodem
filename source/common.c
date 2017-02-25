@@ -311,10 +311,10 @@ char * get_home_directory() {
      * %USERPROFILE% .
      */
 
-        /*
-         * VC6 has SHGetSpecialFolderPath, not SHGetFolderPath.
-         * if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, 0, myDocsPath))) {
-         */
+    /*
+     * VC6 has SHGetSpecialFolderPath, not SHGetFolderPath.
+     * if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, 0, myDocsPath))) {
+     */
     if (SUCCEEDED(SHGetSpecialFolderPath(NULL, myDocsPath, CSIDL_PERSONAL, 0))) {
 
 #endif /* __BORLANDC__ */

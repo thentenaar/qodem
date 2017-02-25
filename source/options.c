@@ -39,6 +39,7 @@
 #include "translate.h"
 #include "qodem.h"
 #include "scrollback.h"
+#include "forms.h"
 #include "options.h"
 
 /*
@@ -54,6 +55,16 @@ struct option_struct {
 
 /* The full path to the options file. */
 static char home_directory_options_filename[FILENAME_SIZE];
+
+/**
+ * The --config command line argument, stored in qodem.c.
+ */
+extern char * q_config_filename;
+
+/**
+ * The --dotqodem-dir command line argument, stored in qodem.c.
+ */
+extern char * q_dotqodem_dir;
 
 /* Options list */
 static struct option_struct options[] = {
@@ -1497,6 +1508,123 @@ static Q_BOOL create_directory(const char * path) {
 }
 
 /**
+ * Create everything that needs to be in ~/.qodem.
+ */
+static void populate_dotqodem() {
+    /*
+     * Create the key bindings files
+     */
+    create_keybindings_files();
+
+#ifndef Q_NO_SERIAL
+    /*
+     * Create the modem config file
+     */
+    create_modem_config_file();
+#endif
+}
+
+/**
+ * Create everything that needs to be in ~/qodem.
+ */
+static void check_and_create_directories() {
+    Q_BOOL rc;
+    char * working_dir;
+    char notify_message[DIALOG_MESSAGE_SIZE];
+    char * message_lines[10];
+    char * env_string;
+    char * substituted_filename;
+
+    /*
+     * We will use $HOME several times now, hang onto it.
+     */
+    env_string = get_home_directory();
+
+    /*
+     * Check for working directory
+     */
+    working_dir =
+        substitute_string(get_option(Q_OPTION_WORKING_DIR), "$HOME",
+                          env_string);
+    if (directory_exists(working_dir) == Q_FALSE) {
+        rc = create_directory(working_dir);
+        if (rc == Q_FALSE) {
+            snprintf(notify_message, sizeof(notify_message), _(""
+                    "Could not create the directory %s."), working_dir);
+            message_lines[0] = notify_message;
+            message_lines[1] = _("You may have to specify full paths when you");
+            message_lines[2] = _("download files, enable capture/log, etc.\n"),
+            notify_form_long(message_lines, 0, 3);
+        }
+    }
+    /*
+     * Free leak
+     */
+    Xfree(working_dir, __FILE__, __LINE__);
+
+    /*
+     * Check for host mode working directory
+     */
+    working_dir =
+        substitute_string(get_option(Q_OPTION_HOST_DIR), "$HOME", env_string);
+    if (directory_exists(working_dir) == Q_FALSE) {
+        rc = create_directory(working_dir);
+        if (rc == Q_FALSE) {
+            snprintf(notify_message, sizeof(notify_message), _(""
+                    "Could not create the directory %s."), working_dir);
+            message_lines[0] = notify_message;
+            message_lines[1] = _("Host mode may be unable to perform");
+            message_lines[2] = _("uploads and downloads or messages"),
+            notify_form_long(message_lines, 0, 3);
+        }
+    }
+    /*
+     * Free leak
+     */
+    Xfree(working_dir, __FILE__, __LINE__);
+
+    /*
+     * Check for scripts directory
+     */
+    working_dir =
+        substitute_string(get_option(Q_OPTION_SCRIPTS_DIR), "$HOME",
+                          env_string);
+    if (directory_exists(working_dir) == Q_FALSE) {
+        rc = create_directory(working_dir);
+        if (rc == Q_FALSE) {
+            snprintf(notify_message, sizeof(notify_message), _(""
+"Could not create the directory %s.  Scripts might not work correctly."),
+                working_dir);
+            notify_form(notify_message, 0);
+        }
+    }
+    /*
+     * Free leak
+     */
+    Xfree(working_dir, __FILE__, __LINE__);
+
+#ifndef Q_PDCURSES_WIN32
+    /*
+     * Check for the scripts stderr fifo.
+     */
+    substituted_filename =
+        substitute_string(get_option(Q_OPTION_SCRIPTS_STDERR_FIFO), "$HOME",
+                          env_string);
+    if (access(substituted_filename, F_OK) != 0) {
+        /*
+         * Try to create it
+         */
+        mkfifo(substituted_filename, S_IRUSR | S_IWUSR);
+    }
+    /*
+     * Free leak
+     */
+    Xfree(substituted_filename, __FILE__, __LINE__);
+#endif
+
+}
+
+/**
  * This must be called to initialize the options list from the config file.
  *
  * Load options from all the files.  We search the following:
@@ -1531,12 +1659,10 @@ void load_options() {
     char * current_filename;
     char * env_string;
     char * substituted_filename;
-    char * working_dir;
     struct option_struct * current_option;
-#ifdef ASK_TO_CREATE
-    char lang_value[32];
-#endif
     char * lang_default;
+    char notify_message[DIALOG_MESSAGE_SIZE];
+    char * message_lines[10];
 
     /*
      * Set default values.
@@ -1556,169 +1682,77 @@ void load_options() {
         current_option++;
     }
 
-    env_string = get_home_directory();
-    if (env_string == NULL) {
-        env_string = "";
-    } else {
-        /*
-         * Check for .qodem directory
-         */
-#ifdef Q_PDCURSES_WIN32
-        working_dir =
-            substitute_string("$HOME\\qodem\\prefs", "$HOME", env_string);
-#else
-        working_dir = substitute_string("$HOME/.qodem", "$HOME", env_string);
-#endif
+    /*
+     * It is main()'s job to set q_home_directory before calling
+     * load_options().  Make sure that was done.
+     */
+    assert(q_home_directory != NULL);
 
-        if (directory_exists(working_dir) == Q_FALSE) {
-
-#ifdef ASK_TO_CREATE
-            printf(_(""
-"Qodem needs to create a directory to store its internal data files.\n"
-"The default directory is %s.  Should I create this directory now? [Y/n] "),
-                   working_dir);
-            i = getchar();
-            if ((tolower(i) == 'y') || (i == '\r') || (i == '\n')) {
-#endif
-                /*
-                 * Create both qodem and qodem/prefs directory
-                 */
-                rc = create_directory(working_dir);
-                if (rc == Q_FALSE) {
-                    printf(_(""
-"Could not create the directory %s.  You may have to specify full paths\n"
-"when you load key bindings, phone books, etc.\n"),
-                           working_dir);
-                } else {
-                    printf(_("Created directory %s.\n"), working_dir);
-
-                    /*
-                     * Create the key bindings files
-                     */
-                    create_keybindings_files();
-
-#ifndef Q_NO_SERIAL
-                    /*
-                     * Create the modem config file
-                     */
-                    create_modem_config_file();
-#endif
-                }
-#ifdef ASK_TO_CREATE
-            } else {
-                printf(_(""
-"Will NOT create the directory %s.  You may have to specify full paths\n"
-"when you load key bindings, phone books, etc.\n"),
-                       working_dir);
-            }
-
+    /*
+     * Check for .qodem directory
+     */
+    if (directory_exists(q_home_directory) == Q_FALSE) {
+        rc = create_directory(q_home_directory);
+        if (rc == Q_FALSE) {
+            snprintf(notify_message, sizeof(notify_message), _(""
+                    "Could not create the directory %s."), q_home_directory);
+            message_lines[0] = notify_message;
+            message_lines[1] = _("You may have to specify full paths when");
+            message_lines[2] = _("you load key bindings, phone books, etc."),
+            notify_form_long(message_lines, 0, 3);
+        } else {
             /*
-             * Clear any other characters waiting in stdin
+             * Since we just created .qodem, we can now create everything in
+             * it.
              */
-            purge_stdin();
-
-            printf(_("Press any key to continue...\n"));
-            getchar();
-#endif
+            populate_dotqodem();
         }
-
-        /*
-         * Free leak
-         */
-        Xfree(working_dir, __FILE__, __LINE__);
     }
 
     /*
-     * Special check: $HOME/.qodem/qodemrc
-     */
-
-    /*
-     * Sustitute for $HOME
+     * Special check: $HOME/.qodem/qodemrc.  If this doesn't exist, then we
+     * create it here before moving on.
      */
 #ifdef Q_PDCURSES_WIN32
     substituted_filename =
-        substitute_string("$HOME/qodem/prefs/qodemrc.txt", "$HOME", env_string);
+        substitute_string("$HOME/qodemrc.txt", "$HOME", q_home_directory);
 #else
     substituted_filename =
-        substitute_string("$HOME/.qodem/qodemrc", "$HOME", env_string);
+        substitute_string("$HOME/qodemrc", "$HOME", q_home_directory);
 #endif
-
     if (file_exists(substituted_filename) == Q_FALSE) {
         /*
-         * UTF-8 locale
+         * Set the ISO8859 and UTF8 lang variables in the new qodemrc based
+         * on the LANG environment variable.
          */
         lang_default = getenv("LANG");
         if (lang_default == NULL) {
-            lang_default = get_option(Q_OPTION_UTF8_LANG);
+            /*
+             * User doesn't have it set, so we use the defaults.
+             */
         } else {
             if (strstr(lang_default, "UTF-8") == NULL) {
-                lang_default = get_option(Q_OPTION_UTF8_LANG);
+                /*
+                 * User has LANG set, but it isn't UTF-8.  Use LANG for
+                 * 8-bit, and default for UTF-8.
+                 */
+                set_option(find_option(Q_OPTION_ISO8859_LANG), lang_default);
+            } else {
+                /*
+                 * User has LANG set, and it is UTF-8.  Use LANG for UTF-8,
+                 * and default for 8-bit.
+                 */
+                set_option(find_option(Q_OPTION_UTF8_LANG), lang_default);
             }
         }
-
-#ifdef ASK_TO_CREATE
-        printf(_(""
-"Qodem needs to set the LANG environment variable when it connects to remote\n"
-"systems.  The current value for UTF-8 systems is '%s'.  Press Enter to use\n"
-"this value, or type in a new value:  "), lang_default);
-
-        fgets(lang_value, sizeof(lang_value) - 1, stdin);
-        if (strlen(lang_value) > 0) {
-            while (q_isspace(lang_value[strlen(lang_value) - 1])) {
-                lang_value[strlen(lang_value) - 1] = 0;
-            }
-        }
-        begin = lang_value;
-        while ((strlen(begin) > 0) && (q_isspace(*begin))) {
-            begin++;
-        }
-        if (strlen(begin) > 0) {
-            set_option(find_option(Q_OPTION_UTF8_LANG), begin);
-        } else {
-#endif
-            set_option(find_option(Q_OPTION_UTF8_LANG), lang_default);
-#ifdef ASK_TO_CREATE
-        }
-#endif
-
-        /*
-         * 8-bit code page locale
-         */
-        lang_default = get_option(Q_OPTION_ISO8859_LANG);
-
-#ifdef ASK_TO_CREATE
-        printf(_(""
-"Qodem needs to set the LANG environment variable when it connects to remote\n"
-"systems.  The current value for non-UTF-8 systems is '%s'.  Press Enter to\n"
-"use this value, or type in a new value:  "), lang_default);
-
-        fgets(lang_value, sizeof(lang_value) - 1, stdin);
-        if (strlen(lang_value) > 0) {
-            while (q_isspace(lang_value[strlen(lang_value) - 1])) {
-                lang_value[strlen(lang_value) - 1] = 0;
-            }
-        }
-        begin = lang_value;
-        while ((strlen(begin) > 0) && (q_isspace(*begin))) {
-            begin++;
-        }
-        if (strlen(begin) > 0) {
-            set_option(find_option(Q_OPTION_ISO8859_LANG), begin);
-        } else {
-#endif
-            set_option(find_option(Q_OPTION_ISO8859_LANG), lang_default);
-#ifdef ASK_TO_CREATE
-        }
-#endif
 
         /*
          * Save options
          */
         if (save_options(substituted_filename) == Q_FALSE) {
-            printf(_("Error saving default options to %s\n"),
-                   substituted_filename);
-            printf(_("Press any key to continue...\n"));
-            getchar();
+            snprintf(notify_message, sizeof(notify_message),
+                _("Error saving default options to %s"), substituted_filename);
+            notify_form(notify_message, 0);
         }
     }
     /*
@@ -1727,26 +1761,29 @@ void load_options() {
     Xfree(substituted_filename, __FILE__, __LINE__);
 
     /*
-     * Special check: $HOME/.qodem/scripts
+     * We will use $HOME several times now, hang onto it.
      */
-    /*
-     * Sustitute for $HOME
-     */
-#ifdef Q_PDCURSES_WIN32
-    substituted_filename =
-        substitute_string("$HOME/qodem/scripts", "$HOME", env_string);
-#else
-    substituted_filename =
-        substitute_string("$HOME/.qodem/scripts", "$HOME", env_string);
-#endif
-    if (directory_exists(substituted_filename) == Q_FALSE) {
-        create_directory(substituted_filename);
-    }
-    /*
-     * Free leak
-     */
-    Xfree(substituted_filename, __FILE__, __LINE__);
+    env_string = get_home_directory();
 
+    if (q_config_filename != NULL) {
+        /*
+         * The user specified --config on the command line.  Only read that
+         * file, don't read any of the others.
+         */
+#ifdef Q_PDCURSES_WIN32
+        if (file_exists(q_config__filename) == Q_TRUE) {
+#else
+        if (access(q_config_filename, F_OK | R_OK) == 0) {
+#endif
+            load_options_from_file(q_config_filename);
+        }
+        goto no_more_config_files;
+    }
+
+    /*
+     * Read options from all the available files, overwriting them with each
+     * read.
+     */
     i = 0;
     for (current_filename = filenames[i]; current_filename != NULL;
          i++, current_filename = filenames[i]) {
@@ -1784,167 +1821,27 @@ void load_options() {
 
     }
 
-    /*
-     * Check for working directory
-     */
-    working_dir =
-        substitute_string(get_option(Q_OPTION_WORKING_DIR), "$HOME",
-                          env_string);
-    if (directory_exists(working_dir) == Q_FALSE) {
-#ifdef ASK_TO_CREATE
-        printf(_(""
-"Qodem needs to create a directory to store user files such as\n"
-"downloaded and uploaded files, session logs, capture files, etc.\n"
-"The default directory is %s.  Should I create this directory now? [Y/n] "),
-               working_dir);
-        i = getchar();
-        if ((tolower(i) == 'y') || (i == '\r') || (i == '\n')) {
-#endif
-            rc = create_directory(working_dir);
-            if (rc == Q_FALSE) {
-                printf(_(""
-"Could not create the directory %s.  You may have to specify full paths\n"
-"when you download files, enable capture/log, etc.\n"),
-                       working_dir);
-            } else {
-                printf(_("Created directory %s.\n"), working_dir);
-            }
-#ifdef ASK_TO_CREATE
-        } else {
-            printf(_(""
-"Will NOT create the directory %s.  You may have to specify full paths\n"
-"when you download files, enable capture/log, etc.\n"),
-                   working_dir);
-        }
-
-        /*
-         * Clear any other characters waiting in stdin
-         */
-        purge_stdin();
-
-        printf(_("Press any key to continue...\n"));
-        getchar();
-#endif
-    }
-    /*
-     * Free leak
-     */
-    Xfree(working_dir, __FILE__, __LINE__);
+no_more_config_files:
 
     /*
-     * Check for host mode working directory
+     * ----------------------------------------------------------------------
+     *
+     * At this point, we have a ~/.qodem created, a ~/.qodem/qodemrc created,
+     * and we have read all of the options between INSTALL_DIR/qodemrc and
+     * $HOME/.qodem/qodemrc.  The working, host mode, and script directory
+     * names are now known.
+     *
+     * Create the directories if needed.  Then wrap up the options handling
+     * and be done.
+     *
+     * ----------------------------------------------------------------------
      */
-    working_dir =
-        substitute_string(get_option(Q_OPTION_HOST_DIR), "$HOME", env_string);
-    if (directory_exists(working_dir) == Q_FALSE) {
-#ifdef ASK_TO_CREATE
-        printf(_(""
-"Qodem needs to create a directory to store host mode files such as\n"
-"downloaded and uploaded files, email messages, etc.\n"
-"The default directory is %s.  Should I create this directory now? [Y/n] "),
-               working_dir);
-        i = getchar();
-        if ((tolower(i) == 'y') || (i == '\r') || (i == '\n')) {
-#endif
-            rc = create_directory(working_dir);
-            if (rc == Q_FALSE) {
-                printf(_(""
-"Could not create the directory %s.  Host mode may be unable to\n"
-"perform uploads and downloads or messages.\n"),
-                       working_dir);
-            } else {
-                printf(_("Created directory %s.\n"), working_dir);
-            }
-#ifdef ASK_TO_CREATE
-        } else {
-            printf(_(""
-"Will NOT create the directory %s.  Host mode may be unable to\n"
-"perform uploads and downloads or messages.\n"),
-                   working_dir);
-        }
-
-        /*
-         * Clear any other characters waiting in stdin
-         */
-        purge_stdin();
-
-        printf(_("Press any key to continue...\n"));
-        getchar();
-#endif
-    }
-    /*
-     * Free leak
-     */
-    Xfree(working_dir, __FILE__, __LINE__);
-
-    /*
-     * Check for scripts directory
-     */
-    working_dir =
-        substitute_string(get_option(Q_OPTION_SCRIPTS_DIR), "$HOME",
-                          env_string);
-    if (directory_exists(working_dir) == Q_FALSE) {
-#ifdef ASK_TO_CREATE
-        printf(_(""
-"Qodem needs to create a directory to store script files.\n"
-"The default directory is %s.  Should I create this directory now? [Y/n] "),
-               working_dir);
-        i = getchar();
-        if ((tolower(i) == 'y') || (i == '\r') || (i == '\n')) {
-#endif
-            rc = create_directory(working_dir);
-            if (rc == Q_FALSE) {
-                printf(_(""
-"Could not create the directory %s.  Scripts might not work correctly\n"),
-                       working_dir);
-            } else {
-                printf(_("Created directory %s.\n"), working_dir);
-            }
-#ifdef ASK_TO_CREATE
-        } else {
-            printf(_(""
-"Will NOT create the directory %s.  Scripts might not work correctly\n"),
-                   working_dir);
-        }
-
-        /*
-         * Clear any other characters waiting in stdin
-         */
-        purge_stdin();
-
-        printf(_("Press any key to continue...\n"));
-        getchar();
-#endif
-    }
-    /*
-     * Free leak
-     */
-    Xfree(working_dir, __FILE__, __LINE__);
-
-#ifndef Q_PDCURSES_WIN32
-    /*
-     * Check for the scripts stderr fifo.
-     */
-    substituted_filename =
-        substitute_string(get_option(Q_OPTION_SCRIPTS_STDERR_FIFO), "$HOME",
-                          env_string);
-    if (access(substituted_filename, F_OK) != 0) {
-        /*
-         * Try to create it
-         */
-        mkfifo(substituted_filename, S_IRUSR | S_IWUSR);
-    }
-    /*
-     * Free leak
-     */
-    Xfree(substituted_filename, __FILE__, __LINE__);
-#endif
+    check_and_create_directories();
 
     /*
      * Special-case options.  For each one, reset to default and then re-load
      * from file.
      */
-
     q_status.idle_timeout = 0;
     if (get_option(Q_OPTION_IDLE_TIMEOUT) != NULL) {
         q_status.idle_timeout = atoi(get_option(Q_OPTION_IDLE_TIMEOUT));
@@ -1954,6 +1851,7 @@ void load_options() {
     if (get_option(Q_OPTION_SCREENSAVER_TIMEOUT) != NULL) {
         q_screensaver_timeout = atoi(get_option(Q_OPTION_SCREENSAVER_TIMEOUT));
     }
+
     q_scrollback_max = atoi(get_option_default(Q_OPTION_SCROLLBACK_LINES));
     if (get_option(Q_OPTION_SCROLLBACK_LINES) != NULL) {
         q_scrollback_max = atoi(get_option(Q_OPTION_SCROLLBACK_LINES));

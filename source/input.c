@@ -42,7 +42,7 @@ static const char * DLOGNAME = NULL;
 /**
  * The current rendering color.
  */
-attr_t q_current_color;
+attr_t q_current_color = COLOR_PAIR(0);
 
 /**
  * How long it's been since user input came in.

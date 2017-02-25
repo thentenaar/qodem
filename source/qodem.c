@@ -264,6 +264,16 @@ char * q_xl8file = NULL;
  */
 char * q_xlufile = NULL;
 
+/**
+ * The --config command line argument.
+ */
+char * q_config_filename = NULL;
+
+/**
+ * The --dotqodem-dir command line argument.
+ */
+char * q_dotqodem_dir = NULL;
+
 /* Command-line options */
 static struct option q_getopt_long_options[] = {
     {"dial",                1,      0,      0},
@@ -275,6 +285,8 @@ static struct option q_getopt_long_options[] = {
     {"xl8file",             1,      0,      0},
     {"xlufile",             1,      0,      0},
     {"scrfile",             1,      0,      0},
+    {"config",              1,      0,      0},
+    {"dotqodem-dir",        1,      0,      0},
     {"help",                0,      0,      0},
     {"username",            1,      0,      0},
     {"play",                1,      0,      0},
@@ -884,6 +896,9 @@ static char * usage_string() {
 "\n"
 "      --dial N                    Immediately connect to the phonebook\n"
 "                                  entry numbered N.\n"
+"      --dotqodem-dir DIRNAME      Use DIRNAME instead of $HOME/.qodem for\n"
+"                                  config/data files.\n"
+"      --config FILENAME           Load options from FILENAME (only).\n"
 "      --connect HOST              Immediately open a connection to HOST.\n"
 "                                  The default connection method is \"ssh"
 "\".\n"
@@ -1085,6 +1100,12 @@ static void process_command_line_option(const char * option,
 
     if (strncmp(option, "xlufile", strlen("xlufile")) == 0) {
         q_xlufile = Xstrdup(value, __FILE__, __LINE__);
+    }
+    if (strncmp(option, "config", strlen("config")) == 0) {
+        q_config_filename = Xstrdup(value, __FILE__, __LINE__);
+    }
+    if (strncmp(option, "dotqodem-dir", strlen("dotqodem-dir")) == 0) {
+        q_dotqodem_dir = Xstrdup(value, __FILE__, __LINE__);
     }
 
     if (strncmp(option, "xterm", strlen("xterm")) == 0) {
@@ -3141,12 +3162,21 @@ int qodem_main(int argc, char * const argv[]) {
     textdomain(PACKAGE);
 #endif
 
-        /*
-        fprintf(stderr, "LANG: %s\n", getenv("LANG"));
-        fprintf(stderr, "%s\n", bindtextdomain(PACKAGE, LOCALEDIR));
-        fprintf(stderr, "%s\n", textdomain(PACKAGE));
-         */
+    /*
+    fprintf(stderr, "LANG: %s\n", getenv("LANG"));
+    fprintf(stderr, "%s\n", bindtextdomain(PACKAGE, LOCALEDIR));
+    fprintf(stderr, "%s\n", textdomain(PACKAGE));
+     */
 #endif /* ENABLE_NLS && HAVE_GETTEXT */
+
+    /*
+     * If the user asked for help or version, do that and bail out before
+     * doing anything else like reading or writing to disk.
+     */
+    rc = check_for_help(argc, argv);
+    if (rc != 0) {
+        exit(rc);
+    }
 
     /*
      * Obtain the user name.
@@ -3189,38 +3219,6 @@ int qodem_main(int argc, char * const argv[]) {
 
     /* Initialize the music "engine" :-) */
     music_init();
-
-    /*
-     * Set q_home_directory.  load_options() will create the default key
-     * binding files and needs to use open_datadir_file().
-     */
-
-    /* Sustitute for $HOME */
-    env_string = get_home_directory();
-
-    /* Store for global use */
-#ifdef Q_PDCURSES_WIN32
-    q_home_directory = substitute_string("$HOME\\qodem\\prefs", "$HOME",
-        env_string);
-#else
-    q_home_directory = substitute_string("$HOME/.qodem", "$HOME", env_string);
-#endif
-
-    /* Load the options */
-    load_options();
-
-    /*
-     * If the user asked for help or version, do that and bail out now.  We
-     * have enough infrastructure in place to display the help/version text
-     * in a PDCurses window.
-     */
-    rc = check_for_help(argc, argv);
-    if (rc != 0) {
-        exit(rc);
-    }
-
-    /* Setup MIXED mode doorway */
-    setup_doorway_handling();
 
     /*
      * Setup an initial call state to support the --connect or --dial command
@@ -3266,12 +3264,53 @@ int qodem_main(int argc, char * const argv[]) {
         }
     } /* for (;;) */
 
-#if defined(Q_PDCURSES) || defined(Q_PDCURSES_WIN32)
+    if (q_program_state == Q_STATE_EXIT) {
+        /*
+         * --help or --version or somesting similar was on the command
+         * line.  Bail out now.
+         */
+        exit(0);
+    }
+
+    /*
+     * Set q_home_directory.  load_options() will create the default key
+     * binding files and needs to use open_datadir_file().
+     */
+
+    if (q_dotqodem_dir != NULL) {
+        /* The user supplied a .qodem directory, use that. */
+        q_home_directory = q_dotqodem_dir;
+    } else {
+        /* Sustitute for $HOME */
+        env_string = get_home_directory();
+#ifdef Q_PDCURSES_WIN32
+        q_home_directory = substitute_string("$HOME\\qodem\\prefs", "$HOME",
+            env_string);
+#else
+        q_home_directory = substitute_string("$HOME/.qodem", "$HOME",
+            env_string);
+#endif
+    }
+
+#if !defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32)
+    /* Xterm: send the private sequence to select metaSendsEscape */
+    fprintf(stdout, "\033[?1036h");
+    fflush(stdout);
+#endif
 
     /* Initialize curses. */
     screen_setup(rows_arg, cols_arg);
 
-#else
+    /* Load the options */
+    load_options();
+
+    /* Now that colors are known, use them. */
+    q_setup_colors();
+    q_current_color = scrollback_full_attr(Q_COLOR_CONSOLE_TEXT);
+
+    /* Setup MIXED mode doorway */
+    setup_doorway_handling();
+
     /*
      * Initialize the keyboard here.  It will newterm() each supported
      * emulation, but restore things before it leaves.
@@ -3280,7 +3319,6 @@ int qodem_main(int argc, char * const argv[]) {
     if (q_keyfile != NULL) {
         switch_current_keyboard(q_keyfile);
     }
-#endif
 
     /*
      * Set the translation tables to do nothing.
@@ -3313,24 +3351,6 @@ int qodem_main(int argc, char * const argv[]) {
     if (getenv("ESCDELAY") == NULL) {
         putenv("ESCDELAY=20");
     }
-
-#if !defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32)
-    /* Xterm: send the private sequence to select metaSendsEscape */
-    fprintf(stdout, "\033[?1036h");
-    fflush(stdout);
-
-    /* Initialize curses */
-    screen_setup(rows_arg, cols_arg);
-#else
-    /*
-     * Initialize the keyboard here.  It will NOT call newterm() because
-     * PDCurses newterm does not look at TERM, there is no point.
-     */
-    initialize_keyboard();
-    if (q_keyfile != NULL) {
-        switch_current_keyboard(q_keyfile);
-    }
-#endif
 
     /*
      * See if the user wants automatic capture/logging enabled.
@@ -3444,7 +3464,6 @@ int qodem_main(int argc, char * const argv[]) {
 
 no_initial_call:
 
-
     /* See if we need to --play something */
     if (play_music_string != NULL) {
         play_ansi_music(play_music_string, strlen((char *)play_music_string),
@@ -3461,23 +3480,30 @@ no_initial_call:
         /*
          * Load the phonebook
          */
-
-        /* Sustitute for $HOME */
-        env_string = get_home_directory();
-
-        /* Check for the default phonebook */
+        if (q_dotqodem_dir != NULL) {
+            /* The user supplied a .qodem directory, use that. */
+            substituted_filename = substitute_string("$HOME/"
+                DEFAULT_PHONEBOOK, "$HOME", q_dotqodem_dir);
+        } else {
+            /* Sustitute for $HOME */
+            env_string = get_home_directory();
 #ifdef Q_PDCURSES_WIN32
-
-        substituted_filename = substitute_string("$HOME\\qodem\\prefs\\"
-            DEFAULT_PHONEBOOK, "$HOME", env_string);
-        if (file_exists(substituted_filename) == Q_FALSE) {
-
+            substituted_filename = substitute_string("$HOME\\qodem\\prefs\\"
+                DEFAULT_PHONEBOOK, "$HOME", env_string);
 #else
-        substituted_filename = substitute_string("$HOME/.qodem/"
-            DEFAULT_PHONEBOOK, "$HOME", env_string);
+            substituted_filename = substitute_string("$HOME/.qodem/"
+                DEFAULT_PHONEBOOK, "$HOME", env_string);
+#endif
+        }
+
+#ifdef Q_PDCURSES_WIN32
+        if (file_exists(substituted_filename) == Q_FALSE) {
+#else
         if (access(substituted_filename, F_OK) != 0) {
 #endif
-
+            /*
+             * The default phonebook does not exist.  Try to create it.
+             */
             FILE * file;
             if ((file = fopen(substituted_filename, "w")) == NULL) {
                 screen_put_color_printf_yx(0, 0, Q_COLOR_CONSOLE_TEXT,

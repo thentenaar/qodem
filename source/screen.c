@@ -1088,6 +1088,7 @@ void screen_beep() {
  *
  * @param rows the desired number of rows
  * @param cols the desired number of columns
+ * @param setup_color if true, initialize colors
  */
 void screen_setup(const unsigned char rows, const unsigned char cols) {
 #if defined(Q_PDCURSES) || defined(Q_PDCURSES_WIN32)
@@ -1188,12 +1189,6 @@ void screen_setup(const unsigned char rows, const unsigned char cols) {
     meta(stdscr, TRUE);
     keypad(stdscr, TRUE);
     start_color();
-    q_setup_colors();
-
-    /*
-     * Set color AFTER they've been initialized!
-     */
-    q_current_color = scrollback_full_attr(Q_COLOR_CONSOLE_TEXT);
 
 #ifdef Q_PDCURSES
     /*

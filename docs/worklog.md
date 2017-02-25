@@ -1,6 +1,18 @@
 The Qodem Project Work Log
 ==========================
 
+February 23, 2017
+
+I ran across a version of Qmodem I have amazingly enough never seen
+before: Qmodem 4.5 Lite.  It has a compile date of 01/01/1992, as
+compared to Qmodem 5.0's date of 01/06/1992.  It appears to be almost
+identical to 5.0, but without script support or the Alt-M mailer
+command.  But nicely enough it also doesn't have an installer: drop
+the files into a directory and off you go.  I must be getting old,
+because at age 15 I would never have wanted the "stripped down"
+version, yet here 25 (!) years later I'm thinking 4.5 Lite might be
+the single best version in the collection.
+
 February 18, 2017
 
 We are closing in on PETSCII.  It is fascinating reading about and
