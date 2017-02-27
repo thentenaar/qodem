@@ -21,6 +21,7 @@
 /* Includes --------------------------------------------------------------- */
 
 #include <wchar.h>
+#include "common.h"             /* Q_BOOL */
 
 #ifdef __cplusplus
 extern "C" {
@@ -140,9 +141,22 @@ typedef enum Q_OPTIONS {
 extern char * get_option(const Q_OPTION option);
 
 /**
+ * Reset options to default state.
+ */
+extern void reset_options();
+
+/**
  * This must be called to initialize the options list from the config file.
  */
 extern void load_options();
+
+/**
+ * Save options to a file.
+ *
+ * @param filename file to save to
+ * @return true if successful
+ */
+extern Q_BOOL save_options(const char * filename);
 
 /**
  * Replace all instances of "pattern" in "original" with "new_string",

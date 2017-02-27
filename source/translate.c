@@ -328,6 +328,10 @@ static void save_translate_tables_8bit(const char * filename,
     FILE * file;
     int i;
 
+    if (q_status.read_only == Q_TRUE) {
+        return;
+    }
+
     assert(filename != NULL);
 
     file = open_datadir_file(filename, &full_filename, "w");
@@ -614,6 +618,10 @@ static void save_translate_tables_unicode(const char * filename,
     char * full_filename;
     FILE * file;
     int i;
+
+    if (q_status.read_only == Q_TRUE) {
+        return;
+    }
 
     assert(filename != NULL);
 

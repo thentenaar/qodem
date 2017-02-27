@@ -162,6 +162,10 @@ static void create_color_config() {
     FILE * file;
     char * full_filename;
 
+    if (q_status.read_only == Q_TRUE) {
+        return;
+    }
+
     file = open_datadir_file(COLOR_CONFIG_FILENAME, &full_filename, "w");
     if (file == NULL) {
         /*

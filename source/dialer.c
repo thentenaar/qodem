@@ -795,7 +795,9 @@ void dial_success() {
                         /*
                          * Execute script if supplied
                          */
-                        script_start(q_scrfile);
+                        if (q_status.read_only == Q_FALSE) {
+                            script_start(q_scrfile);
+                        }
                     }
                 }
                 Xfree(q_scrfile, __FILE__, __LINE__);
@@ -814,7 +816,11 @@ void dial_success() {
                             /*
                              * We're not quicklearning, start the script
                              */
-                            script_start(q_current_dial_entry->script_filename);
+                            if (q_status.read_only == Q_FALSE) {
+                                script_start(
+                                        q_current_dial_entry->script_filename);
+                            }
+                            
                         }
                     }
                 }

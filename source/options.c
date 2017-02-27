@@ -1181,15 +1181,21 @@ const char * get_option_default(const Q_OPTION option) {
 }
 
 /**
- * Save options to the a file.
+ * Save options to a file.
  *
  * @param filename file to save to
  * @return true if successful
  */
-static Q_BOOL save_options(const char * filename) {
+Q_BOOL save_options(const char * filename) {
     struct option_struct * current_option;
     FILE * file;
     int rc;
+    char time_string[TIME_STRING_LENGTH];
+    time_t current_time;
+
+    if (q_status.read_only == Q_TRUE) {
+        return Q_FALSE;
+    }
 
     file = fopen(filename, "w");
     if (file == NULL) {
@@ -1198,6 +1204,27 @@ static Q_BOOL save_options(const char * filename) {
         return Q_FALSE;
     }
 
+    /*
+     * Standard header.
+     */
+    time(&current_time);
+    strftime(time_string, sizeof(time_string), _("%a, %d %b %Y %H:%M:%S %z"),
+        localtime(&current_time));
+    fprintf(file, _("### Qodem " Q_VERSION " options file generated %s\n"),
+        time_string);
+    fprintf(file, "###\n");
+#ifdef Q_PDCURSES_WIN32
+    fprintf(file, "### This file is typically at My Documents\\qodem\\prefs\\qodemrc.txt\n");
+#else
+    fprintf(file, "### This file is typically at ~/.qodem/qodemrc\n");
+#endif
+    fprintf(file, "### ------------------------------------------------------"
+        "-----------------");
+    fprintf(file, "\n\n");
+
+    /*
+     * Emit each option, its description and default value.
+     */
     current_option = options;
     while (current_option->option != Q_OPTION_NULL) {
         rc = fwrite(current_option->comment, strlen(current_option->comment), 1,
@@ -1480,7 +1507,17 @@ static Q_BOOL create_directory(const char * path) {
         int i;
 #endif
 
+    if (q_status.read_only == Q_TRUE) {
+        return Q_FALSE;
+    }
+
     assert(directory_exists(path) == Q_FALSE);
+    if (file_exists(path) == Q_TRUE) {
+        /*
+         * We cannot create a directory when a file already exists there.
+         */
+        return Q_FALSE;
+    }
 
     path_copy = Xstrdup(path, __FILE__, __LINE__);
     parent_dir = Xstrdup(dirname(path_copy), __FILE__, __LINE__);
@@ -1546,6 +1583,7 @@ static void check_and_create_directories() {
     working_dir =
         substitute_string(get_option(Q_OPTION_WORKING_DIR), "$HOME",
                           env_string);
+
     if (directory_exists(working_dir) == Q_FALSE) {
         rc = create_directory(working_dir);
         if (rc == Q_FALSE) {
@@ -1553,7 +1591,7 @@ static void check_and_create_directories() {
                     "Could not create the directory %s."), working_dir);
             message_lines[0] = notify_message;
             message_lines[1] = _("You may have to specify full paths when you");
-            message_lines[2] = _("download files, enable capture/log, etc.\n"),
+            message_lines[2] = _("download files, enable capture/log, etc."),
             notify_form_long(message_lines, 0, 3);
         }
     }
@@ -1614,7 +1652,9 @@ static void check_and_create_directories() {
         /*
          * Try to create it
          */
-        mkfifo(substituted_filename, S_IRUSR | S_IWUSR);
+        if (q_status.read_only == Q_FALSE) {
+            mkfifo(substituted_filename, S_IRUSR | S_IWUSR);
+        }
     }
     /*
      * Free leak
@@ -1622,6 +1662,27 @@ static void check_and_create_directories() {
     Xfree(substituted_filename, __FILE__, __LINE__);
 #endif
 
+}
+
+/**
+ * Reset options to default state.
+ */
+void reset_options() {
+    struct option_struct * current_option;
+    current_option = options;
+    while (current_option->option != Q_OPTION_NULL) {
+        if (current_option->value != NULL) {
+            Xfree(current_option->value, __FILE__, __LINE__);
+        }
+        current_option->value =
+            Xstrdup(current_option->default_value, __FILE__, __LINE__);
+
+        /*
+         * Translate option help text to local language
+         */
+        current_option->comment = _(current_option->comment);
+        current_option++;
+    }
 }
 
 /**
@@ -1659,7 +1720,6 @@ void load_options() {
     char * current_filename;
     char * env_string;
     char * substituted_filename;
-    struct option_struct * current_option;
     char * lang_default;
     char notify_message[DIALOG_MESSAGE_SIZE];
     char * message_lines[10];
@@ -1667,20 +1727,7 @@ void load_options() {
     /*
      * Set default values.
      */
-    current_option = options;
-    while (current_option->option != Q_OPTION_NULL) {
-        if (current_option->value != NULL) {
-            Xfree(current_option->value, __FILE__, __LINE__);
-        }
-        current_option->value =
-            Xstrdup(current_option->default_value, __FILE__, __LINE__);
-
-        /*
-         * Translate option help text to local language
-         */
-        current_option->comment = _(current_option->comment);
-        current_option++;
-    }
+    reset_options();
 
     /*
      * It is main()'s job to set q_home_directory before calling
@@ -1710,15 +1757,15 @@ void load_options() {
     }
 
     /*
-     * Special check: $HOME/.qodem/qodemrc.  If this doesn't exist, then we
-     * create it here before moving on.
+     * Special check: $HOME/.qodem/qodemrc.  If this doesn't exist, AND we
+     * just created its directory, then we create it here before moving on.
      */
 #ifdef Q_PDCURSES_WIN32
     substituted_filename =
-        substitute_string("$HOME/qodemrc.txt", "$HOME", q_home_directory);
+    substitute_string("$HOME/qodemrc.txt", "$HOME", q_home_directory);
 #else
     substituted_filename =
-        substitute_string("$HOME/qodemrc", "$HOME", q_home_directory);
+    substitute_string("$HOME/qodemrc", "$HOME", q_home_directory);
 #endif
     if (file_exists(substituted_filename) == Q_FALSE) {
         /*

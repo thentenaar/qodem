@@ -17,23 +17,26 @@ qodem (1.0.0-1) unstable; urgency=low
   * --xterm command line option: suppresses the terminal mode banner
     and status line, disables phonebook and serial port, and
     immediately launches a shell.  When the shell exits, Qodem exits.
-  * --geometry command line option
+  * --geometry command line option: set rows x cols on X11 and Win32
   * X11/Win32: Shift/Ctrl-Ins pastes from system clipboard
   * X11: Blinking cursor, blinking text
   * --enable-capture command line option is now --capfile
   * --enable-logging command line option is now --logfile
-  * --keyfile command line option
-  * --xl8file command line option
-  * --xlufile command line option
-  * --scrfile command line option
-  * --doorway command line option
-  * --codepage command line option
-  * --emulation command line option
-  * --status-line command line option
-  * --exit-on-completion (-x) command line option
+  * --keyfile command line option: load key bindings from file
+  * --xl8file command line option: load 8-bit translate table from file
+  * --xlufile command line option: load Unicode translate table from file
+  * --scrfile command line option: execute specified script on connect
+  * --doorway command line option: select doorway mode
+  * --codepage command line option: select codepage
+  * --emulation command line option: select emulation
+  * --status-line command line option: enable/disable status line
+  * --exit-on-completion (-x) command line option: exit after disconnect
   * X11: Double-height / double-width line support
   * PETSCII Commodore 64 emulation
   * ATASCII Atari 400/800 emulation
+  * --config command line option: select qodemrc to load
+  * --dotqodem-dir command line option: select preferences directory
+  * --read-only command line option: do not create/write any files/dirs to disk
 
  -- Kevin Lamonte <lamonte@users.sourceforge.net>  Thu, 27 Apr 2017 18:50:00 -0500
 

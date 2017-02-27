@@ -792,6 +792,8 @@ void script_start(const char * script_filename) {
     struct q_scrolline_struct * line;
     struct q_scrolline_struct * line2;
 
+    assert(q_status.read_only == Q_FALSE);
+
     qlog(_("Executing script %s...\n"), script_filename);
 
     /*

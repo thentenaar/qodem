@@ -1377,6 +1377,10 @@ static void save_phonebook(const Q_BOOL backup_version) {
     wchar_t * notes_line;
     int current_notes_idx;
 
+    if (q_status.read_only == Q_TRUE) {
+        return;
+    }
+
     if (backup_version == Q_FALSE) {
         filename = q_phonebook.filename;
     } else {
@@ -4113,7 +4117,9 @@ void phonebook_refresh() {
                         /*
                          * Execute script if supplied
                          */
-                        script_start(q_scrfile);
+                        if (q_status.read_only == Q_FALSE) {
+                            script_start(q_scrfile);
+                        }
                     }
                 }
                 Xfree(q_scrfile, __FILE__, __LINE__);
@@ -4128,7 +4134,9 @@ void phonebook_refresh() {
                         /*
                          * Execute script if supplied
                          */
-                        script_start(q_current_dial_entry->script_filename);
+                        if (q_status.read_only == Q_FALSE) {
+                            script_start(q_current_dial_entry->script_filename);
+                        }
                     }
                 }
             }
@@ -7949,7 +7957,9 @@ void dialer_keyboard_handler(const int keystroke, const int flags) {
                     /*
                      * Execute script if supplied
                      */
-                    script_start(q_scrfile);
+                    if (q_status.read_only == Q_FALSE) {
+                        script_start(q_scrfile);
+                    }
                 }
             }
             Xfree(q_scrfile, __FILE__, __LINE__);
@@ -7963,7 +7973,9 @@ void dialer_keyboard_handler(const int keystroke, const int flags) {
                     /*
                      * Execute script if supplied
                      */
-                    script_start(q_current_dial_entry->script_filename);
+                    if (q_status.read_only == Q_FALSE) {
+                        script_start(q_current_dial_entry->script_filename);
+                    }
                 }
             }
         }
@@ -8086,7 +8098,9 @@ static void modem_data(unsigned char * input, unsigned int input_n,
                     /*
                      * Execute script if supplied
                      */
-                    script_start(q_scrfile);
+                    if (q_status.read_only == Q_FALSE) {
+                        script_start(q_scrfile);
+                    }
                 }
             }
             Xfree(q_scrfile, __FILE__, __LINE__);
@@ -8100,7 +8114,9 @@ static void modem_data(unsigned char * input, unsigned int input_n,
                     /*
                      * Execute script if supplied
                      */
-                    script_start(q_current_dial_entry->script_filename);
+                    if (q_status.read_only == Q_FALSE) {
+                        script_start(q_current_dial_entry->script_filename);
+                    }
                 }
             }
         }

@@ -1,6 +1,17 @@
 The Qodem Project Work Log
 ==========================
 
+February 26, 2017
+
+Qodem has many more options for portability now.  --config lets you
+bypass all of the standard qodemrc locations and just load a specific
+configuration file.  --create-config can put a qodemrc wherever you
+want.  --dotqodem-dir lets you change where ~/.qodem is.  And
+--read-only disables scripts, saves, downloads, and similar writes.
+Between all of these, one can easily create a shell/batch that runs
+qodem to either a) be a passive client to other systems, or b) run
+entirely off a USB stick.
+
 February 23, 2017
 
 I ran across a version of Qmodem I have amazingly enough never seen

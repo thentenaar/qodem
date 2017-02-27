@@ -1642,6 +1642,151 @@ static void copy_keyboard(struct emulation_keyboard * dest,
 #define KEYBINDINGS_LINE_SIZE 128
 
 /**
+ * Save keybindings to a file from a struct emulation_keyboard.
+ *
+ * @param filename file to write to
+ * @param keyboard the keyboard to read bindings from
+ */
+static void save_keybindings_to_file(const char * filename,
+    const struct emulation_keyboard * keyboard) {
+
+    char notify_message[DIALOG_MESSAGE_SIZE];
+    char * full_filename;
+    FILE * file;
+
+    if (q_status.read_only == Q_TRUE) {
+        return;
+    }
+
+    assert(filename != NULL);
+    assert(keyboard != NULL);
+
+    file = open_datadir_file(filename, &full_filename, "w");
+    if (file == NULL) {
+        snprintf(notify_message, sizeof(notify_message),
+                 _("Error opening file \"%s\" for writing: %s"), filename,
+                 strerror(errno));
+        notify_form(notify_message, 0);
+        /*
+         * No leak
+         */
+        Xfree(full_filename, __FILE__, __LINE__);
+        return;
+    }
+
+    fprintf(file, "# Qodem key bindings file\n");
+    fprintf(file, "#\n");
+    fprintf(file, "\n");
+
+    SAVE_KEY_TO_FILE(file, kf1, "kf1");
+    SAVE_KEY_TO_FILE(file, kf2, "kf2");
+    SAVE_KEY_TO_FILE(file, kf3, "kf3");
+    SAVE_KEY_TO_FILE(file, kf4, "kf4");
+    SAVE_KEY_TO_FILE(file, kf5, "kf5");
+    SAVE_KEY_TO_FILE(file, kf6, "kf6");
+    SAVE_KEY_TO_FILE(file, kf7, "kf7");
+    SAVE_KEY_TO_FILE(file, kf8, "kf8");
+    SAVE_KEY_TO_FILE(file, kf9, "kf9");
+    SAVE_KEY_TO_FILE(file, kf10, "kf10");
+    SAVE_KEY_TO_FILE(file, kf11, "kf11");
+    SAVE_KEY_TO_FILE(file, kf12, "kf12");
+    SAVE_KEY_TO_FILE(file, kf13, "kf13");
+    SAVE_KEY_TO_FILE(file, kf14, "kf14");
+    SAVE_KEY_TO_FILE(file, kf15, "kf15");
+    SAVE_KEY_TO_FILE(file, kf16, "kf16");
+    SAVE_KEY_TO_FILE(file, kf17, "kf17");
+    SAVE_KEY_TO_FILE(file, kf18, "kf18");
+    SAVE_KEY_TO_FILE(file, kf19, "kf19");
+    SAVE_KEY_TO_FILE(file, kf20, "kf20");
+    SAVE_KEY_TO_FILE(file, kf21, "kf21");
+    SAVE_KEY_TO_FILE(file, kf22, "kf22");
+    SAVE_KEY_TO_FILE(file, kf23, "kf23");
+    SAVE_KEY_TO_FILE(file, kf24, "kf24");
+    SAVE_KEY_TO_FILE(file, kf25, "kf25");
+    SAVE_KEY_TO_FILE(file, kf26, "kf26");
+    SAVE_KEY_TO_FILE(file, kf27, "kf27");
+    SAVE_KEY_TO_FILE(file, kf28, "kf28");
+    SAVE_KEY_TO_FILE(file, kf29, "kf29");
+    SAVE_KEY_TO_FILE(file, kf30, "kf30");
+    SAVE_KEY_TO_FILE(file, kf31, "kf31");
+    SAVE_KEY_TO_FILE(file, kf32, "kf32");
+    SAVE_KEY_TO_FILE(file, kf33, "kf33");
+    SAVE_KEY_TO_FILE(file, kf34, "kf34");
+    SAVE_KEY_TO_FILE(file, kf35, "kf35");
+    SAVE_KEY_TO_FILE(file, kf36, "kf36");
+    SAVE_KEY_TO_FILE(file, knp, "knp");
+    SAVE_KEY_TO_FILE(file, kpp, "kpp");
+    SAVE_KEY_TO_FILE(file, kcuu1, "kcuu1");
+    SAVE_KEY_TO_FILE(file, kcud1, "kcud1");
+    SAVE_KEY_TO_FILE(file, kcuf1, "kcuf1");
+    SAVE_KEY_TO_FILE(file, kcub1, "kcub1");
+    SAVE_KEY_TO_FILE(file, kbs, "kbs");
+    SAVE_KEY_TO_FILE(file, khome, "khome");
+    SAVE_KEY_TO_FILE(file, kend, "kend");
+    SAVE_KEY_TO_FILE(file, kich1, "kich1");
+    SAVE_KEY_TO_FILE(file, kdch1, "kdch1");
+
+    SAVE_KEY_TO_FILE(file, alt_f1, "alt_f1");
+    SAVE_KEY_TO_FILE(file, alt_f2, "alt_f2");
+    SAVE_KEY_TO_FILE(file, alt_f3, "alt_f3");
+    SAVE_KEY_TO_FILE(file, alt_f4, "alt_f4");
+    SAVE_KEY_TO_FILE(file, alt_f5, "alt_f5");
+    SAVE_KEY_TO_FILE(file, alt_f6, "alt_f6");
+    SAVE_KEY_TO_FILE(file, alt_f7, "alt_f7");
+    SAVE_KEY_TO_FILE(file, alt_f8, "alt_f8");
+    SAVE_KEY_TO_FILE(file, alt_f9, "alt_f9");
+    SAVE_KEY_TO_FILE(file, alt_f10, "alt_f10");
+    SAVE_KEY_TO_FILE(file, alt_f11, "alt_f11");
+    SAVE_KEY_TO_FILE(file, alt_f12, "alt_f12");
+
+    /*
+     * 0-9
+     */
+    SAVE_KEY_TO_FILE(file, np_0, "np_0");
+    SAVE_KEY_TO_FILE(file, np_1, "np_1");
+    SAVE_KEY_TO_FILE(file, np_2, "np_2");
+    SAVE_KEY_TO_FILE(file, np_3, "np_3");
+    SAVE_KEY_TO_FILE(file, np_4, "np_4");
+    SAVE_KEY_TO_FILE(file, np_5, "np_5");
+    SAVE_KEY_TO_FILE(file, np_6, "np_6");
+    SAVE_KEY_TO_FILE(file, np_7, "np_7");
+    SAVE_KEY_TO_FILE(file, np_8, "np_8");
+    SAVE_KEY_TO_FILE(file, np_9, "np_9");
+
+    /*
+     * .
+     */
+    SAVE_KEY_TO_FILE(file, np_period, "np_period");
+
+    /*
+     * /
+     */
+    SAVE_KEY_TO_FILE(file, np_divide, "np_divide");
+
+    /*
+     * */
+    SAVE_KEY_TO_FILE(file, np_multiply, "np_multiply");
+
+    /*
+     * -
+     */
+    SAVE_KEY_TO_FILE(file, np_subtract, "np_subtract");
+
+    /*
+     * +
+     */
+    SAVE_KEY_TO_FILE(file, np_add, "np_add");
+
+    /*
+     * <-
+     */
+    SAVE_KEY_TO_FILE(file, np_enter, "np_enter");
+
+    Xfree(full_filename, __FILE__, __LINE__);
+    fclose(file);
+}
+
+/**
  * Load keybindings from a file into a struct emulation_keyboard.
  *
  * @param filename the file to read keybindings from
@@ -1655,6 +1800,7 @@ static void load_keybindings_from_file(const char * filename,
     char * end;
     char line[KEYBINDINGS_LINE_SIZE];
     char buffer[KEYBINDINGS_LINE_SIZE];
+    char notify_message[DIALOG_MESSAGE_SIZE];
 
     assert(filename != NULL);
     assert(keyboard != NULL);
@@ -1662,8 +1808,20 @@ static void load_keybindings_from_file(const char * filename,
     file = open_datadir_file(filename, &full_filename, "r");
     if (file == NULL) {
         /*
-         * Quietly exit.
+         * If the file can't be opened, use the defaults.  Keep this in sync
+         * with create_keybindings_files().
          */
+        Xfree(full_filename, __FILE__, __LINE__);
+        file = open_datadir_file(filename, &full_filename, "w");
+        if (file != NULL) {
+            fclose(file);
+            save_keybindings_to_file(filename, keyboard);
+        } else {
+            snprintf(notify_message, sizeof(notify_message),
+                _("Error creating key file \"%s\": %s"), full_filename,
+                strerror(errno));
+            notify_form(notify_message, 0);
+        }
         /*
          * Avoid leak
          */
@@ -1823,147 +1981,6 @@ static void load_keybindings_from_file(const char * filename,
 }
 
 /**
- * Save keybindings to a file from a struct emulation_keyboard.
- *
- * @param filename file to write to
- * @param keyboard the keyboard to read bindings from
- */
-static void save_keybindings_to_file(const char * filename,
-    const struct emulation_keyboard * keyboard) {
-
-    char notify_message[DIALOG_MESSAGE_SIZE];
-    char * full_filename;
-    FILE * file;
-
-    assert(filename != NULL);
-    assert(keyboard != NULL);
-
-    file = open_datadir_file(filename, &full_filename, "w");
-    if (file == NULL) {
-        snprintf(notify_message, sizeof(notify_message),
-                 _("Error opening file \"%s\" for writing: %s"), filename,
-                 strerror(errno));
-        notify_form(notify_message, 0);
-        /*
-         * No leak
-         */
-        Xfree(full_filename, __FILE__, __LINE__);
-        return;
-    }
-
-    fprintf(file, "# Qodem key bindings file\n");
-    fprintf(file, "#\n");
-    fprintf(file, "\n");
-
-    SAVE_KEY_TO_FILE(file, kf1, "kf1");
-    SAVE_KEY_TO_FILE(file, kf2, "kf2");
-    SAVE_KEY_TO_FILE(file, kf3, "kf3");
-    SAVE_KEY_TO_FILE(file, kf4, "kf4");
-    SAVE_KEY_TO_FILE(file, kf5, "kf5");
-    SAVE_KEY_TO_FILE(file, kf6, "kf6");
-    SAVE_KEY_TO_FILE(file, kf7, "kf7");
-    SAVE_KEY_TO_FILE(file, kf8, "kf8");
-    SAVE_KEY_TO_FILE(file, kf9, "kf9");
-    SAVE_KEY_TO_FILE(file, kf10, "kf10");
-    SAVE_KEY_TO_FILE(file, kf11, "kf11");
-    SAVE_KEY_TO_FILE(file, kf12, "kf12");
-    SAVE_KEY_TO_FILE(file, kf13, "kf13");
-    SAVE_KEY_TO_FILE(file, kf14, "kf14");
-    SAVE_KEY_TO_FILE(file, kf15, "kf15");
-    SAVE_KEY_TO_FILE(file, kf16, "kf16");
-    SAVE_KEY_TO_FILE(file, kf17, "kf17");
-    SAVE_KEY_TO_FILE(file, kf18, "kf18");
-    SAVE_KEY_TO_FILE(file, kf19, "kf19");
-    SAVE_KEY_TO_FILE(file, kf20, "kf20");
-    SAVE_KEY_TO_FILE(file, kf21, "kf21");
-    SAVE_KEY_TO_FILE(file, kf22, "kf22");
-    SAVE_KEY_TO_FILE(file, kf23, "kf23");
-    SAVE_KEY_TO_FILE(file, kf24, "kf24");
-    SAVE_KEY_TO_FILE(file, kf25, "kf25");
-    SAVE_KEY_TO_FILE(file, kf26, "kf26");
-    SAVE_KEY_TO_FILE(file, kf27, "kf27");
-    SAVE_KEY_TO_FILE(file, kf28, "kf28");
-    SAVE_KEY_TO_FILE(file, kf29, "kf29");
-    SAVE_KEY_TO_FILE(file, kf30, "kf30");
-    SAVE_KEY_TO_FILE(file, kf31, "kf31");
-    SAVE_KEY_TO_FILE(file, kf32, "kf32");
-    SAVE_KEY_TO_FILE(file, kf33, "kf33");
-    SAVE_KEY_TO_FILE(file, kf34, "kf34");
-    SAVE_KEY_TO_FILE(file, kf35, "kf35");
-    SAVE_KEY_TO_FILE(file, kf36, "kf36");
-    SAVE_KEY_TO_FILE(file, knp, "knp");
-    SAVE_KEY_TO_FILE(file, kpp, "kpp");
-    SAVE_KEY_TO_FILE(file, kcuu1, "kcuu1");
-    SAVE_KEY_TO_FILE(file, kcud1, "kcud1");
-    SAVE_KEY_TO_FILE(file, kcuf1, "kcuf1");
-    SAVE_KEY_TO_FILE(file, kcub1, "kcub1");
-    SAVE_KEY_TO_FILE(file, kbs, "kbs");
-    SAVE_KEY_TO_FILE(file, khome, "khome");
-    SAVE_KEY_TO_FILE(file, kend, "kend");
-    SAVE_KEY_TO_FILE(file, kich1, "kich1");
-    SAVE_KEY_TO_FILE(file, kdch1, "kdch1");
-
-    SAVE_KEY_TO_FILE(file, alt_f1, "alt_f1");
-    SAVE_KEY_TO_FILE(file, alt_f2, "alt_f2");
-    SAVE_KEY_TO_FILE(file, alt_f3, "alt_f3");
-    SAVE_KEY_TO_FILE(file, alt_f4, "alt_f4");
-    SAVE_KEY_TO_FILE(file, alt_f5, "alt_f5");
-    SAVE_KEY_TO_FILE(file, alt_f6, "alt_f6");
-    SAVE_KEY_TO_FILE(file, alt_f7, "alt_f7");
-    SAVE_KEY_TO_FILE(file, alt_f8, "alt_f8");
-    SAVE_KEY_TO_FILE(file, alt_f9, "alt_f9");
-    SAVE_KEY_TO_FILE(file, alt_f10, "alt_f10");
-    SAVE_KEY_TO_FILE(file, alt_f11, "alt_f11");
-    SAVE_KEY_TO_FILE(file, alt_f12, "alt_f12");
-
-    /*
-     * 0-9
-     */
-    SAVE_KEY_TO_FILE(file, np_0, "np_0");
-    SAVE_KEY_TO_FILE(file, np_1, "np_1");
-    SAVE_KEY_TO_FILE(file, np_2, "np_2");
-    SAVE_KEY_TO_FILE(file, np_3, "np_3");
-    SAVE_KEY_TO_FILE(file, np_4, "np_4");
-    SAVE_KEY_TO_FILE(file, np_5, "np_5");
-    SAVE_KEY_TO_FILE(file, np_6, "np_6");
-    SAVE_KEY_TO_FILE(file, np_7, "np_7");
-    SAVE_KEY_TO_FILE(file, np_8, "np_8");
-    SAVE_KEY_TO_FILE(file, np_9, "np_9");
-
-    /*
-     * .
-     */
-    SAVE_KEY_TO_FILE(file, np_period, "np_period");
-
-    /*
-     * /
-     */
-    SAVE_KEY_TO_FILE(file, np_divide, "np_divide");
-
-    /*
-     * */
-    SAVE_KEY_TO_FILE(file, np_multiply, "np_multiply");
-
-    /*
-     * -
-     */
-    SAVE_KEY_TO_FILE(file, np_subtract, "np_subtract");
-
-    /*
-     * +
-     */
-    SAVE_KEY_TO_FILE(file, np_add, "np_add");
-
-    /*
-     * <-
-     */
-    SAVE_KEY_TO_FILE(file, np_enter, "np_enter");
-
-    Xfree(full_filename, __FILE__, __LINE__);
-    fclose(file);
-}
-
-/**
  * Load all keybindings from the keybindings files.
  */
 static void load_keybindings() {
@@ -1993,6 +2010,7 @@ void create_keybindings_files() {
     FILE * file;
     char buffer[FILENAME_SIZE];
     char * full_filename;
+    char notify_message[DIALOG_MESSAGE_SIZE];
 
     /*
      * Create the emulation keyboards.
@@ -2004,8 +2022,10 @@ void create_keybindings_files() {
             fclose(file);
             save_keybindings_to_file(buffer, &terminfo_keyboards[i]);
         } else {
-            fprintf(stderr, _("Error creating file \"%s\": %s\n"),
-                    full_filename, strerror(errno));
+            snprintf(notify_message, sizeof(notify_message),
+                _("Error creating key file \"%s\": %s"), full_filename,
+                strerror(errno));
+            notify_form(notify_message, 0);
         }
 
         /*
@@ -2023,8 +2043,10 @@ void create_keybindings_files() {
         fclose(file);
         save_keybindings_to_file(buffer, &default_bound_keyboard);
     } else {
-        fprintf(stderr, _("Error creating file \"%s\": %s\n"), full_filename,
-                strerror(errno));
+        snprintf(notify_message, sizeof(notify_message),
+            _("Error creating key file \"%s\": %s"), full_filename,
+            strerror(errno));
+        notify_form(notify_message, 0);
     }
     Xfree(full_filename, __FILE__, __LINE__);
 }

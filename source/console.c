@@ -129,6 +129,11 @@ void start_capture(const char * filename) {
     time_t current_time;
     char notify_message[DIALOG_MESSAGE_SIZE];
 
+    if (q_status.read_only == Q_TRUE) {
+        /* Never start capture in read-only mode. */
+        return;
+    }
+
     if ((filename != NULL) && (q_status.capture == Q_FALSE)) {
         q_status.capture_file = open_workingdir_file(filename, &new_filename);
         if (q_status.capture_file == NULL) {
@@ -221,6 +226,11 @@ void start_logging(const char * filename) {
     time_t current_time;
     char notify_message[DIALOG_MESSAGE_SIZE];
 
+    if (q_status.read_only == Q_TRUE) {
+        /* Never start logging in read-only mode. */
+        return;
+    }
+
     if ((filename != NULL) && (q_status.logging == Q_FALSE)) {
         q_status.logging_file = open_workingdir_file(filename, &new_filename);
         if (q_status.logging_file == NULL) {
@@ -283,6 +293,11 @@ static void reset_zmodem_autostart() {
  */
 static Q_BOOL check_zmodem_autostart(unsigned char from_modem) {
 
+    if (q_status.read_only == Q_TRUE) {
+        /* No auto-downloads in read-only mode. */
+        return Q_FALSE;
+    }
+
     if (q_console_flood == Q_TRUE) {
         /*
          * No autostart during a console flood
@@ -343,6 +358,11 @@ static void reset_kermit_autostart() {
  */
 static Q_BOOL check_kermit_autostart(unsigned char from_modem) {
 
+    if (q_status.read_only == Q_TRUE) {
+        /* No auto-downloads in read-only mode. */
+        return Q_FALSE;
+    }
+
     if (q_console_flood == Q_TRUE) {
         /*
          * No autostart during a console flood
@@ -395,6 +415,11 @@ void start_quicklearn(const char * filename) {
     char time_string[TIME_STRING_LENGTH];
     time_t current_time;
     char notify_message[DIALOG_MESSAGE_SIZE];
+
+    if (q_status.read_only == Q_TRUE) {
+        /* No QuickLearn in read-only mode. */
+        return;
+    }
 
     assert(quicklearn_file == NULL);
 
@@ -1009,7 +1034,7 @@ void console_keyboard_handler(int keystroke, int flags) {
     switch (keystroke) {
 
     case '0':
-        if (flags & KEY_FLAG_ALT) {
+        if ((flags & KEY_FLAG_ALT) && (q_status.read_only == Q_FALSE)) {
             /*
              * Alt-0 Session log
              */
@@ -1177,7 +1202,7 @@ void console_keyboard_handler(int keystroke, int flags) {
         /*
          * Alt-6 Batch Entry Window
          */
-        if (flags & KEY_FLAG_ALT) {
+        if ((flags & KEY_FLAG_ALT) && (q_status.read_only == Q_FALSE)) {
             batch_upload_file_list =
                 batch_entry_window(get_option(Q_OPTION_UPLOAD_DIR), Q_FALSE);
             if (batch_upload_file_list != NULL) {
@@ -1437,7 +1462,7 @@ void console_keyboard_handler(int keystroke, int flags) {
 
     case 'F':
     case 'f':
-        if (flags & KEY_FLAG_ALT) {
+        if ((flags & KEY_FLAG_ALT) && (q_status.read_only == Q_FALSE)) {
             /*
              * Alt-F Execute script
              */
@@ -1679,7 +1704,7 @@ void console_keyboard_handler(int keystroke, int flags) {
 
     case 'P':
     case 'p':
-        if (flags & KEY_FLAG_ALT) {
+        if ((flags & KEY_FLAG_ALT) && (q_status.read_only == Q_FALSE)) {
             /*
              * Alt-P Capture File
              */
@@ -1710,7 +1735,7 @@ void console_keyboard_handler(int keystroke, int flags) {
 
     case 'Q':
     case 'q':
-        if (flags & KEY_FLAG_ALT) {
+        if ((flags & KEY_FLAG_ALT) && (q_status.read_only == Q_FALSE)) {
             /*
              * Alt-Q QuickLearn
              */
@@ -1798,7 +1823,7 @@ void console_keyboard_handler(int keystroke, int flags) {
 
     case 'T':
     case 't':
-        if (flags & KEY_FLAG_ALT) {
+        if ((flags & KEY_FLAG_ALT) && (q_status.read_only == Q_FALSE)) {
             /*
              * Alt-T Screen dump
              */
@@ -1975,7 +2000,9 @@ void console_keyboard_handler(int keystroke, int flags) {
         return;
 
     case Q_KEY_NPAGE:
-        if ((flags & KEY_FLAG_UNICODE) == 0) {
+        if (((flags & KEY_FLAG_UNICODE) == 0) &&
+            (q_status.read_only == Q_FALSE)
+        ) {
             /*
              * PgDn Download
              */
@@ -2970,15 +2997,26 @@ void console_menu_refresh() {
     /*
      * T Screen dump
      */
-    screen_put_color_str_yx(menu_top + during_row + 1, menu_left + 27,
-                            _("Alt-T  "), Q_COLOR_MENU_COMMAND);
+    if (q_status.read_only == Q_TRUE) {
+        screen_put_color_str_yx(menu_top + during_row + 1, menu_left + 27,
+                                _("Alt-T  "), Q_COLOR_MENU_COMMAND_UNAVAILABLE);
+    } else {
+        screen_put_color_str_yx(menu_top + during_row + 1, menu_left + 27,
+                                _("Alt-T  "), Q_COLOR_MENU_COMMAND);
+    }
+
     screen_put_color_str(_("Screen Dump"), Q_COLOR_MENU_TEXT);
 
     /*
      * F Execute script
      */
-    screen_put_color_str_yx(menu_top + during_row + 2, menu_left + 2,
-                            _("Alt-F  "), Q_COLOR_MENU_COMMAND);
+    if (q_status.read_only == Q_TRUE) {
+        screen_put_color_str_yx(menu_top + during_row + 2, menu_left + 2,
+                                _("Alt-F  "), Q_COLOR_MENU_COMMAND_UNAVAILABLE);
+    } else {
+        screen_put_color_str_yx(menu_top + during_row + 2, menu_left + 2,
+                                _("Alt-F  "), Q_COLOR_MENU_COMMAND);
+    }
     screen_put_color_str(_("Execute Script"), Q_COLOR_MENU_TEXT);
 
 #ifndef Q_NO_SERIAL
@@ -3005,21 +3043,36 @@ void console_menu_refresh() {
     /*
      * P Capture file
      */
-    screen_put_color_str_yx(menu_top + during_row + 4, menu_left + 2,
-                            _("Alt-P  "), Q_COLOR_MENU_COMMAND);
+    if (q_status.read_only == Q_TRUE) {
+        screen_put_color_str_yx(menu_top + during_row + 4, menu_left + 2,
+                                _("Alt-P  "), Q_COLOR_MENU_COMMAND_UNAVAILABLE);
+    } else {
+        screen_put_color_str_yx(menu_top + during_row + 4, menu_left + 2,
+                                _("Alt-P  "), Q_COLOR_MENU_COMMAND);
+    }
     screen_put_color_str(_("Capture File"), Q_COLOR_MENU_TEXT);
     /*
      * PgDn Download files
      */
-    screen_put_color_str_yx(menu_top + during_row + 4, menu_left + 27,
-                            _(" PgDn  "), Q_COLOR_MENU_COMMAND);
+    if (q_status.read_only == Q_TRUE) {
+        screen_put_color_str_yx(menu_top + during_row + 4, menu_left + 27,
+                                _(" PgDn  "), Q_COLOR_MENU_COMMAND_UNAVAILABLE);
+    } else {
+        screen_put_color_str_yx(menu_top + during_row + 4, menu_left + 27,
+                                _(" PgDn  "), Q_COLOR_MENU_COMMAND);
+    }
     screen_put_color_str(_("Download Files"), Q_COLOR_MENU_TEXT);
 
     /*
      * Q Quicklearn
      */
-    screen_put_color_str_yx(menu_top + during_row + 5, menu_left + 2,
-                            _("Alt-Q  "), Q_COLOR_MENU_COMMAND);
+    if (q_status.read_only == Q_TRUE) {
+        screen_put_color_str_yx(menu_top + during_row + 5, menu_left + 2,
+                                _("Alt-Q  "), Q_COLOR_MENU_COMMAND_UNAVAILABLE);
+    } else {
+        screen_put_color_str_yx(menu_top + during_row + 5, menu_left + 2,
+                                _("Alt-Q  "), Q_COLOR_MENU_COMMAND);
+    }
     screen_put_color_str(_("QuickLearn"), Q_COLOR_MENU_TEXT);
 
     /*
@@ -3161,8 +3214,13 @@ void console_menu_refresh() {
     /*
      * 0 Session log
      */
-    screen_put_color_str_yx(menu_top + toggles_row + 1, menu_left + 52,
-                            _("Alt-0  "), Q_COLOR_MENU_COMMAND);
+    if (q_status.read_only == Q_TRUE) {
+        screen_put_color_str_yx(menu_top + toggles_row + 1, menu_left + 52,
+                                _("Alt-0  "), Q_COLOR_MENU_COMMAND_UNAVAILABLE);
+    } else {
+        screen_put_color_str_yx(menu_top + toggles_row + 1, menu_left + 52,
+                                _("Alt-0  "), Q_COLOR_MENU_COMMAND);
+    }
     screen_put_color_str(_("Session Log"), Q_COLOR_MENU_TEXT);
 
 #ifndef Q_NO_SERIAL
@@ -3201,8 +3259,13 @@ void console_menu_refresh() {
     /*
      * 6 Batch entry window
      */
-    screen_put_color_str_yx(menu_top + toggles_row + 7, menu_left + 52,
-                            _("Alt-6  "), Q_COLOR_MENU_COMMAND);
+    if (q_status.read_only == Q_TRUE) {
+        screen_put_color_str_yx(menu_top + toggles_row + 7, menu_left + 52,
+                                _("Alt-6  "), Q_COLOR_MENU_COMMAND_UNAVAILABLE);
+    } else {
+        screen_put_color_str_yx(menu_top + toggles_row + 7, menu_left + 52,
+                                _("Alt-6  "), Q_COLOR_MENU_COMMAND);
+    }
     screen_put_color_str(_("Batch Entry Window"), Q_COLOR_MENU_TEXT);
     /*
      * 7 Status line info

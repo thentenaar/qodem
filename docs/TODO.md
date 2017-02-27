@@ -12,30 +12,6 @@ Fix all marked TODOs in code
 
 #26 Handle multiple instances operating on the phonebook
 
-#38 Be able to run fully portable:
-
-    - keyboard.c and option.c: switch from fprintf(stderr, ...) to
-      notify_form() for failing to write files.
-
-    - A --config command line option to read qodemrc from
-      user-supplied file. If given, NO OTHER option file locations are
-      read.  CODE done.  Needs doc: man pages, help text
-
-    - Be able to load and run phonebook, scripts, modem cfg, color
-      cfg, keyfiles, etc. from read-only media. The media is checked
-      for write access, and if not found save operations fail with a
-      notification. If script_stderr cannot be created, scripts are
-      disabled for that session.  PARTIAL: --dotqodem-dir option in
-      code, needs doc: man pages, help text.
-
-    - A --read-only command line option that disables all save
-        operations entirely. This will require some re-work for config
-        files that auto-create themselves. Also:
-          - script_stderr cannot be created hence scripts are disabled on POSIX.
-          - host mode uploads are disabled.
-          - downloads and zmodem/kermit autostart are disabled.
-          - session log, capture, screen dump, and scrollback save are disabled.
-
 #54 Full 40-column support
     - Win32a double-width chars
     - Cursor position - clamp to margin 39 on double-width rows

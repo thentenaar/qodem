@@ -71,6 +71,11 @@ typedef enum Q_DOORWAY_MODE {
 struct q_status_struct {
 
     /**
+     * If true, do not write anything to disk.
+     */
+    Q_BOOL read_only;
+
+    /**
      * Current emulation mode.
      */
     Q_EMULATION emulation;

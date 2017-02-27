@@ -286,7 +286,9 @@ static struct option q_getopt_long_options[] = {
     {"xlufile",             1,      0,      0},
     {"scrfile",             1,      0,      0},
     {"config",              1,      0,      0},
+    {"create-config",       1,      0,      0},
     {"dotqodem-dir",        1,      0,      0},
+    {"read-only",           0,      0,      0},
     {"help",                0,      0,      0},
     {"username",            1,      0,      0},
     {"play",                1,      0,      0},
@@ -899,6 +901,7 @@ static char * usage_string() {
 "      --dotqodem-dir DIRNAME      Use DIRNAME instead of $HOME/.qodem for\n"
 "                                  config/data files.\n"
 "      --config FILENAME           Load options from FILENAME (only).\n"
+"      --create-config FILENAME    Write a new options file to FILENAME and exit.\n"
 "      --connect HOST              Immediately open a connection to HOST.\n"
 "                                  The default connection method is \"ssh"
 "\".\n"
@@ -913,6 +916,7 @@ static char * usage_string() {
 "      --xl8file FILENAME          Load 8-bit translate tables from FILENAME.\n"
 "      --xlufile FILENAME          Load Unicode translate tables from FILENAME.\n"
 "      --srcfile FILENAME          Start script FILENAME after connect.\n"
+"      --read-only                 Disable all writes to disk.\n"
 "  -x, --exit-on-completion        Exit after connection/command finishes.\n"
 "      --doorway MODE              Select doorway MODE.  Valid values for\n"
 "                                  MODE are \"doorway\", \"mixed\", and \"off\".\n"
@@ -990,11 +994,11 @@ static void page_string(const char * str) {
                 screen_move_yx(0, 0);
             }
         } else {
+            screen_put_char_yx(row, col, ch, A_NORMAL, 0x38);
             col++;
             if (col == 80) {
                 col = 0;
             }
-            screen_put_char_yx(row, col, ch, A_NORMAL, 0x38);
         }
     }
 
@@ -1104,8 +1108,16 @@ static void process_command_line_option(const char * option,
     if (strncmp(option, "config", strlen("config")) == 0) {
         q_config_filename = Xstrdup(value, __FILE__, __LINE__);
     }
+    if (strncmp(option, "create-config", strlen("create-config")) == 0) {
+        reset_options();
+        save_options(value);
+        q_program_state = Q_STATE_EXIT;
+    }
     if (strncmp(option, "dotqodem-dir", strlen("dotqodem-dir")) == 0) {
         q_dotqodem_dir = Xstrdup(value, __FILE__, __LINE__);
+    }
+    if (strncmp(option, "read-only", strlen("read-only")) == 0) {
+        q_status.read_only = Q_TRUE;
     }
 
     if (strncmp(option, "xterm", strlen("xterm")) == 0) {
@@ -3011,6 +3023,11 @@ static void reset_global_state() {
 
     /* Initial program state */
     q_program_state = Q_STATE_INITIALIZATION;
+
+    /*
+     * Read only flag.  When set, things that can write to disk are disabled.
+     */
+    q_status.read_only              = Q_FALSE;
 
     /* Default to VT102 as the most common denominator */
     q_status.emulation              = Q_EMUL_VT102;

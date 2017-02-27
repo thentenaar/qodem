@@ -833,6 +833,8 @@ static void save_scrollback_line(FILE * file, struct q_scrolline_struct * line,
     wchar_t ch;
     Q_BOOL color_changed = Q_FALSE;
 
+    assert(q_status.read_only == Q_FALSE);
+
     for (i = 0; i < WIDTH; i++) {
         /*
          * Break out at the end of the screen
@@ -919,6 +921,8 @@ static Q_BOOL save_scrollback(const char * filename,
     char notify_message[DIALOG_MESSAGE_SIZE];
     attr_t color = Q_A_NORMAL | scrollback_full_attr(Q_COLOR_CONSOLE_TEXT);
     int row;
+
+    assert(q_status.read_only == Q_FALSE);
 
     file = open_workingdir_file(filename, &new_filename);
     if (file == NULL) {
@@ -1378,6 +1382,10 @@ keep_moving:
         /*
          * Save only visible area
          */
+        if (q_status.read_only == Q_TRUE) {
+            break;
+        }
+
         q_cursor_on();
         reset_scrollback_save_type();
         if (q_status.scrollback_save_type == Q_CAPTURE_TYPE_ASK) {
@@ -1409,6 +1417,10 @@ keep_moving:
         /*
          * Save
          */
+        if (q_status.read_only == Q_TRUE) {
+            break;
+        }
+
         q_cursor_on();
         reset_scrollback_save_type();
         if (q_status.scrollback_save_type == Q_CAPTURE_TYPE_ASK) {

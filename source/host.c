@@ -815,6 +815,13 @@ static void view_new_message() {
 
 /* Entering a new message handles the From, To, and Body. */
 static void enter_message() {
+    if (q_status.read_only == Q_TRUE) {
+        do_menu(EOL "Cannot create new message with --read-only set." EOL);
+        current_state = MAIN_MENU;
+        main_menu();
+        return;
+    }
+
     if (msg_state == MSG_INIT) {
         DLOG(("enter_message(): MSG_INIT\n"));
 
@@ -1727,6 +1734,12 @@ static void upload_file(Q_PROTOCOL protocol) {
 
     if (local_login == Q_TRUE) {
         do_menu(EOL "Cannot upload on local logon." EOL);
+        current_state = MAIN_MENU;
+        main_menu();
+        return;
+    }
+    if (q_status.read_only == Q_TRUE) {
+        do_menu(EOL "Cannot upload with --read-only set." EOL);
         current_state = MAIN_MENU;
         main_menu();
         return;

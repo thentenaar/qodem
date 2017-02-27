@@ -245,6 +245,10 @@ static void save_modem_config() {
     char * full_filename;
     FILE * file;
 
+    if (q_status.read_only == Q_TRUE) {
+        return;
+    }
+
     file = open_datadir_file(MODEM_CONFIG_FILENAME, &full_filename, "w");
     if (file == NULL) {
         snprintf(notify_message, sizeof(notify_message),

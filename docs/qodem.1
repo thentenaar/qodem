@@ -19,6 +19,12 @@ qodem \- Qodem Terminal Emulator
 .br
 .RI "[ \-\-scrfile FILENAME ]"
 .br
+.RI "[ \-\-config FILENAME ]"
+.br
+.RI "[ \-\-create\-config FILENAME ]"
+.br
+.RI "[ \-\-dotqodem\-dir DIRNAME ]"
+.br
 .RI "[ \-x | \-\-exit\-on\-completion ]"
 .br
 .RI "[ \-\-doorway MODE ]"
@@ -31,7 +37,9 @@ qodem \- Qodem Terminal Emulator
 .br
 .RI "[ \-\-play MUSIC ]"
 .br
-.RI "[ \-\-play-exit ]"
+.RI "[ \-\-play\-exit ]"
+.br
+.RI "[ \-\-read\-only ]"
 .br
 .RI "[ \-\-geometry COLSxROWS ]"
 .br
@@ -98,6 +106,20 @@ Load Unicode translate tables from FILENAME.
 .TP
 .B \-\-scrfile FILENAME
 Start script FILENAME after connect.
+.TP
+.B \-\-config FILENAME
+Load options from FILENAME (only).
+.TP
+.B \-\-create\-config FILENAME
+Write a new options file to FILENAME and exit.
+.TP
+.B \-\-dotqodem\-dir DIRNAME
+Use DIRNAME instead of $HOME/.qodem for config/data files.
+.TP
+.B \-\-read\-only
+Disable all writes to disk.  No config files will be saved, downloads
+are disabled, scripts are disabled, no screen dump, capture, logging,
+etc.
 .TP
 .B \-x \-\-exit\-on\-completion
 Exit after connection/command finishes.

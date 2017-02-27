@@ -429,6 +429,25 @@ Q_BOOL directory_exists(const char * path) {
     }
 #else
 
+    struct stat fstats;
+    int rc;
+
+    rc = stat(path, &fstats);
+    if (rc < 0) {
+        if (errno == ENOENT) {
+            /*
+             * Directory definitely does not exist.
+             */
+            return Q_FALSE;
+        }
+    }
+    if (S_ISDIR(fstats.st_mode) == 0) {
+        /*
+         * This is not a directory.
+         */
+        return Q_FALSE;
+    }
+
     if (access(path, F_OK) == 0) {
         return Q_TRUE;
     }
