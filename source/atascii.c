@@ -336,34 +336,43 @@ Q_EMULATION_STATUS atascii(const unsigned char from_modem,
     }
 
     /*
-     * ESC
+     * Determine if a control char needs to be printed or handled.
      */
-    if (from_modem == C_ESC) {
-        if (state.print_control_char == Q_TRUE) {
-            DLOG(("STOP printing control characters"));
-            state.print_control_char = Q_FALSE;
-        } else {
-            DLOG(("Start PRINTING control characters"));
-            state.print_control_char = Q_TRUE;
-        }
-        return Q_EMUL_FSM_NO_CHAR_YET;
+    if ((state.print_control_char == Q_TRUE) &&
+        (((from_modem & 0x7F) < 0x20) || ((from_modem & 0x7F) == 0x7F))
+    ) {
+        /*
+         * This is a control character, and we are printing them.  Fall
+         * through to the print at the end.
+         */
+        DLOG(("Control character, PRINT"));
+    } else {
+        if (state.print_control_char == Q_FALSE) {
+            if (from_modem == C_ESC) {
+                DLOG(("Start PRINTING control characters"));
+                state.print_control_char = Q_TRUE;
+                return Q_EMUL_FSM_NO_CHAR_YET;
+            }
+
+            if (atascii_handle_control_char(from_modem) == Q_TRUE) {
+                /*
+                 * This byte was consumed, it does not need to be printed.
+                 */
+                return Q_EMUL_FSM_NO_CHAR_YET;
+            }
+            if (((from_modem & 0x7F) < 0x20) || ((from_modem & 0x7F) == 0x7F)) {
+                /*
+                 * This is a control character, but we are not printing them.
+                 * Make it vanish.
+                 */
+                DLOG(("Unhandled control character, IGNORE"));
+                return Q_EMUL_FSM_NO_CHAR_YET;
+            }
+        } /* if (state.print_control_char == Q_FALSE) */
     }
 
-    if (atascii_handle_control_char(from_modem) == Q_TRUE) {
-        /*
-         * This byte was consumed, it does not need to be printed.
-         */
-        return Q_EMUL_FSM_NO_CHAR_YET;
-    }
-
-    if ((state.print_control_char == Q_FALSE) && ((from_modem & 0x7F) < 0x20)) {
-        /*
-         * This is a control character, but we are not printing them.  Make
-         * it vanish.
-         */
-        DLOG(("Control character, IGNORE"));
-        return Q_EMUL_FSM_NO_CHAR_YET;
-    }
+    /* Reset print control char flag. */
+    state.print_control_char = Q_FALSE;
 
     /* This is a printable character, send it out. */
     if ((from_modem & 0x80) != 0) {
