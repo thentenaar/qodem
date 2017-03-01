@@ -2522,8 +2522,7 @@ void console_refresh(Q_BOOL status_line) {
                 row++;
                 screen_move_yx(row, 0);
             }
-            screen_put_color_char((wchar_t) (split_screen_buffer[i] & 0xFF),
-                                  Q_COLOR_CONSOLE_TEXT);
+            screen_put_color_char(split_screen_buffer[i], Q_COLOR_CONSOLE_TEXT);
         }
         q_split_screen_dirty = Q_FALSE;
     }

@@ -16,8 +16,6 @@ Fix all marked TODOs in code
     - Win32a double-width chars
     - Cursor position - clamp to margin 39 on double-width rows
 
-#48 split-screen unicode support
-
 #52 bracketed paste mode
 
 FULL REGRESSION ON EVERY ITEM:
