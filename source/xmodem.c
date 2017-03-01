@@ -218,7 +218,7 @@ static XMODEM_FLAVOR flavor;
 /* YMODEM ONLY ----------------------------------------------------- */
 
 /* The list of files to upload */
-static struct file_info *upload_file_list;
+static struct file_info * upload_file_list;
 
 /* The current entry in upload_file_list being sent */
 static int upload_file_list_i;
@@ -1147,8 +1147,9 @@ static Q_BOOL verify_block() {
     /*
      * First, verify block size
      */
-    DLOG(("verify_block() checking block size, current_block_n = %d\n"));
-    DLOG2(("Input bytes: ", current_block_n));
+    DLOG(("verify_block() checking block size, current_block_n = %d\n",
+            current_block_n));
+    DLOG2(("verify_block() input bytes: "));
     for (i = 0; i < current_block_n; i++) {
         DLOG2(("%02x ", (current_block[i] & 0xFF)));
     }
@@ -1558,19 +1559,54 @@ static void xmodem_receive(unsigned char * input, unsigned int * input_n,
              * Xmodem - 1K/G case: pull in just enough to make a complete
              * block, process it, and come back for more.
              */
-            unsigned int n = XMODEM_MAX_BLOCK_SIZE - current_block_n;
-            if (*input_n < n) {
+            unsigned int n = 1024 + 5;
+            if (current_block[0] == C_SOH) {
                 /*
-                 * Copy only what is here
+                 * We need a short block, not a long one.
                  */
-                n = *input_n;
+                n = 128 + 5;
+            }
+            if (current_block_n >= n) {
+                /*
+                 * We already have enough for a packet.  But this should not
+                 * have happened.
+                 */
+                assert(current_block_n < n);
             }
 
-            DLOG(("XMODEM-G: adding %d bytes of data\n", n));
-
-            if (current_block_n + n > sizeof(current_block)) {
+            if (*input_n + current_block_n < n) {
                 /*
-                 * We are lost.  In G land this is a fatal error, ABORT.
+                 * We need more data, but it is not here.  Save what we have,
+                 * wait for more.
+                 */
+                DLOG(("Not yet enough data for a block\n"));
+
+                memcpy(current_block + current_block_n, input, *input_n);
+                current_block_n += *input_n;
+                *input_n = 0;
+
+                if ((current_block_n == 1) && (current_block[0] == C_EOT)) {
+                    /*
+                     * EOT, handle below
+                     */
+                    goto eot;
+                }
+                return;
+            }
+
+            DLOG(("XMODEM-G: adding up to %d bytes of data\n",
+                    n - current_block_n));
+            memcpy(current_block + current_block_n, input, n - current_block_n);
+            *input_n -= (n - current_block_n);
+            memmove(input, input + (n - current_block_n), *input_n);
+            current_block_n = n;
+
+            /*
+             * We have enough data for a full block.
+             */
+            if (verify_block() == Q_FALSE) {
+                /*
+                 * In G land this is a fatal error, ABORT
                  */
                 clear_block();
                 stats_file_cancelled(_("Xmodem 1K/G error"));
@@ -1582,54 +1618,14 @@ static void xmodem_receive(unsigned char * input, unsigned int * input_n,
                 return;
             }
 
-            memcpy(current_block + current_block_n, input, n);
-            current_block_n += n;
-
-            if (((current_block[0] == C_STX) &&
-                    (current_block_n == XMODEM_MAX_BLOCK_SIZE)) ||
-                ((current_block[0] == C_SOH) &&
-                    (current_block_n == 128 + 5))
-            ) {
-                /*
-                 * We have enough data for a full block.
-                 */
-                if (verify_block() == Q_FALSE) {
-                    /*
-                     * In G land this is a fatal error, ABORT
-                     */
-                    clear_block();
-                    stats_file_cancelled(_("Xmodem 1K/G error"));
-
-                    /*
-                     * Clear input
-                     */
-                    *input_n = 0;
-                    return;
-                }
-
-                DLOG(("block OK, 1K/G NOT sending ACK\n"));
-                stats_increment_blocks(current_block);
-                clear_block();
-            }
+            DLOG(("block OK, 1K/G NOT sending ACK\n"));
+            stats_increment_blocks(current_block);
+            clear_block();
 
             /*
-             * Save the remainder off the input into current_block and return.
+             * Toss the block in input and return.
              */
-            memmove(input, input + n, *input_n - n);
-            *input_n -= n;
-            if ((current_block_n == 1) &&
-                (current_block[0] == C_EOT) &&
-                (*input_n == 0)
-            ) {
-                /*
-                 * EOT, handle below
-                 */
-            } else {
-                /*
-                 * Awaiting more data
-                 */
-                return;
-            }
+            return;
         } /* -G protocol handling */
 
         /*
@@ -1657,6 +1653,7 @@ static void xmodem_receive(unsigned char * input, unsigned int * input_n,
          * Special case: EOT means the last block received ended the file.
          */
         if ((current_block_n == 1) && (current_block[0] == C_EOT)) {
+eot:
             DLOG(("EOT, saving file...\n"));
 
             /*
@@ -1792,22 +1789,13 @@ static void xmodem_receive(unsigned char * input, unsigned int * input_n,
                 DLOG(("YMODEM: block 0 received, calling ymodem_decode_block0()...\n"));
 
                 if (ymodem_decode_block_0() == Q_TRUE) {
-                    if (flavor != Y_G) {
-                        /*
-                         * Normal Ymodem: send the ACK and first_byte again
-                         * to start the transfer.
-                         */
-                        output[0] = C_ACK;
-                        output[1] = first_byte;
-                        *output_n = 2;
-                    } else {
-                        /*
-                         * Ymodem-G: send only the first_byte again to start
-                         * the transfer.
-                         */
-                        output[0] = first_byte;
-                        *output_n = 1;
-                    }
+                    /*
+                     * Send the ACK and first_byte again to start the
+                     * transfer.
+                     */
+                    output[0] = C_ACK;
+                    output[1] = first_byte;
+                    *output_n = 2;
                     block0_has_been_seen = Q_TRUE;
                     /*
                      * Clear the block
