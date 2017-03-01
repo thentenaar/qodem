@@ -17,12 +17,8 @@ Fix all marked TODOs in code
     - Cursor position - clamp to margin 39 on double-width rows
 
 #48 split-screen unicode support
-    - Also support all control characters via carat notation
 
 #52 bracketed paste mode
-
-#53 Xmodem/G Ymodem/G error
-
 
 FULL REGRESSION ON EVERY ITEM:
   F10 -> Enter or Alt-Enter

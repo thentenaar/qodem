@@ -52,7 +52,7 @@ Q_BOOL q_split_screen_dirty = Q_FALSE;
 static Q_EMULATION split_screen_emulation;
 
 /* The split-screen keyboard buffer */
-static char split_screen_buffer[254];
+static wchar_t split_screen_buffer[254];
 static int split_screen_buffer_n;
 static int split_screen_x;
 static int split_screen_y;
@@ -2080,13 +2080,19 @@ void console_keyboard_handler(int keystroke, int flags) {
         for (i = 0; i < split_screen_buffer_n; i++) {
             if ((split_screen_buffer[i] == '^') &&
                 (i + 1 < split_screen_buffer_n) &&
-                (split_screen_buffer[i + 1] == 'M')
+                (split_screen_buffer[i + 1] >= 'A') &&
+                (split_screen_buffer[i + 1] <= '_')
             ) {
-                post_keystroke(Q_KEY_ENTER, 0);
+                post_keystroke(split_screen_buffer[i + 1] - 0x40,
+                    KEY_FLAG_CTRL);
                 i++;
                 continue;
             }
-            post_keystroke(split_screen_buffer[i], 0);
+            if (split_screen_buffer[i] > 0xFF) {
+                post_keystroke(split_screen_buffer[i], KEY_FLAG_UNICODE);
+            } else {
+                post_keystroke(split_screen_buffer[i], 0);
+            }
         }
         memset(split_screen_buffer, 0, sizeof(split_screen_buffer));
         split_screen_buffer_n = 0;
@@ -2122,18 +2128,46 @@ void console_keyboard_handler(int keystroke, int flags) {
 
     if (split_screen_buffer_n < sizeof(split_screen_buffer)) {
         /*
-         * Append keystroke to buffer
+         * Append keystroke to buffer.
          */
-        split_screen_buffer[split_screen_buffer_n] = keystroke;
-        split_screen_buffer_n++;
-        screen_put_color_char((wchar_t) (keystroke & 0xFF),
-                              Q_COLOR_CONSOLE_TEXT);
-        split_screen_x++;
-        if (split_screen_x == WIDTH) {
-            split_screen_x = 0;
-            split_screen_y++;
+        if (!q_key_code_yes(keystroke) || ((flags & KEY_FLAG_UNICODE) != 0)) {
+            if (((flags & KEY_FLAG_UNICODE) == 0) && (keystroke < 0x20)) {
+                if (split_screen_buffer_n < sizeof(split_screen_buffer) - 2) {
+                    /*
+                     * Control character, put it in carat notation.
+                     */
+                    split_screen_buffer[split_screen_buffer_n] = '^';
+                    split_screen_buffer_n++;
+                    split_screen_buffer[split_screen_buffer_n] = keystroke + 0x40;
+                    split_screen_buffer_n++;
+                    split_screen_x++;
+                    if (split_screen_x == WIDTH) {
+                        split_screen_x = 0;
+                        split_screen_y++;
+                    }
+                    split_screen_x++;
+                    if (split_screen_x == WIDTH) {
+                        split_screen_x = 0;
+                        split_screen_y++;
+                    }
+                    q_split_screen_dirty = Q_TRUE;
+                    return;
+                }
+            }
+
+            /*
+             * Normal character (or Unicode), save it in the buffer.
+             */
+            split_screen_buffer[split_screen_buffer_n] = (wchar_t) keystroke;
+            split_screen_buffer_n++;
+            screen_put_color_char((wchar_t) keystroke, Q_COLOR_CONSOLE_TEXT);
+            split_screen_x++;
+            if (split_screen_x == WIDTH) {
+                split_screen_x = 0;
+                split_screen_y++;
+            }
+            q_split_screen_dirty = Q_TRUE;
         }
-        q_split_screen_dirty = Q_TRUE;
         return;
     }
 }
