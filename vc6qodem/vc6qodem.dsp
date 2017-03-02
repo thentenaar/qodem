@@ -98,6 +98,10 @@ SOURCE=..\source\ansi.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\source\atascii.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\source\avatar.c
 # End Source File
 # Begin Source File
@@ -234,6 +238,10 @@ SOURCE=..\source\ansi.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\source\atascii.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\source\avatar.h
 # End Source File
 # Begin Source File
@@ -303,6 +311,10 @@ SOURCE=..\source\netclient.h
 # Begin Source File
 
 SOURCE=..\source\options.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\source\petscii.h
 # End Source File
 # Begin Source File
 

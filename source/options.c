@@ -1826,7 +1826,7 @@ void load_options() {
          * file, don't read any of the others.
          */
 #ifdef Q_PDCURSES_WIN32
-        if (file_exists(q_config__filename) == Q_TRUE) {
+        if (file_exists(q_config_filename) == Q_TRUE) {
 #else
         if (access(q_config_filename, F_OK | R_OK) == 0) {
 #endif
