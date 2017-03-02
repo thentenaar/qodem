@@ -2112,6 +2112,12 @@ static void xmodem_send(unsigned char * input, unsigned int * input_n,
                      * Downgrade to plain Xmodem
                      */
                     downgrade_to_vanilla_xmodem();
+
+                    /*
+                     * Put an ACK here so the if (state == BLOCK) case can
+                     * construct the first block.
+                     */
+                    input[0] = C_ACK;
                     state = BLOCK;
                 } else {
                     /*
