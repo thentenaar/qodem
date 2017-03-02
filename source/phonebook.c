@@ -99,6 +99,7 @@ struct q_phone_struct * q_current_dial_entry = NULL;
 struct q_phonebook_struct q_phonebook = {
     "fonebook.txt",             /* filename */
     0,                          /* tagged */
+    0,                          /* last_saved_time */
     0,                          /* view_mode */
     NULL,                       /* entries */
     0,                          /* entry_count */
@@ -202,6 +203,73 @@ void phonebook_normalize() {
         }
         p = p->next;
     }
+}
+
+/**
+ * See if the phonebook was last modified by this instance.
+ *
+ * @param backup_version if true, check the backup copy
+ * @return true if the phonebook on disk was last modified by this instance,
+ * or the user overrode ownership
+ */
+static Q_BOOL phonebook_is_mine(Q_BOOL backup_version) {
+    struct stat fstats;
+    char * filename;
+    Q_BOOL rc = Q_FALSE;
+    int keystroke;
+    char * message_lines[4];
+
+    if (backup_version == Q_FALSE) {
+        filename = q_phonebook.filename;
+    } else {
+        filename =
+            (char *) Xmalloc(sizeof(char) * (strlen(q_phonebook.filename) + 5),
+                             __FILE__, __LINE__);
+        snprintf(filename, strlen(q_phonebook.filename) + 5, "%s.bak",
+                 q_phonebook.filename);
+    }
+
+    /*
+     * Get the last modified time, so that we can decide if someone else has
+     * modified it.
+     */
+    if (stat(filename, &fstats) == 0) {
+        if (q_phonebook.last_save_time != fstats.st_mtime) {
+            /*
+             * Someone else has modified this phonebook.  Ask the user if
+             * they want to overwrite it or not.
+             */
+            message_lines[0] = _("It appears another instance may have");
+            message_lines[1] = _("modified this phonebook file.");
+            message_lines[2] = "";
+            message_lines[3] = _("     Save anyway? [Y/n] "),
+            keystroke = tolower(notify_prompt_form_long(message_lines,
+                _("Overwrite Phonebook"),
+                _(" Y-Overwrite The Phonebook File   N-Do Not Save Changes "),
+                    Q_TRUE, 0.0, "YyNn\r", 4));
+
+            if ((keystroke == 'y') || (keystroke == Q_KEY_ENTER)) {
+                rc = Q_TRUE;
+            } else {
+                rc = Q_FALSE;
+            }
+        } else {
+            /*
+             * Default outcome: it is ours.
+             */
+            rc = Q_TRUE;
+        }
+    } else {
+        /*
+         * We couldn't check the time, so assume it is ours.
+         */
+        rc = Q_TRUE;
+    }
+
+    if (backup_version == Q_TRUE) {
+        Xfree(filename, __FILE__, __LINE__);
+    }
+    return rc;
 }
 
 /**
@@ -824,6 +892,7 @@ void load_phonebook(const Q_BOOL backup_version) {
 
     int scan_state;
     int notes_length = 0;
+    struct stat fstats;
 
     DLOG(("load_phonebook()\n"));
 
@@ -879,6 +948,7 @@ void load_phonebook(const Q_BOOL backup_version) {
      * Reset for new phonebook
      */
     q_phonebook.tagged = 0;
+    q_phonebook.last_save_time = 0;
     q_phonebook.view_mode = 0;
     q_phonebook.entries = 0;
     q_phonebook.entry_count = 0;
@@ -1362,6 +1432,15 @@ void load_phonebook(const Q_BOOL backup_version) {
     fclose(file);
     phonebook_page = 0;
     phonebook_entry_i = 0;
+
+    /*
+     * Save the last modified time, so that we can decide if someone else has
+     * modified it.
+     */
+    if (stat(filename, &fstats) == 0) {
+        q_phonebook.last_save_time = fstats.st_mtime;
+    }
+
 }
 
 /**
@@ -1376,6 +1455,7 @@ static void save_phonebook(const Q_BOOL backup_version) {
     char notify_message[DIALOG_MESSAGE_SIZE];
     wchar_t * notes_line;
     int current_notes_idx;
+    struct stat fstats;
 
     if (q_status.read_only == Q_TRUE) {
         return;
@@ -1474,6 +1554,14 @@ static void save_phonebook(const Q_BOOL backup_version) {
         fprintf(file, "\n");
     }
     fclose(file);
+
+    /*
+     * Save the last modified time, so that we can decide if someone else has
+     * modified it.
+     */
+    if ((stat(filename, &fstats) == 0) && (backup_version == Q_FALSE)) {
+        q_phonebook.last_save_time = fstats.st_mtime;
+    }
 
     if (backup_version == Q_TRUE) {
         Xfree(filename, __FILE__, __LINE__);
@@ -1937,7 +2025,8 @@ void create_phonebook() {
 #endif /* Q_NO_SERIAL */
 
     /*
-     * Now save it
+     * Now save it.  Note that we don't care if anyone else might have
+     * modified it.
      */
     save_phonebook(Q_FALSE);
 }
@@ -2087,7 +2176,9 @@ void do_dialer() {
      * Save phonebook - in case someone JUST added an entry and will be
      * dialing.
      */
-    save_phonebook(Q_FALSE);
+    if (phonebook_is_mine(Q_FALSE) == Q_TRUE) {
+        save_phonebook(Q_FALSE);
+    }
 
     /*
      * Now do the connection
@@ -2159,7 +2250,9 @@ void do_dialer() {
     /*
      * Save phonebook
      */
-    save_phonebook(Q_FALSE);
+    if (phonebook_is_mine(Q_FALSE) == Q_TRUE) {
+        save_phonebook(Q_FALSE);
+    }
 }
 
 /**
@@ -7095,7 +7188,9 @@ void phonebook_keyboard_handler(const int keystroke, const int flags) {
         /*
          * Save phonebook
          */
-        save_phonebook(Q_FALSE);
+        if (phonebook_is_mine(Q_FALSE) == Q_TRUE) {
+            save_phonebook(Q_FALSE);
+        }
         return;
 
     case 'i':
@@ -7446,7 +7541,9 @@ void phonebook_keyboard_handler(const int keystroke, const int flags) {
         /*
          * Save a copy of this one
          */
-        save_phonebook(Q_FALSE);
+        if (phonebook_is_mine(Q_FALSE) == Q_TRUE) {
+            save_phonebook(Q_FALSE);
+        }
         phonebook_file_info = view_directory(q_home_directory, "*.txt");
         if (phonebook_file_info != NULL) {
             q_phonebook.filename = phonebook_file_info->name;

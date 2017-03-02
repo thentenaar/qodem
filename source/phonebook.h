@@ -107,6 +107,7 @@ struct q_phone_struct {
 struct q_phonebook_struct {
     char * filename;
     int tagged;
+    time_t last_save_time;
     int view_mode;
     struct q_phone_struct * entries;
     int entry_count;
