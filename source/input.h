@@ -171,6 +171,8 @@
 
 #define Q_KEY_ESCAPE            0x00E5CA9E
 #define Q_KEY_TAB               0x007AB000
+#define Q_KEY_BRACKET_ON        0x00B4ACE1
+#define Q_KEY_BRACKET_OFF       0x00B4ACE0
 
 #define Q_KEYBOARD_DELAY        10000
 

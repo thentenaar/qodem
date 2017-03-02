@@ -178,6 +178,9 @@ static struct string_to_qodem_keystroke terminfo_keystrings[] = {
     { "\033[1;7A" , KEY_UP   ,              0, KEY_FLAG_CTRL, KEY_FLAG_ALT },
     { "\033[1;8A" , KEY_UP   , KEY_FLAG_SHIFT, KEY_FLAG_CTRL, KEY_FLAG_ALT },
 
+    { "\033[200~" , Q_KEY_BRACKET_ON,       0,             0,            0 },
+    { "\033[201~" , Q_KEY_BRACKET_OFF,      0,             0,            0 },
+
     /* Terminating entry */
     { ""      , ERR      ,              0,             0,            0 },
 };
@@ -472,8 +475,10 @@ drain_queue:
             /*
              * Match found.
              */
-            DLOG(("curses_match_keystring() out: ** FOUND** %o\n",
-                terminfo_keystrings[i].keystroke));
+            DLOG(("curses_match_keystring() out: ** FOUND** %o %d 0x%x\n",
+                    terminfo_keystrings[i].keystroke,
+                    terminfo_keystrings[i].keystroke,
+                    terminfo_keystrings[i].keystroke));
             *key = terminfo_keystrings[i].keystroke;
             if (flags != NULL) {
                 *flags = terminfo_keystrings[i].shift |

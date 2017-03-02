@@ -10,13 +10,9 @@ NEW FUNCTIONALITY
 
 Fix all marked TODOs in code
 
-#26 Handle multiple instances operating on the phonebook
-
 #54 Full 40-column support
     - Win32a double-width chars
     - Cursor position - clamp to margin 39 on double-width rows
-
-#52 bracketed paste mode
 
 FULL REGRESSION ON EVERY ITEM:
   F10 -> Enter or Alt-Enter

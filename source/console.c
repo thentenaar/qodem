@@ -837,6 +837,20 @@ void set_status_line(Q_BOOL make_visible) {
 }
 
 /**
+ * Send the sequence representing the beginning of a bracketed paste.
+ */
+static void bracketed_paste_on() {
+    qodem_write(q_child_tty_fd, "\033[200~", 6, Q_TRUE);
+}
+
+/**
+ * Send the sequence representing the end of a bracketed paste.
+ */
+static void bracketed_paste_off() {
+    qodem_write(q_child_tty_fd, "\033[201~", 6, Q_TRUE);
+}
+
+/**
  * Keyboard handler for the normal console.
  *
  * @param keystroke the keystroke from the user.
@@ -886,6 +900,10 @@ void console_keyboard_handler(int keystroke, int flags) {
 
         if (clipboard_rc == PDC_CLIP_SUCCESS) {
             DLOG(("   got %d bytes from clipboard\n", clipboard_length));
+
+            if (q_status.bracketed_paste_mode == Q_TRUE) {
+                bracketed_paste_on();
+            }
             last_utf8_state = utf8_state;
             for (i = 0; i < clipboard_length; i++) {
                 utf8_decode(&utf8_state, &utf8_char,
@@ -907,8 +925,14 @@ void console_keyboard_handler(int keystroke, int flags) {
                 }
 
                 if (utf8_char <= 0x7F) {
-                    DLOG(("   ASCII char: %c\n", utf8_char));
-                    post_keystroke(utf8_char, 0);
+                    /*
+                     * Do not pass ESC, don't let bracketed paste mode be
+                     * subverted.
+                     */
+                    if (utf8_char != 0x1B) {
+                        DLOG(("   ASCII char: %c\n", utf8_char));
+                        post_keystroke(utf8_char, 0);
+                    }
                 } else {
                     DLOG(("   Unicode char: %lc\n", (wchar_t) utf8_char));
                     post_keystroke((wchar_t) utf8_char, KEY_FLAG_UNICODE);
@@ -916,6 +940,9 @@ void console_keyboard_handler(int keystroke, int flags) {
             }
             PDC_freeclipboard(clipboard_contents);
             clipboard_contents = NULL;
+            if (q_status.bracketed_paste_mode == Q_TRUE) {
+                bracketed_paste_off();
+            }
             return;
         }
     }
@@ -926,6 +953,19 @@ void console_keyboard_handler(int keystroke, int flags) {
             keystroke, keystroke, keystroke, keystroke, flags));
 
 #endif
+
+    if ((keystroke == Q_KEY_BRACKET_ON) &&
+        (q_status.bracketed_paste_mode == Q_TRUE)
+    ) {
+        bracketed_paste_on();
+        return;
+    }
+    if ((keystroke == Q_KEY_BRACKET_OFF) &&
+        (q_status.bracketed_paste_mode == Q_TRUE)
+    ) {
+        bracketed_paste_off();
+        return;
+    }
 
     if (q_status.doorway_mode == Q_DOORWAY_MODE_FULL) {
         if ((keystroke == '=') && (flags & KEY_FLAG_ALT)) {
@@ -1225,9 +1265,9 @@ void console_keyboard_handler(int keystroke, int flags) {
              * Alt-7 Status line info
              */
             if (q_status.status_line_info == Q_TRUE) {
-                q_status.status_line_info = Q_FALSE;
+                set_status_line(Q_FALSE);
             } else {
-                q_status.status_line_info = Q_TRUE;
+                set_status_line(Q_TRUE);
             }
             return;
         }

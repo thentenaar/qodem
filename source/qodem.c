@@ -274,6 +274,28 @@ char * q_config_filename = NULL;
  */
 char * q_dotqodem_dir = NULL;
 
+/**
+ * The --codepage command line argument.
+ */
+static char * q_codepage_option = NULL;
+
+/**
+ * The --doorway command line argument.
+ */
+static char * q_doorway_option = NULL;
+
+/**
+ * The --emulation command line argument.
+ */
+static char * q_emulation_option = NULL;
+
+/**
+ * The -x / --exit-on-completion command line argument.  We need it here
+ * because of the sequence of read command line options, load_options(), then
+ * set variables.
+ */
+static Q_BOOL q_exit_on_disconnect = Q_FALSE;
+
 /* Command-line options */
 static struct option q_getopt_long_options[] = {
     {"dial",                1,      0,      0},
@@ -1122,33 +1144,23 @@ static void process_command_line_option(const char * option,
 
     if (strncmp(option, "xterm", strlen("xterm")) == 0) {
         q_status.xterm_mode = Q_TRUE;
-        q_status.exit_on_disconnect = Q_TRUE;
-        q_status.doorway_mode = Q_DOORWAY_MODE_MIXED;
-        set_status_line(Q_FALSE);
     }
 
     if (strncmp(option, "exit-on-completion",
             strlen("exit-on-completion")) == 0) {
-        q_status.exit_on_disconnect = Q_TRUE;
+        q_exit_on_disconnect = Q_TRUE;
     }
 
     if (strncmp(option, "doorway", strlen("doorway")) == 0) {
-        if (strcasecmp(value, "doorway") == 0) {
-            q_status.doorway_mode = Q_DOORWAY_MODE_FULL;
-        } else if (strcasecmp(value, "mixed") == 0) {
-            q_status.doorway_mode = Q_DOORWAY_MODE_MIXED;
-        } else {
-            q_status.doorway_mode = Q_DOORWAY_MODE_OFF;
-        }
+        q_doorway_option = Xstrdup(value, __FILE__, __LINE__);
     }
 
     if (strncmp(option, "codepage", strlen("codepage")) == 0) {
-        q_status.codepage = codepage_from_string(value);
+        q_codepage_option = Xstrdup(value, __FILE__, __LINE__);
     }
 
     if (strncmp(option, "emulation", strlen("emulation")) == 0) {
-        q_status.emulation = emulation_from_string(value);
-        q_status.codepage = default_codepage(q_status.emulation);
+        q_emulation_option = Xstrdup(value, __FILE__, __LINE__);
     }
 
     if (strncmp(option, "status-line", strlen("status-line")) == 0) {
@@ -1226,6 +1238,39 @@ static void process_command_line_option(const char * option,
         }
     }
 
+}
+
+/**
+ * Resolve conflicts between command line options and the options file.
+ */
+static void resolve_command_line_options() {
+
+    if (q_status.xterm_mode == Q_TRUE) {
+        q_status.exit_on_disconnect = Q_TRUE;
+        q_status.doorway_mode = Q_DOORWAY_MODE_MIXED;
+        set_status_line(Q_FALSE);
+    }
+
+    if (q_doorway_option != NULL) {
+        if (strcasecmp(q_doorway_option, "doorway") == 0) {
+            q_status.doorway_mode = Q_DOORWAY_MODE_FULL;
+        } else if (strcasecmp(q_doorway_option, "mixed") == 0) {
+            q_status.doorway_mode = Q_DOORWAY_MODE_MIXED;
+        } else {
+            q_status.doorway_mode = Q_DOORWAY_MODE_OFF;
+        }
+    }
+
+    if (q_emulation_option != NULL) {
+        q_status.emulation = emulation_from_string(q_emulation_option);
+        q_status.codepage = default_codepage(q_status.emulation);
+    }
+
+    if (q_codepage_option != NULL) {
+        q_status.codepage = codepage_from_string(q_codepage_option);
+    }
+
+    q_status.exit_on_disconnect = q_exit_on_disconnect;
 }
 
 /**
@@ -3097,6 +3142,7 @@ static void reset_global_state() {
     q_status.status_visible         = Q_TRUE;
     q_status.status_line_info       = Q_FALSE;
     q_status.xterm_mode             = Q_FALSE;
+    q_status.bracketed_paste_mode   = Q_FALSE;
     q_status.hard_backspace         = Q_TRUE;
     /*
      * Every console assumes line wrap, so turn it on by default.
@@ -3273,7 +3319,7 @@ int qodem_main(int argc, char * const argv[]) {
             break;
 
         case 'x':
-            q_status.exit_on_disconnect = Q_TRUE;
+            q_exit_on_disconnect = Q_TRUE;
             break;
 
         default:
@@ -3310,8 +3356,11 @@ int qodem_main(int argc, char * const argv[]) {
     }
 
 #if !defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32)
-    /* Xterm: send the private sequence to select metaSendsEscape */
-    fprintf(stdout, "\033[?1036h");
+    /*
+     * Xterm: send the private sequence to select metaSendsEscape and
+     * bracketed paste mode.
+     */
+    fprintf(stdout, "\033[?1036;2004h");
     fflush(stdout);
 #endif
 
@@ -3324,6 +3373,12 @@ int qodem_main(int argc, char * const argv[]) {
     /* Now that colors are known, use them. */
     q_setup_colors();
     q_current_color = scrollback_full_attr(Q_COLOR_CONSOLE_TEXT);
+
+    /*
+     * Modify q_status based on command line options.  Do this AFTER
+     * load_options() has set defaults.
+     */
+    resolve_command_line_options();
 
     /* Setup MIXED mode doorway */
     setup_doorway_handling();
@@ -3654,6 +3709,14 @@ no_initial_call:
 #ifdef Q_PDCURSES_WIN32
     /* Shutdown winsock */
     stop_winsock();
+#endif
+
+#if !defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32)
+    /*
+     * Xterm: send the private sequence to disable bracketed paste mode.
+     */
+    fprintf(stdout, "\033[?2004l");
+    fflush(stdout);
 #endif
 
     /* Exit */

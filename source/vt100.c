@@ -1409,6 +1409,25 @@ static void set_toggle(const Q_BOOL value) {
             }
             break;
 
+        case 2004:
+            if ((state.dec_private_mode_flag == Q_TRUE) &&
+                ((q_status.emulation == Q_EMUL_XTERM) ||
+                    (q_status.emulation == Q_EMUL_XTERM_UTF8))
+            ) {
+                if (value == Q_TRUE) {
+                    /*
+                     * Enable bracketed paste mode.
+                     */
+                    q_status.bracketed_paste_mode = Q_TRUE;
+                } else {
+                    /*
+                     * Disable bracketed paste mode.
+                     */
+                    q_status.bracketed_paste_mode = Q_FALSE;
+                }
+            }
+            break;
+
         default:
             break;
 

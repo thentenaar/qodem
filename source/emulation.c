@@ -1094,6 +1094,15 @@ void reset_emulation() {
          */
         mousemask(0, NULL);
     }
+
+    /*
+     * Reset bracketed paste mode to global flag.
+     */
+    q_status.bracketed_paste_mode = Q_FALSE;
+    if (strcasecmp(get_option(Q_OPTION_BRACKETED_PASTE), "true") == 0) {
+        q_status.bracketed_paste_mode = Q_TRUE;
+    }
+
 }
 
 /**

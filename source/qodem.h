@@ -250,6 +250,11 @@ struct q_status_struct {
     Q_BOOL xterm_mode;
 
     /**
+     * When true, bracketed paste mode is enabled.
+     */
+    Q_BOOL bracketed_paste_mode;
+
+    /**
      * When true, backspace sends the C0 backspace control character ^H
      * (0x08).  When false, backspace sends the DEL character (0x7F).  VT220
      * emulation does not honor this flag, because backspace is defined by

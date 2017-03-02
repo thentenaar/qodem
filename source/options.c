@@ -259,6 +259,14 @@ static struct option_struct options[] = {
 "### The number of idle seconds to wait before automatically closing\n"
 "### the connection.  A value of 0 means never disconnect."},
 
+         {Q_OPTION_BRACKETED_PASTE, NULL, "bracketed_paste_mode", "false", ""
+"### Whether or not bracketed paste mode is enabled.  Bracketed paste mode\n"
+"### is a security feature that permits applications to distinguish between\n"
+"### normal keyboard text and pasted text.  Qodem will automatically honor\n"
+"### bracketed paste mode for XTERM and X_UTF8 emulations.  Other\n"
+"### emulations will only use bracketed paste mode if this value is\n"
+"### 'true'."},
+
 /* Capture file */
 
         {Q_OPTION_CAPTURE, NULL, "capture_enabled", "false", ""
@@ -1892,6 +1900,11 @@ no_more_config_files:
     q_status.idle_timeout = 0;
     if (get_option(Q_OPTION_IDLE_TIMEOUT) != NULL) {
         q_status.idle_timeout = atoi(get_option(Q_OPTION_IDLE_TIMEOUT));
+    }
+
+    q_status.bracketed_paste_mode = Q_FALSE;
+    if (strcasecmp(get_option(Q_OPTION_BRACKETED_PASTE), "true") == 0) {
+        q_status.bracketed_paste_mode = Q_TRUE;
     }
 
     q_screensaver_timeout = 0;
