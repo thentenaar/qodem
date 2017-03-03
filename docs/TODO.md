@@ -10,10 +10,6 @@ NEW FUNCTIONALITY
 
 Fix all marked TODOs in code
 
-#54 Full 40-column support
-    - Win32a double-width chars
-    - Cursor position - clamp to margin 39 on double-width rows
-
 FULL REGRESSION ON EVERY ITEM:
   F10 -> Enter or Alt-Enter
   F2 -> Space

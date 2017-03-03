@@ -1557,11 +1557,11 @@ keep_moving:
  */
 Q_BOOL has_true_doublewidth() {
 #if defined(Q_PDCURSES_WIN32)
-    /* Use PDC_set_double() for X11.  The Win32 version is still WIP. */
-    return Q_FALSE;
+    /* Win32 has double-width via PDC_set_double(). */
+    return Q_TRUE;
 #else
 #  if defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32)
-    /* Use PDC_set_double() for X11.  The Win32 version is still WIP. */
+    /* X11 has double-width via PDC_set_double(). */
     return Q_TRUE;
 #  else
     return xterm;

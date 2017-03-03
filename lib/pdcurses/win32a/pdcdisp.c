@@ -8,6 +8,9 @@ RCSID("$Id: pdcdisp.c,v 1.47 2008/07/14 04:24:52 wmcbrine Exp $")
 #include <string.h>
 #include <tchar.h>
 
+// KAL: double-width support
+extern int * double_width_lines;
+
 // #ifdef CHTYPE_LONG
 
 # define A(x) ((chtype)x | A_ALTCHARSET)
@@ -148,7 +151,14 @@ static void redraw_cursor_from_index( const HDC hdc, const int idx)
     LONG left, top;
     extern int PDC_cxChar, PDC_cyChar;
 
-    left = SP->curscol * PDC_cxChar;
+    // KAL: double-width support
+    int double_width_flag = *(double_width_lines + SP->cursrow);
+
+    if (double_width_flag == 0) {
+        left = SP->curscol * PDC_cxChar;
+    } else {
+        left = SP->curscol * PDC_cxChar * 2;
+    }
     top = SP->cursrow * PDC_cyChar;
     while( *sptr)
     {
@@ -158,9 +168,15 @@ static void redraw_cursor_from_index( const HDC hdc, const int idx)
 
         for( i = 0; i < 4; i++)
         {
-            coords[i] = (( i & 1) ?
-                         top + (PDC_cyChar * (*sptr - '0') + 4) / 8 :
-                         left + (PDC_cxChar * (*sptr - '0') + 4) / 8);
+            if (double_width_flag == 0) {
+                coords[i] = (( i & 1) ?
+                             top + (PDC_cyChar * (*sptr - '0') + 4) / 8 :
+                             left + (PDC_cxChar * (*sptr - '0') + 4) / 8);
+            } else {
+                coords[i] = (( i & 1) ?
+                             top + (PDC_cyChar * (*sptr - '0') + 4) / 8 :
+                             left + (PDC_cxChar * 2 * (*sptr - '0') + 4) / 8);
+            }
             sptr++;
             if( *sptr == '+' || *sptr == '-')
             {
@@ -171,6 +187,7 @@ static void redraw_cursor_from_index( const HDC hdc, const int idx)
                 sptr += 2;
             }
         }
+
         rect.left = coords[0];
         rect.top = coords[1];
         rect.right = coords[2];
@@ -489,6 +506,14 @@ void PDC_transform_line_given_hdc( const HDC hdc, const int lineno,
     extern RECT PDC_mouse_rect;              /* see 'pdcscrn.c' */
     int selection[2];
 
+    // KAL: double-width support
+    HDC double_src_hdc;
+    int double_width_flag = *(double_width_lines + lineno);
+    HDC text_out_dc = hdc;
+    HGDIOBJ text_out_bitmap;
+    BITMAPINFO bmInfo;
+    BYTE * bmBytes;
+
     if( !srcp)             /* just freeing up fonts */
     {
         for( i = 0; i < 4; i++)
@@ -520,6 +545,23 @@ void PDC_transform_line_given_hdc( const HDC hdc, const int lineno,
     if( lineno == SP->cursrow && SP->curscol >= x && SP->curscol < x + len)
         if( PDC_current_cursor_state( ))
             cursor_overwritten = TRUE;
+
+    // KAL
+    if (double_width_flag != 0) {
+        double_src_hdc = CreateCompatibleDC(hdc);
+        memset(&bmInfo.bmiHeader, 0, sizeof(BITMAPINFOHEADER));
+        bmInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+        bmInfo.bmiHeader.biWidth = PDC_cxChar;
+        bmInfo.bmiHeader.biHeight = PDC_cyChar;
+        bmInfo.bmiHeader.biPlanes = 1;
+        bmInfo.bmiHeader.biBitCount = 24;
+
+        text_out_bitmap = CreateDIBSection(double_src_hdc, &bmInfo,
+            DIB_RGB_COLORS, &bmBytes, 0, 0);
+        SelectObject(double_src_hdc, text_out_bitmap);
+        text_out_dc = double_src_hdc;
+    }
+
     while( len)
     {
         extern int PDC_really_blinking;          /* see 'pdcsetsc.c' */
@@ -600,7 +642,15 @@ void PDC_transform_line_given_hdc( const HDC hdc, const int lineno,
 #else
             olen++;
 #endif
-        }
+
+            // KAL double-width: go character-by-character
+            if (double_width_flag != 0) {
+                i = 1;
+                break;
+            }
+
+        } // for( i = 0; i < len && olen < BUFFSIZE - 1 && ...
+
         lpDx[olen] = PDC_cxChar;
         if( color != curr_color || ((prev_ch ^ *srcp) & (A_REVERSE | A_BLINK | A_BOLD | A_DIM)))
         {
@@ -608,8 +658,8 @@ void PDC_transform_line_given_hdc( const HDC hdc, const int lineno,
 
             PDC_get_rgb_values( *srcp, &foreground_rgb, &background_rgb);
             curr_color = color;
-            SetTextColor( hdc, foreground_rgb);
-            SetBkColor( hdc, background_rgb);
+            SetTextColor( text_out_dc, foreground_rgb);
+            SetBkColor( text_out_dc, background_rgb);
         }
         if( !PDC_really_blinking && (*srcp & A_BLINK))
             new_font_attrib &= ~A_BLINK;
@@ -625,36 +675,29 @@ void PDC_transform_line_given_hdc( const HDC hdc, const int lineno,
                 idx |= 2;
             if( !hFonts[idx])
                 hFonts[idx] = PDC_get_font_handle( font_attrib);
-            hFont = SelectObject( hdc, hFonts[idx]);
+            hFont = SelectObject( text_out_dc, hFonts[idx]);
             if( !hOldFont)
                 hOldFont = hFont;
         }
         prev_ch = *srcp;
-        clip_rect.left = x * PDC_cxChar;
-        clip_rect.top = lineno * PDC_cyChar;
-        clip_rect.right = clip_rect.left + i * PDC_cxChar;
-        clip_rect.bottom = clip_rect.top + PDC_cyChar;
-//      TextOutW( hdc, clip_rect.left, clip_rect.top,
-//                         buff, olen);
-        ExtTextOutW( hdc, clip_rect.left, clip_rect.top,
+
+        // KAL: double-width support
+        if (double_width_flag == 0) {
+            clip_rect.left = x * PDC_cxChar;
+            clip_rect.top = lineno * PDC_cyChar;
+            clip_rect.right = clip_rect.left + i * PDC_cxChar;
+            clip_rect.bottom = clip_rect.top + PDC_cyChar;
+        } else {
+            clip_rect.left = 0;
+            clip_rect.top = 0;
+            clip_rect.right = PDC_cxChar;
+            clip_rect.bottom = PDC_cyChar;
+        }
+
+        ExtTextOutW( text_out_dc, clip_rect.left, clip_rect.top,
                            ETO_CLIPPED | ETO_OPAQUE, &clip_rect,
                            buff, olen, (olen > 1 ? lpDx : NULL));
-#ifdef TRY_THIS_LATER
-        {
-            WORD glyph_indices[200];
-            int j;
-
-            GetGlyphIndices( hdc, buff, olen, glyph_indices, GGI_MARK_NONEXISTING_GLYPHS);
-            for( j = 0; j < olen; j++)
-               if( glyph_indices[j] == GGI_MARK_NONEXISTING_GLYPHS)
-                  printf( "%x is unsupported\n", (unsigned)buff[j]);
-        }
-#endif
-#ifdef A_OVERLINE
-        if( *srcp & (A_UNDERLINE | A_RIGHTLINE | A_LEFTLINE | A_OVERLINE | A_STRIKEOUT))
-#else
         if( *srcp & (A_UNDERLINE | A_RIGHTLINE | A_LEFTLINE))
-#endif
         {
             const int y1 = clip_rect.top;
             const int y2 = clip_rect.bottom - 1;
@@ -664,38 +707,14 @@ void PDC_transform_line_given_hdc( const HDC hdc, const int lineno,
             extern COLORREF *pdc_rgbs;
             const HPEN pen = CreatePen( PS_SOLID, 1, (SP->line_color == -1 ?
                              foreground_rgb : pdc_rgbs[SP->line_color]));
-            const HPEN old_pen = SelectObject( hdc, pen);
+            const HPEN old_pen = SelectObject( text_out_dc, pen);
 
-            if( *srcp & A_UNDERLINE)
+            if( (*srcp & A_UNDERLINE) && (double_width_flag != 2))
             {
-                MoveToEx( hdc, x1, y2, NULL);
-                LineTo(   hdc, x2, y2);
+                MoveToEx( text_out_dc, x1, y2, NULL);
+                LineTo(   text_out_dc, x2, y2);
             }
-#ifdef A_OVERLINE
-            if( *srcp & A_OVERLINE)
-            {
-                MoveToEx( hdc, x1, y1, NULL);
-                LineTo(   hdc, x2, y1);
-            }
-            if( *srcp & A_STRIKEOUT)
-            {
-                MoveToEx( hdc, x1, (y1 + y2) / 2, NULL);
-                LineTo(   hdc, x2, (y1 + y2) / 2);
-            }
-#endif
-            if( *srcp & A_RIGHTLINE)
-                for( j = 0; j < i; j++)
-                {
-                    MoveToEx( hdc, x2 - j * PDC_cxChar - 1, y1, NULL);
-                    LineTo(   hdc, x2 - j * PDC_cxChar - 1, y2);
-                }
-            if( *srcp & A_LEFTLINE)
-                for( j = 0; j < i; j++)
-                {
-                    MoveToEx( hdc, x1 + j * PDC_cxChar, y1, NULL);
-                    LineTo(   hdc, x1 + j * PDC_cxChar, y2);
-                }
-            SelectObject( hdc, old_pen);
+            SelectObject( text_out_dc, old_pen);
         }
         if( PDC_find_ends_of_selected_text( lineno, &PDC_mouse_rect, selection))
             if( x <= selection[1] + 1 && x + i >= selection[0])
@@ -708,12 +727,50 @@ void PDC_transform_line_given_hdc( const HDC hdc, const int lineno,
                 rect.left = min( x + i, selection[1] + 1);
                 rect.right *= PDC_cxChar;
                 rect.left *= PDC_cxChar;
-                InvertRect( hdc, &rect);
+                InvertRect( text_out_dc, &rect);
             }
+
+
+        // KAL: double-width support
+        if (double_width_flag == 1) {
+            // double-width, normal-height
+
+            // Stretch the clip_rect from text_out_dc to hdc.
+            StretchBlt(hdc, x * PDC_cxChar * 2, lineno * PDC_cyChar,
+                PDC_cxChar * 2, PDC_cyChar,
+                text_out_dc, 0, 0, PDC_cxChar, PDC_cyChar,
+                SRCCOPY);
+
+        } else if (double_width_flag == 2) {
+            // double-width, double-height on top half
+
+            // Stretch the clip_rect from text_out_dc to hdc.
+            StretchBlt(hdc, x * PDC_cxChar * 2, lineno * PDC_cyChar,
+                PDC_cxChar * 2, PDC_cyChar,
+                text_out_dc, 0, 0, PDC_cxChar, (PDC_cyChar / 2),
+                SRCCOPY);
+        } else if (double_width_flag == 3) {
+            // double-width, double-height on bottom half
+
+            // Stretch the clip_rect from text_out_dc to hdc.
+            StretchBlt(hdc, x * PDC_cxChar * 2, lineno * PDC_cyChar,
+                PDC_cxChar * 2, PDC_cyChar,
+                text_out_dc, 0, PDC_cyChar / 2, PDC_cxChar, (PDC_cyChar / 2),
+                SRCCOPY);
+        }
+
         len -= i;
         x += i;
         srcp += i;
+
+    } // while (len)
+
+    // KAL
+    if (double_width_flag != 0) {
+        DeleteDC(double_src_hdc);
+        DeleteObject(text_out_bitmap);
     }
+
     SelectObject( hdc, hOldFont);
                /* ...did we step on the cursor?  If so,  redraw it: */
     if( cursor_overwritten)
@@ -733,4 +790,3 @@ void PDC_transform_line(int lineno, int x, int len, const chtype *srcp)
         ReleaseDC( PDC_hWnd, hdc);
     }
 }
-

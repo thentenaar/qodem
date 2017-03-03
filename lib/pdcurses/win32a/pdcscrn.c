@@ -6,6 +6,9 @@
 
 RCSID("$Id: pdcscrn.c,v 1.92 2008/07/20 20:12:04 wmcbrine Exp $")
 
+// KAL: double-width support
+int * double_width_lines = NULL;
+
 /* COLOR_PAIR to attribute encoding table. */
 
 static short *color_pair_indices = (short *)NULL;
@@ -2298,6 +2301,13 @@ int PDC_scr_open( int argc, char **argv)
         return ERR;
     }
 
+    // KAL - allocate double_width and set to 0
+    double_width_lines = (int *)realloc(double_width_lines,
+        SP->lines * sizeof(int *));
+    for (i = 0; i < SP->lines; i++) {
+        double_width_lines[i] = 0;
+    }
+
 /*  PDC_reset_prog_mode();   doesn't do anything anyway */
     debug_printf( "...we're done\n");
     return OK;
@@ -2307,6 +2317,8 @@ int PDC_scr_open( int argc, char **argv)
 
 int PDC_resize_screen( int nlines, int ncols)
 {
+    int i;
+
     SP->resized = FALSE;
     debug_printf( "Incoming: %d %d\n", nlines, ncols);
     if( nlines >= 2 && ncols >= 2 && PDC_cxChar && PDC_cyChar && PDC_hWnd &&
@@ -2331,6 +2343,14 @@ int PDC_resize_screen( int nlines, int ncols)
                   SWP_NOMOVE | SWP_NOZORDER | SWP_SHOWWINDOW);
         }
     }
+
+    // KAL - allocate double_width and set to 0
+    double_width_lines = (int *)realloc(double_width_lines,
+        SP->lines * sizeof(int *));
+    for (i = 0; i < SP->lines; i++) {
+        double_width_lines[i] = 0;
+    }
+
     return OK;
 }
 
@@ -2491,27 +2511,11 @@ int PDC_init_color( short color, short red, short green, short blue)
  */
 void PDC_set_double(const int y, const int d)
 {
-    // KAL - TODO
-
-#if 0
-
+    // KAL
     int old_d;
-
-    XC_get_line_lock(y);
-
-    old_d = *(Xcurscr + XCURSCR_DOUBLE_OFF + y);
+    old_d = *(double_width_lines + y);
     if (old_d != d) {
-        *(Xcurscr + XCURSCR_DOUBLE_OFF + y) = d;
-        *(Xcurscr + XCURSCR_START_OFF + y) = 0;
-        *(Xcurscr + XCURSCR_LENGTH_OFF + y) = XCursesCOLS;
+        *(double_width_lines + y) = d;
+        PDC_transform_line(y, 0, SP->cols, curscr->_y[y]);
     }
-
-    XC_release_line_lock(y);
-
-    if (old_d != d) {
-        XCursesInstructAndWait(CURSES_REFRESH);
-    }
-
-#endif
-
 }

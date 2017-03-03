@@ -1,6 +1,17 @@
 The Qodem Project Work Log
 ==========================
 
+March 3, 2017
+
+We are down to the last feature before 1.0.0: Win32 double width
+support.  And I even have several hours available this weekend between
+coughing fits to make the attempt.
+
+... later ...
+
+We have double-width in Win32, and it was amazingly easier than X11
+thanks to StretchBlt().
+
 February 26, 2017
 
 Qodem has many more options for portability now.  --config lets you
