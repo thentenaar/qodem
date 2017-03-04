@@ -34,10 +34,20 @@
 #define inline __inline
 #endif
 
-/*
+/**
  * The offset between normal and bolded colors.  Stored in colors.c.
  */
 extern short q_color_bold_offset;
+
+/**
+ * The geometry as requested by the command line arguments.  Stored in
+ * qodem.c.
+ */
+extern unsigned char q_rows_arg;
+extern unsigned char q_cols_arg;
+
+/* If true, then initscr() has been called. */
+static Q_BOOL curses_initted = Q_FALSE;
 
 #if !defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32)
 #include <stdlib.h>             /* getenv() */
@@ -243,6 +253,12 @@ void screen_put_scrollback_char_yx(const int y, const int x, const wchar_t ch,
     static int cache_count = 0;
     wchar_t wch[2];
     short color = color_from_attr(attr);
+
+    if (curses_initted == Q_FALSE) {
+        /* Handle lazy-loading curses. */
+        screen_setup(q_rows_arg, q_cols_arg);
+    }
+
     if ((ch == ch_cached) && (attr == attr_cached)) {
         /*
          * NOP
@@ -271,6 +287,12 @@ static void screen_win_put_char(void * win, const wchar_t ch, const attr_t attr,
                                 const short color) {
     cchar_t ncurses_ch;
     wchar_t wch[2];
+
+    if (curses_initted == Q_FALSE) {
+        /* Handle lazy-loading curses. */
+        screen_setup(q_rows_arg, q_cols_arg);
+    }
+
     wch[0] = ch;
     wch[1] = 0;
     setcchar(&ncurses_ch, wch, physical_attr_from_attr(attr),
@@ -293,6 +315,12 @@ static void screen_win_put_char_yx(void * win, const int y, const int x,
                                    const short color) {
     cchar_t ncurses_ch;
     wchar_t wch[2];
+
+    if (curses_initted == Q_FALSE) {
+        /* Handle lazy-loading curses. */
+        screen_setup(q_rows_arg, q_cols_arg);
+    }
+
     wch[0] = ch;
     wch[1] = 0;
     setcchar(&ncurses_ch, wch, physical_attr_from_attr(attr),
@@ -424,6 +452,12 @@ static void screen_win_put_hline_yx(void * win, const int y, const int x,
                                     const attr_t attr, const short color) {
     cchar_t ncurses_ch;
     wchar_t wch[2];
+
+    if (curses_initted == Q_FALSE) {
+        /* Handle lazy-loading curses. */
+        screen_setup(q_rows_arg, q_cols_arg);
+    }
+
     wch[0] = ch;
     wch[1] = 0;
     setcchar(&ncurses_ch, wch, physical_attr_from_attr(attr),
@@ -446,6 +480,12 @@ static void screen_win_put_vline_yx(void * win, const int y, const int x,
                                     const attr_t attr, const short color) {
     cchar_t ncurses_ch;
     wchar_t wch[2];
+
+    if (curses_initted == Q_FALSE) {
+        /* Handle lazy-loading curses. */
+        screen_setup(q_rows_arg, q_cols_arg);
+    }
+
     wch[0] = ch;
     wch[1] = 0;
     setcchar(&ncurses_ch, wch, physical_attr_from_attr(attr),
@@ -917,6 +957,11 @@ void screen_put_color_printf_yx(const int y, const int x, const Q_COLOR q_color,
  * @param x new column position to write to.  The left-most column is 0.
  */
 void screen_move_yx(const int y, const int x) {
+    if (curses_initted == Q_FALSE) {
+        /* Handle lazy-loading curses. */
+        screen_setup(q_rows_arg, q_cols_arg);
+    }
+
     move(y, x);
 }
 
@@ -928,6 +973,11 @@ void screen_move_yx(const int y, const int x) {
  * @param x new column position to write to.  The left-most column is 0.
  */
 void screen_win_move_yx(void * win, const int y, const int x) {
+    if (curses_initted == Q_FALSE) {
+        /* Handle lazy-loading curses. */
+        screen_setup(q_rows_arg, q_cols_arg);
+    }
+
     wmove((WINDOW *) win, y, x);
 }
 
@@ -935,6 +985,11 @@ void screen_win_move_yx(void * win, const int y, const int x) {
  * Force any pending updates to be written to the physical terminal.
  */
 void screen_flush() {
+    if (curses_initted == Q_FALSE) {
+        /* Handle lazy-loading curses. */
+        screen_setup(q_rows_arg, q_cols_arg);
+    }
+
     refresh();
 }
 
@@ -944,6 +999,11 @@ void screen_flush() {
  * @param win the curses WINDOW
  */
 void screen_win_flush(void * win) {
+    if (curses_initted == Q_FALSE) {
+        /* Handle lazy-loading curses. */
+        screen_setup(q_rows_arg, q_cols_arg);
+    }
+
     wrefresh((WINDOW *) win);
 }
 
@@ -952,6 +1012,11 @@ void screen_win_flush(void * win) {
  */
 void screen_clear() {
     int i;
+
+    if (curses_initted == Q_FALSE) {
+        /* Handle lazy-loading curses. */
+        screen_setup(q_rows_arg, q_cols_arg);
+    }
 
     if (has_true_doublewidth() == Q_TRUE) {
         for (i = 0; i < HEIGHT; i++) {
@@ -979,6 +1044,11 @@ void screen_really_clear() {
     int i;
     cchar_t ncurses_ch;
     wchar_t wch[2];
+
+    if (curses_initted == Q_FALSE) {
+        /* Handle lazy-loading curses. */
+        screen_setup(q_rows_arg, q_cols_arg);
+    }
 
     if (has_true_doublewidth() == Q_TRUE) {
         for (i = 0; i < HEIGHT; i++) {
@@ -1013,6 +1083,12 @@ void screen_really_clear() {
 void screen_win_get_yx(void * win, int * y, int * x) {
     int screen_x;
     int screen_y;
+
+    if (curses_initted == Q_FALSE) {
+        /* Handle lazy-loading curses. */
+        screen_setup(q_rows_arg, q_cols_arg);
+    }
+
     getyx((WINDOW *) win, screen_y, screen_x);
     *y = screen_y;
     *x = screen_x;
@@ -1033,6 +1109,11 @@ void screen_beep() {
          * Don't beep
          */
         return;
+    }
+
+    if (curses_initted == Q_FALSE) {
+        /* Handle lazy-loading curses. */
+        screen_setup(q_rows_arg, q_cols_arg);
     }
 
     /*
@@ -1107,6 +1188,11 @@ void screen_setup(const unsigned char rows, const unsigned char cols) {
     char rowString[10];
     char colString[10];
 
+    if (curses_initted == Q_TRUE) {
+        /* Don't init twice. */
+        return;
+    }
+
     if ((rows > 25) && (rows < 250)) {
         sprintf(rowString, "%d", rows);
         pdcursesOptions[2] = rowString;
@@ -1122,6 +1208,11 @@ void screen_setup(const unsigned char rows, const unsigned char cols) {
     /*
      * Setup for Win32-based PDCurses
      */
+
+    if (curses_initted == Q_TRUE) {
+        /* Don't init twice. */
+        return;
+    }
 
     /*
      * Size limits: 25-250 rows, 80-250 columns.  This is only in the Win32a
@@ -1153,6 +1244,11 @@ void screen_setup(const unsigned char rows, const unsigned char cols) {
      * of emulation keyboards, we need to use newterm() here also so that we
      * are not mixing the use of initscr() and newterm().
      */
+
+    if (curses_initted == Q_TRUE) {
+        /* Don't init twice. */
+        return;
+    }
 
     /*
      * Ask ncurses to use extended names.  qodem_win_getch() should work
@@ -1197,18 +1293,28 @@ void screen_setup(const unsigned char rows, const unsigned char cols) {
      */
     PDC_set_blink(1);
 #endif
+
+    curses_initted = Q_TRUE;
 }
 
 /**
  * Shut down the curses UI.
  */
 void screen_teardown() {
+
+    if (curses_initted == Q_FALSE) {
+        /* Don't shutdown twice. */
+        return;
+    }
+
     /*
      * Disable the mouse
      */
     mousemask(0, NULL);
 
     endwin();
+
+    curses_initted = Q_FALSE;
 }
 
 /**
@@ -1219,6 +1325,12 @@ void screen_teardown() {
 void screen_clear_remaining_line(Q_BOOL double_width) {
     int x, y;
     int i;
+
+    if (curses_initted == Q_FALSE) {
+        /* Handle lazy-loading curses. */
+        screen_setup(q_rows_arg, q_cols_arg);
+    }
+
     getyx(stdscr, y, x);
     for (i = x; i < WIDTH; i++) {
         screen_put_char_yx(y, i, ' ', 0,
@@ -1236,6 +1348,12 @@ void screen_clear_remaining_line(Q_BOOL double_width) {
 void screen_get_dimensions(int * height, int * width) {
     int local_height;
     int local_width;
+
+    if (curses_initted == Q_FALSE) {
+        /* Handle lazy-loading curses. */
+        screen_setup(q_rows_arg, q_cols_arg);
+    }
+
     getmaxyx(stdscr, local_height, local_width);
     *height = local_height;
     *width = local_width;
@@ -1255,7 +1373,15 @@ void screen_get_dimensions(int * height, int * width) {
  */
 static void * screen_win_subwin(void * win, int height, int width, int top,
                                 int left) {
-    WINDOW * window = subwin((WINDOW *) win, height, width, top, left);
+
+    WINDOW * window;
+
+    if (curses_initted == Q_FALSE) {
+        /* Handle lazy-loading curses. */
+        screen_setup(q_rows_arg, q_cols_arg);
+    }
+
+    window = subwin((WINDOW *) win, height, width, top, left);
     if (window != NULL) {
         meta(window, TRUE);
         keypad(window, TRUE);
@@ -1284,6 +1410,7 @@ void * screen_subwin(int height, int width, int top, int left) {
  * @param win the curses WINDOW
  */
 void screen_delwin(void * win) {
+    assert(curses_initted == Q_TRUE);
     assert(win != NULL);
     delwin((WINDOW *) win);
 }
@@ -1345,6 +1472,11 @@ void screen_win_draw_box_color(void * window, const int left, const int top,
     int window_length;
     int window_top;
     int window_left;
+
+    if (curses_initted == Q_FALSE) {
+        /* Handle lazy-loading curses. */
+        screen_setup(q_rows_arg, q_cols_arg);
+    }
 
     window_length = right - left;
     window_height = bottom - top;

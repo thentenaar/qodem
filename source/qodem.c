@@ -237,9 +237,11 @@ static int dial_phonebook_entry_n;
 static unsigned char * play_music_string = NULL;
 static Q_BOOL play_music_exit = Q_FALSE;
 
-/* The geometry as requested by the command line arguments */
-static unsigned char rows_arg = 25;
-static unsigned char cols_arg = 80;
+/**
+ * The geometry as requested by the command line arguments.
+ */
+unsigned char q_rows_arg = 25;
+unsigned char q_cols_arg = 80;
 
 /* The --status-line command line argument */
 static Q_BOOL status_line_disabled = Q_FALSE;
@@ -1144,6 +1146,7 @@ static void process_command_line_option(const char * option,
 
     if (strncmp(option, "xterm", strlen("xterm")) == 0) {
         q_status.xterm_mode = Q_TRUE;
+        q_exit_on_disconnect = Q_TRUE;
     }
 
     if (strncmp(option, "exit-on-completion",
@@ -1187,8 +1190,8 @@ static void process_command_line_option(const char * option,
         if (cols_arg_int > 250) {
             cols_arg_int = 250;
         }
-        rows_arg = (unsigned char) rows_arg_int;
-        cols_arg = (unsigned char) cols_arg_int;
+        q_rows_arg = (unsigned char) rows_arg_int;
+        q_cols_arg = (unsigned char) cols_arg_int;
     }
 
     if (strcmp(option, "dial") == 0) {
@@ -1246,7 +1249,6 @@ static void process_command_line_option(const char * option,
 static void resolve_command_line_options() {
 
     if (q_status.xterm_mode == Q_TRUE) {
-        q_status.exit_on_disconnect = Q_TRUE;
         q_status.doorway_mode = Q_DOORWAY_MODE_MIXED;
         set_status_line(Q_FALSE);
     }
@@ -3364,11 +3366,11 @@ int qodem_main(int argc, char * const argv[]) {
     fflush(stdout);
 #endif
 
-    /* Initialize curses. */
-    screen_setup(rows_arg, cols_arg);
-
-    /* Load the options */
+    /* Load the options. */
     load_options();
+
+    /* Initialize curses. */
+    screen_setup(q_rows_arg, q_cols_arg);
 
     /* Now that colors are known, use them. */
     q_setup_colors();
