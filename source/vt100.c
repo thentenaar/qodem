@@ -504,6 +504,7 @@ static void clear_params() {
 
     q_emul_buffer_n = 0;
     q_emul_buffer_i = 0;
+    memset(q_emul_buffer, 0, sizeof(q_emul_buffer));
 }
 
 /**
@@ -2521,7 +2522,9 @@ static void sgr() {
                     break;
                 case 39:
                     if ((q_status.emulation == Q_EMUL_LINUX_UTF8) ||
-                        (q_status.emulation == Q_EMUL_LINUX)
+                        (q_status.emulation == Q_EMUL_LINUX) ||
+                        (q_status.emulation == Q_EMUL_XTERM_UTF8) ||
+                        (q_status.emulation == Q_EMUL_XTERM)
                     ) {
                         /*
                          * Linux console: set underscore off, set default
