@@ -1,10 +1,6 @@
 Qodem TODO List
 ===============
 
-NEW FUNCTIONALITY
------------------
-
-
 1.0.0
 -----
 
@@ -173,8 +169,8 @@ Release:
 
 
 
-1.1.0
------
+1.1.0 Wishlist
+--------------
 
 Encrypted phonebook
 
@@ -216,8 +212,8 @@ External protocols
 
 
 
-"MAYBE" / WISHLIST FEATURES
----------------------------
+Brainstorm Wishlist
+-------------------
 
 Pacing character support
 
@@ -286,17 +282,8 @@ Qodem support BBS:
 
 
 
-SPINOFFS
---------
-
-Drop-in replacement for lrzsz that does better error checking
-
-Linux/ncurses port of HS/Link 1.21
-
-
-
-BUGS IN OTHER PROGRAMS
-----------------------
+Bugs Noted In Other Programs
+----------------------------
 
 Bug on telnetd: set LANG
 
@@ -307,8 +294,3 @@ Bug on xterm/ncurses: A_BOLD and ACS_VLINE
 Bug on xterm: -fbx/+fbx doesn't seem to do anything
 
 Bug on xterm: A_REVERSE + DECSCNM + A_BOLD
-
-
-
-QUESTIONS TO ASK OUT THERE
---------------------------

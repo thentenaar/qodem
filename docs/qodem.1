@@ -310,12 +310,11 @@ function.
 .TP
 .B
 VT102
-Fairly complete.  Double\-width characters are not displayed with wide
-glyhps due to curses\-based output.  Does not support smooth
-scrolling, printing, keyboard locking, and hardware tests.  Many
-numeric keypad characters also do not work correctly due to console
-NUM LOCK handling.  132\-column output is only supported if the host
-console / window is already 132 columns or wider; Qodem does
+Fairly complete.  Does not support smooth scrolling, printing,
+keyboard locking, and hardware tests.  Many numeric keypad characters
+also do not work correctly due to console NUM LOCK handling.
+132\-column output is only supported if the host console / window is
+already 132 columns or wider; Qodem does
 .B not
 issue resize commands to the host console for 80/132 column switching
 codes.

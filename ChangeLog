@@ -31,7 +31,7 @@ qodem (1.0.0-1) unstable; urgency=low
   * --emulation command line option: select emulation
   * --status-line command line option: enable/disable status line
   * --exit-on-completion (-x) command line option: exit after disconnect
-  * X11: Double-height / double-width line support
+  * X11/Win32: Double-height / double-width line support
   * PETSCII Commodore 64 emulation
   * ATASCII Atari 400/800 emulation
   * --config command line option: select qodemrc to load

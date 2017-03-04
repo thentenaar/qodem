@@ -2573,7 +2573,7 @@ char * raw_help_text = \
 "\n"
 "@BOLD{VT102}   - This is a fairly complete VT102.  The text version displays\n"
 "double-width and double-height characters correctly when run under xterm,\n"
-"but when run on the raw Linux console or the X11 build Qodem displays\n"
+"X11, and Win32, but when run on the raw Linux console Qodem displays\n"
 "double-width / double-height with a character followed by a space.  Qodem\n"
 "also does not support smooth scrolling, printing, keyboard locking, and\n"
 "hardware tests.  On the text Qodem build, some numeric keypad characters\n"

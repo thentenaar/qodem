@@ -243,7 +243,7 @@ issues.
 The ncurses version of Qodem requires a Unicode-capable Linux console
 or X emulator to look right.  For the Linux console, the default
 settings for most Linux distributions should work well.  Under X11,
-uxterm, rxvt-unicode, and Konsole work well.
+xterm, rxvt-unicode, and Konsole work well.
 
 Most BBS programs assume a display with 80x24 dimensions.  Qodem by
 default sets the right margin to column 80 for ANSI, Avatar, and TTY
@@ -268,11 +268,6 @@ Midnight Commander) send the DECCOLM sequence ({ESC} [ ? 3 l ) when
 exiting, putting the emulation into 80-column mode.  Resetting the
 emulation via Alt-G {pick emulation} {enter 'y'} will restore the
 default right margin.
-
-Even though the function key editor window has space for the numeric
-keypad keys, they are not yet supported.  Unix-like consoles do not
-differentiate perfectly between numeric keypad keys and regular
-console keys.
 
 ASCII uploads may hang if the remote end can't keep up.  For instance,
 using 'vi' to create a large file and ASCII uploading the contents may
@@ -440,20 +435,20 @@ that have 132 (or more) columns available.  For instance, 132-column
 VT100 output on a 128-column Linux console screen will result in
 incorrect behavior.
 
-VT52, VT10x, VT220, and LINUX numeric/application keypad modes do not
-work well in the text version.  This is due to Qodem's host console
-translating the numeric keypad keys on its own before sending the
-keystroke to the (n)curses library.  For example, the Linux console
-will transmit the code corresponding to KEY_END when the number pad "1
-key" is pressed if NUMLOCK is off; if NUMLOCK is on the console will
-transmit a "1" when the "1 key" is pressed.  Qodem thus never actually
-sees the curses KEY_C1 code that would instruct Qodem to transmit the
-appropriate string to the host system.  The only key that appears to
-work right on most consoles is the number pad "5 key" (KEY_B2).  The
-X11 version of Qodem supports the number pad correctly.
+VT52, VT10x, VT220, LINUX, and XTERM numeric/application keypad modes
+do not work well in the text version.  This is due to Qodem's host
+console translating the numeric keypad keys on its own before sending
+the keystroke to the (n)curses library.  For example, the Linux
+console will transmit the code corresponding to KEY_END when the
+number pad "1 key" is pressed if NUMLOCK is off; if NUMLOCK is on the
+console will transmit a "1" when the "1 key" is pressed.  Qodem thus
+never actually sees the curses KEY_C1 code that would instruct Qodem
+to transmit the appropriate string to the host system.  The only key
+that appears to work right on most consoles is the number pad "5 key"
+(KEY_B2).  The X11 version of Qodem supports the number pad correctly.
 
 VT52 HOLD SCREEN mode is not supported in any emulation (VT52, VT10x,
-LINUX).
+LINUX, XTERM).
 
 In VT52 graphics mode, the 3/, 5/, and 7/ characters (fraction
 numerators) are not rendered correctly.

@@ -2800,10 +2800,8 @@ static void XCursesButton(Widget w, XEvent *event, String *params,
             (!SP->_trap_mbe || (event->xbutton.state & ShiftMask)))
         {
             // KAL
-            _selection_off();
-            /*
+            // _selection_off();
             _selection_extend(MOUSE_X_POS, MOUSE_Y_POS);
-             */
             send_key = FALSE;
         }
         else
@@ -2885,8 +2883,7 @@ static void XCursesButton(Widget w, XEvent *event, String *params,
                         (!SP->_trap_mbe || (event->xbutton.state & ShiftMask)))
                     {
                         _selection_off();
-                        // KAL
-                        // _selection_on(MOUSE_X_POS, MOUSE_Y_POS);
+                        _selection_on(MOUSE_X_POS, MOUSE_Y_POS);
                     }
 
                     handle_real_release = True;
