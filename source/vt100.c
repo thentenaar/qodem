@@ -58,6 +58,11 @@ Q_EMULATION q_vt100_arrow_keys;
 Q_BOOL q_vt100_new_line_mode;
 
 /**
+ * When true, the last sgr() command set the color to the default color.
+ */
+Q_BOOL is_default_color;
+
+/**
  * Whether number pad keys send VT100 or VT52, application or numeric
  * sequences.
  */
@@ -342,6 +347,11 @@ struct vt100_state {
     attr_t saved_attributes;
 
     /**
+     * The saved drawing attributes default color flag.
+     */
+    Q_BOOL saved_attributes_is_default_color;
+
+    /**
      * Which character set was last in G0 before saving state.
      */
     VT100_CHARACTER_SET saved_g0_charset;
@@ -474,6 +484,7 @@ static struct vt100_state state = {
     0,
     NULL,
     -1,
+    Q_FALSE,
     CHARSET_US,
     CHARSET_DRAWING,
     Q_FALSE,
@@ -562,6 +573,7 @@ void vt100_reset() {
     q_vt100_new_line_mode           = Q_FALSE;
     q_vt100_arrow_keys              = Q_EMUL_ANSI;
     q_vt100_keypad_mode.keypad_mode = Q_KEYPAD_MODE_NUMERIC;
+    is_default_color                = Q_FALSE;
 
     /* Default character sets */
     state.g0_charset                = CHARSET_US;
@@ -569,6 +581,7 @@ void vt100_reset() {
 
     /* Curses attributes representing normal */
     state.saved_attributes          = q_current_color;
+    state.saved_attributes_is_default_color = is_default_color;
     state.saved_origin_mode         = Q_FALSE;
     state.saved_g0_charset          = CHARSET_US;
     state.saved_g1_charset          = CHARSET_DRAWING;
@@ -889,6 +902,7 @@ static void decrc() {
     if (state.saved_cursor_x != -1) {
         cursor_position(state.saved_cursor_y, state.saved_cursor_x);
         q_current_color         = state.saved_attributes;
+        is_default_color        = state.saved_attributes_is_default_color;
         q_status.origin_mode    = state.saved_origin_mode;
         state.g0_charset        = state.saved_g0_charset;
         state.g1_charset        = state.saved_g1_charset;
@@ -2298,6 +2312,7 @@ static void sgr() {
     int j;
     short foreground, background;
     short curses_color;
+    Q_BOOL real_bold = Q_FALSE;
 
     if (state.dec_private_mode_flag == Q_TRUE) {
         return;
@@ -2305,10 +2320,26 @@ static void sgr() {
 
     DLOG(("sgr(): "));
 
+    if ((is_default_color == Q_TRUE) &&
+        ((q_current_color & Q_A_BOLD) != 0) &&
+        (q_text_colors[Q_COLOR_CONSOLE_TEXT].bold == Q_TRUE)
+    ) {
+        /*
+         * The "real" bold flag is false, even if q_current_color shows it to
+         * be true.
+         */
+        real_bold = Q_FALSE;
+    } else {
+        if ((q_current_color & Q_A_BOLD) != 0) {
+            real_bold = Q_TRUE;
+        }
+    }
+
     if (state.params_n < 0) {
         q_current_color = Q_A_NORMAL |
             scrollback_full_attr(Q_COLOR_CONSOLE_TEXT);
         DLOG2(("RESET\n"));
+        is_default_color = Q_TRUE;
         return;
 
     } else {
@@ -2318,7 +2349,11 @@ static void sgr() {
             DLOG2(("%d ", j));
             switch (j) {
             case 0:
-                /* Normal */
+                /*
+                 * Reset to default text color.
+                 */
+                is_default_color = Q_TRUE;
+                real_bold = Q_FALSE;
                 q_current_color = Q_A_NORMAL |
                     scrollback_full_attr(Q_COLOR_CONSOLE_TEXT);
                 break;
@@ -2326,6 +2361,8 @@ static void sgr() {
             case 1:
                 /* Bold */
                 q_current_color |= Q_A_BOLD;
+                is_default_color = Q_FALSE;
+                real_bold = Q_TRUE;
                 break;
 
             case 4:
@@ -2365,6 +2402,7 @@ static void sgr() {
                 case 22:
                     /* Normal intensity */
                     q_current_color &= ~Q_A_BOLD;
+                    real_bold = Q_FALSE;
                     break;
 
                 case 24:
@@ -2434,34 +2472,42 @@ static void sgr() {
                 case 30:
                     /* Set black foreground */
                     foreground = Q_COLOR_BLACK;
+                    is_default_color = Q_FALSE;
                     break;
                 case 31:
                     /* Set red foreground */
                     foreground = Q_COLOR_RED;
+                    is_default_color = Q_FALSE;
                     break;
                 case 32:
                     /* Set green foreground */
                     foreground = Q_COLOR_GREEN;
+                    is_default_color = Q_FALSE;
                     break;
                 case 33:
                     /* Set yellow foreground */
                     foreground = Q_COLOR_YELLOW;
+                    is_default_color = Q_FALSE;
                     break;
                 case 34:
                     /* Set blue foreground */
                     foreground = Q_COLOR_BLUE;
+                    is_default_color = Q_FALSE;
                     break;
                 case 35:
                     /* Set magenta foreground */
                     foreground = Q_COLOR_MAGENTA;
+                    is_default_color = Q_FALSE;
                     break;
                 case 36:
                     /* Set cyan foreground */
                     foreground = Q_COLOR_CYAN;
+                    is_default_color = Q_FALSE;
                     break;
                 case 37:
                     /* Set white foreground */
                     foreground = Q_COLOR_WHITE;
+                    is_default_color = Q_FALSE;
                     break;
                 case 38:
                     if ((q_status.emulation == Q_EMUL_LINUX_UTF8) ||
@@ -2477,6 +2523,8 @@ static void sgr() {
                             q_current_color |= Q_A_BOLD;
                         }
                         q_current_color |= Q_A_UNDERLINE;
+                        is_default_color = Q_TRUE;
+                        real_bold = Q_FALSE;
                     }
 
                     if ((q_status.emulation == Q_EMUL_XTERM_UTF8) ||
@@ -2536,39 +2584,49 @@ static void sgr() {
                             q_current_color |= Q_A_BOLD;
                         }
                         q_current_color &= ~Q_A_UNDERLINE;
+                        is_default_color = Q_TRUE;
+                        real_bold = Q_FALSE;
                     }
                     break;
                 case 40:
                     /* Set black background */
                     background = Q_COLOR_BLACK;
+                    is_default_color = Q_FALSE;
                     break;
                 case 41:
                     /* Set red background */
                     background = Q_COLOR_RED;
+                    is_default_color = Q_FALSE;
                     break;
                 case 42:
                     /* Set green background */
                     background = Q_COLOR_GREEN;
+                    is_default_color = Q_FALSE;
                     break;
                 case 43:
                     /* Set yellow background */
                     background = Q_COLOR_YELLOW;
+                    is_default_color = Q_FALSE;
                     break;
                 case 44:
                     /* Set blue background */
                     background = Q_COLOR_BLUE;
+                    is_default_color = Q_FALSE;
                     break;
                 case 45:
                     /* Set magenta background */
                     background = Q_COLOR_MAGENTA;
+                    is_default_color = Q_FALSE;
                     break;
                 case 46:
                     /* Set cyan background */
                     background = Q_COLOR_CYAN;
+                    is_default_color = Q_FALSE;
                     break;
                 case 47:
                     /* Set white background */
                     background = Q_COLOR_WHITE;
+                    is_default_color = Q_FALSE;
                     break;
                 case 48:
                     if ((q_status.emulation == Q_EMUL_XTERM_UTF8) ||
@@ -2589,6 +2647,7 @@ static void sgr() {
                     break;
                 case 49:
                     background = q_text_colors[Q_COLOR_CONSOLE_TEXT].bg;
+                    is_default_color = Q_TRUE;
                     break;
                 } /* switch (j) */
 
@@ -2596,6 +2655,14 @@ static void sgr() {
                 curses_color = (foreground << 3) | background;
                 q_current_color = q_current_color & NO_COLOR_MASK;
                 q_current_color |= color_to_attr(curses_color);
+
+                if (real_bold == Q_TRUE) {
+                    q_current_color |= Q_A_BOLD;
+                } else {
+                    if (is_default_color == Q_FALSE) {
+                        q_current_color &= ~Q_A_BOLD;
+                    }
+                }
 
             } /* if (q_status.vt100_color == Q_TRUE) */
 

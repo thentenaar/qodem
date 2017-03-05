@@ -40,7 +40,7 @@
  * color pair number; this is handy to always really get white-on-black for
  * terminals that have a different default color.
  */
-short q_white_color_pair_num;
+short q_white_color_pair_num = 0;
 
 /**
  * The offset between normal and bolded colors.  screen.c needs to peek at
