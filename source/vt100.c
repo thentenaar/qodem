@@ -7285,7 +7285,14 @@ wchar_t * xterm_keystroke(const int keystroke, const int flags) {
         return L"\033";
 
     case Q_KEY_TAB:
-        return L"\011";
+        if ((flags & KEY_FLAG_SHIFT) != 0) {
+            return L"\033[Z";
+        } else {
+            return L"\011";
+        }
+
+    case Q_KEY_BTAB:
+        return L"\033[Z";
 
     case Q_KEY_BACKSPACE:
         if (q_status.hard_backspace == Q_TRUE) {
