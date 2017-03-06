@@ -1016,9 +1016,11 @@ void console_keyboard_handler(int keystroke, int flags) {
                 }
                 if ((keystroke == Q_KEY_PPAGE) && (flags == KEY_FLAG_SHIFT)) {
                     /*
-                     * Shift-PgUp, switch to scrollback
+                     * Shift-PgUp, switch to scrollback, and pass this PgUp
+                     * to it to go up a screen.
                      */
                     switch_state(Q_STATE_SCROLLBACK);
+                    scrollback_keyboard_handler(keystroke, flags);
                     return;
                 }
                 if ((keystroke == Q_KEY_NPAGE) || (keystroke == Q_KEY_PPAGE)) {
@@ -2026,9 +2028,11 @@ void console_keyboard_handler(int keystroke, int flags) {
     case Q_KEY_PPAGE:
         if (flags == KEY_FLAG_SHIFT) {
             /*
-             * Shift-PgUp, switch to scrollback
+             * Shift-PgUp, switch to scrollback, and pass this PgUp to it to
+             * go up a screen.
              */
             switch_state(Q_STATE_SCROLLBACK);
+            scrollback_keyboard_handler(keystroke, flags);
             return;
         }
         if ((flags & KEY_FLAG_UNICODE) == 0) {

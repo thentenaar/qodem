@@ -1,6 +1,95 @@
 The Qodem Project Work Log
 ==========================
 
+March 5, 2017
+
+I have started using Qodem as my daily driver under X11 again.
+Naturally I am finding lots of small glitchy things again: when my
+default color has bold then LOTS of other stuff was bold too; Jexer
+was relying on Xterm's erroneous behavior of bold'ing the background
+color for its color picker; Shift-Tab wasn't being picked up (x11.c
+didn't have the keysym in its table); and I noticed that scrollback
+page-up/down was actually skipping a row (and has been doing so for
+probably 12 years now).  So let's get those fixed now that I'm seeing
+them.
+
+It is weird though, seeing Linux for real using the DOS color palette.
+That bold + reverse behavior of Xterm has been with me so long that
+seeing CGA bold behavior is really driving home the "vintage" feel.
+
+Also, Qodem has formally entered freeze for 1.0.0.  It's been a long
+14 years, but we are finally just about here now.
+
+   2186    5925   55727 source/ansi.c
+     81     357    2454 source/ansi.h
+    510    1635   13740 source/atascii.c
+     68     266    1965 source/atascii.h
+    931    2337   24274 source/avatar.c
+     56     186    1498 source/avatar.h
+   2189   10906   92406 source/codepage.c
+    302     985    8063 source/codepage.h
+   1761   12781   87397 source/colors.c
+    282     852    6396 source/colors.h
+    541    1711   12417 source/common.c
+    337    1375    9532 source/common.h
+     80     392    2317 source/config.h
+   3918   10799  127105 source/console.c
+    179     664    4661 source/console.h
+   1006    2784   28552 source/dialer.c
+    132     385    2880 source/dialer.h
+   1424    3858   37112 source/emulation.c
+    222     856    6681 source/emulation.h
+    594    1862   16176 source/field.c
+    276     851    5934 source/field.h
+   3948   10729  130751 source/forms.c
+    252    1409    9131 source/forms.h
+   2891   13407  107235 source/help.c
+     71     242    2095 source/help.h
+   2914    7841   80967 source/host.c
+    125     439    3177 source/host.h
+   2422    8134   72032 source/input.c
+    274     910    8069 source/input.h
+   6719   19954  195548 source/kermit.c
+     84     381    2659 source/kermit.h
+   3833   10079  113312 source/keyboard.c
+     80     275    2152 source/keyboard.h
+   2805    7515   81521 source/modem.c
+    291     973    7384 source/modem.h
+   1431    4604   42483 source/music.c
+     99     381    2805 source/music.h
+   5055   15911  146646 source/netclient.c
+    334    1469    8964 source/netclient.h
+   2184    8771   77352 source/options.c
+    255     750    7223 source/options.h
+   1271    4444   39157 source/petscii.c
+     77     318    2290 source/petscii.h
+   8600   23536  282950 source/phonebook.c
+    230     774    6132 source/phonebook.h
+   2343    6660   74078 source/protocols.c
+    290    1044    8075 source/protocols.h
+     74     290    2151 source/qcurses.h
+   3776   11952  119319 source/qodem.c
+    783    2744   19188 source/qodem.h
+   1552    6487   47347 source/screen.c
+    575    3120   19515 source/screen.h
+   1748    4970   49830 source/script.c
+    176     606    4308 source/script.h
+   3082    9978   94928 source/scrollback.c
+    406    1705   11359 source/scrollback.h
+    456     968   11711 source/states.c
+    166     540    4573 source/states.h
+   2401    7365   71622 source/translate.c
+    150     580    4411 source/translate.h
+   7770   22233  235670 source/vt100.c
+    153     650    4532 source/vt100.h
+    887    2124   21305 source/vt52.c
+     73     282    2060 source/vt52.h
+   3104    9913   88958 source/xmodem.c
+    114     554    3908 source/xmodem.h
+   5611   16942  164502 source/zmodem.c
+     87     402    2824 source/zmodem.h
+  99097  317122 3045496 total
+
 March 3, 2017
 
 We are down to the last feature before 1.0.0: Win32 double width

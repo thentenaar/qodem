@@ -1113,7 +1113,7 @@ void scrollback_keyboard_handler(const int keystroke, const int flags) {
     wchar_t * begin;
     Q_BOOL find_found = Q_FALSE;
 
-    local_height = HEIGHT - STATUS_HEIGHT;
+    local_height = HEIGHT - STATUS_HEIGHT - 2;
 
     switch (keystroke) {
 
@@ -1476,7 +1476,7 @@ keep_moving:
          * won't bugger with it anymore. Same code is in the KEY_PPAGE case
          * too but j instead of i.
          */
-        for (i = 0, line = q_scrollback_buffer; i < local_height; i++) {
+        for (i = 0, line = q_scrollback_buffer; i < local_height + 1; i++) {
             if (line == q_scrollback_position) {
                 break;
             }
@@ -1484,7 +1484,7 @@ keep_moving:
                 line = line->next;
             }
         }
-        if (i != local_height) {
+        if (i != local_height + 1) {
             break;
         }
 
@@ -1507,7 +1507,7 @@ keep_moving:
 
     case Q_KEY_PPAGE:
         for (i = 0; i < local_height; i++) {
-            for (j = 0, line = q_scrollback_buffer; j < local_height; j++) {
+            for (j = 0, line = q_scrollback_buffer; j < local_height + 1; j++) {
                 if (line == q_scrollback_position) {
                     break;
                 }
@@ -1515,7 +1515,7 @@ keep_moving:
                     line = line->next;
                 }
             }
-            if (j != local_height) {
+            if (j != local_height + 1) {
                 i = local_height;
                 break;
             }
@@ -1528,7 +1528,7 @@ keep_moving:
 
     case Q_KEY_HOME:
         q_scrollback_position = q_scrollback_buffer;
-        for (i = 1; i < local_height; i++) {
+        for (i = 0; i < local_height; i++) {
             if ((q_scrollback_position != NULL) &&
                 (q_scrollback_position->next != NULL)) {
                 q_scrollback_position = q_scrollback_position->next;
