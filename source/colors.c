@@ -815,37 +815,48 @@ void q_setup_colors() {
     ) {
         /*
          * Complete re-map both the colors and color pairs.  Note that the
-         * max color value is 1000.  These values are gamma-corrected (gamma
-         * = 1.4):
+         * max color value is 1000.  These values are gamma-corrected.  Some
+         * other potential values:
          *
-         *    333 = 215
-         *    666 = 568
-         *    999 = 999
+         *  gamma  |  333  |  666  | 999
+         * ------------------------------
+         *    1.0  |  333  |  666  | 999
+         *    1.2  |  267  |  614  | 999
+         *    1.4  |  215  |  568  | 999
+         *    1.6  |  172  |  522  | 999
+         *    1.8  |  138  |  481  | 999
+         *    2.0  |  111  |  444  | 999
+         *    2.2  |   89  |  409  | 999
+         *    2.4  |   71  |  377  | 999
          */
+#define GAMMA_000 000
+#define GAMMA_333 267
+#define GAMMA_666 614
+#define GAMMA_999 999
 
         /*
          * Normal intensity colors
          */
-        init_color(COLOR_BLACK,   000, 000, 000);
-        init_color(COLOR_RED,     568, 000, 000);
-        init_color(COLOR_GREEN,   000, 568, 000);
-        init_color(COLOR_YELLOW,  568, 215, 000);
-        init_color(COLOR_BLUE,    000, 000, 568);
-        init_color(COLOR_MAGENTA, 568, 000, 568);
-        init_color(COLOR_CYAN,    000, 568, 568);
-        init_color(COLOR_WHITE,   568, 568, 568);
+        init_color(COLOR_BLACK,   GAMMA_000, GAMMA_000, GAMMA_000);
+        init_color(COLOR_RED,     GAMMA_666, GAMMA_000, GAMMA_000);
+        init_color(COLOR_GREEN,   GAMMA_000, GAMMA_666, GAMMA_000);
+        init_color(COLOR_YELLOW,  GAMMA_666, GAMMA_333, GAMMA_000);
+        init_color(COLOR_BLUE,    GAMMA_000, GAMMA_000, GAMMA_666);
+        init_color(COLOR_MAGENTA, GAMMA_666, GAMMA_000, GAMMA_666);
+        init_color(COLOR_CYAN,    GAMMA_000, GAMMA_666, GAMMA_666);
+        init_color(COLOR_WHITE,   GAMMA_666, GAMMA_666, GAMMA_666);
 
         /*
          * Bright intensity colors
          */
-        init_color(8 + COLOR_BLACK,   215, 215, 215);
-        init_color(8 + COLOR_RED,     999, 215, 215);
-        init_color(8 + COLOR_GREEN,   215, 999, 215);
-        init_color(8 + COLOR_YELLOW,  999, 999, 215);
-        init_color(8 + COLOR_BLUE,    215, 215, 999);
-        init_color(8 + COLOR_MAGENTA, 999, 215, 999);
-        init_color(8 + COLOR_CYAN,    215, 999, 999);
-        init_color(8 + COLOR_WHITE,   999, 999, 999);
+        init_color(8 + COLOR_BLACK,   GAMMA_333, GAMMA_333, GAMMA_333);
+        init_color(8 + COLOR_RED,     GAMMA_999, GAMMA_333, GAMMA_333);
+        init_color(8 + COLOR_GREEN,   GAMMA_333, GAMMA_999, GAMMA_333);
+        init_color(8 + COLOR_YELLOW,  GAMMA_999, GAMMA_999, GAMMA_333);
+        init_color(8 + COLOR_BLUE,    GAMMA_333, GAMMA_333, GAMMA_999);
+        init_color(8 + COLOR_MAGENTA, GAMMA_999, GAMMA_333, GAMMA_999);
+        init_color(8 + COLOR_CYAN,    GAMMA_333, GAMMA_999, GAMMA_999);
+        init_color(8 + COLOR_WHITE,   GAMMA_999, GAMMA_999, GAMMA_999);
 
         /*
          * Now init the pairs
