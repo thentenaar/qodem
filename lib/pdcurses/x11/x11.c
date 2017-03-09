@@ -49,7 +49,12 @@ XCursesAppData xc_app_data;
 /* Default icons for XCurses applications.  */
 
 #include "big_icon.xbm"
+#define big_icon_width 64
+#define big_icon_height 64
 #include "little_icon.xbm"
+
+// Color icon
+#include "big_icon.xpm"
 
 static void _selection_off(void);
 static void _display_cursor(int, int, int, int);
@@ -1251,6 +1256,13 @@ static void _get_icon(void)
                             &icon_pixmap, &icon_pixmap_mask, NULL);
         return;
     }
+
+    XpmCreatePixmapFromData(XtDisplay(topLevel),
+        RootWindowOfScreen(XtScreen(topLevel)),
+        qodem_big_icon_bits, &icon_bitmap, NULL, NULL);
+
+    return;
+
 #endif
 
     if (xc_app_data.bitmap && xc_app_data.bitmap[0]) /* supplied bitmap */
