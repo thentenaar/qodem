@@ -1,6 +1,21 @@
 The Qodem Project Work Log
 ==========================
 
+March 10, 2017
+
+Borland has some serious problems with colors when 64-bit chtype is
+being used.  I don't have much time or interest in figuring it out,
+because I am more surprised that it worked in the first place.  I
+added CHTYPE_32 to the win32a and qodem builds and all the problems
+suddenly vanish.
+
+Fixed the Windows blink to match the behavior of X11.
+
+March 9, 2017
+
+My Win32 double-width support introduced a memory smash, got that
+fixed now I hope.  Also got a color icon for the X11 version.
+
 March 5, 2017
 
 I have started using Qodem as my daily driver under X11 again.

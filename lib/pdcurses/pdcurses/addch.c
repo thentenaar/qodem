@@ -378,6 +378,8 @@ int waddch( WINDOW *win, const chtype ch)
     xlat = !SP->raw_out && !(ch & A_ALTCHARSET);
     text = ch & A_CHARTEXT;
     attr = ch & A_ATTRIBUTES;
+
+#ifndef CHTYPE_32
 #ifdef PDC_WIDE
     text_width = mk_wcwidth( (int)text);
 
@@ -394,8 +396,9 @@ int waddch( WINDOW *win, const chtype ch)
                      + find_combined_char_idx( win->_y[y][x], text);
     }
 #endif
+#endif
 
-    if (xlat && (text < ' ' || text == 0x7f))
+if (xlat && (text < ' ' || text == 0x7f))
     {
         int x2;
 

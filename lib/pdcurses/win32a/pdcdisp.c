@@ -10,6 +10,7 @@ RCSID("$Id: pdcdisp.c,v 1.47 2008/07/14 04:24:52 wmcbrine Exp $")
 
 // KAL: double-width support
 extern int * double_width_lines;
+extern int double_width_lines_n;
 
 // #ifdef CHTYPE_LONG
 
@@ -152,7 +153,12 @@ static void redraw_cursor_from_index( const HDC hdc, const int idx)
     extern int PDC_cxChar, PDC_cyChar;
 
     // KAL: double-width support
-    int double_width_flag = *(double_width_lines + SP->cursrow);
+    int double_width_flag = 0;
+    if (double_width_lines != NULL) {
+        if (SP->cursrow < double_width_lines_n) {
+            double_width_flag = double_width_lines[SP->cursrow];
+        }
+    }
 
     if (double_width_flag == 0) {
         left = SP->curscol * PDC_cxChar;
@@ -442,10 +448,14 @@ void PDC_get_rgb_values( const chtype srcp,
         extern int PDC_really_blinking;          /* see 'pdcsetsc.c' */
         extern int PDC_blink_state;
 
-        if( !PDC_really_blinking)   /* convert 'blinking' to 'bold' */
+        if( !PDC_really_blinking) {
+            // convert 'blinking' to 'bold'
             intensify_backgnd = TRUE;
-        else if( PDC_blink_state)
-            reverse_colors = !reverse_colors;
+        } else if( PDC_blink_state) {
+            // KAL
+            // reverse_colors = !reverse_colors;
+            *foreground_rgb = *background_rgb;
+        }
     }
     if( reverse_colors)
     {
@@ -508,11 +518,17 @@ void PDC_transform_line_given_hdc( const HDC hdc, const int lineno,
 
     // KAL: double-width support
     HDC double_src_hdc;
-    int double_width_flag = *(double_width_lines + lineno);
+    int double_width_flag = 0;
     HDC text_out_dc = hdc;
     HGDIOBJ text_out_bitmap;
     BITMAPINFO bmInfo;
     BYTE * bmBytes;
+
+    if (double_width_lines != NULL) {
+        if (lineno < double_width_lines_n) {
+            double_width_flag = double_width_lines[lineno];
+        }
+    }
 
     if( !srcp)             /* just freeing up fonts */
     {

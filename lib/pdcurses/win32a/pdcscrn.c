@@ -8,6 +8,7 @@ RCSID("$Id: pdcscrn.c,v 1.92 2008/07/20 20:12:04 wmcbrine Exp $")
 
 // KAL: double-width support
 int * double_width_lines = NULL;
+int double_width_lines_n = 0;
 
 /* COLOR_PAIR to attribute encoding table. */
 
@@ -2302,10 +2303,17 @@ int PDC_scr_open( int argc, char **argv)
     }
 
     // KAL - allocate double_width and set to 0
-    double_width_lines = (int *)realloc(double_width_lines,
-        SP->lines * sizeof(int *));
-    for (i = 0; i < SP->lines; i++) {
-        double_width_lines[i] = 0;
+    if (double_width_lines != NULL) {
+        free(double_width_lines);
+        double_width_lines = NULL;
+        double_width_lines_n = 0;
+    }
+    double_width_lines = (int *)malloc(SP->lines * sizeof(int));
+    if (double_width_lines != NULL) {
+        double_width_lines_n = SP->lines;
+        for (i = 0; i < double_width_lines_n; i++) {
+            double_width_lines[i] = 0;
+        }
     }
 
 /*  PDC_reset_prog_mode();   doesn't do anything anyway */
@@ -2318,6 +2326,7 @@ int PDC_scr_open( int argc, char **argv)
 int PDC_resize_screen( int nlines, int ncols)
 {
     int i;
+    int new_lines = nlines;
 
     SP->resized = FALSE;
     debug_printf( "Incoming: %d %d\n", nlines, ncols);
@@ -2345,10 +2354,20 @@ int PDC_resize_screen( int nlines, int ncols)
     }
 
     // KAL - allocate double_width and set to 0
-    double_width_lines = (int *)realloc(double_width_lines,
-        SP->lines * sizeof(int *));
-    for (i = 0; i < SP->lines; i++) {
-        double_width_lines[i] = 0;
+    if (new_lines < SP->lines) {
+        new_lines = SP->lines;
+    }
+    if (double_width_lines != NULL) {
+        free(double_width_lines);
+        double_width_lines = NULL;
+        double_width_lines_n = 0;
+    }
+    double_width_lines = (int *)malloc(new_lines * sizeof(int));
+    if (double_width_lines != NULL) {
+        double_width_lines_n = new_lines;
+        for (i = 0; i < double_width_lines_n; i++) {
+            double_width_lines[i] = 0;
+        }
     }
 
     return OK;
@@ -2513,9 +2532,18 @@ void PDC_set_double(const int y, const int d)
 {
     // KAL
     int old_d;
-    old_d = *(double_width_lines + y);
+
+    if (double_width_lines == NULL) {
+        return;
+    }
+
+    if (y >= double_width_lines_n) {
+        return;
+    }
+
+    old_d = double_width_lines[y];
     if (old_d != d) {
-        *(double_width_lines + y) = d;
+        double_width_lines[y] = d;
         PDC_transform_line(y, 0, SP->cols, curscr->_y[y]);
     }
 }

@@ -115,20 +115,29 @@ FULL REGRESSION ON EVERY ITEM:
     --username
 
 
-Release:
-  Eliminate DEBUG_*, // comments
-  Update ChangeLog
-  #define RELEASE common.h
-  Update Telnet BBS List --> put into setup
-  Check dates on web pages:
+
+Release Checklist
+-----------------
+
+Eliminate DEBUG_*, // comments
+
+Update ChangeLog
+
+#define RELEASE common.h
+
+Update Telnet BBS List --> put into setup
+
+Check dates on web pages:
     index.html screenshots.html getting_started.html
-  Sync up text in help.c and man pages and README and www/index.html
-  Rebuild man page HTML:
+
+Sync up text in help.c and man pages and README and www/index.html
+
+Rebuild man page HTML:
     groff -mandoc `man -w docs/qodem.1` -T html > qodem.1.html
-  Copy qodem.1 -> qodem-x11.1
-    Change qodem -> qodem-x11 in man page title
-    Change xqodem -> qodem in "See Also" section
-  Version in:
+
+Sync qodem.1 and qodem-x11.1
+
+Version in:
     FILE_ID.DIZ
     configure.ac
     common.h
@@ -142,18 +151,27 @@ Release:
     build/deb/qodem-x11/control
     build/rpm/qodem.spec
     build/rpm/qodem-x11.spec
-  Update written by date to current year:
+
+Update written by date to current year:
     All code headers
     qodem.c --version
     console.c terminal header
-  .tar.gz Source
-  Windows:
-    dos2unix: CREDITS FILE_ID.DIZ ChangeLog README.md
-    Redo build
+
+Verify .tar.gz source builds cleanly
+
+Windows:
+    sync_windows_build.bash
+    Build all:
+        UPnP
+        PDCurses
+        cryptlib
+        libc
+        qodem
     Test on Windows 2000
     Test on Windows XP
     Test on Windows 7
-  Binary builds:
+
+Binary builds:
     Fedora i386
     Fedora x86_64
     X11 Fedora i386
@@ -165,7 +183,10 @@ Release:
     MacOS
     Win32
     Win64
-  Upload to SF
+
+Tag github
+
+Upload to SF
 
 
 
