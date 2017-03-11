@@ -1,39 +1,71 @@
 Qodem TODO List
 ===============
 
-1.0.0
------
 
-Fix all marked TODOs in code
 
-FULL REGRESSION ON EVERY ITEM:
-  F10 -> Enter or Alt-Enter
-  F2 -> Space
-  Translate tables
-    Input
-      UTF-8
-    Output
-      UTF-8
-  Keyboard editor
-  Keyboard macros
-  Modem config
-  Serial port settings
+Regression Checklist
+--------------------
+
+  Persistence
+    Phonebook
+    Keyboard editor
+    Modem config
+    Translate tables editor
+    Edit options
+      Reload options after edit
+    Edit colors
+      Reload colors after edit
+
+  Online features
+    Codepage
+    Serial port settings
+    Keyboard macros
+    Translate tables
+      Input
+        8-bit
+        UTF-8
+      Output
+        8-bit
+        UTF-8
+    Split screen
+    Scrollback
+      View up/down
+      Clear
+      Save to file
+        Normal
+        Html
+    Screen dump
+      Normal
+      Html
+    List directory
+    View file
+    View log file
+    Send break
+    Launch mail reader
+    Capture
+      Raw
+      Normal
+      Html
+
+√  UI Conventions
+    F10 -> Enter or Alt-Enter
+    F2 -> Space
+
   Toggles
     Full duplex
     Strip 8th
     Beeps and bells
-    ...
-  Split screen
-  Scrollback
-    View up/down
-    Clear
-    Save to file
-  Screen dump
-  List directory
-  View file
-  View log file
-  Send break
-  Codepage
+    Session Log
+    Xon/Xoff
+    Hard backspace
+    Linewrap
+    Display NUL
+    Scrollback
+    Status line visible
+    Status line info
+    Add CR
+    ANSI music
+
   Serial port
     5-bit
     6-bit
@@ -42,11 +74,11 @@ FULL REGRESSION ON EVERY ITEM:
     Mark / Space
     RTS/CTS
     XON/XOFF
+
   Alt Code key
     8-bit
     Unicode
-  Edit options
-    Reload options after edit
+
   Uploads
     ASCII
     Xmodem
@@ -58,6 +90,7 @@ FULL REGRESSION ON EVERY ITEM:
     Ymodem G
     Zmodem
     Kermit
+
   Downloads
     ASCII
     Xmodem
@@ -69,13 +102,16 @@ FULL REGRESSION ON EVERY ITEM:
     Ymodem G
     Zmodem
     Kermit
-  Script
+
+  Scripts
+
   Host mode
     socket
     ssh
     telnet
     serial
     modem
+
   Phonebook:
     Find
     Find Again
@@ -85,10 +121,7 @@ FULL REGRESSION ON EVERY ITEM:
     Tag
     Edit Notes
     Edit Script
-  Capture
-    Raw
-    Normal
-    Html
+
   Emulations:
     VT52
     VT100
@@ -106,6 +139,7 @@ FULL REGRESSION ON EVERY ITEM:
     DEBUG
     PETSCII
     ATASCII
+
   Command-line switches:
     --connect
     --connect-method
@@ -113,17 +147,38 @@ FULL REGRESSION ON EVERY ITEM:
     --play-exit
     --dial
     --username
+    --dotqodem-dir
+    --config
+    --create-config
+    --capfile
+    --logfile
+    --keyfile
+    --xl8file
+    --xlufile
+    --srcfile
+    --read-only
+    -x, --exit-on-completion
+    --doorway
+    --codepage
+    --emulation
+    --status-line
+    --geometry
+    --xterm
+    --version
+    -h, --help
 
 
 
 Release Checklist
 -----------------
 
-Eliminate DEBUG_*, // comments
+Fix all marked TODOs in code
 
-Update ChangeLog
+√ Eliminate DEBUG_*, // comments
 
-#define RELEASE common.h
+√ Update ChangeLog
+
+√ #define RELEASE common.h
 
 Update Telnet BBS List --> put into setup
 
@@ -132,12 +187,12 @@ Check dates on web pages:
 
 Sync up text in help.c and man pages and README and www/index.html
 
-Rebuild man page HTML:
+√ Rebuild man page HTML:
     groff -mandoc `man -w docs/qodem.1` -T html > qodem.1.html
 
-Sync qodem.1 and qodem-x11.1
+√ Sync qodem.1 and qodem-x11.1
 
-Version in:
+√ Version in:
     FILE_ID.DIZ
     configure.ac
     common.h
@@ -145,6 +200,8 @@ Version in:
     qodem.c
     build/win32/qodem-isetup.iss
     build/win32/resources.rc
+    build/osx/build_dmg.bash
+    build/osx/Qodem.app/Contents/Info.plist
     build/deb/qodem/changelog
     build/deb/qodem/control
     build/deb/qodem-x11/changelog
@@ -152,7 +209,7 @@ Version in:
     build/rpm/qodem.spec
     build/rpm/qodem-x11.spec
 
-Update written by date to current year:
+√ Update written by date to current year:
     All code headers
     qodem.c --version
     console.c terminal header
@@ -180,9 +237,9 @@ Binary builds:
     Debian stable x86_64
     X11 Debian stable i386
     X11 Debian stable x86_64
-    MacOS
-    Win32
-    Win64
+    MacOS Sierra
+    Win32 Win2k
+    Win64 ???
 
 Tag github
 

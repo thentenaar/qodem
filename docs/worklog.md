@@ -1,6 +1,38 @@
 The Qodem Project Work Log
 ==========================
 
+March 11, 2017
+
+The Great Regression (TGR) finally begins.  Only about 8 years after I
+first put together the list, and about 40% of the total code lines
+ago.
+
+This one is going to be quite a bit different that anything else Qodem
+has undergone.  If I'm lucky, the only thing that will be updating
+between git commits is this log and the TODO list, showing more tests
+passing.  If I'm less lucky, then I will encounter bugs that have to
+be addressed before the final 1.0.0 release.
+
+Release target is 47 days away, there are about 150 items on the test
+checklist.  Some items like file transfers will get knocked down
+quickly: I am confident that they work, and it will be just a couple
+hours to try all of them, and 10% of the total list is done.  But some
+like the Phonebook revise screen are several hours just for one line
+in the checklist.  I can't possibly test all of these combinations
+against all the supported platforms, so I will divide these up but put
+the majority of the effort on Win32.  Serial ports and scripts will
+need to be tested on both platforms though.
+
+Along the way I also need to slow down.  Part of me wants to just
+#define RELEASE, spin the builds, and off we go, and then I can put
+Qodem down for some months (or years if there are no real bugs).  But
+this particular release is a bit more significant than the others, and
+I need to really put it through its paces.  This will be a slow burn,
+yet needs to be put on the back burner too because it is about to be
+spring in my new house and I need to get some real life going.  If it
+turns out that I miss the April 27 date, then the next date out will
+be July 4.
+
 March 10, 2017
 
 Borland has some serious problems with colors when 64-bit chtype is

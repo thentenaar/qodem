@@ -21,7 +21,7 @@ License:
     and provides a public license fallback for those jurisdictions
     that do not recognize the public domain.
 
-The Debian packaging was written 2009-2016 by. Kevin Lamonte
+The Debian packaging was written 2009-2017 by Kevin Lamonte
 <kevin.lamonte@gmail.com> and has been dedicated to the public domain.
 
 Qodem is linked to miniupnpc and cryptlib.  Those licenses are
