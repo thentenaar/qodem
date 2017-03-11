@@ -33,6 +33,14 @@ spring in my new house and I need to get some real life going.  If it
 turns out that I miss the April 27 date, then the next date out will
 be July 4.
 
+...
+
+I finally found the X11 selection bug that has been killing me for the
+last two years.  Somehow Xlib is sending a mouse event with button
+number 0x7F00, which crashed a dereference (button should be 0-5).
+Adding the check seems to fix things.  I'm going to get this pushed
+out tomorrow as the new-and-improved 1.0.0.
+
 March 10, 2017
 
 Borland has some serious problems with colors when 64-bit chtype is

@@ -2732,6 +2732,18 @@ static void XCursesButton(Widget w, XEvent *event, String *params,
        the event. The following code is designed to cater for this
        situation. */
 
+    /*
+    fprintf(stderr, "0 button_no %d last_button_no %d\n", button_no,
+        last_button_no);
+     */
+
+    if ((button_no < 0) || (button_no > 5)) {
+        // KAL: sometimes button_no is coming back 0x7F00.  No idea why, but
+        // it causes a crash in the MotionNotify case at the
+        // save_mouse_status.button[button_no - 1] reference.
+        button_no = 0;
+    }
+
     if (!button_no)
         button_no = last_button_no;
 
@@ -2812,13 +2824,11 @@ static void XCursesButton(Widget w, XEvent *event, String *params,
         if (button_no == 1 &&
             (!SP->_trap_mbe || (event->xbutton.state & ShiftMask)))
         {
-            // KAL
-            // _selection_off();
             _selection_extend(MOUSE_X_POS, MOUSE_Y_POS);
             send_key = FALSE;
-        }
-        else
+        } else {
             _selection_off();
+        }
 
         /* Throw away mouse movements if they are in the same character
            position as the last mouse event, or if we are currently in
