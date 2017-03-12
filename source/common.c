@@ -483,6 +483,19 @@ void shorten_string(char * string, const int length) {
 
 }
 
+/**
+ * Convert ASCII 'A'-'Z' to 'a'-'z'.
+ *
+ * @param ch the character to convert
+ * @return (ch - 0x20), IF ch is between 'A' and 'Z'.  Otherwise, ch.
+ */
+int q_tolower(const int ch) {
+    if ((ch >= 'A') && (ch <= 'Z')) {
+        return (ch - 0x20);
+    }
+    return ch;
+}
+
 #if defined(__BORLANDC__)
 
 /**

@@ -1487,7 +1487,7 @@ void translate_table_editor_8bit_keyboard_handler(const int keystroke,
                     _(" Y-Save Changes   N-Exit "),
                     Q_TRUE, 0.0,
                     "YyNn\r");
-                new_keystroke = tolower(new_keystroke);
+                new_keystroke = q_tolower(new_keystroke);
 
                 /*
                  * Save if the user said so
@@ -2040,7 +2040,7 @@ void translate_table_editor_unicode_keyboard_handler(const int keystroke,
                     _(" Y-Save Changes   N-Exit "),
                     Q_TRUE, 0.0,
                     "YyNn\r");
-                new_keystroke = tolower(new_keystroke);
+                new_keystroke = q_tolower(new_keystroke);
 
                 /*
                  * Save if the user said so

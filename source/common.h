@@ -265,6 +265,14 @@ extern Q_BOOL directory_exists(const char * path);
  */
 extern void shorten_string(char * string, const int length);
 
+/**
+ * Convert ASCII 'A'-'Z' to 'a'-'z'.
+ *
+ * @param ch the character to convert
+ * @return (ch - 0x20), IF ch is between 'A' and 'Z'.  Otherwise, ch.
+ */
+extern int q_tolower(const int ch);
+
 /* Borland C 5.02 and Visual C++ 6.0 support ------------------------------ */
 
 /**/

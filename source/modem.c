@@ -1240,7 +1240,7 @@ exit_dialog:
                 _("Changes have been made!  Save them? [Y/n] "),
                 _(" Y-Save Changes   N-Exit "),
                 Q_TRUE, 0.0, "YyNn\r");
-            new_keystroke = tolower(new_keystroke);
+            new_keystroke = q_tolower(new_keystroke);
 
             /*
              * Save if the user said so.
@@ -2240,7 +2240,7 @@ Q_BOOL open_serial_port() {
         snprintf(notify_message, sizeof(notify_message),
             _("Error stat()'ing lock directory \"%s\": %s.  Proceed anyway? [Y/n] "),
             q_modem_config.lock_dir, strerror(errno));
-        keystroke = tolower(notify_prompt_form(
+        keystroke = q_tolower(notify_prompt_form(
             _("Attention!"), notify_message,
             _(" Y-Proceed Without a Lock File   N-Do Not Open Serial Port "),
             Q_TRUE, 0.0, "YyNn\r"));
@@ -2328,7 +2328,7 @@ Q_BOOL open_serial_port() {
             snprintf(notify_message, sizeof(notify_message),
                 _("Error creating lockfile \"%s\": %s.  Proceed anyway? [Y/n] "),
                 q_modem_config.lock_dir, strerror(errno));
-            keystroke = tolower(notify_prompt_form(
+            keystroke = q_tolower(notify_prompt_form(
                 _("Attention!"), notify_message,
                 _(" Y-Proceed Without a Lock File   N-Do Not Open Serial Port "),
                 Q_TRUE, 0.0, "YyNn\r"));

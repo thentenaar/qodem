@@ -1060,7 +1060,7 @@ void console_keyboard_handler(int keystroke, int flags) {
             /*
              * Behave just like Alt-X Exit
              */
-            new_keystroke = tolower(
+            new_keystroke = q_tolower(
                 notify_prompt_form(_("Exit Qodem"),
                     _(" Are you sure? [Y/n] "),
                     _(" Y-Exit Qodem   N-Return to TERMINAL Mode "),
@@ -1318,7 +1318,7 @@ void console_keyboard_handler(int keystroke, int flags) {
                  * Hangup first
                  */
                 if (q_status.guard_hangup == Q_TRUE) {
-                    new_keystroke = tolower(
+                    new_keystroke = q_tolower(
                         notify_prompt_form(_("Hangup"),
                             _("Hangup Modem? [Y/n] "),
                             _(" Y-Hang Up the Connection   N-Exit "),
@@ -1551,13 +1551,13 @@ void console_keyboard_handler(int keystroke, int flags) {
             if ((q_status.online == Q_TRUE) || Q_SERIAL_OPEN) {
                 if (q_status.guard_hangup == Q_TRUE) {
                     if (Q_SERIAL_OPEN) {
-                        new_keystroke = tolower(
+                        new_keystroke = q_tolower(
                             notify_prompt_form(_("Hangup"),
                                 _("Hangup Modem? [Y/n] "),
                                 _(" Y-Hang Up the Connection   N-Exit "),
                                 Q_TRUE, 0.0, "YyNn\r"));
                     } else {
-                        new_keystroke = tolower(
+                        new_keystroke = q_tolower(
                             notify_prompt_form(_("Close"),
                                 _("Close Connection? [Y/n] "),
                                 _(" Y-Close Connection   N-Exit "),
@@ -1791,7 +1791,7 @@ void console_keyboard_handler(int keystroke, int flags) {
                          * Prompt to overwrite
                          */
                         new_keystroke =
-                            tolower(notify_prompt_form
+                            q_tolower(notify_prompt_form
                                     (_("Script File Already Exists"),
                                      _(" Overwrite File? [Y/n] "),
                                      _(" Y-Overwrite Script File   N-Abort Quicklearn "),
@@ -1961,7 +1961,7 @@ void console_keyboard_handler(int keystroke, int flags) {
             /*
              * Alt-X Exit
              */
-            new_keystroke = tolower(
+            new_keystroke = q_tolower(
                 notify_prompt_form(_("Exit Qodem"),
                     _(" Are you sure? [Y/n] "),
                     _(" Y-Exit Qodem   N-Return to TERMINAL Mode "),

@@ -243,7 +243,7 @@ static Q_BOOL phonebook_is_mine(Q_BOOL backup_version) {
             message_lines[1] = _("modified this phonebook file.");
             message_lines[2] = "";
             message_lines[3] = _("     Save anyway? [Y/n] "),
-            keystroke = tolower(notify_prompt_form_long(message_lines,
+            keystroke = q_tolower(notify_prompt_form_long(message_lines,
                 _("Overwrite Phonebook"),
                 _(" Y-Overwrite The Phonebook File   N-Do Not Save Changes "),
                     Q_TRUE, 0.0, "YyNn\r", 4));
@@ -6679,7 +6679,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                      * modem configuration.
                      */
                     keystroke =
-                        tolower(notify_prompt_form(
+                        q_tolower(notify_prompt_form(
                             _("Change Port Settings"),
                             _("Use Modem Config? [Y/n] "),
                             _(" Y-Use the Modem Settings   N-Override the Modem Settings for This Entry "),
@@ -6694,7 +6694,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                                            &xonxoff, &rtscts);
 
                         keystroke =
-                            tolower(notify_prompt_form(
+                            q_tolower(notify_prompt_form(
                                 _("DTE Baud"), _("Lock DTE Baud? [Y/n] "),
                                 _(" Y-Lock Serial Port Speed   N-Change Serial Port Speed After CONNECT "),
                                 Q_TRUE, 0.0, "YyNn\r"));
@@ -6714,7 +6714,7 @@ static void edit_phone_entry_form(struct q_phone_struct * entry) {
                      * toggles configuration.
                      */
                     keystroke =
-                        tolower(notify_prompt_form(
+                        q_tolower(notify_prompt_form(
                             _("Change Toggles"), _("Use Defaults? [Y/n] "),
                             _(" Y-Use the Default Settings   N-Override the Toggles for This Entry "),
                             Q_TRUE, 0.0, "YyNn\r"));
@@ -7632,7 +7632,7 @@ void phonebook_keyboard_handler(const int keystroke, const int flags) {
                      * Prompt to overwrite
                      */
                     new_keystroke =
-                        tolower(notify_prompt_form(
+                        q_tolower(notify_prompt_form(
                             _("Script File Already Exists"),
                             _(" Overwrite File? [Y/n] "),
                             _(" Y-Overwrite Script File   N-Do Not Quicklearn "),

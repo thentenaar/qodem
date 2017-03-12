@@ -4419,7 +4419,7 @@ static int ssh_setup_connection(int fd, const char * host, const char * port) {
         message_lines[1] = (char *) ssh_server_key_str();
         message_lines[2] = "";
         message_lines[3] = _("   Add to known hosts?  [Y/n/z] ");
-        keystroke = tolower(notify_prompt_form_long(
+        keystroke = q_tolower(notify_prompt_form_long(
             message_lines, _("Host Key Not Found"),
             _(" Y-Connect And Add Key   N-Connect   Z-Disconnect "),
             Q_TRUE, 0.0, "YyNnZz\r", 4));
@@ -4485,7 +4485,7 @@ crypt_error:
         message_lines[7] = host_server_key;
         message_lines[8] = "";
         message_lines[9] = _("   Remove saved key from known hosts?  [y/N] ");
-        keystroke = tolower(notify_prompt_form_long(
+        keystroke = q_tolower(notify_prompt_form_long(
             message_lines,
             _("Host Key Has Changed!"),
             _(" Y-Remove Key   N-Keep Old Key "),

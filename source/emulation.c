@@ -1380,7 +1380,7 @@ void emulation_menu_keyboard_handler(const int keystroke, const int flags) {
                                            _("Reset Current Emulation? [y/N] "),
                                            _(" Y-Reset Emulation   N-Exit "),
                                            Q_TRUE, 0.0, "YyNn\r");
-        new_keystroke = tolower(new_keystroke);
+        new_keystroke = q_tolower(new_keystroke);
 
         /*
          * Reset only if the user said so
