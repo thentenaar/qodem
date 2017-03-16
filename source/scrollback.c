@@ -1681,6 +1681,12 @@ void render_scrollback(const int skip_lines) {
         line = line->next;
     }
     line = top_line;
+
+    /*
+    fprintf(stderr, "double_on_this_screen %s\n",
+        (double_on_this_screen == Q_TRUE ? "true" : "false"));
+     */
+
 #endif
 
     /*
@@ -1695,6 +1701,55 @@ void render_scrollback(const int skip_lines) {
          * rendering to a larger scrollback region (ala Turbo Vision).
          */
         if ((line->dirty == Q_TRUE) || Q_TRUE) {
+#ifndef Q_PDCURSES
+            /*
+             * For xterm, we need to set the double-width flag appropriately
+             * BEFORE drawing any of the characters.  If we don't, then when
+             * we switch between double-width and single-width we will lose
+             * the right half of the screen because we were at double-width,
+             * drew 80 columns, xterm ignored columns 41-80, then switched to
+             * single-width and xterm shrinks the visible portion.
+             */
+            if ((xterm == Q_TRUE) &&
+                ((double_on_last_screen == Q_TRUE) ||
+                 (double_on_this_screen == Q_TRUE)) &&
+                ((q_program_state == Q_STATE_CONSOLE) ||
+                 (q_program_state == Q_STATE_SCRIPT_EXECUTE) ||
+                 (q_program_state == Q_STATE_HOST) ||
+                 (q_program_state == Q_STATE_SCROLLBACK))
+            ) {
+                screen_move_yx(row, 0);
+                if ((line->double_width == Q_TRUE) &&
+                    (line->double_height == 0)
+                ) {
+                    odd_line = Q_TRUE;
+                    screen_flush();
+                    fflush(stdout);
+                    fprintf(stdout, "\033#6");
+                    odd_line = Q_TRUE;
+                } else if (line->double_height == 1) {
+                    assert(line->double_width == Q_TRUE);
+                    odd_line = Q_TRUE;
+                    screen_flush();
+                    fflush(stdout);
+                    fprintf(stdout, "\033#3");
+                } else if (line->double_height == 2) {
+                    assert(line->double_width == Q_TRUE);
+                    odd_line = Q_TRUE;
+                    screen_flush();
+                    fflush(stdout);
+                    fprintf(stdout, "\033#4");
+                } else {
+                    assert(line->double_width == Q_FALSE);
+                    assert(line->double_height == 0);
+                    odd_line = Q_TRUE;
+                    screen_flush();
+                    fflush(stdout);
+                    fprintf(stdout, "\033#5");
+                }
+            }
+#endif /* Q_PDCURSES */
+
             if (line->length > 0) {
                 for (i = 0; i < line->length; i++) {
                     attr_t color = line->colors[i];
@@ -1713,6 +1768,11 @@ void render_scrollback(const int skip_lines) {
                         color = line->search_colors[i];
                     }
 
+                    /*
+                    fprintf(stderr, "i %d double_width %s\n", i,
+                        (line->double_width == Q_TRUE ? "true" : "false"));
+                     */
+
                     if (line->double_width == Q_TRUE) {
                         if ((2 * i) >= WIDTH) {
                             break;
@@ -1729,7 +1789,6 @@ void render_scrollback(const int skip_lines) {
                             screen_put_scrollback_char_yx(row, i,
                                 translate_unicode_in(line->chars[i]), color);
                         }
-
                     } else {
                         assert(line->double_height == 0);
                         if (i >= WIDTH) {
@@ -1738,11 +1797,13 @@ void render_scrollback(const int skip_lines) {
                         screen_put_scrollback_char_yx(row, i,
                             translate_unicode_in(line->chars[i]), color);
                     }
-                }
+
+                } /* for (i = 0; i < line->length; i++) */
+
 #ifndef Q_PDCURSES
                 if ((xterm == Q_TRUE) && (odd_line == Q_TRUE)) {
-                    screen_flush();
                     fflush(stdout);
+                    screen_flush();
                 }
 #endif
             } else {
@@ -1755,6 +1816,12 @@ void render_scrollback(const int skip_lines) {
             screen_clear_remaining_line(line->double_width);
 
 #ifdef Q_PDCURSES
+            /*
+             * For PDcurses, we can render everything and then set
+             * double-width afterwards.  This is a performance improvement
+             * mainly, to reduce the number of double-width characters the
+             * X11 version tries to draw.
+             */
             if ((has_true_doublewidth() == Q_TRUE) &&
                 (q_program_state == Q_STATE_CONSOLE) ||
                 (q_program_state == Q_STATE_SCRIPT_EXECUTE) ||
@@ -1775,49 +1842,6 @@ void render_scrollback(const int skip_lines) {
                     PDC_set_double(row, 0);
                 }
             }
-
-#else
-            if ((xterm == Q_TRUE) &&
-                ((double_on_last_screen == Q_TRUE) ||
-                 (double_on_this_screen == Q_TRUE)) &&
-                ((q_program_state == Q_STATE_CONSOLE) ||
-                 (q_program_state == Q_STATE_SCRIPT_EXECUTE) ||
-                 (q_program_state == Q_STATE_HOST) ||
-                 (q_program_state == Q_STATE_SCROLLBACK))
-            ) {
-                screen_move_yx(row, 0);
-                if ((line->double_width == Q_TRUE) &&
-                    (line->double_height == 0)
-                ) {
-                    odd_line = Q_TRUE;
-                    screen_flush();
-                    fflush(stdout);
-                    fprintf(stdout, "\033#6");
-                    fflush(stdout);
-                } else if (line->double_height == 1) {
-                    assert(line->double_width == Q_TRUE);
-                    odd_line = Q_TRUE;
-                    screen_flush();
-                    fflush(stdout);
-                    fprintf(stdout, "\033#3");
-                    fflush(stdout);
-                } else if (line->double_height == 2) {
-                    assert(line->double_width == Q_TRUE);
-                    odd_line = Q_TRUE;
-                    screen_flush();
-                    fflush(stdout);
-                    fprintf(stdout, "\033#4");
-                    fflush(stdout);
-                } else {
-                    assert(line->double_width == Q_FALSE);
-                    assert(line->double_height == 0);
-                    odd_line = Q_TRUE;
-                    screen_flush();
-                    fflush(stdout);
-                    fprintf(stdout, "\033#5");
-                    fflush(stdout);
-                }
-            }
 #endif
 
             line->dirty = Q_FALSE;
@@ -1833,7 +1857,6 @@ void render_scrollback(const int skip_lines) {
 
 #ifdef Q_PDCURSES
         PDC_set_double(row, 0);
-        screen_clear_remaining_line(Q_FALSE);
 #else
         if ((xterm == Q_TRUE) &&
             ((double_on_last_screen == Q_TRUE) ||
@@ -1842,19 +1865,13 @@ void render_scrollback(const int skip_lines) {
             screen_flush();
             fprintf(stdout, "\033#5");
             screen_flush();
-            screen_clear_remaining_line(Q_FALSE);
-        } else {
-            screen_clear_remaining_line(Q_FALSE);
         }
 #endif
+        screen_clear_remaining_line(Q_FALSE);
     }
 
 #ifndef Q_PDCURSES
-    if (double_on_this_screen == Q_TRUE) {
-        double_on_last_screen = Q_TRUE;
-    } else {
-        double_on_last_screen = Q_FALSE;
-    }
+    double_on_last_screen = double_on_this_screen;
 #endif
 }
 
@@ -2602,12 +2619,6 @@ void erase_screen(const int start_row, const int start_col, const int end_row,
         erase_line(start_col, end_col, honor_protected);
 
         /*
-         * Erase display clears the double attributes
-         */
-        q_scrollback_current->double_width = Q_FALSE;
-        q_scrollback_current->double_height = 0;
-
-        /*
          * Note: we don't add a line when (i == end_row) because if end_row
          * is the last line in scrollback new_scrollback_line() will make the
          * total screen one line larger than it really is.  This causes lots
@@ -3079,4 +3090,66 @@ void set_double_width(Q_BOOL double_width) {
 void set_double_height(int double_height) {
     q_scrollback_current->double_width = Q_TRUE;
     q_scrollback_current->double_height = double_height;
+}
+
+/**
+ * Set a number of lines to single-width.
+ *
+ * @param start_row the first row to set single-width
+ * @param end_row the last row to set single-width
+ */
+void set_single_width(const int start_row, const int end_row) {
+    struct q_scrolline_struct * start_line;
+    struct q_scrolline_struct * line;
+    struct q_scrolline_struct * original_current_line;
+
+    int i;
+
+    if ((start_row < 0) || (end_row < 0) || (end_row < start_row)) {
+        return;
+    }
+
+    /*
+     * Hang onto the original cursor position
+     */
+    original_current_line = q_scrollback_current;
+
+    /*
+     * Get to the starting line
+     */
+    start_line = find_top_scrollback_line();
+    for (i = 0; i < start_row; i++) {
+        if (start_line->next == NULL) {
+            new_scrollback_line();
+        }
+        start_line = start_line->next;
+    }
+
+    line = start_line;
+
+    for (i = start_row; i <= end_row; i++) {
+        q_scrollback_current = line;
+
+        set_double_width(Q_FALSE);
+
+        /*
+         * Note: we don't add a line when (i == end_row) because if end_row
+         * is the last line in scrollback new_scrollback_line() will make the
+         * total screen one line larger than it really is.  This causes lots
+         * of trouble and looks like crap.
+         */
+        if ((line->next == NULL) && (i < end_row)) {
+            /*
+             * Add a line
+             */
+            new_scrollback_line();
+        }
+        line = line->next;
+    }
+
+    /*
+     * Restore the cursor position
+     */
+    q_scrollback_current = original_current_line;
+
 }

@@ -386,6 +386,14 @@ extern void set_double_width(Q_BOOL double_width);
 extern void set_double_height(int double_height);
 
 /**
+ * Set a number of lines to single-width.
+ *
+ * @param start_row the first row to set single-width
+ * @param end_row the last row to set single-width
+ */
+extern void set_single_width(const int start_row, const int end_row);
+
+/**
  * Save the visible portion of the scrollback buffer to file for debugging
  * purposes.
  *

@@ -1325,6 +1325,7 @@ void screen_teardown() {
 void screen_clear_remaining_line(Q_BOOL double_width) {
     int x, y;
     int i;
+    int n = WIDTH;
 
     if (curses_initted == Q_FALSE) {
         /* Handle lazy-loading curses. */
@@ -1332,7 +1333,10 @@ void screen_clear_remaining_line(Q_BOOL double_width) {
     }
 
     getyx(stdscr, y, x);
-    for (i = x; i < WIDTH; i++) {
+    if (double_width == Q_TRUE) {
+        n /= 2;
+    }
+    for (i = x; i < n; i++) {
         screen_put_char_yx(y, i, ' ', 0,
                            screen_color(Q_COLOR_CONSOLE_BACKGROUND));
     }

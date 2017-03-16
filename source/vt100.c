@@ -2117,8 +2117,10 @@ static void ed() {
         if (q_status.cursor_y < HEIGHT - STATUS_HEIGHT - 1) {
             erase_screen(q_status.cursor_y + 1, 0, HEIGHT - STATUS_HEIGHT - 1,
                          WIDTH - 1, honor_protected);
+            set_single_width(q_status.cursor_y + 1, HEIGHT - STATUS_HEIGHT - 1);
         }
         erase_line(q_status.cursor_x, WIDTH - 1, honor_protected);
+        set_double_width(Q_FALSE);
     } else if (i == 1) {
 
         DLOG(("ed(): 0 0 %d %d %s\n", q_status.cursor_y, q_status.cursor_x,
@@ -2127,6 +2129,8 @@ static void ed() {
         /* Erase from beginning of screen to here */
         erase_screen(0, 0, q_status.cursor_y - 1, WIDTH - 1, honor_protected);
         erase_line(0, q_status.cursor_x, honor_protected);
+        set_single_width(0, q_status.cursor_y);
+        set_double_width(Q_FALSE);
     } else if (i == 2) {
 
         DLOG(("ed(): 0 0 %d %d %s\n", HEIGHT - STATUS_HEIGHT - 1, WIDTH - 1,
@@ -2135,6 +2139,7 @@ static void ed() {
         /* Erase entire screen */
         erase_screen(0, 0, HEIGHT - STATUS_HEIGHT - 1, WIDTH - 1,
                      honor_protected);
+        set_single_width(0, HEIGHT - STATUS_HEIGHT - 1);
     }
 
 }

@@ -2179,7 +2179,7 @@ static void state_machine_keyboard_handler(const int keystroke) {
 
         if ((state->state == current_state) &&
             ((tolower(ch) == state->input) || (state->input == 0))
-            ) {
+        ) {
             if (do_line_buffer == Q_FALSE) {
                 /*
                  * User made a menu selection, echo it
