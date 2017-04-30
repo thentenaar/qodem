@@ -3852,7 +3852,7 @@ void console_info_refresh() {
                                         Q_COLOR_MENU_COMMAND);
             }
 
-#ifdef Q_SSH_CRYPTLIB
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
             if ((q_status.dial_method == Q_DIAL_METHOD_SSH) &&
                 (net_is_connected() == Q_TRUE)
             ) {
@@ -3866,7 +3866,7 @@ void console_info_refresh() {
                                         Q_COLOR_MENU_COMMAND);
 
             }
-#endif /* Q_SSH_CRYPTLIB */
+#endif /* defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2) */
 
         } /* if (q_status.online == Q_TRUE) */
 

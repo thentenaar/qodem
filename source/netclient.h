@@ -238,6 +238,10 @@ extern void rlogin_resize_screen(const int lines, const int columns);
  */
 extern Q_BOOL ssh_send_window_change;
 
+#endif /* Q_SSH_CRYPTLIB */
+
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
+
 /**
  * Read data from remote system to a buffer, via an 8-bit clean channel
  * through the ssh protocol.
@@ -285,6 +289,10 @@ extern Q_BOOL ssh_maybe_readable();
  * @return the key string
  */
 extern const char * ssh_server_key_str();
+
+#endif /* defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2) */
+
+#ifdef Q_SSH_CRYPTLIB
 
 /**
  * Create a RSA private key for the SSH server.  This does nothing if the key

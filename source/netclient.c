@@ -240,9 +240,13 @@ static unsigned int write_buffer_n = 0;
 
 /* Forward references needed by net_X() methods */
 static void rlogin_send_login(const int fd);
-#ifdef Q_SSH_CRYPTLIB
+
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
 static int ssh_setup_connection(int fd, const char * host, const char * port);
 static void ssh_close();
+#endif
+
+#ifdef Q_SSH_CRYPTLIB
 static int ssh_accept(int fd);
 #endif
 
@@ -1282,7 +1286,7 @@ Q_BOOL net_connect_finish() {
     DLOG(("net_connect_finish() : connected.  Remote host is %s %s\n",
             remote_host, remote_port));
 
-#ifdef Q_SSH_CRYPTLIB
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
 
     /*
      * SSH has its session management here
@@ -1315,7 +1319,8 @@ Q_BOOL net_connect_finish() {
             return Q_FALSE;
         }
     }
-#endif /* Q_SSH_CRYPTLIB */
+
+#endif /* defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2) */
 
     /*
      * Reset connection state machine
@@ -1882,14 +1887,14 @@ void net_close() {
 
     assert(q_child_tty_fd != -1);
 
-#ifdef Q_SSH_CRYPTLIB
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
     /*
      * SSH needs to destroy the crypto session.
      */
     if (q_status.dial_method == Q_DIAL_METHOD_SSH) {
         ssh_close();
     }
-#endif /* Q_SSH_CRYPTLIB */
+#endif /* defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2) */
 
     DLOG(("net_close() : shutdown(q_child_tty_fd, SHUT_WR)\n"));
 
@@ -1921,14 +1926,14 @@ void net_force_close() {
         return;
     }
 
-#ifdef Q_SSH_CRYPTLIB
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
     /*
      * SSH needs to destroy the crypto session.
      */
     if (q_status.dial_method == Q_DIAL_METHOD_SSH) {
         ssh_close();
     }
-#endif /* Q_SSH_CRYPTLIB */
+#endif /* defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2) */
 
     DLOG(("net_force_close() : close(q_child_tty_fd)\n"));
 
@@ -3770,11 +3775,13 @@ ssize_t rlogin_write(const int fd, void * buf, size_t count) {
     return send(fd, (const char *) buf, count, 0);
 }
 
-#ifdef Q_SSH_CRYPTLIB
-
 /* -------------------------------------------------------------------------- */
 /* SSH connect/read/write --------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
+
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
+
+#ifdef Q_SSH_CRYPTLIB
 
 /*
  * SSH uses cryptlib, it's a very straightforward library.  We need to define
@@ -3804,9 +3811,6 @@ extern "C" {
 #include <netinet/tcp.h>
 #endif
 
-#include "input.h"
-#include "options.h"
-
 /**
  * Everything is done through the crypt session interface.
  */
@@ -3818,11 +3822,6 @@ static CRYPT_SESSION cryptSession;
 static int cryptUser = CRYPT_UNUSED;
 
 /**
- * The human-readable SHA1 key for a ssh server.
- */
-static char * ssh_server_key = NULL;
-
-/**
  * The filename in the working directory to store a qodem ssh server key.
  */
 #define HOST_SSH_SERVER_KEY_FILENAME "ssh_server_key.p15"
@@ -3831,6 +3830,68 @@ static char * ssh_server_key = NULL;
  * If true, new screen dimensions need to be sent to the remote side.
  */
 Q_BOOL ssh_send_window_change = Q_FALSE;
+
+#endif /* Q_SSH_CRYPTLIB */
+
+#ifdef Q_SSH_LIBSSH2
+
+#include <libssh2.h>
+#include <ctype.h>
+#include <gcrypt.h>
+#define libssh2_md5_ctx gcry_md_hd_t
+#define libssh2_md5_init(ctx) gcry_md_open (ctx,  GCRY_MD_MD5, 0);
+#define libssh2_md5_update(ctx, data, len) gcry_md_write (ctx, data, len)
+#define libssh2_md5_final(ctx, out) \
+    memcpy (out, gcry_md_read (ctx, 0), 20), gcry_md_close (ctx)
+
+static LIBSSH2_SESSION * q_ssh_session = NULL;
+static LIBSSH2_CHANNEL * q_ssh_channel = NULL;
+
+typedef enum {
+    step_a,
+    step_b,
+    step_c,
+    step_d
+} base64_decodestep;
+
+typedef struct {
+    base64_decodestep step;
+    char plainchar;
+} base64_decodestate;
+
+/* Forward declaration for ssh_setup_connection() */
+static int base64_decode_block(const char* code_in, const int length_in,
+    char* plaintext_out, base64_decodestate* state_in);
+static void base64_init_decodestate(base64_decodestate* state_in);
+
+#endif /* Q_SSH_LIBSSH2 */
+
+#include "input.h"
+#include "options.h"
+
+/**
+ * The human-readable SHA1 key for a ssh server.
+ */
+static char * ssh_server_key = NULL;
+
+/**
+ * Flag to indicate some more data MIGHT be ready to read.
+ */
+static Q_BOOL maybe_readable = Q_FALSE;
+
+/**
+ * Flag to indicate some more data MIGHT be ready to read.  This can happen
+ * if the last call to ssh_read() resulted in a length of 0 or EAGAIN.  The
+ * socket will not be readable to select(), but another call to ssh_read()
+ * could read some data.
+ *
+ * @return true if there might be data to read from the ssh session
+ */
+Q_BOOL ssh_maybe_readable() {
+    return maybe_readable;
+}
+
+#ifdef Q_SSH_CRYPTLIB
 
 /**
  * One entry in the known_hosts file.
@@ -3862,23 +3923,6 @@ struct known_host_entry {
      */
     struct known_host_entry * next;
 };
-
-/**
- * Flag to indicate some more data MIGHT be ready to read.
- */
-static Q_BOOL maybe_readable = Q_FALSE;
-
-/**
- * Flag to indicate some more data MIGHT be ready to read.  This can happen
- * if the last call to ssh_read() resulted in a length of 0 or EAGAIN.  The
- * socket will not be readable to select(), but another call to ssh_read()
- * could read some data.
- *
- * @return true if there might be data to read from the ssh session
- */
-Q_BOOL ssh_maybe_readable() {
-    return maybe_readable;
-}
 
 /**
  * Convert a raw SHA1 hash value to a human-readable ASCII string.
@@ -5053,3 +5097,671 @@ crypt_error:
 }
 
 #endif /* Q_SSH_CRYPTLIB */
+
+#ifdef Q_SSH_LIBSSH2
+
+/**
+ * Convert a raw MD5 hash value to a human-readable ASCII string.
+ *
+ * @param md5 the hash value
+ * @param dest the string to write
+ * @param n the maximum number of bytes to write to dest
+ */
+static void md5_to_string(const unsigned char * md5, char * dest) {
+    const int len = 16;
+    int i;
+    memset(dest, 0, len * 3 + 2);
+    for (i = 0; i < len/2; i++) {
+        sprintf(dest + strlen(dest),
+            "%x", (md5[i] >> 4) & 0x0F);
+        sprintf(dest + strlen(dest),
+            "%x", md5[i] & 0x0F);
+        sprintf(dest + strlen(dest),
+            ":");
+    }
+    for (; i < len; i++) {
+        sprintf(dest + strlen(dest),
+            "%x", (md5[i] >> 4) & 0x0F);
+        sprintf(dest + strlen(dest),
+            "%x", md5[i] & 0x0F);
+        sprintf(dest + strlen(dest),
+            ":");
+    }
+    dest[strlen(dest) - 1] = 0;
+}
+
+/**
+ * Emit the libssh2 error to the debug log.
+ *
+ * @param session the ssh session object
+ */
+static void emit_ssh_error(LIBSSH2_SESSION * session) {
+    if (DLOGNAME != NULL) {
+        char * msg;
+        int rc = libssh2_session_last_error(session, &msg, NULL, 0);
+        DLOG(("libssh2 ERROR: %d %s\n", rc, msg));
+    }
+}
+
+/**
+ * Get the ssh server key fingerprint as a hex-encoded SHA1 hash of the
+ * server key, the same as the key fingerprint exposed by most ssh clients.
+ *
+ * @return the key string
+ */
+const char * ssh_server_key_str() {
+    assert(q_ssh_session != NULL);
+    if (ssh_server_key == NULL) {
+        const unsigned char * hash;
+        const int len = 16;
+        hash = (unsigned char *)libssh2_hostkey_hash(q_ssh_session,
+            LIBSSH2_HOSTKEY_HASH_MD5);
+        if (hash == NULL) {
+            emit_ssh_error(q_ssh_session);
+            ssh_server_key = Xstrdup("*** UNKNOWN! ***", __FILE__, __LINE__);
+        } else {
+            ssh_server_key = (char *)Xmalloc((len * 3 + 2) * sizeof(char),
+                __FILE__, __LINE__);
+            md5_to_string(hash, ssh_server_key);
+        }
+    }
+    return ssh_server_key;
+}
+
+/**
+ * Perform SSH protocol negotiation for a new TCP connection.
+ *
+ * @param fd a socket that is already connected
+ * @param host the hostname
+ * @param the port, for example "22"
+ * @return the descriptor for the socket, or -1 if there was an error
+ */
+static int ssh_setup_connection(int fd, const char * host, const char * port) {
+    assert(q_ssh_session == NULL);
+    char username[128];
+    char password[128];
+    int rc = LIBSSH2_ERROR_SOCKET_NONE;
+    LIBSSH2_KNOWNHOSTS * hosts = NULL;
+    char * knownhosts_filename;
+    struct libssh2_knownhost * knownhost = NULL;
+    char * knownhost_key = NULL;
+    char knownhost_key_str[1024];
+    int knownhost_key_str_n = 0;
+    unsigned char knownhost_key_md5[16];
+    char knownhost_key_md5_str[16 * 3 + 2];
+    libssh2_md5_ctx md5_ctx;
+
+    base64_decodestate b64_state;
+    int knownhosts_i = 0;
+    size_t hostkey_length;
+    int hostkey_type;
+    const char * hostkey = NULL;
+    int hostkey_status;
+    char notify_message[DIALOG_MESSAGE_SIZE];
+    char * message_lines[8];
+    int keystroke;
+
+    DLOG(("ssh_setup_connection() ENTER\n"));
+
+    q_ssh_session = libssh2_session_init();
+    if (q_ssh_session == NULL) {
+        /* Unable to initialize SSH */
+        return -1;
+    }
+
+    /* Handshake with server */
+#if LIBSSH2_VERSION_NUM < 0x010208
+    rc = libssh2_session_startup(q_ssh_session, fd);
+#else
+    rc = libssh2_session_handshake(q_ssh_session, fd);
+#endif /* LIBSSH2_VERSION_NUM */
+    if (rc != 0) {
+        /* Error connecting to the remote server */
+        emit_ssh_error(q_ssh_session);
+        ssh_close();
+        return -1;
+    }
+
+    DLOG(("ssh_setup_connection() handshake OK\n"));
+
+    /* Check host key against known_hosts */
+    hosts = libssh2_knownhost_init(q_ssh_session);
+    if (hosts == NULL) {
+        DLOG(("ssh_setup_connection() hosts NULL\n"));
+        /* This isn't terribly bad, just move on. */
+    } else {
+        hostkey = libssh2_session_hostkey(q_ssh_session, &hostkey_length,
+            &hostkey_type);
+        if (hostkey == NULL) {
+            goto skip_hostkey_check;
+        }
+
+        if (DLOGNAME != NULL) {
+            int i;
+            DLOG(("hostkey:"));
+            for (i = 0; i < hostkey_length; i++) {
+                DLOG2((" %02x", (hostkey[i] & 0xFF)));
+            }
+            DLOG2(("\n"));
+        }
+
+        knownhosts_filename = get_option(Q_OPTION_SSH_KNOWNHOSTS);
+#ifdef Q_PDCURSES_WIN32
+        /* Ensure known_hosts exists */
+        if (file_exists(knownhosts_filename) != Q_TRUE) {
+            FILE * file = NULL;
+            file = fopen(knownhosts_filename, "w");
+            fclose(file);
+        }
+#endif /* Q_PDCURSES_WIN32 */
+        knownhosts_i = libssh2_knownhost_readfile(hosts, knownhosts_filename,
+            LIBSSH2_KNOWNHOST_FILE_OPENSSH);
+        if (knownhosts_i < 0) {
+            DLOG(("knownhosts_readfile failed\n"));
+            /* known_hosts isn't working, move on */
+            goto free_knownhosts;
+        } else {
+            DLOG(("knownhosts_readfile %d hosts read\n", knownhosts_i));
+        }
+
+        hostkey_status = libssh2_knownhost_check(hosts, host, hostkey,
+            hostkey_length,
+            LIBSSH2_KNOWNHOST_TYPE_PLAIN |
+            LIBSSH2_KNOWNHOST_KEYENC_RAW,
+            &knownhost);
+        if (hostkey_status == LIBSSH2_KNOWNHOST_CHECK_FAILURE) {
+            DLOG(("LIBSSH2_KNOWNHOST_CHECK_FAILURE\n"));
+            /* known_hosts isn't working, move on */
+            goto free_knownhosts;
+        }
+        if (hostkey_status == LIBSSH2_KNOWNHOST_CHECK_MATCH) {
+            DLOG(("LIBSSH2_KNOWNHOST_CHECK_MATCH\n"));
+            /* known_hosts entry matches, move on */
+            goto free_knownhosts;
+        }
+        if (hostkey_status == LIBSSH2_KNOWNHOST_CHECK_NOTFOUND) {
+            DLOG(("LIBSSH2_KNOWNHOST_CHECK_NOTFOUND\n"));
+
+            /* New entry, ask if the user wants to add it */
+            sprintf(notify_message, _("Host key for %s:%s not found: "),
+                host, port);
+            message_lines[0] = notify_message;
+            message_lines[1] = (char *)ssh_server_key_str();
+            message_lines[2] = "";
+            message_lines[3] = "   Add to known hosts?  [Y/n/z] ";
+            keystroke = tolower(notify_prompt_form_long(
+                message_lines,
+                _("Host Key Not Found"),
+                _(" Y-Connect And Add Key   N-Connect   Z-Disconnect "),
+                Q_TRUE,
+                0.0, "YyNnZz\r", 4));
+            q_cursor_off();
+
+            if ((keystroke == 'y') || (keystroke == C_CR)) {
+                libssh2_knownhost_addc(hosts, host, NULL,
+                    hostkey, hostkey_length, NULL, 0,
+                    LIBSSH2_KNOWNHOST_TYPE_PLAIN |
+                    LIBSSH2_KNOWNHOST_KEYENC_RAW |
+                    (hostkey_type & LIBSSH2_HOSTKEY_TYPE_RSA ? LIBSSH2_KNOWNHOST_KEY_SSHRSA : 0) |
+                    (hostkey_type & LIBSSH2_HOSTKEY_TYPE_DSS ? LIBSSH2_KNOWNHOST_KEY_SSHDSS : 0),
+                    NULL);
+                libssh2_knownhost_writefile(hosts, knownhosts_filename,
+                    LIBSSH2_KNOWNHOST_FILE_OPENSSH);
+                goto free_knownhosts;
+            } else if (keystroke == 'n') {
+                goto free_knownhosts;
+            } else {
+                libssh2_knownhost_free(hosts);
+                ssh_close();
+                return -1;
+            }
+        }
+
+        if (hostkey_status == LIBSSH2_KNOWNHOST_CHECK_MISMATCH) {
+            DLOG(("LIBSSH2_KNOWNHOST_CHECK_MISMATCH\n"));
+
+            /*
+             * Entry changed!  Show the user the old and new and ask if they
+             * want to continue and/or update the key.
+             */
+            knownhost_key = knownhost->key;
+
+            /* Decode host key from base64 */
+            base64_init_decodestate(&b64_state);
+            knownhost_key_str_n = base64_decode_block(knownhost_key,
+                strlen(knownhost_key), knownhost_key_str, &b64_state);
+
+            /*
+             * Take MD5 hash.  I'm following the same procedure as libssh2,
+             * currently using gcrypt for MD5.
+             */
+            libssh2_md5_init(&md5_ctx);
+            libssh2_md5_update(md5_ctx, knownhost_key_str, knownhost_key_str_n);
+            libssh2_md5_final(md5_ctx, knownhost_key_md5);
+            md5_to_string(knownhost_key_md5, knownhost_key_md5_str);
+
+            /* New entry, ask if the user wants to add it */
+            sprintf(notify_message, _("Host key for %s:%s has changed! "),
+                host, port);
+            message_lines[0] = notify_message;
+            message_lines[1] = "Old key:";
+            message_lines[2] = knownhost_key_md5_str;
+            message_lines[3] = "";
+            message_lines[4] = "New key:";
+            message_lines[5] = (char *)ssh_server_key_str();
+            message_lines[6] = "";
+            message_lines[7] = "   Update known hosts?  [y/n/Z] ";
+            keystroke = tolower(notify_prompt_form_long(
+                message_lines,
+                _("Host Key Has Changed!"),
+                _(" Y-Connect And Update Key   N-Connect   Z-Disconnect "),
+                Q_TRUE,
+                0.0, "YyNnZz\r", 8));
+            q_cursor_off();
+
+            if (keystroke == 'y') {
+                /* Delete the old key */
+                libssh2_knownhost_del(hosts, knownhost);
+
+                /* Add to known_hosts */
+                libssh2_knownhost_addc(hosts, host, NULL, hostkey,
+                    hostkey_length, NULL, 0,
+                    LIBSSH2_KNOWNHOST_TYPE_PLAIN |
+                    LIBSSH2_KNOWNHOST_KEYENC_RAW |
+                    (hostkey_type & LIBSSH2_HOSTKEY_TYPE_RSA ? LIBSSH2_KNOWNHOST_KEY_SSHRSA : 0) |
+                    (hostkey_type & LIBSSH2_HOSTKEY_TYPE_DSS ? LIBSSH2_KNOWNHOST_KEY_SSHDSS : 0),
+                    NULL);
+                libssh2_knownhost_writefile(hosts, knownhosts_filename,
+                    LIBSSH2_KNOWNHOST_FILE_OPENSSH);
+                goto free_knownhosts;
+            } else if (keystroke == 'n') {
+                goto free_knownhosts;
+            } else {
+                libssh2_knownhost_free(hosts);
+                ssh_close();
+                return -1;
+            }
+        }
+
+
+    free_knownhosts:
+        /* Free resources */
+        libssh2_knownhost_free(hosts);
+        hosts = NULL;
+    }
+
+skip_hostkey_check:
+
+    /* Username and password need to be converted to char, not wchar_t */
+    snprintf(username, sizeof(username) - 1, "%ls", q_status.current_username);
+    snprintf(password, sizeof(password) - 1, "%ls", q_status.current_password);
+
+    /* Authenticate with username and password */
+    rc = libssh2_userauth_password(q_ssh_session, username, password);
+    if (rc != 0) {
+        emit_ssh_error(q_ssh_session);
+        ssh_close();
+        return -1;
+    }
+
+    DLOG(("ssh_setup_connection() password authenticated OK\n"));
+
+    /* Open channel and shell session */
+    q_ssh_channel = libssh2_channel_open_session(q_ssh_session);
+    if (q_ssh_channel == NULL) {
+        emit_ssh_error(q_ssh_session);
+        ssh_close();
+        return -1;
+    }
+
+    DLOG(("ssh_setup_connection() channel open\n"));
+
+    /*
+     * Set the LANG - we do this ahead of the shell, but most hosts I'm
+     * looking at seem to override it anyway.  Ugh.
+     */
+    rc = libssh2_channel_setenv(q_ssh_channel, "LANG",
+        emulation_lang(q_status.emulation));
+    if ((rc != 0) && (rc != LIBSSH2_ERROR_CHANNEL_REQUEST_DENIED)) {
+        emit_ssh_error(q_ssh_session);
+        ssh_close();
+        return -1;
+    }
+
+    DLOG(("ssh_setup_connection() LANG passed: %s\n",
+            emulation_lang(q_status.emulation)));
+
+    rc = libssh2_channel_request_pty_ex(q_ssh_channel,
+        emulation_term(q_status.emulation),
+        strlen(emulation_term(q_status.emulation)), NULL, 0, WIDTH,
+        HEIGHT - STATUS_HEIGHT, 0, 0);
+    if (rc != 0) {
+        emit_ssh_error(q_ssh_session);
+        ssh_close();
+        return -1;
+    }
+
+    DLOG(("ssh_setup_connection() PTY\n"));
+
+    /* Get the shell */
+    rc = libssh2_channel_shell(q_ssh_channel);
+    if (rc != 0) {
+        emit_ssh_error(q_ssh_session);
+        ssh_close();
+        return -1;
+    }
+
+    DLOG(("ssh_setup_connection() shell open\n"));
+
+    /* Set to non-blocking */
+    libssh2_channel_set_blocking(q_ssh_channel, 0);
+
+    /* All is OK */
+    return fd;
+}
+
+/**
+ * Close SSH session.
+ */
+static void ssh_close() {
+    assert(q_ssh_session != NULL);
+    if (q_ssh_channel != NULL) {
+        libssh2_channel_free(q_ssh_channel);
+        q_ssh_channel = NULL;
+    }
+    libssh2_session_disconnect(q_ssh_session, _("Connection closed by user."));
+    libssh2_session_free(q_ssh_session);
+    q_ssh_session = NULL;
+    if (ssh_server_key != NULL) {
+        Xfree(ssh_server_key, __FILE__, __LINE__);
+        ssh_server_key = NULL;
+    }
+}
+
+/**
+ * Send new screen dimensions to the remote side.
+ *
+ * @param lines the number of screen rows
+ * @param columns the number of screen columns
+ */
+void ssh_resize_screen(const int lines, const int columns) {
+    DLOG(("ssh_resize_screen() %d cols %d lines\n", columns, lines));
+    assert(q_ssh_channel != NULL);
+    libssh2_channel_request_pty_size(q_ssh_channel, columns, lines);
+}
+
+/**
+ * Read data from remote system to a buffer, via an 8-bit clean channel
+ * through the ssh protocol.
+ *
+ * @param fd the socket descriptor
+ * @param buf the buffer to write to
+ * @param count the number of bytes requested
+ * @return the number of bytes read into buf
+ */
+ssize_t ssh_read(const int fd, void * buf, size_t count) {
+    int readBytes;
+
+    DLOG(("SSH_READ()\n"));
+
+    /* Return read_buffer first - it has the connect message */
+    if (read_buffer_n > 0) {
+        DLOG(("ssh_read(): direct string bypass: %s\n", read_buffer));
+        memcpy(buf, read_buffer, read_buffer_n);
+        readBytes = read_buffer_n;
+        read_buffer_n = 0;
+        return readBytes;
+    }
+
+    if (nvt.is_eof == Q_TRUE) {
+        DLOG(("ssh_read() : no read because EOF\n"));
+
+        /* Return EOF */
+        return 0;
+    }
+
+    /*
+     * Read some more bytes from the remote side.  By default don't ask about
+     * the stderr stream.
+     */
+    readBytes = libssh2_channel_read(q_ssh_channel, buf, count);
+    if (readBytes < 1) {
+        if (((readBytes == LIBSSH2_ERROR_EAGAIN) || (readBytes == 0)) &&
+            (!libssh2_channel_eof(q_ssh_channel))
+        ) {
+            /*
+             * The message will be returned on the next ssh_read().
+             */
+            maybe_readable = Q_TRUE;
+#ifdef Q_PDCURSES_WIN32
+            set_errno(WSAEWOULDBLOCK);
+#else
+            set_errno(EAGAIN);
+#endif /* Q_PDCURSES_WIN32 */
+            goto read_done;
+        }
+
+        if (readBytes <= 0) {
+
+            DLOG(("EOF EOF EOF\n"));
+
+            /* Remote end has closed connection */
+            snprintf((char *)read_buffer, sizeof(read_buffer), "%s",
+                _("Connection closed.\r\n"));
+            read_buffer_n = strlen((char *)read_buffer);
+            nvt.is_eof = Q_TRUE;
+
+            if (readBytes < 0) {
+                if (DLOGNAME != NULL) {
+                    emit_ssh_error(q_ssh_session);
+                }
+
+                /*
+                 * This is a dead connection, we can't select() on it again.
+                 */
+                set_errno(EIO);
+            } else {
+                /*
+                 * The message will be returned on the next ssh_read()
+                 */
+                maybe_readable = Q_TRUE;
+#ifdef Q_PDCURSES_WIN32
+                set_errno(WSAEWOULDBLOCK);
+#else
+                set_errno(EAGAIN);
+#endif /* Q_PDCURSES_WIN32 */
+            }
+            return -1;
+        }
+    }
+
+read_done:
+    ;
+
+    if (DLOGNAME != NULL) {
+        int i;
+        DLOG(("ssh_read() : read %d bytes (count = %d) (errno = %d):\n",
+                readBytes, (int)count, errno));
+        for (i = 0; i < readBytes; i++) {
+            DLOG2((" %02x", (((char *)buf)[i] & 0xFF)));
+        }
+        DLOG2(("\n"));
+        for (i = 0; i < readBytes; i++) {
+            if ((((char *)buf)[i] & 0xFF) >= 0x80) {
+                DLOG2((" %02x", (((char *)buf)[i] & 0xFF)));
+            } else {
+                DLOG2((" %c ", (((char *)buf)[i] & 0xFF)));
+            }
+        }
+        DLOG2(("\n"));
+    }
+
+    if (readBytes == 0) {
+        /* SSH protocol consumed everything.  Come back again. */
+        maybe_readable = Q_TRUE;
+#ifdef Q_PDCURSES_WIN32
+        set_errno(WSAEWOULDBLOCK);
+#else
+        set_errno(EAGAIN);
+#endif /* Q_PDCURSES_WIN32 */
+        return -1;
+    }
+
+    if (readBytes == count) {
+        DLOG(("MAYBE READABLE: TRUE\n"));
+
+        /*
+         * There might still be more data to read due to decompression, have
+         * process_incoming_data() call us again.
+         */
+        maybe_readable = Q_TRUE;
+    } else {
+        DLOG(("MAYBE READABLE: FALSE\n"));
+
+        maybe_readable = Q_FALSE;
+    }
+
+    /* We read something, pass it on. */
+    return readBytes;
+}
+
+/**
+ * Write data from a buffer to the remote system, via an 8-bit clean channel
+ * through the ssh protocol.
+ *
+ * @param fd the socket descriptor
+ * @param buf the buffer to read from
+ * @param count the number of bytes to write to the remote side
+ * @return the number of bytes written
+ */
+ssize_t ssh_write(const int fd, void * buf, size_t count) {
+    int writtenBytes;
+
+    /* Make sure we're supposed to send something */
+    assert(count > 0);
+
+    writtenBytes = libssh2_channel_write(q_ssh_channel, buf, count);
+    if ((writtenBytes < 0) && (writtenBytes != LIBSSH2_ERROR_EAGAIN)) {
+        /* ssh error */
+        emit_ssh_error(q_ssh_session);
+        /* This will be an error */
+        set_errno(EIO);
+        return -1;
+    }
+
+    if (writtenBytes == 0) {
+        /* This isn't EOF yet */
+#ifdef Q_PDCURSES_WIN32
+        set_errno(WSAEWOULDBLOCK);
+#else
+        set_errno(EAGAIN);
+#endif /* Q_PDCURSES_WIN32 */
+        return -1;
+    }
+
+    if (DLOGNAME != NULL) {
+        int i;
+        DLOG(("ssh_write() : wrote %d bytes (count = %d):\n", writtenBytes,
+                (int)count));
+        for (i = 0; i < writtenBytes; i++) {
+            DLOG2((" %02x", (((char *)buf)[i] & 0xFF)));
+        }
+        DLOG2(("\n"));
+        for (i = 0; i < writtenBytes; i++) {
+            if ((((char *)buf)[i] & 0xFF) >= 0x80) {
+                DLOG2((" %02x", (((char *)buf)[i] & 0xFF)));
+            } else {
+                DLOG2((" %c ", (((char *)buf)[i] & 0xFF)));
+            }
+        }
+        DLOG2(("\n"));
+    }
+
+    /* We wrote something, pass it on. */
+    return writtenBytes;
+}
+
+/*
+cdecoder.c - c source to a base64 decoding algorithm implementation
+
+This is part of the libb64 project, and has been placed in the public domain.
+For details, see http://sourceforge.net/projects/libb64
+
+Copied into qodem by Kevin Lamonte.  Originally written by Chris Venter
+chris.venter@gmail.com : http://man9.wordpress.com
+*/
+static int base64_decode_value(char value_in) {
+    static const char decoding[] = {62,-1,-1,-1,63,52,53,54,55,56,57,58,59,60,61,-1,-1,-1,-2,-1,-1,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,-1,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51};
+    static const char decoding_size = sizeof(decoding);
+    value_in -= 43;
+    if (value_in < 0 || value_in > decoding_size) return -1;
+    return decoding[(int)value_in];
+}
+
+static void base64_init_decodestate(base64_decodestate* state_in) {
+    state_in->step = step_a;
+    state_in->plainchar = 0;
+}
+
+static int base64_decode_block(const char* code_in, const int length_in,
+    char* plaintext_out, base64_decodestate* state_in) {
+
+    const char* codechar = code_in;
+    char* plainchar = plaintext_out;
+    char fragment;
+
+    *plainchar = state_in->plainchar;
+
+    switch (state_in->step) {
+        while (1) {
+        case step_a:
+            do {
+                if (codechar == code_in+length_in) {
+                    state_in->step = step_a;
+                    state_in->plainchar = *plainchar;
+                    return plainchar - plaintext_out;
+                }
+                fragment = (char)base64_decode_value(*codechar++);
+            } while (fragment < 0);
+            *plainchar    = (fragment & 0x03f) << 2;
+        case step_b:
+            do {
+                if (codechar == code_in+length_in) {
+                    state_in->step = step_b;
+                    state_in->plainchar = *plainchar;
+                    return plainchar - plaintext_out;
+                }
+                fragment = (char)base64_decode_value(*codechar++);
+            } while (fragment < 0);
+            *plainchar++ |= (fragment & 0x030) >> 4;
+            *plainchar    = (fragment & 0x00f) << 4;
+        case step_c:
+            do {
+                if (codechar == code_in+length_in) {
+                    state_in->step = step_c;
+                    state_in->plainchar = *plainchar;
+                    return plainchar - plaintext_out;
+                }
+                fragment = (char)base64_decode_value(*codechar++);
+            } while (fragment < 0);
+            *plainchar++ |= (fragment & 0x03c) >> 2;
+            *plainchar    = (fragment & 0x003) << 6;
+        case step_d:
+            do {
+                if (codechar == code_in+length_in) {
+                    state_in->step = step_d;
+                    state_in->plainchar = *plainchar;
+                    return plainchar - plaintext_out;
+                }
+                fragment = (char)base64_decode_value(*codechar++);
+            } while (fragment < 0);
+            *plainchar++   |= (fragment & 0x03f);
+        }
+    }
+    /* control should not reach here */
+    return plainchar - plaintext_out;
+}
+
+#endif /* Q_SSH_LIBSSH2 */
+
+#endif /* defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2) */

@@ -2031,7 +2031,7 @@ void create_phonebook() {
     save_phonebook(Q_FALSE);
 }
 
-#ifdef Q_SSH_CRYPTLIB
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
 /* Forward reference for function called in do_dialer() */
 static Q_BOOL prompt_ssh_password(const wchar_t * initial_username,
                                   wchar_t ** returned_username,
@@ -2047,7 +2047,7 @@ static Q_BOOL prompt_ssh_password(const wchar_t * initial_username,
  */
 void do_dialer() {
 
-#ifdef Q_SSH_CRYPTLIB
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
     wchar_t * ssh_username = NULL;
     wchar_t * ssh_password = NULL;
 #endif
@@ -2062,7 +2062,7 @@ void do_dialer() {
         q_status.current_password = NULL;
     }
 
-#ifdef Q_SSH_CRYPTLIB
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
 
     /*
      * Make sure for SSH connections we have both the username and password
@@ -2121,7 +2121,7 @@ void do_dialer() {
     q_status.current_password =
         Xwcsdup(q_current_dial_entry->password, __FILE__, __LINE__);
 
-#endif /* Q_SSH_CRYPTLIB */
+#endif /* defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2) */
 
 #ifndef Q_NO_SERIAL
     /*
@@ -2842,7 +2842,7 @@ static char * pick_tag_string() {
     return NULL;
 }
 
-#ifdef Q_SSH_CRYPTLIB
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
 /**
  * Prompt the user for ssh username and password.
  *
@@ -3047,7 +3047,7 @@ static Q_BOOL prompt_ssh_password(const wchar_t * initial_username,
     return Q_FALSE;
 }
 
-#endif /* Q_SSH_CRYPTLIB */
+#endif /* defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2) */
 
 #ifndef Q_NO_SERIAL
 

@@ -34,8 +34,11 @@
 #include <string.h>
 #include <assert.h>
 
-#ifdef Q_SSH_CRYPTLIB
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
 #include <sys/time.h>
+#endif
+
+#ifdef Q_SSH_CRYPTLIB
 
 /*
  * SSH uses cryptlib, it's a very straightforward library.  We need to define
@@ -57,6 +60,10 @@ extern "C" {
 }
 #endif
 
+#endif /* Q_SSH_CRYPTLIB */
+
+#ifdef Q_SSH_LIBSSH2
+#include <libssh2.h>
 #endif
 
 #include "qodem.h"
@@ -333,7 +340,7 @@ static struct option q_getopt_long_options[] = {
  * get_workingdir_filename(), and get_scriptdir_filename().
  */
 static char datadir_filename[FILENAME_SIZE];
-#ifdef Q_SSH_CRYPTLIB
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
 
 /*
  * The SSH socket will always be periodically checked.
@@ -345,7 +352,7 @@ static suseconds_t ssh_last_time = 1000000;
 #endif
 static struct timeval ssh_tv;
 
-#endif /* Q_SSH_CRYPTLIB */
+#endif /* defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2) */
 
 #if defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32)
 /*
@@ -563,11 +570,13 @@ do_write:
     ) {
         /* Socket */
         rc = send(fd, write_buffer + begin, data_n, 0);
-#ifdef Q_SSH_CRYPTLIB
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
     } else if (((q_status.dial_method == Q_DIAL_METHOD_SSH) &&
-            (net_is_connected() == Q_TRUE)) ||
-        (((q_program_state == Q_STATE_HOST) || (q_host_active == Q_TRUE)) &&
+            (net_is_connected() == Q_TRUE))
+#ifdef Q_SSH_CRYPTLIB
+        || (((q_program_state == Q_STATE_HOST) || (q_host_active == Q_TRUE)) &&
             (q_host_type == Q_HOST_TYPE_SSHD))
+#endif
     ) {
         /* SSH */
         rc = ssh_write(fd, write_buffer + begin, data_n);
@@ -761,11 +770,13 @@ static ssize_t qodem_read(const int fd, void * buf, size_t count) {
         /* Socket */
         return recv(fd, (char *)buf, count, 0);
     }
-#ifdef Q_SSH_CRYPTLIB
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
     if (((q_status.dial_method == Q_DIAL_METHOD_SSH) &&
-            (net_is_connected() == Q_TRUE)) ||
-        (((q_program_state == Q_STATE_HOST) || (q_host_active == Q_TRUE)) &&
+            (net_is_connected() == Q_TRUE))
+#ifdef Q_SSH_CRYPTLIB
+        || (((q_program_state == Q_STATE_HOST) || (q_host_active == Q_TRUE)) &&
             (q_host_type == Q_HOST_TYPE_SSHD))
+#endif
     ) {
         /* SSH */
         return ssh_read(fd, buf, count);
@@ -1550,12 +1561,14 @@ static Q_BOOL is_readable(int fd) {
         }
     }
 
-#ifdef Q_SSH_CRYPTLIB
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
     /* SSH special case: see if we should read again anyway */
     if (((q_status.dial_method == Q_DIAL_METHOD_SSH) &&
-            (net_is_connected() == Q_TRUE)) ||
-        (((q_program_state == Q_STATE_HOST) || (q_host_active == Q_TRUE)) &&
+            (net_is_connected() == Q_TRUE))
+#ifdef Q_SSH_CRYPTLIB
+        || (((q_program_state == Q_STATE_HOST) || (q_host_active == Q_TRUE)) &&
             (q_host_type == Q_HOST_TYPE_SSHD))
+#endif
     ) {
         if (fd == q_child_tty_fd) {
             if (ssh_maybe_readable() == Q_TRUE) {
@@ -1673,7 +1686,7 @@ static void process_incoming_data() {
         (wait_on_script == Q_FALSE)
     ) {
 
-#ifdef Q_SSH_CRYPTLIB
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
         ssh_last_time = ssh_tv.tv_usec;
 #endif
 
@@ -1709,7 +1722,7 @@ static void process_incoming_data() {
                             (net_is_connected() == Q_TRUE)) ||
                         ((q_status.dial_method == Q_DIAL_METHOD_RLOGIN) &&
                             (net_is_connected() == Q_TRUE)) ||
-#ifdef Q_SSH_CRYPTLIB
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
                         ((q_status.dial_method == Q_DIAL_METHOD_SSH) &&
                             (net_is_connected() == Q_TRUE)) ||
 #endif
@@ -2802,7 +2815,7 @@ static void data_handler() {
             (q_program_state == Q_STATE_DIALER) ||
             (q_program_state == Q_STATE_SCRIPT_EXECUTE) ||
             (q_program_state == Q_STATE_HOST)
-#ifdef Q_SSH_CRYPTLIB
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
             || ((q_status.dial_method == Q_DIAL_METHOD_SSH) &&
                 (net_is_connected() == Q_TRUE) &&
                 (is_readable(q_child_tty_fd)))
@@ -3665,6 +3678,17 @@ no_initial_call:
         }
 #endif
 
+#ifdef Q_SSH_LIBSSH2
+        if (libssh2_init(0) < 0) {
+            screen_put_color_printf_yx(0, 0, Q_COLOR_CONSOLE_TEXT,
+                _("Error initializing libssh2\n"));
+            screen_put_color_printf_yx(3, 0, Q_COLOR_CONSOLE_TEXT,
+                _("Press any key to continue...\n"));
+            screen_flush();
+            discarding_getch();
+        }
+#endif
+
         /* Enter main loop */
         for (;;) {
             /* Window size checks, refresh, etc. */
@@ -3706,6 +3730,10 @@ no_initial_call:
 
 #ifdef Q_SSH_CRYPTLIB
     cryptEnd();
+#endif
+
+#ifdef Q_SSH_LIBSSH2
+    libssh2_exit();
 #endif
 
 #ifdef Q_PDCURSES_WIN32

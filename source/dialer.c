@@ -921,7 +921,7 @@ void dial_out(struct q_phone_struct * target) {
         do_network_connect = Q_TRUE;
         setup_dial_screen();
         q_child_tty_fd = net_connect_start(target->address, target->port);
-#ifdef Q_SSH_CRYPTLIB
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
     } else if ((target->method == Q_DIAL_METHOD_SSH) &&
                (q_status.external_ssh == Q_FALSE)) {
         /*

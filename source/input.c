@@ -1401,7 +1401,7 @@ void send_screen_size() {
         if (q_status.dial_method == Q_DIAL_METHOD_RLOGIN) {
             rlogin_resize_screen(HEIGHT - STATUS_HEIGHT, WIDTH);
         }
-#ifdef Q_SSH_CRYPTLIB
+#if defined(Q_SSH_CRYPTLIB) || defined(Q_SSH_LIBSSH2)
         if (q_status.dial_method == Q_DIAL_METHOD_SSH) {
             ssh_resize_screen(HEIGHT - STATUS_HEIGHT, WIDTH);
         }

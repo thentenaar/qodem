@@ -33,6 +33,10 @@ default: qodem
 #                      rather than spawn the ssh binary through a pty.
 #                      You will need to add cryptlib.a to LDFLAGS.
 #
+# Q_SSH_LIBSSH2      - Use the libssh2 library to do ssh connections
+#                      rather than spawn the ssh binary through a pty.
+#                      You will need to add libssh2.a or -lssh2 to LDFLAGS.
+#
 # Q_UPNP             - Include support for miniupmpc-1.4.  You will need to
 #                      add -Iupmp/miniupnpc-1.4 to CFLAGS, and the following
 #                      to LDLIBS:
@@ -72,6 +76,12 @@ QODEM_EXE = $(QODEM_BIN_DIR)/qodem
 INC = -I$(QODEM_SRC_DIR)
 LDFLAGS =
 
+# libssh2 + mbedtls support
+LIBSSH2_DIR = /usr/local
+LIBSSH2_INC = $(LIBSSH2_DIR)/include
+LIBSSH2_A = $(LIBSSH2_DIR)/lib/libssh2.a
+MBEDTLS_A = $(LIBSSH2_DIR)/lib/libmbedtls.a $(LIBSSH2_DIR)/lib/libmbedcrypto.a
+
 # cryptlib support
 CRYPTLIB_DIR = lib/cryptlib
 CRYPTLIB_A = $(CRYPTLIB_DIR)/libcl.a
@@ -101,6 +111,11 @@ LDLIBS = -lncursesw -lutil
 # CFLAGS = -O0 -Wall -ggdb $(INC) -DHAVE_NCURSESW_CURSES_H $(EXTRA_INC) -DQ_SSH_CRYPTLIB -DCONFIG_PROFILE_SSH -DQ_UPNP
 # LDLIBS = -lncursesw -lutil $(CRYPTLIB_A) $(MINIUPNPC_A) -lpthread
 
+# Debug settings which include libssh2 support
+EXTRA_LIBS = $(LIBSSH2_A)
+EXTRA_INC = -I$(LIBSSH2_INC)
+CFLAGS = -O0 -Wall -ggdb $(INC) -DHAVE_NCURSESW_CURSES_H $(EXTRA_INC) -DQ_SSH_LIBSSH2
+LDLIBS = -lncursesw -lutil $(LIBSSH2_A) $(MBEDTLS_A) -lpthread -lz -lgcrypt
 
 # ----------------------------------------------------------------------------
 # What's below this line should not require modifications
