@@ -1823,10 +1823,10 @@ void render_scrollback(const int skip_lines) {
              * X11 version tries to draw.
              */
             if ((has_true_doublewidth() == Q_TRUE) &&
-                (q_program_state == Q_STATE_CONSOLE) ||
-                (q_program_state == Q_STATE_SCRIPT_EXECUTE) ||
-                (q_program_state == Q_STATE_HOST) ||
-                (q_program_state == Q_STATE_SCROLLBACK)
+                ((q_program_state == Q_STATE_CONSOLE) ||
+                 (q_program_state == Q_STATE_SCRIPT_EXECUTE) ||
+                 (q_program_state == Q_STATE_HOST) ||
+                 (q_program_state == Q_STATE_SCROLLBACK))
             ) {
                 if ((line->double_width == Q_TRUE) &&
                     (line->double_height == 0)
