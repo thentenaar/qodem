@@ -1,6 +1,124 @@
 The Qodem Project Work Log
 ==========================
 
+May 27, 2017
+
+I've got the release build VMs up and running again.  My main laptop
+can build everything except the Mac binary, but I've got a new Mac
+Mini (Sierra) to do that now.  I need to check the man page and help
+text, update the BBS list, and sweep the README and index.html.  Might
+get some of that wrapped tomorrow.
+
+I've got 38 days until July 4, but need to release before June 22 so
+about 25 days left on the clock to 1.0.0.  So I will get the latest
+BBS list and spin the final build on Windows first, and then keep
+going down the TGR list.  I probably won't hit every item on that
+list, but even so this will be the most stable release since 0.3.2.
+
+And one that I will be content being the last release for a very long
+while.  It is now time to put in writing my feelings on a few
+matters...
+
+-----
+
+Qodem has taken a very long effort, and I feel that I am reaching the
+finish line just in time for the last staff member to be leaving the
+stadium and turning out the lights.  Or perhaps one could say I am
+putting the finishing touches on one of the coolest transoceanic
+sailing ships in the world, at a time when no one has enough vacation
+time from work to actually travel in it.
+
+The programming world has become all about Optional<T>, functional
+programming, and HTML/CSS/JS on the backend.  The Internet of Things
+(Internet of Shit) is taking over seemingly everywhere.  Just today I
+had to spend more money for a house thermostat that didn't require
+wifi or a twelve-page manual to program it.  On the Linux side,
+systemd ... well, I didn't have any real problems with init; nor did I
+have a need for PulseAudio so that videophone calls could seamlessly
+transition from speaker to USB or bluetooth headphones, I was doing
+alright with alsa.  In fact, I could be pretty content with KDE 3.x,
+Debian Sarge, and Java 1.7.  Or on the other side Windows 2000, Office
+XP, and Firefox 3.x.
+
+Modern computing isn't what I like anymore.  I don't want to HAVE to
+be connected to the Internet or my game won't run, and I don't want my
+motherboard to REQUIRE some unauditable "security processor" to have
+backdoor access to everything behind my operating system's back when I
+AM connected to the Internet.  I don't want my IDE to have to go
+online to pull a zillion dependencies just to get Hello World running
+on whatever today's latest fashionable GUI framework.  And flat icon
+themes, just fucking yuck.
+
+Last year I moved houses, and I took the unusual step of not moving my
+broadband service with me.  My wife has one smartphone which we share
+for email, weather, and light browsing; I have a dumbphone for texting
+and voice calls.  I do my basic news headlines from work, and we go to
+the local library a few hours each week to do bills and (for me) sync
+with github.  It all reminds me more than a little of BBS life.  I
+PLAN my time to be online now, it doesn't follow me everywhere.  I
+notice all the other things that are not being done while I am online,
+because online means not at home now and things like dishes and
+yardwork and reading physical books is not happening when one is
+clicking away at web sites.  Sometimes I really look forward to a few
+hours at the library, accessing the sites my work filters off.  (Note
+to industrial manufacturing companies stuck on the Microsoft stack:
+filtering out open source sites is NOT helping you be more
+competitive.)
+
+But this is also a curious inversion of the BBS era: I am the one
+offline, choosing NOT to sink time into conversing with people all
+over the world, while everyone else in high school^W^W the world is
+caught up with the latest crazes from gossip magazines^W^W
+television^W movies^W Facebook / Reddit / WhatsApp / Snapchat /
+Instagram / Twitter / whatever.  Professional programmers are
+investing millions of lines of code into Hadoop cluster managers,
+Docker container managers, CSS layout engines, and stupendously huge
+thick client JavaScript libraries, while I putt putt in my hobby hours
+working on bleeding-edge technologies circa 1993: file transfer
+protocols, text-based user interface, a compiler targeting DOS, and a
+chemical process simulator.  My biggest insights come not from
+programming or engineering sites/blogs but from dead-tree textbooks
+straight out of the 1980's that I pick up at used bookstores.
+
+But unlike the BBS era, the world will never come to understand what I
+like about MY stuff.  They are headed off to the singularity/cyberpunk
+futures of _Rainbows End_ and _Idoru_: near-total VR immersion and
+augmented reality.  What I want -- computers that work as I (and no
+one else) tell them to, computers that make ME a bigger thinking
+entity, programming languages that favor stability and teachability to
+others over syntax fashions and IDE glitz -- will never become the
+focus again.  There is no money in it.  And there never were, and
+never will be enough people with the capability to do this work that
+will pay for the infrastructure needed to sustain it.  Why would any
+business approve an engineer's request for a $10k POWER system that
+behaves as a computer should when there are $1k ARM/X86 spy-boxes for
+sale in every grocery and office supply store?  The money instead is
+in turning computers into telescreens, windows for other entities to
+peer into one's life to slice and dice and carefully measure the
+masses of humanity.  To find out their dreams in order to manipulate
+them to support the existing social order, to discover their talents
+and passions in order to nudge them into more profitable avenues, and
+as a last resort to collect blackmail should they decide to enter
+politics.  The Internet pioneers of the IETF, IANA, and everybody else
+thought they were creating a fertile breeding ground for anyone to
+become the next Craigslist / Reddit / Amazon / Google / Netflix, but
+what they have actually brought about is the Great Firewall and the
+Snowden revelations.
+
+I am glad that Qodem has reached this point, that it is in my mind
+"complete."  But I am also sad that in the time it took to get here
+the world abandoned the general-purpose computing concept which tools
+like Qodem are intended to support.
+
+After Qodem is released, I will be taking a step back from programming
+in general.  Some things I've learned will still be published,
+someday: Jermit for the file transfer protocols, Jexer for Xterm- and
+Unicode-isms.  Bug fixes will be worked on, but at a more sedate pace.
+
+
+-----
+
+
 March 11, 2017
 
 The Great Regression (TGR) finally begins.  Only about 8 years after I

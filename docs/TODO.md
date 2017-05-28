@@ -41,13 +41,14 @@ Regression Checklist
     View file
     View log file
     Send break
-    Launch mail reader
+√   Launch mail reader
+√   Operating system shell
     Capture
       Raw
       Normal
       Html
 
-√  UI Conventions
+  UI Conventions
     F10 -> Enter or Alt-Enter
     F2 -> Space
 
@@ -88,7 +89,7 @@ Regression Checklist
     Xmodem 1k-G
     Ymodem
     Ymodem G
-    Zmodem
+√   Zmodem
     Kermit
 
   Downloads
@@ -100,7 +101,7 @@ Regression Checklist
     Xmodem 1k-G
     Ymodem
     Ymodem G
-    Zmodem
+√   Zmodem
     Kermit
 
   Scripts
