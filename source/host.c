@@ -1995,7 +1995,7 @@ static void hangup(char *msg) {
             if (Q_SERIAL_OPEN) {
                 if (q_host_type != Q_HOST_TYPE_SERIAL) {
                     /*
-                     * Modem
+                     * Modem: close it to force DCD drop.
                      */
                     close_serial_port();
                 }
@@ -2012,6 +2012,16 @@ static void hangup(char *msg) {
     }
 
     reset_host();
+
+#ifndef Q_NO_SERIAL
+    if (q_host_type == Q_HOST_TYPE_MODEM) {
+        /*
+         * Modem: re-open serial port (to reset).
+         */
+        open_serial_port();
+    }
+#endif
+
     do_menu(_(EOL "Waiting for next call..." EOL));
     qlog(_("Host mode waiting for next call...\n"));
 }
@@ -2552,6 +2562,12 @@ static void host_modem_data(unsigned char * input, unsigned int input_n,
 
                 qlog(_("Host mode connection established at %s baud.\n"),
                     q_serial_port.dce_baud);
+
+                /*
+                 * Toss the input seen so that it doesn't make it to
+                 * do_login().
+                 */
+                *remaining = 0;
 
                 /*
                  * Change online here so that my caller knows to move to

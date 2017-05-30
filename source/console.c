@@ -1217,6 +1217,7 @@ void console_keyboard_handler(int keystroke, int flags) {
                         return;
                     }
 
+                    assert(port != NULL);
                     break;
 #ifndef Q_NO_SERIAL
                 case Q_HOST_TYPE_MODEM:
@@ -1227,7 +1228,6 @@ void console_keyboard_handler(int keystroke, int flags) {
                     break;
 #endif
                 }
-                assert(port != NULL);
 
                 /*
                  * Switch state first, because host_start() might switch back

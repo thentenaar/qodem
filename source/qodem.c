@@ -1285,6 +1285,8 @@ void qlog(const char * format, ...) {
     time_t current_time;
     va_list arglist;
 
+    DLOG(("QLOG: %s", format));
+
     if (q_status.logging == Q_FALSE) {
         return;
     }
@@ -2686,11 +2688,13 @@ static void data_handler() {
 #ifndef Q_NO_SERIAL
 
         /*
-         * Check for DCD drop, but NOT if the host is running in serial mode.
+         * Check for DCD drop, but NOT if the host is running in serial or
+         * modem mode.
          */
         if ((q_status.online == Q_TRUE) && Q_SERIAL_OPEN &&
             !((q_program_state == Q_STATE_HOST) &&
-                (q_host_type == Q_HOST_TYPE_SERIAL))
+                ((q_host_type == Q_HOST_TYPE_SERIAL) ||
+                 (q_host_type == Q_HOST_TYPE_MODEM)))
         ) {
             query_serial_port();
             if (q_serial_port.rs232.DCD == Q_FALSE) {
