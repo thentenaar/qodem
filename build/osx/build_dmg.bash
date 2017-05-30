@@ -29,6 +29,6 @@ cp -r Qodem.app dmg
 cp ../../README.md dmg/README.txt
 cp ../../ChangeLog dmg/ChangeLog.txt
 cp ../../CREDITS dmg/CREDITS.txt
-cp ../../misc/ibbs0416.txt dmg/ibbs0416.txt
+cp ../../misc/ibbs0517.txt dmg/ibbs0517.txt
 
 genisoimage -V qodem -D -R -apple -no-pad -o qodem-${VERSION}.dmg dmg
