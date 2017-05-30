@@ -45,7 +45,7 @@ Source: "E:\qodem2k\git\qodem\README.md"; DestDir: "{app}"; DestName: "README.tx
 Source: "E:\qodem2k\git\qodem\ChangeLog"; DestDir: "{app}"; DestName: "ChangeLog.txt"
 Source: "E:\qodem2k\git\qodem\CREDITS"; DestDir: "{app}"; DestName: "CREDITS.txt"
 Source: "E:\qodem2k\git\qodem\FILE_ID.DIZ"; DestDir: "{app}";
-Source: "E:\qodem2k\git\qodem\misc\ibbs0416.txt"; DestDir: "{userdocs}\qodem\prefs"
+Source: "E:\qodem2k\git\qodem\misc\ibbs0517.txt"; DestDir: "{userdocs}\qodem\prefs"
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

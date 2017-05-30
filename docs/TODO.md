@@ -110,8 +110,8 @@ Regression Checklist
     socket
     ssh
     telnet
-    serial
-    modem
+√   serial
+√   modem
 
   Phonebook:
     Find
