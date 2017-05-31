@@ -462,6 +462,8 @@ int qodem_write(const int fd, const char * data, const int data_n,
     }
 
     if (sync == Q_TRUE) {
+        DLOG(("qodem_write() SYNC is TRUE\n"));
+
         /*
          * Every caller that syncs is sending data in console mode: emulation
          * responses, modem command strings, and keystrokes.  The only caller
@@ -681,6 +683,15 @@ do_write:
     if (rc < 0) {
         DLOG(("qodem_write() write() error %s (%d)\n", get_strerror(old_errno),
                 old_errno));
+    } else if (rc == 0) {
+        DLOG(("qodem_write() write() RC=0\n"));
+
+        if (sync == Q_TRUE) {
+            DLOG(("qodem_write() write() RC=0 SYNC is true, go back\n"));
+            goto do_write;
+        }
+    } else {
+        DLOG(("qodem_write() write() %d bytes written\n", rc));
     }
 
     if (sync == Q_TRUE) {
@@ -694,8 +705,20 @@ do_write:
                  * write.
                  */
                 goto do_write;
+            } else {
+#ifndef Q_PDCURSES_WIN32
+#ifndef Q_NO_SERIAL
+                /*
+                 * The last write was successful, all bytes are written.  Now
+                 * encourage the bytes to actually go out.
+                 */
+                if (Q_SERIAL_OPEN) {
+                    tcdrain(fd);
+                }
+#endif
+#endif
             }
-        } else if ((error == EAGAIN) ||
+        } else if ((rc == 0) || (error == EAGAIN) ||
 #ifdef Q_PDCURSES_WIN32
             (error == WSAEWOULDBLOCK)
 #else
@@ -707,6 +730,7 @@ do_write:
              */
             goto do_write;
         }
+
     }
 
     /* Reset clock for keepalive/idle timeouts */

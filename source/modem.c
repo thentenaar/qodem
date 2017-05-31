@@ -51,6 +51,10 @@
 #define MODEM_CONFIG_FILENAME   "modem.cfg"
 #define MODEM_CONFIG_LINE_SIZE  128
 
+/* Set this to a not-NULL value to enable debug log. */
+/* static const char * DLOGNAME = "modem"; */
+static const char * DLOGNAME = NULL;
+
 #ifdef Q_PDCURSES_WIN32
 
 /**
@@ -1497,6 +1501,9 @@ exit_dialog:
 static void send_modem_string(const char * string) {
     char ch;
     int i;
+    int n;
+
+    DLOG(("send_modem_string(): '%s'\n", string));
 
 #ifdef Q_PDCURSES_WIN32
     assert(q_serial_handle != NULL);
@@ -1504,8 +1511,12 @@ static void send_modem_string(const char * string) {
     assert(q_child_tty_fd != -1);
 #endif
 
-    for (i = 0; i < strlen(string); i++) {
+    n = strlen(string);
+    for (i = 0; i < n; i++) {
         ch = string[i];
+
+        DLOG(("send_modem_string(): --> '%c'\n", ch));
+
         if (ch == '~') {
             /*
              * Pause 1/2 second
@@ -1520,7 +1531,7 @@ static void send_modem_string(const char * string) {
              * Control char
              */
             i++;
-            if (i < strlen(string)) {
+            if (i < n) {
                 ch = string[i];
                 /*
                  * Bring into control char range
@@ -1698,43 +1709,47 @@ void hangup_modem() {
     assert(q_serial_handle != NULL);
     assert(Q_SERIAL_OPEN);
 
-    /*
-     * First, drop DTR.  Most modems will hangup with this.
-     */
-    rc = EscapeCommFunction(q_serial_handle, CLRDTR);
-    if (rc == FALSE) {
-        /*
-         * Uh-oh
-         */
-        goto hangup_modem_last_chance;
-    }
-    Sleep(1000);
+    if (q_status.ignore_dcd == Q_FALSE) {
 
-    /*
-     * See if CD is still there.
-     */
-    rc = GetCommModemStatus(q_serial_handle, &pins);
-    if (rc == FALSE) {
         /*
-         * Uh-oh
+         * First, drop DTR.  Most modems will hangup with this.
          */
-        goto hangup_modem_restore_dtr;
-    }
-    if ((pins & MS_RLSD_ON) == 0) {
+        rc = EscapeCommFunction(q_serial_handle, CLRDTR);
+        if (rc == FALSE) {
+            /*
+             * Uh-oh
+             */
+            goto hangup_modem_last_chance;
+        }
+        Sleep(1000);
+
         /*
-         * DCD went down, we're done.
+         * See if CD is still there.
          */
-        do_hangup_string = Q_FALSE;
-    }
+        rc = GetCommModemStatus(q_serial_handle, &pins);
+        if (rc == FALSE) {
+            /*
+             * Uh-oh
+             */
+            goto hangup_modem_restore_dtr;
+        }
+        if ((pins & MS_RLSD_ON) == 0) {
+            /*
+             * DCD went down, we're done.
+             */
+            do_hangup_string = Q_FALSE;
+        }
 
 hangup_modem_restore_dtr:
-    rc = EscapeCommFunction(q_serial_handle, SETDTR);
-    if (rc == FALSE) {
-        /*
-         * Uh-oh
-         */
-        goto hangup_modem_last_chance;
-    }
+        rc = EscapeCommFunction(q_serial_handle, SETDTR);
+        if (rc == FALSE) {
+            /*
+             * Uh-oh
+             */
+            goto hangup_modem_last_chance;
+        }
+
+    } /* if (q_status.ignore_dcd == Q_FALSE) */
 
 hangup_modem_last_chance:
     /*
@@ -2127,57 +2142,61 @@ void hangup_modem() {
     assert(q_child_tty_fd != -1);
     assert(Q_SERIAL_OPEN);
 
-    /*
-     * First, drop DTR.  Most modems will hangup with this.
-     */
-    rc = ioctl(q_child_tty_fd, TIOCMGET, &pins);
-    if (rc < 0) {
-        /*
-         * Uh-oh
-         */
-        goto hangup_modem_last_chance;
-    }
-    if ((pins & TIOCM_DTR) != 0) {
-        /*
-         * If DTR is set, drop it, sleep 1 second, and bring it back up.
-         */
-        pins = pins & ~TIOCM_DTR;
-        rc = ioctl(q_child_tty_fd, TIOCMSET, &pins);
-        if (rc < 0) {
-            /*
-             * Uh-oh
-             */
-            goto hangup_modem_last_chance;
-        }
-        sleep(1);
+    if (q_status.ignore_dcd == Q_FALSE) {
 
         /*
-         * See if CD is still there.
+         * First, drop DTR.  Most modems will hangup with this.
          */
         rc = ioctl(q_child_tty_fd, TIOCMGET, &pins);
         if (rc < 0) {
             /*
              * Uh-oh
              */
-            goto hangup_modem_restore_dtr;
-        }
-        if ((pins & TIOCM_CAR) == 0) {
-            /*
-             * DCD went down, we're done.
-             */
-            do_hangup_string = Q_FALSE;
-        }
-
-hangup_modem_restore_dtr:
-        pins = pins | TIOCM_DTR;
-        rc = ioctl(q_child_tty_fd, TIOCMSET, &pins);
-        if (rc < 0) {
-            /*
-             * Uh-oh
-             */
             goto hangup_modem_last_chance;
         }
-    }
+        if ((pins & TIOCM_DTR) != 0) {
+            /*
+             * If DTR is set, drop it, sleep 1 second, and bring it back up.
+             */
+            pins = pins & ~TIOCM_DTR;
+            rc = ioctl(q_child_tty_fd, TIOCMSET, &pins);
+            if (rc < 0) {
+                /*
+                 * Uh-oh
+                 */
+                goto hangup_modem_last_chance;
+            }
+            sleep(1);
+
+            /*
+             * See if CD is still there.
+             */
+            rc = ioctl(q_child_tty_fd, TIOCMGET, &pins);
+            if (rc < 0) {
+                /*
+                 * Uh-oh
+                 */
+                goto hangup_modem_restore_dtr;
+            }
+            if ((pins & TIOCM_CAR) == 0) {
+                /*
+                 * DCD went down, we're done.
+                 */
+                do_hangup_string = Q_FALSE;
+            }
+
+hangup_modem_restore_dtr:
+            pins = pins | TIOCM_DTR;
+            rc = ioctl(q_child_tty_fd, TIOCMSET, &pins);
+            if (rc < 0) {
+                /*
+                 * Uh-oh
+                 */
+                goto hangup_modem_last_chance;
+            }
+        }
+
+    } /* if (q_status.ignore_dcd == Q_FALSE) */
 
 hangup_modem_last_chance:
     /*

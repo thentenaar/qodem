@@ -8316,32 +8316,6 @@ static void modem_data(unsigned char * input, unsigned int input_n,
         DLOG(("modem_data() MODEM_SENT_AT\n"));
 
         if (complete_line == Q_TRUE) {
-            /*
-             * Expect OK
-             */
-            if (strcasecmp(q_dialer_modem_message, "at") == 0) {
-                /*
-                 * Modem echo is on, just discard this part
-                 */
-
-                /*
-                 * Clear modem message
-                 */
-                memset(q_dialer_modem_message, 0,
-                       sizeof(q_dialer_modem_message));
-
-                /*
-                 * Toss the input seen so far
-                 */
-                *remaining -= strlen(begin);
-                if (*remaining < 0) {
-                    *remaining = 0;
-                }
-            }
-
-            /*
-             * Expect OK
-             */
             if (strcasecmp(q_dialer_modem_message, "ok") == 0) {
                 DLOG(("modem_data() MODEM_SENT_AT ** OK **\n"));
                 /*
@@ -8370,6 +8344,20 @@ static void modem_data(unsigned char * input, unsigned int input_n,
                  * New state
                  */
                 modem_state = DIAL_MODEM_SENT_DIAL_STRING;
+
+            } else {
+                /*
+                 * Modem sent something else, just discard this part.  But
+                 * keep it on the display.
+                 */
+
+                /*
+                 * Toss the input seen so far
+                 */
+                *remaining -= strlen(begin);
+                if (*remaining < 0) {
+                    *remaining = 0;
+                }
             }
         }
 
@@ -8405,14 +8393,10 @@ static void modem_data(unsigned char * input, unsigned int input_n,
                 if (*remaining < 0) {
                     *remaining = 0;
                 }
-            }
-            if ((strstr(q_dialer_modem_message, q_modem_config.dial_string) !=
-                 NULL) ||
-                (strstr(q_dialer_modem_message, q_current_dial_entry->address)
-                 != NULL)) {
+            } else {
                 /*
-                 * Modem echo is on, just discard this part.  But keep it on
-                 * the display.
+                 * Modem sent something else, just discard this part.  But
+                 * keep it on the display.
                  */
 
                 /*
@@ -8491,7 +8475,7 @@ static void modem_data(unsigned char * input, unsigned int input_n,
                 modem_state = DIAL_MODEM_CONNECTED;
                 time(&q_dialer_cycle_start_time);
 
-                qlog(_("CONNECTION ESTABLISHED: %s baud\n"),
+                qlog(_("CONNECTION ESTABLISHED: %d baud\n"),
                     q_serial_port.dce_baud);
 
                 /*
