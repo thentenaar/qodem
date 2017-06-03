@@ -1,6 +1,21 @@
 The Qodem Project Work Log
 ==========================
 
+June 2, 2017
+
+I have been tackling a dialup failure a user reported, using a null
+modem cable to simulate both ends of the link.  I discovered that
+close() on a serial port could fail to flush the buffer, so added
+tcdrain() to qodem_write() when sync is true to cover that case.  It
+was needed because it appears that the modem the user is using is
+either slow to assert or doesn't use at all DCD, so I added a new
+option ignore_dcd and needed to make hangup_modem() rely on the hangup
+string (+++ATH0) rather than just drop DTR.
+
+Respun all the builds, and then noticed that I had the same %s baud
+crash in host mode connection string, so have to do it all over
+again.  Sigh...
+
 May 27, 2017
 
 I've got the release build VMs up and running again.  My main laptop

@@ -2560,7 +2560,7 @@ static void host_modem_data(unsigned char * input, unsigned int input_n,
                     }
                 }
 
-                qlog(_("Host mode connection established at %s baud.\n"),
+                qlog(_("Host mode connection established at %d baud.\n"),
                     q_serial_port.dce_baud);
 
                 /*
