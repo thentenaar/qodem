@@ -125,6 +125,11 @@ extern void set_raw_termios(const int tty_fd);
  */
 extern void dial_success();
 
+/**
+ * See if a dialup script was specified, and if so execute it.
+ */
+extern void check_for_dialup_script();
+
 #ifdef __cplusplus
 }
 #endif

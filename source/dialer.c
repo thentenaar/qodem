@@ -722,6 +722,48 @@ static void setup_dial_screen() {
 }
 
 /**
+ * See if a dialup script was specified, and if so execute it.
+ */
+void check_for_dialup_script() {
+    /*
+     * Execute script if supplied.
+     */
+    if (q_scrfile != NULL) {
+        if (file_exists(get_scriptdir_filename(q_scrfile)) == Q_TRUE) {
+            if (q_status.quicklearn == Q_FALSE) {
+                /*
+                 * Execute script if supplied
+                 */
+                if (q_status.read_only == Q_FALSE) {
+                    script_start(q_scrfile);
+                }
+            }
+        }
+        Xfree(q_scrfile, __FILE__, __LINE__);
+        q_scrfile = NULL;
+    } else {
+        if (q_current_dial_entry->script_filename != NULL) {
+            if ((strlen(q_current_dial_entry->script_filename) > 0) &&
+                (file_exists(get_scriptdir_filename(
+                    q_current_dial_entry->script_filename)) == Q_TRUE)
+            ) {
+                if ((q_status.quicklearn == Q_FALSE) &&
+                    (q_current_dial_entry->quicklearn == Q_FALSE)
+                ) {
+                    /*
+                     * We're not quicklearning, start the script
+                     */
+                    if (q_status.read_only == Q_FALSE) {
+                        script_start(
+                        q_current_dial_entry->script_filename);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
  * Called upon the completion of a successful connection.
  */
 void dial_success() {
@@ -763,10 +805,7 @@ void dial_success() {
         q_phonebook.tagged--;
     }
 
-#ifndef Q_PDCURSES_WIN32
     if (q_current_dial_entry->method != Q_DIAL_METHOD_MODEM) {
-#endif
-
         /*
          * Log the connection.
          */
@@ -789,48 +828,10 @@ void dial_success() {
             /*
              * Execute script if supplied.
              */
-            if (q_scrfile != NULL) {
-                if (file_exists(get_scriptdir_filename(q_scrfile)) == Q_TRUE) {
-                    if (q_status.quicklearn == Q_FALSE) {
-                        /*
-                         * Execute script if supplied
-                         */
-                        if (q_status.read_only == Q_FALSE) {
-                            script_start(q_scrfile);
-                        }
-                    }
-                }
-                Xfree(q_scrfile, __FILE__, __LINE__);
-                q_scrfile = NULL;
-            } else {
-                if (q_current_dial_entry->script_filename != NULL) {
-                    if ((strlen(q_current_dial_entry->script_filename) > 0) &&
-                        (file_exists(
-                            get_scriptdir_filename(
-                            q_current_dial_entry->script_filename))
-                                == Q_TRUE)
-                    ) {
-                        if ((q_status.quicklearn == Q_FALSE) &&
-                            (q_current_dial_entry->quicklearn == Q_FALSE)
-                        ) {
-                            /*
-                             * We're not quicklearning, start the script
-                             */
-                            if (q_status.read_only == Q_FALSE) {
-                                script_start(
-                                        q_current_dial_entry->script_filename);
-                            }
-                            
-                        }
-                    }
-                }
-            }
+            check_for_dialup_script();
             screen_flush();
         }
-
-#ifndef Q_PDCURSES_WIN32
     }
-#endif
 
 }
 

@@ -4203,36 +4203,7 @@ void phonebook_refresh() {
              */
             switch_state(Q_STATE_CONSOLE);
             q_screen_dirty = Q_TRUE;
-
-            if (q_scrfile != NULL) {
-                if (file_exists(get_scriptdir_filename(q_scrfile)) == Q_TRUE) {
-                    if (q_status.quicklearn == Q_FALSE) {
-                        /*
-                         * Execute script if supplied
-                         */
-                        if (q_status.read_only == Q_FALSE) {
-                            script_start(q_scrfile);
-                        }
-                    }
-                }
-                Xfree(q_scrfile, __FILE__, __LINE__);
-                q_scrfile = NULL;
-            } else {
-                if ((strlen(q_current_dial_entry->script_filename) > 0) &&
-                    (file_exists(
-                        get_scriptdir_filename(
-                            q_current_dial_entry->script_filename)) == Q_TRUE)
-                ) {
-                    if (q_status.quicklearn == Q_FALSE) {
-                        /*
-                         * Execute script if supplied
-                         */
-                        if (q_status.read_only == Q_FALSE) {
-                            script_start(q_current_dial_entry->script_filename);
-                        }
-                    }
-                }
-            }
+            check_for_dialup_script();
             break;
 
         case Q_DIAL_USER_ABORTED:
@@ -8041,41 +8012,12 @@ void dialer_keyboard_handler(const int keystroke, const int flags) {
      * Press ANY key to continue
      */
     if (q_dial_state == Q_DIAL_CONNECTED) {
-
         /*
          * Time is up, switch to console
          */
         switch_state(Q_STATE_CONSOLE);
         q_screen_dirty = Q_TRUE;
-
-        if (q_scrfile != NULL) {
-            if (file_exists(get_scriptdir_filename(q_scrfile)) == Q_TRUE) {
-                if (q_status.quicklearn == Q_FALSE) {
-                    /*
-                     * Execute script if supplied
-                     */
-                    if (q_status.read_only == Q_FALSE) {
-                        script_start(q_scrfile);
-                    }
-                }
-            }
-            Xfree(q_scrfile, __FILE__, __LINE__);
-            q_scrfile = NULL;
-        } else {
-            if ((strlen(q_current_dial_entry->script_filename) > 0) &&
-                (file_exists
-                 (get_scriptdir_filename(
-                     q_current_dial_entry->script_filename)) == Q_TRUE)) {
-                if (q_status.quicklearn == Q_FALSE) {
-                    /*
-                     * Execute script if supplied
-                     */
-                    if (q_status.read_only == Q_FALSE) {
-                        script_start(q_current_dial_entry->script_filename);
-                    }
-                }
-            }
-        }
+        check_for_dialup_script();
         return;
     }
 
@@ -8179,7 +8121,6 @@ static void modem_data(unsigned char * input, unsigned int input_n,
     int i;
     Q_BOOL complete_line = Q_FALSE;
     int new_dce_baud;
-    int unused;
     char * begin = (char *) input;
     int menu_left = 1 + (WIDTH - 80) / 2;
     int menu_top = HEIGHT - 1 - 9;
@@ -8189,41 +8130,12 @@ static void modem_data(unsigned char * input, unsigned int input_n,
     if (modem_state == DIAL_MODEM_CONNECTED) {
         DLOG(("modem_data() DIAL_MODEM_CONNECTED\n"));
 
-        if (q_scrfile != NULL) {
-            if (file_exists(get_scriptdir_filename(q_scrfile)) == Q_TRUE) {
-                if (q_status.quicklearn == Q_FALSE) {
-                    /*
-                     * Execute script if supplied
-                     */
-                    if (q_status.read_only == Q_FALSE) {
-                        script_start(q_scrfile);
-                    }
-                }
-            }
-            Xfree(q_scrfile, __FILE__, __LINE__);
-            q_scrfile = NULL;
-        } else {
-            if ((strlen(q_current_dial_entry->script_filename) > 0) &&
-                (file_exists
-                 (get_scriptdir_filename(
-                     q_current_dial_entry->script_filename)) == Q_TRUE)) {
-                if (q_status.quicklearn == Q_FALSE) {
-                    /*
-                     * Execute script if supplied
-                     */
-                    if (q_status.read_only == Q_FALSE) {
-                        script_start(q_current_dial_entry->script_filename);
-                    }
-                }
-            }
-        }
-
         /*
-         * We got some data.  Switch to console mode and process it
+         * We got some data.  Let the console process it.
          */
-        switch_state(Q_STATE_CONSOLE);
-        q_screen_dirty = Q_TRUE;
-        console_process_incoming_data(input, input_n, &unused);
+        if (input_n > 0) {
+            console_process_incoming_data(input, input_n, remaining);
+        }
         return;
     }
 
@@ -8305,10 +8217,6 @@ static void modem_data(unsigned char * input, unsigned int input_n,
          */
         snprintf((char *) output, output_max, "AT\r");
         *output_n = strlen((char *) output);
-        /*
-         * Clear modem message
-         */
-        memset(q_dialer_modem_message, 0, sizeof(q_dialer_modem_message));
         modem_state = DIAL_MODEM_SENT_AT;
         break;
 
@@ -8327,12 +8235,6 @@ static void modem_data(unsigned char * input, unsigned int input_n,
                 *output_n = strlen((char *) output);
 
                 /*
-                 * Clear modem message
-                 */
-                memset(q_dialer_modem_message, 0,
-                       sizeof(q_dialer_modem_message));
-
-                /*
                  * Toss the input seen so far
                  */
                 *remaining -= strlen(begin);
@@ -8341,15 +8243,22 @@ static void modem_data(unsigned char * input, unsigned int input_n,
                 }
 
                 /*
+                 * Show the dial command on the UI.
+                 */
+                memcpy(q_dialer_modem_message, output, *output_n - 1);
+
+                /*
                  * New state
                  */
                 modem_state = DIAL_MODEM_SENT_DIAL_STRING;
 
             } else {
+
                 /*
-                 * Modem sent something else, just discard this part.  But
-                 * keep it on the display.
+                 * Modem sent something else.  Re-send AT, and expect OK.
                  */
+                snprintf((char *) output, output_max, "AT\r");
+                *output_n = strlen((char *) output);
 
                 /*
                  * Toss the input seen so far
@@ -8393,6 +8302,33 @@ static void modem_data(unsigned char * input, unsigned int input_n,
                 if (*remaining < 0) {
                     *remaining = 0;
                 }
+
+            } else if (strcasecmp(q_dialer_modem_message, "ok") == 0) {
+
+                DLOG(("modem_data() MODEM_SENT_DIAL_STRING ** OK **\n"));
+
+                /*
+                 * We just received an "OK" from a previous command.  Repeat
+                 * the dial command.
+                 */
+                snprintf((char *) output, output_max, "%s%s\r",
+                         q_modem_config.dial_string,
+                         q_current_dial_entry->address);
+                *output_n = strlen((char *) output);
+
+                /*
+                 * Toss the input seen so far
+                 */
+                *remaining -= strlen(begin);
+                if (*remaining < 0) {
+                    *remaining = 0;
+                }
+
+                /*
+                 * Show the dial command on the UI.
+                 */
+                memcpy(q_dialer_modem_message, output, *output_n - 1);
+
             } else {
                 /*
                  * Modem sent something else, just discard this part.  But
@@ -8417,7 +8353,8 @@ static void modem_data(unsigned char * input, unsigned int input_n,
                 /*
                  * Find baud
                  */
-                DLOG(("q_dialer_modem_message \'%s\'", q_dialer_modem_message));
+                DLOG(("q_dialer_modem_message \'%s\'\n",
+                        q_dialer_modem_message));
 
                 if (sscanf(q_dialer_modem_message, "CONNECT %d",
                         &new_dce_baud) == 1) {
@@ -8525,7 +8462,7 @@ void dialer_process_data(unsigned char * input, const unsigned int input_n,
     for (i = 0; i < input_n; i++) {
         DLOG2(("%02x ", input[i]));
     }
-    DLOG((" | \""));
+    DLOG2((" | \""));
     for (i = 0; i < input_n; i++) {
         DLOG2(("%c", input[i]));
     }

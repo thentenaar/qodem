@@ -1954,20 +1954,7 @@ no_data:
 
 #ifndef Q_NO_SERIAL
 
-        if ((q_dial_state == Q_DIAL_CONNECTED) &&
-            (q_current_dial_entry->method == Q_DIAL_METHOD_MODEM)
-        ) {
-            /*
-             * UGLY HACK TIME.  Just so that I can display a message in the
-             * Redialer window, I duplicate the call to
-             * console_process_incoming_data() below.
-             */
-
-            /* Let the console process the data */
-            console_process_incoming_data(q_buffer_raw, q_buffer_raw_n,
-                &unprocessed_n);
-
-        } else if (q_current_dial_entry->method != Q_DIAL_METHOD_MODEM) {
+        if (q_current_dial_entry->method != Q_DIAL_METHOD_MODEM) {
             /*
              * We're doing a network connection, do NOT consume the data.
              * Leave it in the buffer for the console to see later.
@@ -1976,8 +1963,7 @@ no_data:
             /* Do nothing */
         } else {
             /*
-             * We're talking to the modem before the connection has been
-             * made.
+             * We're talking to the modem.
              */
             dialer_process_data(q_buffer_raw, q_buffer_raw_n, &unprocessed_n,
                 q_transfer_buffer_raw, &q_transfer_buffer_raw_n,
