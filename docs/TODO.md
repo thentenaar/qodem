@@ -18,7 +18,7 @@ Regression Checklist
 
   Online features
     Codepage
-    Serial port settings
+√   Serial port settings
     Keyboard macros
     Translate tables
       Input
