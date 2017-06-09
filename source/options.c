@@ -699,16 +699,6 @@ static struct option_struct options[] = {
 "### $REMOTEHOST will be replaced with the phonebook address,\n"
 "### $REMOTEPORT will be replaced with the phonebook port."},
 
-/* Communication protocol: MODEM */
-
-        {Q_OPTION_MODEM_IGNORE_DCD, NULL, "modem_ignore_dcd", "false", ""
-"### COMMUNICATION PROTOCOL: MODEM/SERIAL ---------------------------------\n"
-"\n"
-"### Whether or not to monitor carrier detect (DCD) for online status.\n"
-"### 'true' means to ignore the DCD signal, 'false' means to close the\n"
-"### serial port and go offline when DCD is dropped.  If modem connections\n"
-"### are failing immediately after dialing, set this to 'true'."},
-
 /* File transfer protocol: ASCII */
 
         {Q_OPTION_ASCII_UPLOAD_USE_TRANSLATE_TABLE, NULL,
@@ -2097,10 +2087,6 @@ no_more_config_files:
     q_status.external_ssh = Q_TRUE;
     if (strcasecmp(get_option(Q_OPTION_SSH_EXTERNAL), "false") == 0) {
         q_status.external_ssh = Q_FALSE;
-    }
-    q_status.ignore_dcd = Q_FALSE;
-    if (strcasecmp(get_option(Q_OPTION_MODEM_IGNORE_DCD), "true") == 0) {
-        q_status.ignore_dcd = Q_TRUE;
     }
     q_status.xterm_double = Q_TRUE;
     if (strcasecmp(get_option(Q_OPTION_XTERM_DOUBLE), "false") == 0) {

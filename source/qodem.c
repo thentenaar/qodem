@@ -2701,7 +2701,7 @@ static void data_handler() {
          * Check for DCD drop, but NOT if the host is running in serial or
          * modem mode.
          */
-        if ((q_status.ignore_dcd == Q_FALSE) &&
+        if ((q_serial_port.ignore_dcd == Q_FALSE) &&
             (q_status.online == Q_TRUE) && Q_SERIAL_OPEN &&
             !((q_program_state == Q_STATE_HOST) &&
                 ((q_host_type == Q_HOST_TYPE_SERIAL) ||
@@ -3108,7 +3108,6 @@ static void reset_global_state() {
     q_status.external_telnet        = Q_FALSE;
     q_status.external_rlogin        = Q_TRUE;
     q_status.external_ssh           = Q_TRUE;
-    q_status.ignore_dcd             = Q_FALSE;
     q_status.xterm_double           = Q_TRUE;
     q_status.xterm_mouse_reporting  = Q_TRUE;
     q_status.vt100_color            = Q_TRUE;

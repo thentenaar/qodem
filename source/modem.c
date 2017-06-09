@@ -83,14 +83,15 @@ typedef enum {
     M_HOST_INIT_STRING,
     M_ANSWER_STRING,
     M_COMM_SETTINGS,
-    M_DTE_BAUD
+    M_DTE_BAUD,
+    M_IGNORE_DCD
 } EDITOR_ROW;
 
 /**
  * The global modem configuration settings.
  */
 struct q_modem_config_struct q_modem_config = {
-    Q_TRUE, Q_FALSE, Q_TRUE, NULL, NULL, NULL, NULL, NULL, NULL
+    Q_TRUE, Q_FALSE, Q_TRUE, Q_FALSE, NULL, NULL, NULL, NULL, NULL, NULL
 };
 
 /**
@@ -290,6 +291,8 @@ static void save_modem_config() {
             (q_modem_config.rtscts == Q_TRUE ? "true" : "false"));
     fprintf(file, "lock_dte_baud = %s\n",
             (q_modem_config.lock_dte_baud == Q_TRUE ? "true" : "false"));
+    fprintf(file, "ignore_dcd = %s\n",
+            (q_modem_config.ignore_dcd == Q_TRUE ? "true" : "false"));
 
     /*
      * Close file.
@@ -368,6 +371,7 @@ void load_modem_config() {
         q_modem_config.xonxoff = Q_FALSE;
         q_modem_config.rtscts = Q_TRUE;
         q_modem_config.lock_dte_baud = Q_TRUE;
+        q_modem_config.ignore_dcd = Q_FALSE;
         q_modem_config.default_baud = Q_BAUD_115200;
         q_modem_config.default_data_bits = Q_DATA_BITS_8;
         q_modem_config.default_parity = Q_PARITY_NONE;
@@ -381,6 +385,7 @@ void load_modem_config() {
         q_serial_port.stop_bits = q_modem_config.default_stop_bits;
         q_serial_port.dce_baud = 0;
         q_serial_port.lock_dte_baud = q_modem_config.lock_dte_baud;
+        q_serial_port.ignore_dcd = q_modem_config.ignore_dcd;
 
         /*
          * No leak
@@ -548,6 +553,13 @@ void load_modem_config() {
             } else {
                 q_modem_config.lock_dte_baud = Q_FALSE;
             }
+        } else if (strncmp(key, "ignore_dcd",
+                           strlen("ignore_dcd")) == 0) {
+            if (strcmp(value, "true") == 0) {
+                q_modem_config.ignore_dcd = Q_TRUE;
+            } else {
+                q_modem_config.ignore_dcd = Q_FALSE;
+            }
         }
     }
 
@@ -593,6 +605,7 @@ void load_modem_config() {
     q_serial_port.stop_bits     = q_modem_config.default_stop_bits;
     q_serial_port.dce_baud      = 0;
     q_serial_port.lock_dte_baud = q_modem_config.lock_dte_baud;
+    q_serial_port.ignore_dcd    = q_modem_config.ignore_dcd;
 
     /*
      * Note that we have no outstanding changes to save.
@@ -639,6 +652,7 @@ void create_modem_config_file() {
     q_modem_config.xonxoff = Q_FALSE;
     q_modem_config.rtscts = Q_TRUE;
     q_modem_config.lock_dte_baud = Q_TRUE;
+    q_modem_config.ignore_dcd = Q_FALSE;
     q_modem_config.default_baud = Q_BAUD_115200;
     q_modem_config.default_data_bits = Q_DATA_BITS_8;
     q_modem_config.default_parity = Q_PARITY_NONE;
@@ -652,6 +666,7 @@ void create_modem_config_file() {
     q_serial_port.stop_bits     = q_modem_config.default_stop_bits;
     q_serial_port.dce_baud      = 0;
     q_serial_port.lock_dte_baud = q_modem_config.lock_dte_baud;
+    q_serial_port.ignore_dcd    = q_modem_config.ignore_dcd;
 
     /*
      * No leak
@@ -674,7 +689,7 @@ void create_modem_config_file() {
 static int window_left;
 static int window_top;
 static int window_length = 70;
-static int window_height = 15;
+static int window_height = 16;
 
 /**
  * Draw screen for the Alt-O modem settings dialog.
@@ -980,11 +995,29 @@ void modem_config_refresh() {
     }
     if (q_modem_config.lock_dte_baud) {
         screen_put_color_printf_yx(window_top + 11, window_left + values_column,
-                                   color, _("Locked at %s"),
+                                   color, _("Locked (currently %s)"),
                                    baud_string(q_modem_config.default_baud));
     } else {
         screen_put_color_str_yx(window_top + 11, window_left + values_column,
                                 _("Varies with connection speed"), color);
+    }
+
+    /*
+     * IGNORE_DCD
+     */
+    screen_put_color_str_yx(window_top + 12, window_left + 2,
+        _("B. Ignore DCD"), Q_COLOR_MENU_COMMAND);
+    if (highlighted_row == M_IGNORE_DCD) {
+        color = Q_COLOR_MENU_COMMAND;
+    } else {
+        color = Q_COLOR_MENU_TEXT;
+    }
+    if (q_modem_config.ignore_dcd) {
+        screen_put_color_str_yx(window_top + 12, window_left + values_column,
+            _("Carrier detect ignored, hangup with string"), color);
+    } else {
+        screen_put_color_str_yx(window_top + 12, window_left + values_column,
+            _("Carrier detect honored, hangup with DTR"), color);
     }
 
     screen_flush();
@@ -1146,6 +1179,26 @@ void modem_config_keyboard_handler(const int keystroke, const int flags) {
         }
         return;
 
+    case 'B':
+    case 'b':
+        if (highlighted_row == M_NONE) {
+            /*
+             * Swap ignore DCD flag
+             */
+            if (q_modem_config.ignore_dcd == Q_TRUE) {
+                q_modem_config.ignore_dcd = Q_FALSE;
+            } else {
+                q_modem_config.ignore_dcd = Q_TRUE;
+            }
+            /*
+             * Refresh
+             */
+            q_screen_dirty = Q_TRUE;
+        } else {
+            fieldset_keystroke(modem_config_entry_form, keystroke);
+        }
+        return;
+
     case Q_KEY_F(1):
         launch_help(Q_HELP_MODEM_CONFIG);
 
@@ -1204,6 +1257,7 @@ void modem_config_keyboard_handler(const int keystroke, const int flags) {
          */
         if (highlighted_row == M_NONE) {
             save_modem_config();
+            load_modem_config();
         } else {
             return;
         }
@@ -1251,6 +1305,7 @@ exit_dialog:
              */
             if ((new_keystroke == 'y') || (new_keystroke == Q_KEY_ENTER)) {
                 save_modem_config();
+                load_modem_config();
             } else {
                 /*
                  * Abandon changes.
@@ -1333,6 +1388,7 @@ exit_dialog:
                 break;
 
             case M_DTE_BAUD:
+            case M_IGNORE_DCD:
                 /*
                  * Never get here
                  */
@@ -1363,6 +1419,7 @@ exit_dialog:
              * Treat like F10 - save values.
              */
             save_modem_config();
+            load_modem_config();
             goto exit_dialog;
         }
 
@@ -1479,6 +1536,7 @@ exit_dialog:
         break;
 
     case M_DTE_BAUD:
+    case M_IGNORE_DCD:
         /*
          * Never get here
          */
@@ -2142,7 +2200,7 @@ void hangup_modem() {
     assert(q_child_tty_fd != -1);
     assert(Q_SERIAL_OPEN);
 
-    if (q_status.ignore_dcd == Q_FALSE) {
+    if (q_serial_port.ignore_dcd == Q_FALSE) {
 
         /*
          * First, drop DTR.  Most modems will hangup with this.

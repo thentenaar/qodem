@@ -437,11 +437,6 @@ struct q_status_struct {
      */
     Q_BOOL external_ssh;
 
-    /**
-     * When true, ignore the DCD on modem/serial connections.
-     */
-    Q_BOOL ignore_dcd;
-
     /* Avatar features */
 
     /**

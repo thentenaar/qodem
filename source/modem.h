@@ -95,6 +95,7 @@ struct q_modem_config_struct {
     Q_BOOL rtscts;              /* true = use RTS/CTS flow control */
     Q_BOOL xonxoff;             /* true = use XON/XOFF flow control */
     Q_BOOL lock_dte_baud;       /* true = lock DTE baud rate on connect */
+    Q_BOOL ignore_dcd;          /* true = ignore DCD/DTR */
 
     wchar_t * name;             /* "My Brand Foo Modem" */
     char * dev_name;            /* "/dev/modem" */
@@ -119,6 +120,7 @@ struct q_serial_port_struct {
     Q_BOOL rtscts;              /* true = use RTS/CTS flow control */
     Q_BOOL xonxoff;             /* true = use XON/XOFF flow control */
     Q_BOOL lock_dte_baud;       /* true = lock DTE baud rate on connect */
+    Q_BOOL ignore_dcd;          /* true = ignore DCD/DTR */
 
     Q_BAUD_RATE baud;
     Q_DATA_BITS data_bits;
@@ -154,7 +156,7 @@ struct q_serial_port_struct {
  * Normal case: use maximum error correction and compression, hardware flow
  * control, lock DTE port
  */
-#define MODEM_DEFAULT_INIT_STRING       "AT &F &B1 &H1&R2 &K1 &M4 E1 F1" \
+#define MODEM_DEFAULT_INIT_STRING       "AT &F &B1 &H1&R2 &K1 &M4 E1 F1 " \
                                         "Q0 V1 X4 &A3 &C1 &D2 &R2 &S0 ^M"
 
 #define MODEM_DEFAULT_HANGUP_STRING     "+~+~+~~~~ATH0^M"
