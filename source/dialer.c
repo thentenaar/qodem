@@ -805,7 +805,9 @@ void dial_success() {
         q_phonebook.tagged--;
     }
 
+#ifndef Q_NO_SERIAL
     if (q_current_dial_entry->method != Q_DIAL_METHOD_MODEM) {
+#endif
         /*
          * Log the connection.
          */
@@ -831,7 +833,9 @@ void dial_success() {
             check_for_dialup_script();
             screen_flush();
         }
+#ifndef Q_NO_SERIAL
     }
+#endif
 
 }
 
