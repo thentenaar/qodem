@@ -1767,7 +1767,7 @@ void hangup_modem() {
     assert(q_serial_handle != NULL);
     assert(Q_SERIAL_OPEN);
 
-    if (q_status.ignore_dcd == Q_FALSE) {
+    if (q_serial_port.ignore_dcd == Q_FALSE) {
 
         /*
          * First, drop DTR.  Most modems will hangup with this.
