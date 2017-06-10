@@ -8285,7 +8285,7 @@ static void modem_data(unsigned char * input, unsigned int input_n,
             if ((strstr(q_dialer_modem_message, "NO DIALTONE") != NULL) ||
                 (strstr(q_dialer_modem_message, "BUSY") != NULL) ||
                 (strstr(q_dialer_modem_message, "NO CARRIER") != NULL) ||
-                (strstr(q_dialer_modem_message, "VOICE") != 0)) {
+                (strstr(q_dialer_modem_message, "VOICE") != NULL)) {
 
                 DLOG(("modem_data() MODEM_SENT_DIAL_STRING CYCLE\n"));
 
@@ -8302,32 +8302,6 @@ static void modem_data(unsigned char * input, unsigned int input_n,
                 if (*remaining < 0) {
                     *remaining = 0;
                 }
-
-            } else if (strcasecmp(q_dialer_modem_message, "ok") == 0) {
-
-                DLOG(("modem_data() MODEM_SENT_DIAL_STRING ** OK **\n"));
-
-                /*
-                 * We just received an "OK" from a previous command.  Repeat
-                 * the dial command.
-                 */
-                snprintf((char *) output, output_max, "%s%s\r",
-                         q_modem_config.dial_string,
-                         q_current_dial_entry->address);
-                *output_n = strlen((char *) output);
-
-                /*
-                 * Toss the input seen so far
-                 */
-                *remaining -= strlen(begin);
-                if (*remaining < 0) {
-                    *remaining = 0;
-                }
-
-                /*
-                 * Show the dial command on the UI.
-                 */
-                memcpy(q_dialer_modem_message, output, *output_n - 1);
 
             } else {
                 /*
