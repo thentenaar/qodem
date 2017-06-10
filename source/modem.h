@@ -146,18 +146,27 @@ struct q_serial_port_struct {
     int dce_baud;
 };
 
-/* DEBUG: No error correction, don't lock DTE port */
 /*
-#define MODEM_DEFAULT_INIT_STRING       "AT &F &B0 &H0&R1 &K0 &M0 E1 F1" \
+ * DEBUG case 1: No error correction, don't lock DTE port
+ */
+/*
+#define MODEM_DEFAULT_INIT_STRING       "AT &F &B0 &H0&R1 &K0 &M0 E1 F1 " \
                                         "Q0 V1 X4 &A3 &C1 &D2 &R2 &S0 ^M"
 */
 
 /*
- * Normal case: use maximum error correction and compression, hardware flow
+ * Debug case 2: use maximum error correction and compression, hardware flow
  * control, lock DTE port
  */
+/*
 #define MODEM_DEFAULT_INIT_STRING       "AT &F &B1 &H1&R2 &K1 &M4 E1 F1 " \
                                         "Q0 V1 X4 &A3 &C1 &D2 &R2 &S0 ^M"
+*/
+
+/*
+ * Normal case: no init string at all (like minicom).
+ */
+#define MODEM_DEFAULT_INIT_STRING       ""
 
 #define MODEM_DEFAULT_HANGUP_STRING     "+~+~+~~~~ATH0^M"
 #define MODEM_DEFAULT_DIAL_STRING       "ATDT"
