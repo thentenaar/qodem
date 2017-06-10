@@ -1807,7 +1807,7 @@ hangup_modem_restore_dtr:
             goto hangup_modem_last_chance;
         }
 
-    } /* if (q_status.ignore_dcd == Q_FALSE) */
+    } /* if (q_serial_port.ignore_dcd == Q_FALSE) */
 
 hangup_modem_last_chance:
     /*
@@ -2254,7 +2254,7 @@ hangup_modem_restore_dtr:
             }
         }
 
-    } /* if (q_status.ignore_dcd == Q_FALSE) */
+    } /* if (q_serial_port.ignore_dcd == Q_FALSE) */
 
 hangup_modem_last_chance:
     /*
