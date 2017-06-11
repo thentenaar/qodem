@@ -1606,154 +1606,7 @@ static void send_modem_string(const char * string) {
     }
 }
 
-/*
- * The functions read_serial_port() and flush_serial_port() are used solely
- * to trash the init string from the modem.
- */
-enum {
-    SERIAL_TIMEOUT,
-    SERIAL_ERROR,
-    SERIAL_OK
-};
-
-#define MAX_SERIAL_WRITE 128
-
-#ifndef Q_PDCURSES_WIN32
-
-/**
- * Read data from the serial port and put into buffer, starting at
- * buffer[buffer_start] and reading no more than buffer[buffer_max].  The
- * number of NEW bytes read is ADDED to buffer_n.
- *
- * @param buffer the buffer to write data to
- * @param buffer_max the TOTAL SIZE of the buffer (e.g. sizeof(x))
- * @param buffer_start the index into buffer to append data
- * @param buffer_n the total number of bytes in the buffer (e.g. strlen(x))
- * @param timeout how long to wait in the poll/select call
- * @return status SERIAL_OK means bytes were read and appended to the buffer
- * SERIAL_ERROR means an error occurred either in the poll or the read.
- * SERIAL_TIMEOUT means NO bytes were read because the timeout expired.
- */
-static int read_serial_port(unsigned char * buffer, const int buffer_max,
-                            const int buffer_start, int * buffer_n,
-                            const struct timeval * timeout) {
-    int rc;
-    struct timeval select_timeout;
-    fd_set readfds;
-    fd_set writefds;
-    fd_set exceptfds;
-
-    assert(buffer != NULL);
-    assert(buffer_n != NULL);
-    assert(*buffer_n >= 0);
-    assert(timeout != NULL);
-    assert(buffer_start >= 0);
-    assert(buffer_max <= MAX_SERIAL_WRITE);
-    assert(buffer_max > buffer_start);
-
-    FD_ZERO(&readfds);
-    FD_ZERO(&writefds);
-    FD_ZERO(&exceptfds);
-    FD_SET(q_child_tty_fd, &readfds);
-
-    memcpy(&select_timeout, timeout, sizeof(struct timeval));
-    rc = select(q_child_tty_fd + 1, &readfds, &writefds, &exceptfds,
-                &select_timeout);
-
-    if (rc < 0) {
-        if (errno == EINTR) {
-            /*
-             * Interrupted by a signal.
-             */
-            return SERIAL_TIMEOUT;
-        }
-        return SERIAL_ERROR;
-    }
-    if (rc == 0) {
-        return SERIAL_TIMEOUT;
-    }
-
-    /*
-     * Read the data.
-     */
-    rc = read(q_child_tty_fd, buffer + buffer_start, buffer_max - (*buffer_n));
-    if (rc < 0) {
-        return SERIAL_ERROR;
-    }
-    if (rc == 0) {
-        /*
-         * Remote end closed connection, huh?
-         */
-        return SERIAL_ERROR;
-    }
-    (*buffer_n) += rc;
-
-    /*
-     * All is well.
-     */
-    return SERIAL_OK;
-}
-
-/**
- * Trash all data coming in from the serial port until timeout seconds have
- * passed with no new data.
- *
- * @param timeout the number of seconds to wait before seeing no data
- */
-static void flush_serial_port(const float timeout) {
-    unsigned char buffer[16];
-    int buffer_n;
-    int buffer_before;
-    int rc;
-
-    /*
-     * How long we will allow each poll/select to wait before seeing data.
-     */
-    struct timeval polling_timeout;
-
-    /*
-     * Set poll/select timeout.
-     */
-    polling_timeout.tv_sec = timeout;
-    polling_timeout.tv_usec = (unsigned long) (timeout * 1000000.0f) % 1000000;
-
-    buffer_n = 0;
-    buffer_before = buffer_n;
-    while ((rc = read_serial_port(buffer, sizeof(buffer), buffer_before,
-                &buffer_n, &polling_timeout)) != SERIAL_TIMEOUT) {
-        if (rc == SERIAL_ERROR) {
-            /*
-             * Not sure what to do here...
-             */
-            return;
-        }
-        buffer_n = 0;
-        buffer_before = buffer_n;
-    }
-
-    /*
-     * All OK.
-     */
-    return;
-}
-
-#endif /* Q_PDCURSES_WIN32 */
-
 #ifdef Q_PDCURSES_WIN32
-
-/**
- * Trash all data coming in from the serial port until timeout seconds have
- * passed with no new data.
- *
- * @param timeout the number of seconds to wait before seeing no data
- */
-static void flush_serial_port(const float timeout) {
-    assert(q_serial_handle != NULL);
-    assert(Q_SERIAL_OPEN);
-
-    PurgeComm(q_serial_handle, PURGE_RXABORT | PURGE_RXCLEAR |
-        PURGE_TXABORT | PURGE_TXCLEAR);
-}
 
 /**
  * Try to hang up the modem, first by dropping DTR and then if that doesn't
@@ -2068,11 +1921,6 @@ Q_BOOL configure_serial_port() {
         send_modem_string(q_modem_config.init_string);
         first = Q_FALSE;
     }
-
-    /*
-     * Clear whatever is there
-     */
-    flush_serial_port(0.5);
 
     /*
      * All OK
@@ -2699,11 +2547,6 @@ Q_BOOL configure_serial_port() {
         send_modem_string(q_modem_config.init_string);
         first = Q_FALSE;
     }
-
-    /*
-     * Clear whatever is there
-     */
-    flush_serial_port(0.5);
 
     /*
      * All OK

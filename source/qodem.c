@@ -706,17 +706,19 @@ do_write:
                  */
                 goto do_write;
             } else {
-#ifndef Q_PDCURSES_WIN32
 #ifndef Q_NO_SERIAL
                 /*
                  * The last write was successful, all bytes are written.  Now
                  * encourage the bytes to actually go out.
                  */
                 if (Q_SERIAL_OPEN) {
+#ifdef Q_PDCURSES_WIN32
+                    FlushFileBuffers(q_serial_handle);
+#else
                     tcdrain(fd);
+#endif /* Q_PDCURSES_WIN32*/
                 }
-#endif
-#endif
+#endif /* Q_NO_SERIAL */
             }
         } else if ((rc == 0) || (error == EAGAIN) ||
 #ifdef Q_PDCURSES_WIN32
@@ -1953,7 +1955,7 @@ no_data:
     if ((q_program_state == Q_STATE_DIALER) && (q_transfer_buffer_raw_n == 0)) {
 
 #ifndef Q_NO_SERIAL
-
+        assert(q_current_dial_entry != NULL);
         if (q_current_dial_entry->method != Q_DIAL_METHOD_MODEM) {
             /*
              * We're doing a network connection, do NOT consume the data.
@@ -2130,9 +2132,44 @@ no_data:
         }
 #endif
 
-        /* Write the data to q_child_tty_fd */
+        /*
+         * Write the data to q_child_tty_fd.
+         */
+#ifndef Q_NO_SERIAL
+        if (q_program_state == Q_STATE_DIALER) {
+            assert(q_current_dial_entry != NULL);
+            if (q_current_dial_entry->method == Q_DIAL_METHOD_MODEM) {
+                /*
+                 * During the dialing sequence, force sync on every write.
+                 * This is potentially MUCH slower due to the tcdrain()
+                 * calls.
+                 */
+                rc = qodem_write(q_child_tty_fd,
+                    (char *) q_transfer_buffer_raw, q_transfer_buffer_raw_n,
+                    Q_TRUE);
+            } else {
+                /*
+                 * Dialing, but not modem: buffer output.
+                 */
+                rc = qodem_write(q_child_tty_fd,
+                    (char *) q_transfer_buffer_raw, q_transfer_buffer_raw_n,
+                    Q_FALSE);
+            }
+        } else {
+            /*
+             * Normal case: buffer output.
+             */
+            rc = qodem_write(q_child_tty_fd, (char *) q_transfer_buffer_raw,
+                q_transfer_buffer_raw_n, Q_FALSE);
+        }
+#else
+        /*
+         * No serial support: buffer output.
+         */
         rc = qodem_write(q_child_tty_fd, (char *) q_transfer_buffer_raw,
             q_transfer_buffer_raw_n, Q_FALSE);
+
+#endif /* Q_NO_SERIAL */
 
         if (rc < 0) {
             int error = get_errno();
