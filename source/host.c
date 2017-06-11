@@ -2524,7 +2524,7 @@ static void host_modem_data(unsigned char * input, unsigned int input_n,
                 /*
                  * Find baud
                  */
-                DLOG(("host_modem_message \'%s\'", host_modem_message));
+                DLOG(("host_modem_message \'%s\'\n", host_modem_message));
 
                 if (sscanf(host_modem_message, "CONNECT %d",
                         &new_dce_baud) == 1) {

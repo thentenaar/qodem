@@ -37,8 +37,10 @@ qodem (1.0.0-1) unstable; urgency=low
   * --config command line option: select qodemrc to load
   * --dotqodem-dir command line option: select preferences directory
   * --read-only command line option: do not create/write any files/dirs to disk
+  * Modem option to ignore DCD and not use DTR for hangup (support 3-wire
+    RS-232)
 
- -- Kevin Lamonte <lamonte@users.sourceforge.net>  Thu, 27 Apr 2017 18:50:00 -0500
+ -- Kevin Lamonte <lamonte@users.sourceforge.net>  Sun, 18 Jun 2017 18:50:00 -0500
 
 qodem (1.0beta-1) unstable; urgency=low
 

@@ -345,11 +345,11 @@ Q_EMULATION_STATUS atascii(const unsigned char from_modem,
          * This is a control character, and we are printing them.  Fall
          * through to the print at the end.
          */
-        DLOG(("Control character, PRINT"));
+        DLOG(("Control character, PRINT\n"));
     } else {
         if (state.print_control_char == Q_FALSE) {
             if (from_modem == C_ESC) {
-                DLOG(("Start PRINTING control characters"));
+                DLOG(("Start PRINTING control characters\n"));
                 state.print_control_char = Q_TRUE;
                 return Q_EMUL_FSM_NO_CHAR_YET;
             }
@@ -365,7 +365,7 @@ Q_EMULATION_STATUS atascii(const unsigned char from_modem,
                  * This is a control character, but we are not printing them.
                  * Make it vanish.
                  */
-                DLOG(("Unhandled control character, IGNORE"));
+                DLOG(("Unhandled control character, IGNORE\n"));
                 return Q_EMUL_FSM_NO_CHAR_YET;
             }
         } /* if (state.print_control_char == Q_FALSE) */
@@ -383,7 +383,7 @@ Q_EMULATION_STATUS atascii(const unsigned char from_modem,
         q_current_color &= ~Q_A_REVERSE;
     }
     *to_screen = atascii_chars[from_modem & 0x7F];
-    DLOG(("Send to screen: '%c'", *to_screen));
+    DLOG(("Send to screen: '%c'\n", *to_screen));
     return Q_EMUL_FSM_ONE_CHAR;
 }
 

@@ -1,6 +1,18 @@
 The Qodem Project Work Log
 ==========================
 
+June 11, 2017
+
+Thanks to Ryan de Laplante, Qodem can now dial actual BBSes!  I needed
+to do two major things to get it working, and afterwards I find a
+little more still.  The old buoy flush_serial_port() code is still
+causing lost bytes immediately after connection, and that has to go.
+flush_serial_port() made a lot of sense for the embedded buoys, but it
+doesn't belong here at all.
+
+The final release date is now set: June 18, 2017.  This is the final
+week.
+
 June 2, 2017
 
 I have been tackling a dialup failure a user reported, using a null
