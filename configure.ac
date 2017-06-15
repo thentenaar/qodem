@@ -1,4 +1,4 @@
-AC_INIT([qodem], [1.0.0])
+AC_INIT([qodem], [1.0.1])
 AC_CONFIG_SRCDIR([source/qodem.h])
 AM_CONFIG_HEADER([source/config.h])
 AM_INIT_AUTOMAKE([foreign subdir-objects])

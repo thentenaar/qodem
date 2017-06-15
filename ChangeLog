@@ -1,3 +1,9 @@
+qodem (1.0.1-1) unstable; urgency=low
+
+  * Bug fixes
+
+ -- Kevin Lamonte <lamonte@users.sourceforge.net>  Sun, 18 Jun 2017 18:50:00 -0500
+
 qodem (1.0.0-1) unstable; urgency=low
 
   * ANSI keyboard mappings match SyncTERM/Netrunner

@@ -1,12 +1,12 @@
 Name:           qodem
-Version:        1.0.0
+Version:        1.0.1
 Release:        1%{?dist}
 Summary:        Qodem terminal emulator and communications package.
 
 Group:          Applications/Communications
 License:        Public Domain
 URL:            http://qodem.sourceforge.net/
-Source0:        https://downloads.sourceforge.net/project/qodem/qodem/1.0.0/qodem-1.0.0.tar.gz
+Source0:        https://downloads.sourceforge.net/project/qodem/qodem/1.0.1/qodem-1.0.1.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 Requires:  ncurses
@@ -104,6 +104,7 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Sun Jun 18 2017 Kevin Lamonte <lamonte at, users.sourceforge.net> - 1.0.1-1
 * Sun Jun 18 2017 Kevin Lamonte <lamonte at, users.sourceforge.net> - 1.0.0-1
 * Wed Apr 27 2016 Kevin Lamonte <lamonte at, users.sourceforge.net> - 1.0beta-1
 * Sat May 19 2012 Kevin Lamonte <lamonte at, users.sourceforge.net> - 1.0alpha-1

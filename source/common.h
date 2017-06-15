@@ -61,7 +61,7 @@ extern "C" {
 #define RELEASE
 /* #undef RELEASE */
 
-#define Q_VERSION               "1.0.0"
+#define Q_VERSION               "1.0.1"
 #define Q_AUTHOR                "Kevin Lamonte"
 
 #ifdef RELEASE
