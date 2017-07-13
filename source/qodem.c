@@ -208,6 +208,14 @@ static unsigned char q_buffer_raw[Q_BUFFER_SIZE];
 static int q_buffer_raw_n = 0;
 
 /*
+ * The output buffer used by qodem_buffered_write() and
+ * qodem_buffered_write_flush().
+ */
+static char * buffered_write_buffer = NULL;
+static int buffered_write_buffer_i = 0;
+static int buffered_write_buffer_n = 0;
+
+/*
  * The output buffer for sending raw bytes to the remote side.  This is used
  * by the modem dialer, scripts, host mode, and file transfer protocols.
  * Console (keyboard) output does not use this, that is sent directly to
@@ -386,7 +394,7 @@ static void handle_sigchld(int sig) {
             /*
              * Error in the waitpid() call.
              */
-            DLOG(("Error in waitpid(): %s (%d)\n", errno, strerror(errno)));
+            DLOG(("Error in waitpid(): %s (%d)\n", strerror(errno), errno));
             break;
         }
         if (pid == 0) {
@@ -743,6 +751,63 @@ do_write:
 
     /* All done */
     return rc;
+}
+
+/**
+ * Buffer up data to write to the remote system.
+ *
+ * @param data the buffer to read from
+ * @param data_n the number of bytes to write to the remote side
+ */
+void qodem_buffered_write(const char * data, const int data_n) {
+    if (DLOGNAME != NULL) {
+        int i;
+
+        DLOG(("qodem_buffered_write() OUTPUT bytes: "));
+        for (i = 0; i < data_n; i++) {
+            DLOG2(("%02x ", data[i] & 0xFF));
+        }
+        DLOG2(("\n"));
+        DLOG(("qodem_buffered_write() OUTPUT bytes (ASCII): "));
+        for (i = 0; i < data_n; i++) {
+            DLOG2(("%c ", data[i] & 0xFF));
+        }
+        DLOG2(("\n"));
+    }
+
+    if (buffered_write_buffer == NULL) {
+        assert(buffered_write_buffer_n == 0);
+        buffered_write_buffer = (char *) Xmalloc(sizeof(char) * data_n,
+            __FILE__, __LINE__);
+        buffered_write_buffer_n += data_n;
+    } else if ((buffered_write_buffer_i + data_n) > buffered_write_buffer_n) {
+        buffered_write_buffer = (char *) Xrealloc(buffered_write_buffer,
+            sizeof(char) * (buffered_write_buffer_n + data_n), __FILE__,
+            __LINE__);
+        buffered_write_buffer_n += data_n;
+    } else {
+        assert(buffered_write_buffer_i + data_n <= buffered_write_buffer_n);
+    }
+
+    memcpy(buffered_write_buffer + buffered_write_buffer_i, data, data_n);
+    buffered_write_buffer_i += data_n;
+}
+
+/**
+ * Write data from the buffer of qodem_buffered_write() to the remote system,
+ * dispatching to the appropriate connection-specific write function.
+ *
+ * @param fd the socket descriptor
+ */
+void qodem_buffered_write_flush(const int fd) {
+    DLOG(("qodem_buffered_write_flush()\n"));
+
+    if (buffered_write_buffer_i > 0) {
+        qodem_write(fd, buffered_write_buffer, buffered_write_buffer_i, Q_TRUE);
+    } else {
+        assert(buffered_write_buffer_i == 0);
+    }
+    buffered_write_buffer_i = 0;
 }
 
 /**

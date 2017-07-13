@@ -2789,6 +2789,7 @@ ssize_t telnet_read(const int fd, void * buf, size_t count) {
                     nvt.binary_mode = Q_FALSE;
                 }
                 break;
+
             case 1:
                 if (nvt.dowill_type == TELNET_WILL) {
                     DLOG(("** ECHO ON (we initiated) **\n"));

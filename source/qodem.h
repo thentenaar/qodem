@@ -763,6 +763,22 @@ extern int qodem_write(const int fd, const char * data, const int data_n,
                        const Q_BOOL sync);
 
 /**
+ * Buffer up data to write to the remote system.
+ *
+ * @param data the buffer to read from
+ * @param data_n the number of bytes to write to the remote side
+ */
+extern void qodem_buffered_write(const char * data, const int data_n);
+
+/**
+ * Write data from the buffer of qodem_buffered_write() to the remote system,
+ * dispatching to the appropriate connection-specific write function.
+ *
+ * @param fd the socket descriptor
+ */
+extern void qodem_buffered_write_flush(const int fd);
+
+/**
  * Spawn a command in an external terminal.  This is used for the mail reader
  * and external file editors.
  *
