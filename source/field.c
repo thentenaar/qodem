@@ -127,6 +127,13 @@ void fieldset_keystroke(struct fieldset * fieldset, const int keystroke) {
     }
 
     /*
+     * Disregard bracketed paste keys
+     */
+    if ((keystroke == Q_KEY_BRACKET_ON) || (keystroke == Q_KEY_BRACKET_OFF)) {
+        return;
+    }
+
+    /*
      * Process keystroke
      */
     if ((field->position == field->data_n) && (field->data_n < field->width)) {

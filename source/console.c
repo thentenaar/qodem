@@ -954,16 +954,16 @@ void console_keyboard_handler(int keystroke, int flags) {
 
 #endif
 
-    if ((keystroke == Q_KEY_BRACKET_ON) &&
-        (q_status.bracketed_paste_mode == Q_TRUE)
-    ) {
-        bracketed_paste_on();
+    if (keystroke == Q_KEY_BRACKET_ON) {
+        if (q_status.bracketed_paste_mode == Q_TRUE) {
+            bracketed_paste_on();
+        }
         return;
     }
-    if ((keystroke == Q_KEY_BRACKET_OFF) &&
-        (q_status.bracketed_paste_mode == Q_TRUE)
-    ) {
-        bracketed_paste_off();
+    if (keystroke == Q_KEY_BRACKET_OFF) {
+        if (q_status.bracketed_paste_mode == Q_TRUE) {
+            bracketed_paste_off();
+        }
         return;
     }
 
