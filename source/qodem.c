@@ -363,6 +363,12 @@ static struct timeval ssh_tv;
 extern int xc_key_sock;
 #endif
 
+/*
+ * A function pointer containing the appropriate network close connection to
+ * call, set by dial_out().
+ */
+void (*close_function)();
+
 #ifndef WIN32
 
 /*
@@ -1395,15 +1401,114 @@ void qlog(const char * format, ...) {
 }
 
 /**
- * Cleanup connection resources, called AFTER read() has returned 0.
+ * Close a remote network connection.
  */
-static void cleanup_connection() {
+void close_network_connection() {
+
+    DLOG(("close_network_connection()\n"));
+
+#ifndef Q_NO_SERIAL
+    assert(q_status.dial_method != Q_DIAL_METHOD_MODEM);
+#endif
+
+    assert((q_status.dial_method == Q_DIAL_METHOD_SOCKET) ||
+        (q_status.dial_method == Q_DIAL_METHOD_TELNET) ||
+        (q_status.dial_method == Q_DIAL_METHOD_RLOGIN) ||
+        (q_status.dial_method == Q_DIAL_METHOD_SSH));
+
+    if (q_status.dial_method == Q_DIAL_METHOD_SOCKET) {
+        net_force_close();
+    } else {
+        net_close();
+    }
+
+#ifdef Q_PDCURSES_WIN32
+    closesocket(q_child_tty_fd);
+#else
+    close(q_child_tty_fd);
+#endif
+    q_child_tty_fd = -1;
+    qlog(_("Connection closed.\n"));
+}
+
+/**
+ * Close a wrapped shell connection.
+ */
+void close_shell_connection() {
 
 #ifdef Q_PDCURSES_WIN32
     DWORD status;
 #else
     int status;
 #endif
+
+    DLOG(("close_shell_connection()\n"));
+
+#ifndef Q_NO_SERIAL
+    assert(q_status.dial_method != Q_DIAL_METHOD_MODEM);
+#endif
+
+#ifdef Q_PDCURSES_WIN32
+
+    assert(q_child_tty_fd == -1);
+
+    if (GetExitCodeProcess(q_child_process, &status) == TRUE) {
+        /* Got return code */
+        if (status == STILL_ACTIVE) {
+            /*
+             * Process thinks it's still running, DIE!
+             */
+            TerminateProcess(q_child_process, -1);
+            status = -1;
+            qlog(_("Connection forcibly terminated: still thinks it is alive.\n"));
+        } else {
+            qlog(_("Connection exited with RC=%u\n"), status);
+        }
+    } else {
+        /*
+         * Can't get process exit code
+         */
+        TerminateProcess(q_child_process, -1);
+        qlog(_("Connection forcibly terminated: unable to get exit code.\n"));
+    }
+
+    /* Close pipes */
+    CloseHandle(q_child_stdin);
+    q_child_stdin = NULL;
+    CloseHandle(q_child_stdout);
+    q_child_stdout = NULL;
+    CloseHandle(q_child_process);
+    q_child_process = NULL;
+    CloseHandle(q_child_thread);
+    q_child_thread = NULL;
+
+#else
+
+    assert(q_child_pid != -1);
+    assert(q_child_tty_fd != -1);
+
+    /* Close pty */
+    close(q_child_tty_fd);
+    q_child_tty_fd = -1;
+    Xfree(q_child_ttyname, __FILE__, __LINE__);
+    wait4(q_child_pid, &status, WNOHANG, NULL);
+    if (WIFEXITED(status)) {
+        qlog(_("Connection exited with RC=%u\n"), WEXITSTATUS(status));
+        if (q_status.exit_on_disconnect == Q_TRUE) {
+            q_exitrc = WEXITSTATUS(status);
+        }
+    } else if (WIFSIGNALED(status)) {
+        qlog(_("Connection exited with signal=%u\n"), WTERMSIG(status));
+    }
+    q_child_pid = -1;
+
+#endif /* Q_PDCURSES_WIN32 */
+}
+
+/**
+ * Cleanup connection resources, called AFTER read() has returned 0.
+ */
+static void cleanup_connection() {
 
     DLOG(("cleanup_connection()\n"));
 
@@ -1455,109 +1560,11 @@ static void cleanup_connection() {
         }
 
     } else {
-
-#ifndef Q_NO_SERIAL
-        assert(q_status.dial_method != Q_DIAL_METHOD_MODEM);
-#endif
-
-        switch (q_status.dial_method) {
-        case Q_DIAL_METHOD_SOCKET:
-            /* Fall through... */
-        case Q_DIAL_METHOD_TELNET:
-            /* Fall through... */
-        case Q_DIAL_METHOD_RLOGIN:
-            /* Fall through... */
-        case Q_DIAL_METHOD_SSH:
-            /* Fall through... */
-
-            /*
-             * The remote side initiated the close, this is the ideal closing
-             * sequence.
-             */
-            if (net_is_connected() == Q_TRUE) {
-                if (q_status.dial_method == Q_DIAL_METHOD_SOCKET) {
-                    net_force_close();
-                } else {
-                    net_close();
-                }
-            }
-
-#ifdef Q_PDCURSES_WIN32
-            closesocket(q_child_tty_fd);
-#else
-            close(q_child_tty_fd);
-#endif
-            q_child_tty_fd = -1;
-            qlog(_("Connection closed.\n"));
-            break;
-
-        case Q_DIAL_METHOD_COMMANDLINE:
-            /* Fall through... */
-        case Q_DIAL_METHOD_SHELL:
-
-#ifdef Q_PDCURSES_WIN32
-
-            assert(q_child_tty_fd == -1);
-
-            if (GetExitCodeProcess(q_child_process, &status) == TRUE) {
-                /* Got return code */
-                if (status == STILL_ACTIVE) {
-                    /*
-                     * Process thinks it's still running, DIE!
-                     */
-                    TerminateProcess(q_child_process, -1);
-                    status = -1;
-                    qlog(_("Connection forcibly terminated: still thinks it is alive.\n"));
-                } else {
-                    qlog(_("Connection exited with RC=%u\n"), status);
-                }
-            } else {
-                /*
-                 * Can't get process exit code
-                 */
-                TerminateProcess(q_child_process, -1);
-                qlog(_("Connection forcibly terminated: unable to get exit code.\n"));
-            }
-
-            /* Close pipes */
-            CloseHandle(q_child_stdin);
-            q_child_stdin = NULL;
-            CloseHandle(q_child_stdout);
-            q_child_stdout = NULL;
-            CloseHandle(q_child_process);
-            q_child_process = NULL;
-            CloseHandle(q_child_thread);
-            q_child_thread = NULL;
-
-#else
-
-            /* Close pty */
-            close(q_child_tty_fd);
-            q_child_tty_fd = -1;
-            Xfree(q_child_ttyname, __FILE__, __LINE__);
-            wait4(q_child_pid, &status, WNOHANG, NULL);
-            if (WIFEXITED(status)) {
-                qlog(_("Connection exited with RC=%u\n"), WEXITSTATUS(status));
-                if (q_status.exit_on_disconnect == Q_TRUE) {
-                    q_exitrc = WEXITSTATUS(status);
-                }
-            } else if (WIFSIGNALED(status)) {
-                qlog(_("Connection exited with signal=%u\n"), WTERMSIG(status));
-            }
-            q_child_pid = -1;
-
-#endif /* Q_PDCURSES_WIN32 */
-
-            break;
-
-#ifndef Q_NO_SERIAL
-        case Q_DIAL_METHOD_MODEM:
-            /* BUG */
-            abort();
-            break;
-#endif
-
-        }
+        /*
+         * Call the appropriate close function.
+         */
+        assert(close_function != NULL);
+        close_function();
 
         /* Increment stats */
         if (q_current_dial_entry != NULL) {
@@ -1618,6 +1625,7 @@ void close_connection() {
     assert(q_child_pid != -1);
     kill(q_child_pid, SIGHUP);
 #endif /* Q_PDCURSES_WIN32 */
+
 }
 
 /**
@@ -3483,6 +3491,15 @@ int qodem_main(int argc, char * const argv[]) {
     fflush(stdout);
 #endif
 
+    /*
+     * We reduce ESCDELAY on the assumption that local console is VERY fast.
+     * However, if the user has already set ESCDELAY, we don't want to change
+     * it.
+     */
+    if (getenv("ESCDELAY") == NULL) {
+        putenv("ESCDELAY=20");
+    }
+
     /* Load the options. */
     load_options();
 
@@ -3533,15 +3550,6 @@ int qodem_main(int argc, char * const argv[]) {
      * Setup the help system
      */
     setup_help();
-
-    /*
-     * We reduce ESCDELAY on the assumption that local console is VERY fast.
-     * However, if the user has already set ESCDELAY, we don't want to change
-     * it.
-     */
-    if (getenv("ESCDELAY") == NULL) {
-        putenv("ESCDELAY=20");
-    }
 
     /*
      * See if the user wants automatic capture/logging enabled.

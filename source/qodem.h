@@ -792,6 +792,22 @@ extern void spawn_terminal(const char * command);
  */
 extern void close_connection();
 
+/**
+ * Close a remote network connection.
+ */
+extern void close_network_connection();
+
+/**
+ * Close a wrapped shell connection.
+ */
+extern void close_shell_connection();
+
+/*
+ * A function pointer containing the appropriate network close connection to
+ * call, set by dial_out().
+ */
+extern void (*close_function)();
+
 #ifdef __cplusplus
 }
 #endif
