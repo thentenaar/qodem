@@ -1598,6 +1598,13 @@ void close_connection() {
          */
         if ((q_program_state != Q_STATE_HOST) &&
             (q_status.dial_method == Q_DIAL_METHOD_SOCKET)
+#ifdef Q_SSH_CRYPTLIB
+            /*
+             * Cryptlib does not return 0 on the next read() after
+             * cryptDestroySession(), so treat it like socket.
+             */
+            || (q_status.dial_method == Q_DIAL_METHOD_SSH)
+#endif
         ) {
             cleanup_connection();
             net_force_close();
