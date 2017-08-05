@@ -1358,15 +1358,19 @@ static void resolve_command_line_options() {
         } else {
             q_status.doorway_mode = Q_DOORWAY_MODE_OFF;
         }
+        initial_call.doorway = q_status.doorway_mode;
     }
 
     if (q_emulation_option != NULL) {
         q_status.emulation = emulation_from_string(q_emulation_option);
         q_status.codepage = default_codepage(q_status.emulation);
+        initial_call.emulation = q_status.emulation;
+        initial_call.codepage = q_status.codepage;
     }
 
     if (q_codepage_option != NULL) {
         q_status.codepage = codepage_from_string(q_codepage_option);
+        initial_call.codepage = q_status.codepage;
     }
 
     q_status.exit_on_disconnect = q_exit_on_disconnect;
@@ -3425,6 +3429,7 @@ int qodem_main(int argc, char * const argv[]) {
     initial_call.port           = "22";
     initial_call.password       = L"";
     initial_call.emulation      = Q_EMUL_XTERM_UTF8;
+    initial_call.method         = Q_DIAL_METHOD_SSH;
     initial_call.codepage       = default_codepage(initial_call.emulation);
     initial_call.notes          = NULL;
     initial_call.script_filename            = "";
@@ -3592,8 +3597,6 @@ int qodem_main(int argc, char * const argv[]) {
         initial_call.name = Xstring_to_wcsdup(initial_call.address,
             __FILE__, __LINE__);
         goto no_initial_call;
-    } else {
-        initial_call.method = Q_DIAL_METHOD_SSH;
     }
 
     /*
