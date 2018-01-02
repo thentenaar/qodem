@@ -346,6 +346,9 @@ struct KERMIT_STATUS {
     /* If true we can support RESEND */
     Q_BOOL do_resend;
 
+    /* If true, this is the first file data packet to send */
+    Q_BOOL is_first_data_packet;
+
     /* Full pathname to file */
     char file_fullname[FILENAME_SIZE];
 
@@ -372,6 +375,7 @@ static struct KERMIT_STATUS status = {
     0,
     5,
     0,
+    Q_FALSE,
     Q_FALSE,
     Q_FALSE,
     Q_FALSE,
@@ -5016,6 +5020,7 @@ static Q_BOOL send_SA() {
 
         input_packet.parsed_ok = Q_FALSE;
         output_packet.parsed_ok = Q_FALSE;
+        status.is_first_data_packet = Q_TRUE;
 
         DLOG(("do_resend %s data_n %u\n",
                 (status.do_resend == Q_TRUE ? "true" : "false"),
@@ -5055,6 +5060,7 @@ static Q_BOOL send_SA() {
              * Increment sequence number here.
              */
             status.sequence_number++;
+
         }
 
         set_transfer_stats_last_message(_("DATA"));
@@ -5141,8 +5147,10 @@ static Q_BOOL send_SDW() {
          * Streaming support
          */
         if ((session_parms.streaming == Q_TRUE) ||
-            (session_parms.windowing == Q_TRUE)
+            (session_parms.windowing == Q_TRUE) ||
+            (status.is_first_data_packet == Q_TRUE)
         ) {
+            status.is_first_data_packet = Q_FALSE;
             send_SD_next_packet();
         }
         return Q_TRUE;
@@ -5156,6 +5164,31 @@ static Q_BOOL send_SDW() {
         DLOG(("KERMIT: send_SDW() got Ack\n"));
 
         input_packet.parsed_ok = Q_FALSE;
+
+        if ((input_packet.data_n > 0) &&
+            ((input_packet.data[0] == 'X') || (input_packet.data[0] == 'Z'))
+        ) {
+            /*
+             * Remote side skipped this file
+             */
+            DLOG(("KERMIT: send_SDW() got ACK (SKIP)\n"));
+            set_transfer_stats_last_message(_("SKIP FILE"));
+            DLOG(("KERMIT: send_SDW() PARTIAL (SKIPPED) file download complete: %sF\n",
+                    status.file_name));
+
+            /*
+             * Log it
+             */
+            qlog(_("UPLOAD FILE COMPLETE (PARTIAL): protocol %s, filename %s, transferred %d\n"),
+                 q_transfer_stats.protocol_name, q_transfer_stats.filename,
+                 status.file_position);
+
+            /*
+             * Just set skip_file, send_SD_next_packet() will do the right
+             * thing.
+             */
+            status.skip_file = Q_TRUE;
+        }
 
         if ((session_parms.windowing == Q_TRUE) && (output_window != NULL)) {
             /*
@@ -6557,6 +6590,7 @@ Q_BOOL kermit_start(struct file_info * file_list, const char *pathname,
     status.skip_file = Q_FALSE;
     status.seven_bit_only = Q_FALSE;
     status.do_resend = Q_FALSE;
+    status.is_first_data_packet = Q_FALSE;
 
 #ifndef Q_NO_SERIAL
     /*
