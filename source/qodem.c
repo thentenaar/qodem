@@ -1047,7 +1047,7 @@ static char * usage_string() {
 "      --emulation EMULATION       Select emulation EMULATION.  Valid values are\n"
 "                                  \"ansi\", \"avatar\", \"debug\", \"vt52\", \"vt100\",\n"
 "                                  \"vt102\", \"vt220\", \"linux\", \"l_utf8\", \"xterm\",\n"
-"                                  \"petscii\", and \"atascii\".\n"
+"                                  \"x_utf8\", \"petscii\", and \"atascii\".\n"
 "      --status-line { on | off }  If \"on\" enable status line.  If \"off\" disable\n"
 "                                  status line.\n"
 "      --play MUSIC                Play MUSIC as ANSI Music\n"
@@ -3082,7 +3082,7 @@ char * get_datadir_filename(const char * filename) {
 }
 
 /**
- * Get the full path to a filename in the wirking directory.  Note that the
+ * Get the full path to a filename in the working directory.  Note that the
  * string returned is a single static buffer, i.e. this is NOT thread-safe.
  *
  * @param filename a relative filename
@@ -3371,6 +3371,15 @@ int qodem_main(int argc, char * const argv[]) {
 #endif /* ENABLE_NLS && HAVE_GETTEXT */
 
     /*
+     * We reduce ESCDELAY on the assumption that local console is VERY fast.
+     * However, if the user has already set ESCDELAY, we don't want to change
+     * it.
+     */
+    if (getenv("ESCDELAY") == NULL) {
+        putenv("ESCDELAY=20");
+    }
+
+    /*
      * If the user asked for help or version, do that and bail out before
      * doing anything else like reading or writing to disk.
      */
@@ -3502,15 +3511,6 @@ int qodem_main(int argc, char * const argv[]) {
     fprintf(stdout, "\033[?1036;2004h");
     fflush(stdout);
 #endif
-
-    /*
-     * We reduce ESCDELAY on the assumption that local console is VERY fast.
-     * However, if the user has already set ESCDELAY, we don't want to change
-     * it.
-     */
-    if (getenv("ESCDELAY") == NULL) {
-        putenv("ESCDELAY=20");
-    }
 
     /* Load the options. */
     load_options();

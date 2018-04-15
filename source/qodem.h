@@ -714,7 +714,7 @@ extern FILE * open_workingdir_file(const char * filename, char ** new_filename);
 extern char * get_datadir_filename(const char * filename);
 
 /**
- * Get the full path to a filename in the wirking directory.  Note that the
+ * Get the full path to a filename in the working directory.  Note that the
  * string returned is a single static buffer, i.e. this is NOT thread-safe.
  *
  * @param filename a relative filename
