@@ -2318,6 +2318,7 @@ static void sgr() {
     short foreground, background;
     short curses_color;
     Q_BOOL real_bold = Q_FALSE;
+    static int previous_aixterm_color = 0;
 
     if (state.dec_private_mode_flag == Q_TRUE) {
         return;
@@ -2345,6 +2346,7 @@ static void sgr() {
             scrollback_full_attr(Q_COLOR_CONSOLE_TEXT);
         DLOG2(("RESET\n"));
         is_default_color = Q_TRUE;
+        previous_aixterm_color = 0;
         return;
 
     } else {
@@ -2352,6 +2354,35 @@ static void sgr() {
         for (i = 0; i <= state.params_n; i++) {
             j = atoi((char *) state.params[i]);
             DLOG2(("%d ", j));
+
+            if ((q_status.emulation == Q_EMUL_XTERM) ||
+                (q_status.emulation == Q_EMUL_XTERM_UTF8)
+            ) {
+                if (((j >= 90) && (j <= 97)) ||
+                    ((j >= 100) && (j <= 107))
+                ) {
+                    previous_aixterm_color = j;
+                    /*
+                     * We will set the color below, but it is a bold color.
+                     */
+                    q_current_color |= Q_A_BOLD;
+                    real_bold = Q_TRUE;
+                    is_default_color = Q_FALSE;
+                } else if ((previous_aixterm_color >= 90) &&
+                    (previous_aixterm_color <= 97) &&
+                    (j >= 30) && (j <= 37)
+                ) {
+                    /*
+                     * We are transitioning from a bright foreground to
+                     * not-bright foreground, turn off the bold flag.
+                     */
+                    q_current_color &= ~Q_A_BOLD;
+                    real_bold = Q_FALSE;
+                    is_default_color = Q_FALSE;
+                    previous_aixterm_color = 0;
+                }
+            }
+
             switch (j) {
             case 0:
                 /*
@@ -2654,6 +2685,72 @@ static void sgr() {
                     background = q_text_colors[Q_COLOR_CONSOLE_TEXT].bg;
                     is_default_color = Q_TRUE;
                     break;
+
+                case 90:
+                    if ((q_status.emulation == Q_EMUL_XTERM_UTF8) ||
+                        (q_status.emulation == Q_EMUL_XTERM)
+                    ) {
+                        /* Set bright black foreground */
+                        foreground = Q_COLOR_BLACK;
+                    }
+                    break;
+                case 91:
+                    if ((q_status.emulation == Q_EMUL_XTERM_UTF8) ||
+                        (q_status.emulation == Q_EMUL_XTERM)
+                    ) {
+                        /* Set bright red foreground */
+                        foreground = Q_COLOR_RED;
+                    }
+                    break;
+                case 92:
+                    if ((q_status.emulation == Q_EMUL_XTERM_UTF8) ||
+                        (q_status.emulation == Q_EMUL_XTERM)
+                    ) {
+                        /* Set bright green foreground */
+                        foreground = Q_COLOR_GREEN;
+                    }
+                    break;
+                case 93:
+                    if ((q_status.emulation == Q_EMUL_XTERM_UTF8) ||
+                        (q_status.emulation == Q_EMUL_XTERM)
+                    ) {
+                        /* Set bright yellow foreground */
+                        foreground = Q_COLOR_YELLOW;
+                    }
+                    break;
+                case 94:
+                    if ((q_status.emulation == Q_EMUL_XTERM_UTF8) ||
+                        (q_status.emulation == Q_EMUL_XTERM)
+                    ) {
+                        /* Set bright blue foreground */
+                        foreground = Q_COLOR_BLUE;
+                    }
+                    break;
+                case 95:
+                    if ((q_status.emulation == Q_EMUL_XTERM_UTF8) ||
+                        (q_status.emulation == Q_EMUL_XTERM)
+                    ) {
+                        /* Set bright magenta foreground */
+                        foreground = Q_COLOR_MAGENTA;
+                    }
+                    break;
+                case 96:
+                    if ((q_status.emulation == Q_EMUL_XTERM_UTF8) ||
+                        (q_status.emulation == Q_EMUL_XTERM)
+                    ) {
+                        /* Set bright cyan foreground */
+                        foreground = Q_COLOR_CYAN;
+                    }
+                    break;
+                case 97:
+                    if ((q_status.emulation == Q_EMUL_XTERM_UTF8) ||
+                        (q_status.emulation == Q_EMUL_XTERM)
+                    ) {
+                        /* Set bright white foreground */
+                        foreground = Q_COLOR_WHITE;
+                    }
+                    break;
+
                 } /* switch (j) */
 
                 /* Wipe out the existing colors and replace */

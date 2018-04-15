@@ -1267,9 +1267,9 @@ void console_keyboard_handler(int keystroke, int flags) {
              * Alt-7 Status line info
              */
             if (q_status.status_line_info == Q_TRUE) {
-                set_status_line(Q_FALSE);
+                q_status.status_line_info = Q_FALSE;
             } else {
-                set_status_line(Q_TRUE);
+                q_status.status_line_info = Q_TRUE;
             }
             return;
         }
