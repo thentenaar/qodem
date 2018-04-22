@@ -1,6 +1,7 @@
 qodem (1.0.1-1) unstable; urgency=low
 
   * Bug fixes
+  * Linux console GPM mouse support
 
  -- Kevin Lamonte <lamonte@users.sourceforge.net>  Sun, 18 Jun 2017 18:50:00 -0500
 

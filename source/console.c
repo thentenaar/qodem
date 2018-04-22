@@ -1697,13 +1697,12 @@ void console_keyboard_handler(int keystroke, int flags) {
                 /*
                  * xterm emulations: listen for the mouse.
                  */
-                mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
-                mouseinterval(0);
+                enable_mouse_listener();
             } else {
                 /*
                  * Non-xterm or mouse disabled, do not listen for the mouse.
                  */
-                mousemask(0, NULL);
+                disable_mouse_listener();
             }
 
             return;

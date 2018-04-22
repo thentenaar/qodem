@@ -256,6 +256,7 @@ static void insert_scrollback_line(struct q_scrolline_struct * insert_point) {
     if (((q_scrollback_max > 0)
             && (q_status.scrollback_lines >= q_scrollback_max)) ||
         ((q_status.scrollback_enabled == Q_FALSE)
+            && (q_in_handle_resize == Q_FALSE)
             && (q_status.scrollback_lines > HEIGHT - STATUS_HEIGHT - 1))
         ) {
 
@@ -354,6 +355,7 @@ void new_scrollback_line() {
     if (((q_scrollback_max > 0)
             && (q_status.scrollback_lines >= q_scrollback_max)) ||
         ((q_status.scrollback_enabled == Q_FALSE)
+            && (q_in_handle_resize == Q_FALSE)
             && (q_status.scrollback_lines > HEIGHT - STATUS_HEIGHT - 1))
     ) {
 

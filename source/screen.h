@@ -31,6 +31,11 @@ extern "C" {
 
 /* Globals ---------------------------------------------------------------- */
 
+#if defined(__linux) && defined(Q_ENABLE_GPM)
+/* If true, then GPM is available for mouse events. */
+extern Q_BOOL q_gpm_mouse;
+#endif
+
 /* Functions -------------------------------------------------------------- */
 
 /**
@@ -567,6 +572,16 @@ extern void screen_win_draw_box_color(void * window, const int left,
                                       const int top, const int right,
                                       const int bottom, const Q_COLOR border,
                                       const Q_COLOR background);
+
+/**
+ * Enable listening for mouse events.
+ */
+extern void enable_mouse_listener();
+
+/**
+ * Disable listening for mouse events.
+ */
+extern void disable_mouse_listener();
 
 #ifdef __cplusplus
 }

@@ -27,7 +27,6 @@
 #include "codepage.h"           /* Q_CODEPAGE */
 #include "phonebook.h"          /* Q_DIAL_METHOD */
 #include "common.h"
-#include "common.h"
 
 #ifdef __cplusplus
 extern "C" {

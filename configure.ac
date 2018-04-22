@@ -25,6 +25,7 @@ AC_CHECK_FUNCS(forkpty)
 AC_CHECK_LIB([ncursesw], [mvwadd_wch], Q_HAS_NCURSES="yes", Q_HAS_NCURSES="no")
 AC_CHECK_LIB([ncurses], [mvwadd_wch], Q_HAS_NCURSES_APPLE="yes", Q_HAS_NCURSES_APPLE="no")
 AC_CHECK_LIB([miniupnpc], [upnpDiscover], Q_USE_SYSTEM_UPNP="yes", Q_USE_SYSTEM_UPNP="no")
+AC_CHECK_LIB([gpm], [Gpm_Open], Q_HAS_LIBGPM="yes", Q_HAS_LIBGPM="no")
 
 dnl SDL is an argument
 disable_sdl=no
@@ -140,6 +141,30 @@ else
         AC_MSG_NOTICE([ *** Using local UPnP library *** ])
         LIBS="$LIBS lib/upnp/libminiupnpc.a"
         CFLAGS="$CFLAGS -DQ_UPNP -Ilib/upnp"
+    fi
+fi
+
+dnl Look for libgpm, and if present enable GPM support
+disable_keymacros=no
+AC_ARG_ENABLE(gpm, [  --disable-gpm           Disable Linux console GPM support])
+if test "x$enable_gpm" = "xyes" ; then
+    disable_gpm=no
+else
+    if test "x$enable_gpm" = "x" ; then
+        disable_gpm=no
+    else
+        disable_gpm=yes
+    fi
+fi
+if test "x$disable_gpm" = "xyes"; then
+    AC_MSG_NOTICE([ *** Disable Linux console GPM support *** ])
+else
+    if test "x$Q_HAS_LIBGPM" = "xyes"; then
+        AC_MSG_NOTICE([ *** libgpm found *** ])
+        LDFLAGS="$LD_FLAGS -lgpm"
+        CFLAGS="$CFLAGS -DQ_ENABLE_GPM"
+    else
+        AC_MSG_ERROR([ *** libgpm NOT found, no Linux console GPM support *** ])
     fi
 fi
 

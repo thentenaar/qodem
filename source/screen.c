@@ -34,6 +34,10 @@
 #define inline __inline
 #endif
 
+/* Set this to a not-NULL value to enable debug log. */
+/* static const char * DLOGNAME = "screen"; */
+static const char * DLOGNAME = NULL;
+
 /**
  * The offset between normal and bolded colors.  Stored in colors.c.
  */
@@ -48,6 +52,18 @@ extern unsigned char q_cols_arg;
 
 /* If true, then initscr() has been called. */
 static Q_BOOL curses_initted = Q_FALSE;
+
+#if defined(__linux) && defined(Q_ENABLE_GPM)
+#include <gpm.h>
+#include "input.h"
+
+/* If true, then GPM is available for mouse events. */
+Q_BOOL q_gpm_mouse = Q_FALSE;
+
+/* The handle to GPM. */
+static Gpm_Connect gpm_connection;
+
+#endif
 
 #if !defined(Q_PDCURSES) && !defined(Q_PDCURSES_WIN32)
 #include <stdlib.h>             /* getenv() */
@@ -1307,10 +1323,7 @@ void screen_teardown() {
         return;
     }
 
-    /*
-     * Disable the mouse
-     */
-    mousemask(0, NULL);
+    disable_mouse_listener();
 
     endwin();
 
@@ -1336,9 +1349,11 @@ void screen_clear_remaining_line(Q_BOOL double_width) {
     if (double_width == Q_TRUE) {
         n /= 2;
     }
-    for (i = x; i < n; i++) {
-        screen_put_char_yx(y, i, ' ', 0,
-                           screen_color(Q_COLOR_CONSOLE_BACKGROUND));
+    if (x < n - 1) {
+        for (i = x; i < n; i++) {
+            screen_put_char_yx(y, i, ' ', 0,
+                               screen_color(Q_COLOR_CONSOLE_BACKGROUND));
+        }
     }
     move(y, x);
 }
@@ -1553,4 +1568,86 @@ void screen_win_draw_box_color(void * window, const int left, const int top,
         }
     }
 
+}
+
+/**
+ * Enable listening for mouse events.
+ */
+void enable_mouse_listener() {
+#if defined(__linux) && defined(Q_ENABLE_GPM)
+    char * term;
+
+    if (q_gpm_mouse == Q_FALSE) {
+        /*
+         * If term is "linux", try to connect to GPM.
+         */
+        term = getenv("TERM");
+        if (term != NULL) {
+            int rc;
+            if (strstr(term, "linux") != NULL) {
+                DLOG(("enable_mouse_listener() connect to GPM\n"));
+                gpm_connection.eventMask = GPM_MOVE | GPM_DRAG;
+                gpm_connection.eventMask |= GPM_DOWN | GPM_UP;
+                gpm_connection.defaultMask = 0;
+                gpm_connection.minMod = 0;
+                gpm_connection.maxMod = 0;
+
+                rc = Gpm_Open(&gpm_connection, 0);
+                if (rc != -1) {
+                    DLOG(("enable_mouse_listener() Gpm_Open OK\n"));
+                    q_gpm_mouse = Q_TRUE;
+                    return;
+                }
+                DLOG(("enable_mouse_listener() Gpm_Open FAILED\n"));
+            }
+        }
+
+        /*
+         * GPM didn't initialize happily, fall through to ncurses.
+         */
+    }
+
+    if (q_gpm_mouse == Q_TRUE) {
+        /*
+         * We already have the mouse, bail out.
+         */
+        return;
+    }
+#endif
+
+    if (curses_initted == Q_TRUE) {
+        DLOG(("enable_mouse_listener() call mousemask()\n"));
+
+        /*
+         * ncurses case: ask for KEY_MOUSE events.
+         */
+        mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
+        mouseinterval(0);
+    }
+}
+
+/**
+ * Disable listening for mouse events.
+ */
+void disable_mouse_listener() {
+#if defined(__linux) && defined(Q_ENABLE_GPM)
+    if (q_gpm_mouse == Q_TRUE) {
+        /*
+         * GPM case: stop listening for mouse events.
+         */
+        DLOG(("disable_mouse_listener() disconnect from GPM\n"));
+        Gpm_Close();
+        q_gpm_mouse = Q_FALSE;
+        return;
+    }
+#endif
+
+    if (curses_initted == Q_TRUE) {
+        DLOG(("disable_mouse_listener() call mousemask()\n"));
+
+        /*
+         * ncurses case: turn off KEY_MOUSE events.
+         */
+        mousemask(0, NULL);
+    }
 }

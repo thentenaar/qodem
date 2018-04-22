@@ -1782,11 +1782,11 @@ struct file_info * view_directory(const char * initial_directory,
         window_top = 2;
 
         page_size = files_n;
-        if (page_size > HEIGHT - STATUS_HEIGHT - window_top - 2) {
+        if (page_size > HEIGHT - STATUS_HEIGHT - window_top - 3) {
             /*
              * Reduce page_size to fit the screen
              */
-            page_size = HEIGHT - STATUS_HEIGHT - window_top - 2;
+            page_size = HEIGHT - STATUS_HEIGHT - window_top - 3;
         }
 
         window_height = page_size + 2;

@@ -722,6 +722,7 @@ enable_serial
 enable_x11
 enable_ssh
 enable_upnp
+enable_gpm
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1357,6 +1358,7 @@ Optional Features:
   --enable-x11            Enable PDCurses-based X11 build
   --enable-ssh            Enable internal ssh (via cryptlib)
   --disable-upnp          Disable UPnP (via libminiupnpc)
+  --disable-gpm           Disable Linux console GPM support
 
 Some influential environment variables:
   CC          C compiler command
@@ -2150,7 +2152,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 ac_config_headers="$ac_config_headers source/config.h"
 
-am__api_version='1.14'
+am__api_version='1.15'
 
 ac_aux_dir=
 for ac_dir in "$srcdir" "$srcdir/.." "$srcdir/../.."; do
@@ -2371,7 +2373,7 @@ else
 $as_echo "$as_me: WARNING: 'missing' script is too old or missing" >&2;}
 fi
 
-if test x"${install_sh}" != xset; then
+if test x"${install_sh+set}" != xset; then
   case $am_aux_dir in
   *\ * | *\	*)
     install_sh="\${SHELL} '$am_aux_dir/install-sh'" ;;
@@ -2699,8 +2701,8 @@ MAKEINFO=${MAKEINFO-"${am_missing_run}makeinfo"}
 # <http://lists.gnu.org/archive/html/automake/2012-07/msg00014.html>
 mkdir_p='$(MKDIR_P)'
 
-# We need awk for the "check" target.  The system "awk" is bad on
-# some platforms.
+# We need awk for the "check" target (and possibly the TAP driver).  The
+# system "awk" is bad on some platforms.
 # Always define AMTAR for backward compatibility.  Yes, it's still used
 # in the wild :-(  We should find a proper way to deprecate it ...
 AMTAR='$${TAR-tar}'
@@ -4478,6 +4480,48 @@ else
   Q_USE_SYSTEM_UPNP="no"
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Gpm_Open in -lgpm" >&5
+$as_echo_n "checking for Gpm_Open in -lgpm... " >&6; }
+if ${ac_cv_lib_gpm_Gpm_Open+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lgpm  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char Gpm_Open ();
+int
+main ()
+{
+return Gpm_Open ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_gpm_Gpm_Open=yes
+else
+  ac_cv_lib_gpm_Gpm_Open=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gpm_Gpm_Open" >&5
+$as_echo "$ac_cv_lib_gpm_Gpm_Open" >&6; }
+if test "x$ac_cv_lib_gpm_Gpm_Open" = xyes; then :
+  Q_HAS_LIBGPM="yes"
+else
+  Q_HAS_LIBGPM="no"
+fi
+
 
 disable_sdl=no
 # Check whether --enable-sdl was given.
@@ -4670,6 +4714,35 @@ $as_echo "$as_me:  *** Using system-provided UPnP library *** " >&6;}
 $as_echo "$as_me:  *** Using local UPnP library *** " >&6;}
         LIBS="$LIBS lib/upnp/libminiupnpc.a"
         CFLAGS="$CFLAGS -DQ_UPNP -Ilib/upnp"
+    fi
+fi
+
+disable_keymacros=no
+# Check whether --enable-gpm was given.
+if test "${enable_gpm+set}" = set; then :
+  enableval=$enable_gpm;
+fi
+
+if test "x$enable_gpm" = "xyes" ; then
+    disable_gpm=no
+else
+    if test "x$enable_gpm" = "x" ; then
+        disable_gpm=no
+    else
+        disable_gpm=yes
+    fi
+fi
+if test "x$disable_gpm" = "xyes"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}:  *** Disable Linux console GPM support *** " >&5
+$as_echo "$as_me:  *** Disable Linux console GPM support *** " >&6;}
+else
+    if test "x$Q_HAS_LIBGPM" = "xyes"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}:  *** libgpm found *** " >&5
+$as_echo "$as_me:  *** libgpm found *** " >&6;}
+        LDFLAGS="$LD_FLAGS -lgpm"
+        CFLAGS="$CFLAGS -DQ_ENABLE_GPM"
+    else
+        as_fn_error $? " *** libgpm NOT found, no Linux console GPM support *** " "$LINENO" 5
     fi
 fi
 

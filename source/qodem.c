@@ -2577,6 +2577,18 @@ static void data_handler() {
 #ifdef Q_PDCURSES_WIN32
             }
 #endif
+#if defined(__linux) && defined(Q_ENABLE_GPM)
+            /*
+             * If we have GPM running, select on its descriptor.
+             */
+            if ((q_gpm_mouse == Q_TRUE) && (gpm_fd > 2)) {
+                DLOG(("GPM FD = %d\n", gpm_fd));
+                FD_SET(gpm_fd, &readfds);
+                if (gpm_fd > select_fd_max) {
+                    select_fd_max = gpm_fd;
+                }
+            }
+#endif
             break;
         case Q_STATE_DOWNLOAD_MENU:
         case Q_STATE_UPLOAD_MENU:
@@ -3020,6 +3032,20 @@ static void data_handler() {
             /* Process incoming data */
             process_incoming_data();
         }
+
+#if defined(__linux) && defined(Q_ENABLE_GPM)
+        /*
+         * If GPM has data, process it.
+         */
+        if ((q_gpm_mouse == Q_TRUE) && FD_ISSET(gpm_fd, &readfds)) {
+            DLOG(("GPM is readable, check it...\n"));
+            Gpm_Event event;
+            if (Gpm_GetEvent(&event) > 0) {
+                DLOG(("Gpm_GetEvent() > 0, call gpm_handle_mouse()\n"));
+                gpm_handle_mouse(&event, 0);
+            }
+        }
+#endif
         break;
     }
 
@@ -3218,6 +3244,7 @@ static void reset_global_state() {
     q_status.doorway_mode           = Q_DOORWAY_MODE_OFF;
     q_status.zmodem_autostart       = Q_TRUE;
     q_status.zmodem_escape_ctrl     = Q_FALSE;
+    q_status.zmodem_zchallenge      = Q_FALSE;
 
     q_status.kermit_autostart               = Q_TRUE;
     q_status.kermit_robust_filename         = Q_FALSE;
