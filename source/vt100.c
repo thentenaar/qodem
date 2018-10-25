@@ -569,7 +569,18 @@ void vt100_reset() {
     /* Reset vt100_state */
     state.saved_cursor_x            = -1;
     state.saved_cursor_y            = -1;
-    q_emulation_right_margin        = 79;
+    if ((q_status.emulation == Q_EMUL_LINUX) ||
+        (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+        (q_status.emulation == Q_EMUL_XTERM) ||
+        (q_status.emulation == Q_EMUL_XTERM_UTF8)
+    ) {
+        /*
+         * For Linux and Xterm, unset the margin, don't assume 80 columns.
+         */
+        q_emulation_right_margin    = -1;
+    } else {
+        q_emulation_right_margin    = 79;
+    }
     q_vt100_new_line_mode           = Q_FALSE;
     q_vt100_arrow_keys              = Q_EMUL_ANSI;
     q_vt100_keypad_mode.keypad_mode = Q_KEYPAD_MODE_NUMERIC;
@@ -1046,7 +1057,19 @@ static void set_toggle(const Q_BOOL value) {
                     DLOG(("DECCOLM: reset -- switch to 80 columns\n"));
                     /* 80 columns */
                     state.columns_132 = Q_FALSE;
-                    q_emulation_right_margin = 79;
+                    if ((q_status.emulation == Q_EMUL_LINUX) ||
+                        (q_status.emulation == Q_EMUL_LINUX_UTF8) ||
+                        (q_status.emulation == Q_EMUL_XTERM) ||
+                        (q_status.emulation == Q_EMUL_XTERM_UTF8)
+                    ) {
+                        /*
+                         * For Linux and Xterm, unset the margin, don't
+                         * assume 80 columns.
+                         */
+                        q_emulation_right_margin = -1;
+                    } else {
+                        q_emulation_right_margin = 79;
+                    }
                 }
                 /* Entire screen is cleared, and scrolling region is reset */
                 erase_screen(0, 0, HEIGHT - STATUS_HEIGHT - 1, WIDTH - 1,
