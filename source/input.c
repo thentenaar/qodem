@@ -1613,6 +1613,11 @@ void handle_mouse() {
              */
             mouse1 = Q_TRUE;
             old_mouse1 = Q_TRUE;
+        } else if ((old_mouse1 == Q_TRUE) && (real_motion == Q_TRUE)) {
+            /*
+             * This is a movement with button 1 down.
+             */
+            mouse1 = Q_TRUE;
         } else if ((old_mouse1 == Q_TRUE) && (real_motion == Q_FALSE)) {
             /*
              * Convert this motion into a RELEASE.  Same logic for the other
@@ -1625,6 +1630,8 @@ void handle_mouse() {
         if ((mouse.bstate & BUTTON2_PRESSED) && (old_mouse2 == Q_FALSE)) {
             mouse2 = Q_TRUE;
             old_mouse2 = Q_TRUE;
+        } else if ((old_mouse2 == Q_TRUE) && (real_motion == Q_TRUE)) {
+            mouse2 = Q_TRUE;
         } else if ((old_mouse2 == Q_TRUE) && (real_motion == Q_FALSE)) {
             mouse2 = Q_TRUE;
             release = Q_TRUE;
@@ -1633,6 +1640,8 @@ void handle_mouse() {
         if ((mouse.bstate & BUTTON3_PRESSED) && (old_mouse3 == Q_FALSE)) {
             mouse3 = Q_TRUE;
             old_mouse3 = Q_TRUE;
+        } else if ((old_mouse3 == Q_TRUE) && (real_motion == Q_TRUE)) {
+            mouse3 = Q_TRUE;
         } else if ((old_mouse3 == Q_TRUE) && (real_motion == Q_FALSE)) {
             mouse3 = Q_TRUE;
             release = Q_TRUE;
@@ -1649,10 +1658,15 @@ void handle_mouse() {
              * down.
              */
             motion = Q_TRUE;
+            mouse1 = old_mouse1;
+            mouse2 = old_mouse2;
+            mouse3 = old_mouse3;
         } else if ((mouse.bstate & BUTTON4_PRESSED) && (old_mouse4 == Q_FALSE)
         ) {
             mouse4 = Q_TRUE;
             old_mouse4 = Q_TRUE;
+        } else if ((old_mouse4 == Q_TRUE) && (real_motion == Q_TRUE)) {
+            mouse4 = Q_TRUE;
         } else if ((old_mouse4 == Q_TRUE) && (real_motion == Q_FALSE)) {
             mouse4 = Q_TRUE;
             release = Q_TRUE;
@@ -1663,6 +1677,8 @@ void handle_mouse() {
         if ((mouse.bstate & BUTTON5_PRESSED) && (old_mouse5 == Q_FALSE)) {
             mouse5 = Q_TRUE;
             old_mouse5 = Q_TRUE;
+        } else if ((old_mouse5 == Q_TRUE) && (real_motion == Q_TRUE)) {
+            mouse5 = Q_TRUE;
         } else if ((old_mouse5 == Q_TRUE) && (real_motion == Q_FALSE)) {
             mouse5 = Q_TRUE;
             release = Q_TRUE;
