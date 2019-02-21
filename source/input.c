@@ -1533,7 +1533,6 @@ void handle_mouse() {
     static Q_BOOL old_mouse1 = Q_FALSE;
     static Q_BOOL old_mouse2 = Q_FALSE;
     static Q_BOOL old_mouse3 = Q_FALSE;
-    static Q_BOOL old_mouse4 = Q_FALSE;
     Q_BOOL mouse1 = Q_FALSE;
     Q_BOOL mouse2 = Q_FALSE;
     Q_BOOL mouse3 = Q_FALSE;
@@ -1543,7 +1542,6 @@ void handle_mouse() {
      * button 5 inside an ifdef check.
      */
 #ifdef BUTTON5_PRESSED
-    static Q_BOOL old_mouse5 = Q_FALSE;
     Q_BOOL mouse5 = Q_FALSE;
 #endif
     static int old_x = -1;
@@ -1661,28 +1659,13 @@ void handle_mouse() {
             mouse1 = old_mouse1;
             mouse2 = old_mouse2;
             mouse3 = old_mouse3;
-        } else if ((mouse.bstate & BUTTON4_PRESSED) && (old_mouse4 == Q_FALSE)
-        ) {
+        } else if (mouse.bstate & BUTTON4_PRESSED) {
             mouse4 = Q_TRUE;
-            old_mouse4 = Q_TRUE;
-        } else if ((old_mouse4 == Q_TRUE) && (real_motion == Q_TRUE)) {
-            mouse4 = Q_TRUE;
-        } else if ((old_mouse4 == Q_TRUE) && (real_motion == Q_FALSE)) {
-            mouse4 = Q_TRUE;
-            release = Q_TRUE;
-            motion = Q_FALSE;
         }
 
 #ifdef BUTTON5_PRESSED
-        if ((mouse.bstate & BUTTON5_PRESSED) && (old_mouse5 == Q_FALSE)) {
+        if (mouse.bstate & BUTTON5_PRESSED) {
             mouse5 = Q_TRUE;
-            old_mouse5 = Q_TRUE;
-        } else if ((old_mouse5 == Q_TRUE) && (real_motion == Q_TRUE)) {
-            mouse5 = Q_TRUE;
-        } else if ((old_mouse5 == Q_TRUE) && (real_motion == Q_FALSE)) {
-            mouse5 = Q_TRUE;
-            release = Q_TRUE;
-            motion = Q_FALSE;
         }
 #endif
 
@@ -1704,20 +1687,6 @@ void handle_mouse() {
             release = Q_TRUE;
             motion = Q_FALSE;
         }
-        if (mouse.bstate & BUTTON4_RELEASED) {
-            mouse4 = Q_TRUE;
-            old_mouse4 = Q_FALSE;
-            release = Q_TRUE;
-            motion = Q_FALSE;
-        }
-#ifdef BUTTON5_RELEASED
-        if (mouse.bstate & BUTTON5_RELEASED) {
-            mouse5 = Q_TRUE;
-            old_mouse5 = Q_FALSE;
-            release = Q_TRUE;
-            motion = Q_FALSE;
-        }
-#endif
         if ((release == Q_FALSE) && (motion == Q_FALSE)) {
             press = Q_TRUE;
         }
