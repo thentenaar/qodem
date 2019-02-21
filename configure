@@ -4621,8 +4621,7 @@ fi
 
 if test "x$enable_x11" = "xyes"; then
     subdirs="lib/pdcurses $subdirs"
-    LIBS="$LIBS lib/pdcurses/libXCurses.a"
-    LDFLAGS="$LD_FLAGS -lXaw -lXmu -lXt -lX11 -lXpm"
+    LIBS="$LIBS lib/pdcurses/libXCurses.a -lXaw -lXmu -lXt -lX11 -lXpm"
     CFLAGS="$CFLAGS -Ilib/pdcurses/include -DQ_PDCURSES"
 fi
 
@@ -4732,6 +4731,11 @@ else
         disable_gpm=yes
     fi
 fi
+if test "x$enable_x11" = "xyes" ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}:  *** Disable Linux console GPM support due to X11 build *** " >&5
+$as_echo "$as_me:  *** Disable Linux console GPM support due to X11 build *** " >&6;}
+    disable_gpm=yes
+fi
 if test "x$disable_gpm" = "xyes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}:  *** Disable Linux console GPM support *** " >&5
 $as_echo "$as_me:  *** Disable Linux console GPM support *** " >&6;}
@@ -4739,7 +4743,7 @@ else
     if test "x$Q_HAS_LIBGPM" = "xyes"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}:  *** libgpm found *** " >&5
 $as_echo "$as_me:  *** libgpm found *** " >&6;}
-        LDFLAGS="$LD_FLAGS -lgpm"
+        LIBS="$LIBS -lgpm"
         CFLAGS="$CFLAGS -DQ_ENABLE_GPM"
     else
         as_fn_error $? " *** libgpm NOT found, no Linux console GPM support *** " "$LINENO" 5
