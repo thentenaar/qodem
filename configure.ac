@@ -73,8 +73,7 @@ dnl X11 build option
 AC_ARG_ENABLE(x11, [  --enable-x11            Enable PDCurses-based X11 build])
 if test "x$enable_x11" = "xyes"; then
     subdirs="lib/pdcurses $subdirs"
-    LIBS="$LIBS lib/pdcurses/libXCurses.a"
-    LDFLAGS="$LD_FLAGS -lXaw -lXmu -lXt -lX11 -lXpm"
+    LIBS="$LIBS lib/pdcurses/libXCurses.a -lXaw -lXmu -lXt -lX11 -lXpm"
     CFLAGS="$CFLAGS -Ilib/pdcurses/include -DQ_PDCURSES"
 fi
 AC_SUBST(subdirs)
@@ -156,12 +155,16 @@ else
         disable_gpm=yes
     fi
 fi
+if test "x$enable_x11" = "xyes" ; then
+    AC_MSG_NOTICE([ *** Disable Linux console GPM support due to X11 build *** ])
+    disable_gpm=yes
+fi
 if test "x$disable_gpm" = "xyes"; then
     AC_MSG_NOTICE([ *** Disable Linux console GPM support *** ])
 else
     if test "x$Q_HAS_LIBGPM" = "xyes"; then
         AC_MSG_NOTICE([ *** libgpm found *** ])
-        LDFLAGS="$LD_FLAGS -lgpm"
+        LIBS="$LIBS -lgpm"
         CFLAGS="$CFLAGS -DQ_ENABLE_GPM"
     else
         AC_MSG_ERROR([ *** libgpm NOT found, no Linux console GPM support *** ])
