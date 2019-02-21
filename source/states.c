@@ -176,12 +176,16 @@ void refresh_handler() {
 
     case Q_STATE_CONSOLE:
         /*
-         * Only update the console 8 times a second
+         * Only update the console 8 times a second when in flood.
          */
-        gettimeofday(&tv, NULL);
-        if ((tv.tv_usec < last_time) || (tv.tv_usec - last_time > 125000)) {
+        if (q_console_flood == Q_TRUE) {
+            gettimeofday(&tv, NULL);
+            if ((tv.tv_usec < last_time) || (tv.tv_usec - last_time > 125000)) {
+                console_refresh(Q_TRUE);
+                last_time = tv.tv_usec;
+            }
+        } else {
             console_refresh(Q_TRUE);
-            last_time = tv.tv_usec;
         }
         break;
     case Q_STATE_SCRIPT_EXECUTE:

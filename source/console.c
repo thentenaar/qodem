@@ -954,16 +954,16 @@ void console_keyboard_handler(int keystroke, int flags) {
 
 #endif
 
-    if ((keystroke == Q_KEY_BRACKET_ON) &&
-        (q_status.bracketed_paste_mode == Q_TRUE)
-    ) {
-        bracketed_paste_on();
+    if (keystroke == Q_KEY_BRACKET_ON) {
+        if (q_status.bracketed_paste_mode == Q_TRUE) {
+            bracketed_paste_on();
+        }
         return;
     }
-    if ((keystroke == Q_KEY_BRACKET_OFF) &&
-        (q_status.bracketed_paste_mode == Q_TRUE)
-    ) {
-        bracketed_paste_off();
+    if (keystroke == Q_KEY_BRACKET_OFF) {
+        if (q_status.bracketed_paste_mode == Q_TRUE) {
+            bracketed_paste_off();
+        }
         return;
     }
 
@@ -1267,9 +1267,9 @@ void console_keyboard_handler(int keystroke, int flags) {
              * Alt-7 Status line info
              */
             if (q_status.status_line_info == Q_TRUE) {
-                set_status_line(Q_FALSE);
+                q_status.status_line_info = Q_FALSE;
             } else {
-                set_status_line(Q_TRUE);
+                q_status.status_line_info = Q_TRUE;
             }
             return;
         }
@@ -1697,13 +1697,12 @@ void console_keyboard_handler(int keystroke, int flags) {
                 /*
                  * xterm emulations: listen for the mouse.
                  */
-                mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
-                mouseinterval(0);
+                enable_mouse_listener();
             } else {
                 /*
                  * Non-xterm or mouse disabled, do not listen for the mouse.
                  */
-                mousemask(0, NULL);
+                disable_mouse_listener();
             }
 
             return;

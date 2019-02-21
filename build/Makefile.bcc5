@@ -22,7 +22,7 @@ default: qodem
 # Available defines are listed below.  If none are set, qodem is built
 # as: Win32 PDCurses; using external 'ssh' binary; no UPnP; serial
 # port support enabled; do use newterm() (but a separate check disable
-# newterm() on PDCurses anyway).
+# newterm() on PDCurses anyway); no GPM.
 #
 # Q_SSH_CRYPTLIB     - Use the cryptlib library to do ssh connections
 #                      rather than spawn the ssh binary through a pty.
@@ -51,6 +51,9 @@ default: qodem
 #
 # Q_NO_NEWTERM       - Do not call newterm() in initialize_keyboard().  This
 #                      is required for running on Arch Linux.
+#
+# Q_ENABLE_GPM       - Enable GPM mouse support.  You will need to add
+#                      -lgpm to LDLIBS.
 #
 # QMODEM_INFO_SCREEN - Use a Qmodem 5.0-derived screen for the Alt-I info
 #                      display.

@@ -27,7 +27,6 @@
 #include "codepage.h"           /* Q_CODEPAGE */
 #include "phonebook.h"          /* Q_DIAL_METHOD */
 #include "common.h"
-#include "common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -714,7 +713,7 @@ extern FILE * open_workingdir_file(const char * filename, char ** new_filename);
 extern char * get_datadir_filename(const char * filename);
 
 /**
- * Get the full path to a filename in the wirking directory.  Note that the
+ * Get the full path to a filename in the working directory.  Note that the
  * string returned is a single static buffer, i.e. this is NOT thread-safe.
  *
  * @param filename a relative filename
@@ -763,6 +762,22 @@ extern int qodem_write(const int fd, const char * data, const int data_n,
                        const Q_BOOL sync);
 
 /**
+ * Buffer up data to write to the remote system.
+ *
+ * @param data the buffer to read from
+ * @param data_n the number of bytes to write to the remote side
+ */
+extern void qodem_buffered_write(const char * data, const int data_n);
+
+/**
+ * Write data from the buffer of qodem_buffered_write() to the remote system,
+ * dispatching to the appropriate connection-specific write function.
+ *
+ * @param fd the socket descriptor
+ */
+extern void qodem_buffered_write_flush(const int fd);
+
+/**
  * Spawn a command in an external terminal.  This is used for the mail reader
  * and external file editors.
  *
@@ -775,6 +790,22 @@ extern void spawn_terminal(const char * command);
  * connection-specific close function.
  */
 extern void close_connection();
+
+/**
+ * Close a remote network connection.
+ */
+extern void close_network_connection();
+
+/**
+ * Close a wrapped shell connection.
+ */
+extern void close_shell_connection();
+
+/*
+ * A function pointer containing the appropriate network close connection to
+ * call, set by dial_out().
+ */
+extern void (*close_function)();
 
 #ifdef __cplusplus
 }

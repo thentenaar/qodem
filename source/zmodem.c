@@ -512,9 +512,20 @@ static void makecrc(void) {
  *
  * The CRC is computed using preset to -1 and invert.
  */
-static uint32_t compute_crc32(const uint32_t old_crc, const unsigned char *buf,
+static uint32_t compute_crc32(const uint32_t old_crc, const unsigned char * buf,
                               unsigned len) {
     uint32_t crc;
+    unsigned int i;
+
+    if (!buf) {
+        DLOG(("compute_crc32(): initialize\n"));
+    } else if (len > 1) {
+        DLOG(("compute_crc32(): %d input bytes:", len));
+        for (i = 0; i < len; i++) {
+            DLOG2((" %02x", buf[i]));
+        }
+        DLOG2(("\n"));
+    }
 
     if (buf) {
         crc = old_crc;
@@ -1267,9 +1278,7 @@ decode_zdata_bytes_big_loop:
 static unsigned char encode_byte_map[256];
 
 /**
- * Turn one byte into up to two escaped bytes, copying to output.
- *
- * The output buffer must be big enough to contain all the data.
+ * Set up the encode map.
  */
 static void setup_encode_byte_map() {
 
@@ -2841,10 +2850,13 @@ static Q_BOOL receive_zrinit_wait(unsigned char * output,
                 setup_encode_byte_map();
 
                 /*
-                 * ZACK the ZSINIT
+                 * Record the prior state and switch to data processing
                  */
-                options = 0;
-                build_packet(P_ZACK, options, output, output_n, output_max);
+                status.prior_state = ZRINIT_WAIT;
+                status.state = ZDATA;
+                packet.data_n = 0;
+                packet.crc16 = 0;
+                packet.crc32 = compute_crc32(0, NULL, 0);
 
             } else if (packet.type == P_ZCOMMAND) {
                 /*
@@ -3140,10 +3152,21 @@ static Q_BOOL receive_zfile() {
     /*
      * size, mtime, umask, files left, total left
      */
-    sscanf((char *) packet.data + strlen((char *) packet.data) + 1,
-           "%u %lo %o 0 %d %ld", (unsigned int *) &status.file_size,
-           &status.file_modtime, (int *) &permissions, &filesleft,
-           &totalbytesleft);
+    rc = sscanf((char *) packet.data + strlen((char *) packet.data) + 1,
+                "%u %lo %o 0 %d %ld", (unsigned int *) &status.file_size,
+                &status.file_modtime, (int *) &permissions, &filesleft,
+                &totalbytesleft);
+
+    DLOG(("receive_zfile(): sscanf() rc = %d\n", rc))
+    if (rc < 5) {
+        totalbytesleft = 0;
+    }
+    if (rc < 4) {
+        filesleft = 0;
+    }
+    if (rc < 3) {
+        permissions = 027;
+    }
 
     /*
      * It so happens we can't use the permissions mask.  Forsberg didn't

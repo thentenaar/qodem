@@ -1118,8 +1118,7 @@ void post_keystroke(const int keystroke, const int flags) {
              * Send the ALT ESCAPE character first
              */
             encode_utf8_char(C_ESC);
-            qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer),
-                        Q_TRUE);
+            qodem_buffered_write(utf8_buffer, strlen(utf8_buffer));
 
             if (q_status.emulation == Q_EMUL_DEBUG) {
                 for (i = 0; i < strlen(utf8_buffer); i++) {
@@ -1136,7 +1135,7 @@ void post_keystroke(const int keystroke, const int flags) {
          * Special case: ^@
          */
         if ((keystroke2 == 0) && (flags & KEY_FLAG_CTRL)) {
-            qodem_write(q_child_tty_fd, "\0", 1, Q_TRUE);
+            qodem_buffered_write("\0", 1);
             if (q_status.emulation == Q_EMUL_DEBUG) {
                 debug_local_echo('\0');
                 /*
@@ -1162,8 +1161,7 @@ void post_keystroke(const int keystroke, const int flags) {
                     q_status.codepage);
                 utf8_buffer[1] = 0;
             }
-            qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer),
-                        Q_TRUE);
+            qodem_buffered_write(utf8_buffer, strlen(utf8_buffer));
         }
 
         if (q_status.emulation == Q_EMUL_DEBUG) {
@@ -1203,6 +1201,7 @@ void post_keystroke(const int keystroke, const int flags) {
         /*
          * Done
          */
+        qodem_buffered_write_flush(q_child_tty_fd);
         return;
 
     } /* if (!q_key_code_yes(keystroke2) || ((flags & KEY_FLAG_UNICODE) != 0)) */
@@ -1373,8 +1372,7 @@ void post_keystroke(const int keystroke, const int flags) {
                         q_status.codepage);
                     utf8_buffer[1] = 0;
                 }
-                qodem_write(q_child_tty_fd, utf8_buffer, strlen(utf8_buffer),
-                            Q_TRUE);
+                qodem_buffered_write(utf8_buffer, strlen(utf8_buffer));
 
                 if (q_status.emulation == Q_EMUL_DEBUG) {
                     for (i = 0; i < strlen(utf8_buffer); i++) {
@@ -1393,8 +1391,7 @@ void post_keystroke(const int keystroke, const int flags) {
                 ) {
                     if (keystroke == Q_KEY_ENTER) {
                         encode_utf8_char(C_LF);
-                        qodem_write(q_child_tty_fd, utf8_buffer,
-                            strlen(utf8_buffer), Q_TRUE);
+                        qodem_buffered_write(utf8_buffer, strlen(utf8_buffer));
                         if (q_status.emulation == Q_EMUL_DEBUG) {
                             debug_local_echo(C_LF);
                             /*
@@ -1422,14 +1419,17 @@ void post_keystroke(const int keystroke, const int flags) {
                 ) {
                     if (q_vt100_new_line_mode == Q_TRUE) {
                         encode_utf8_char(C_LF);
-                        qodem_write(q_child_tty_fd, utf8_buffer,
-                            strlen(utf8_buffer), Q_TRUE);
+                        qodem_buffered_write(utf8_buffer, strlen(utf8_buffer));
                     }
                 }
             }
         }
     }
 
+    /*
+     * Send it out to the wire.
+     */
+    qodem_buffered_write_flush(q_child_tty_fd);
 }
 
 /**

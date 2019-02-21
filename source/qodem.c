@@ -208,6 +208,14 @@ static unsigned char q_buffer_raw[Q_BUFFER_SIZE];
 static int q_buffer_raw_n = 0;
 
 /*
+ * The output buffer used by qodem_buffered_write() and
+ * qodem_buffered_write_flush().
+ */
+static char * buffered_write_buffer = NULL;
+static int buffered_write_buffer_i = 0;
+static int buffered_write_buffer_n = 0;
+
+/*
  * The output buffer for sending raw bytes to the remote side.  This is used
  * by the modem dialer, scripts, host mode, and file transfer protocols.
  * Console (keyboard) output does not use this, that is sent directly to
@@ -355,6 +363,12 @@ static struct timeval ssh_tv;
 extern int xc_key_sock;
 #endif
 
+/*
+ * A function pointer containing the appropriate network close connection to
+ * call, set by dial_out().
+ */
+void (*close_function)();
+
 #ifndef WIN32
 
 /*
@@ -386,7 +400,7 @@ static void handle_sigchld(int sig) {
             /*
              * Error in the waitpid() call.
              */
-            DLOG(("Error in waitpid(): %s (%d)\n", errno, strerror(errno)));
+            DLOG(("Error in waitpid(): %s (%d)\n", strerror(errno), errno));
             break;
         }
         if (pid == 0) {
@@ -746,6 +760,63 @@ do_write:
 }
 
 /**
+ * Buffer up data to write to the remote system.
+ *
+ * @param data the buffer to read from
+ * @param data_n the number of bytes to write to the remote side
+ */
+void qodem_buffered_write(const char * data, const int data_n) {
+    if (DLOGNAME != NULL) {
+        int i;
+
+        DLOG(("qodem_buffered_write() OUTPUT bytes: "));
+        for (i = 0; i < data_n; i++) {
+            DLOG2(("%02x ", data[i] & 0xFF));
+        }
+        DLOG2(("\n"));
+        DLOG(("qodem_buffered_write() OUTPUT bytes (ASCII): "));
+        for (i = 0; i < data_n; i++) {
+            DLOG2(("%c ", data[i] & 0xFF));
+        }
+        DLOG2(("\n"));
+    }
+
+    if (buffered_write_buffer == NULL) {
+        assert(buffered_write_buffer_n == 0);
+        buffered_write_buffer = (char *) Xmalloc(sizeof(char) * data_n,
+            __FILE__, __LINE__);
+        buffered_write_buffer_n += data_n;
+    } else if ((buffered_write_buffer_i + data_n) > buffered_write_buffer_n) {
+        buffered_write_buffer = (char *) Xrealloc(buffered_write_buffer,
+            sizeof(char) * (buffered_write_buffer_n + data_n), __FILE__,
+            __LINE__);
+        buffered_write_buffer_n += data_n;
+    } else {
+        assert(buffered_write_buffer_i + data_n <= buffered_write_buffer_n);
+    }
+
+    memcpy(buffered_write_buffer + buffered_write_buffer_i, data, data_n);
+    buffered_write_buffer_i += data_n;
+}
+
+/**
+ * Write data from the buffer of qodem_buffered_write() to the remote system,
+ * dispatching to the appropriate connection-specific write function.
+ *
+ * @param fd the socket descriptor
+ */
+void qodem_buffered_write_flush(const int fd) {
+    DLOG(("qodem_buffered_write_flush()\n"));
+
+    if (buffered_write_buffer_i > 0) {
+        qodem_write(fd, buffered_write_buffer, buffered_write_buffer_i, Q_TRUE);
+    } else {
+        assert(buffered_write_buffer_i == 0);
+    }
+    buffered_write_buffer_i = 0;
+}
+
+/**
  * Read data from remote system to a buffer, dispatching to the
  * appropriate connection-specific read function.
  *
@@ -940,7 +1011,7 @@ serial_read_result:
 static char * usage_string() {
         return _(""
 "'qodem' is a terminal emulator with support for scrollback, capture, file\n"
-"transfers, keyboard macros, scripting, and more.  This is version 1.0.0.\n"
+"transfers, keyboard macros, scripting, and more.  This is version 1.0.1.\n"
 "\n"
 "Usage: qodem [OPTIONS] { [ --dial N ] | [ --connect ] | [ command line ] }\n"
 "\n"
@@ -976,7 +1047,7 @@ static char * usage_string() {
 "      --emulation EMULATION       Select emulation EMULATION.  Valid values are\n"
 "                                  \"ansi\", \"avatar\", \"debug\", \"vt52\", \"vt100\",\n"
 "                                  \"vt102\", \"vt220\", \"linux\", \"l_utf8\", \"xterm\",\n"
-"                                  \"petscii\", and \"atascii\".\n"
+"                                  \"x_utf8\", \"petscii\", and \"atascii\".\n"
 "      --status-line { on | off }  If \"on\" enable status line.  If \"off\" disable\n"
 "                                  status line.\n"
 "      --play MUSIC                Play MUSIC as ANSI Music\n"
@@ -999,7 +1070,7 @@ static char * usage_string() {
  */
 static char * version_string() {
     return _(""
-"qodem version 1.0.0\n"
+"qodem version 1.0.1\n"
 "Written 2003-2017 by Kevin Lamonte\n"
 "\n"
 "To the extent possible under law, the author(s) have dedicated all\n"
@@ -1287,15 +1358,19 @@ static void resolve_command_line_options() {
         } else {
             q_status.doorway_mode = Q_DOORWAY_MODE_OFF;
         }
+        initial_call.doorway = q_status.doorway_mode;
     }
 
     if (q_emulation_option != NULL) {
         q_status.emulation = emulation_from_string(q_emulation_option);
         q_status.codepage = default_codepage(q_status.emulation);
+        initial_call.emulation = q_status.emulation;
+        initial_call.codepage = q_status.codepage;
     }
 
     if (q_codepage_option != NULL) {
         q_status.codepage = codepage_from_string(q_codepage_option);
+        initial_call.codepage = q_status.codepage;
     }
 
     q_status.exit_on_disconnect = q_exit_on_disconnect;
@@ -1330,15 +1405,114 @@ void qlog(const char * format, ...) {
 }
 
 /**
- * Cleanup connection resources, called AFTER read() has returned 0.
+ * Close a remote network connection.
  */
-static void cleanup_connection() {
+void close_network_connection() {
+
+    DLOG(("close_network_connection()\n"));
+
+#ifndef Q_NO_SERIAL
+    assert(q_status.dial_method != Q_DIAL_METHOD_MODEM);
+#endif
+
+    assert((q_status.dial_method == Q_DIAL_METHOD_SOCKET) ||
+        (q_status.dial_method == Q_DIAL_METHOD_TELNET) ||
+        (q_status.dial_method == Q_DIAL_METHOD_RLOGIN) ||
+        (q_status.dial_method == Q_DIAL_METHOD_SSH));
+
+    if (q_status.dial_method == Q_DIAL_METHOD_SOCKET) {
+        net_force_close();
+    } else {
+        net_close();
+    }
+
+#ifdef Q_PDCURSES_WIN32
+    closesocket(q_child_tty_fd);
+#else
+    close(q_child_tty_fd);
+#endif
+    q_child_tty_fd = -1;
+    qlog(_("Connection closed.\n"));
+}
+
+/**
+ * Close a wrapped shell connection.
+ */
+void close_shell_connection() {
 
 #ifdef Q_PDCURSES_WIN32
     DWORD status;
 #else
     int status;
 #endif
+
+    DLOG(("close_shell_connection()\n"));
+
+#ifndef Q_NO_SERIAL
+    assert(q_status.dial_method != Q_DIAL_METHOD_MODEM);
+#endif
+
+#ifdef Q_PDCURSES_WIN32
+
+    assert(q_child_tty_fd == -1);
+
+    if (GetExitCodeProcess(q_child_process, &status) == TRUE) {
+        /* Got return code */
+        if (status == STILL_ACTIVE) {
+            /*
+             * Process thinks it's still running, DIE!
+             */
+            TerminateProcess(q_child_process, -1);
+            status = -1;
+            qlog(_("Connection forcibly terminated: still thinks it is alive.\n"));
+        } else {
+            qlog(_("Connection exited with RC=%u\n"), status);
+        }
+    } else {
+        /*
+         * Can't get process exit code
+         */
+        TerminateProcess(q_child_process, -1);
+        qlog(_("Connection forcibly terminated: unable to get exit code.\n"));
+    }
+
+    /* Close pipes */
+    CloseHandle(q_child_stdin);
+    q_child_stdin = NULL;
+    CloseHandle(q_child_stdout);
+    q_child_stdout = NULL;
+    CloseHandle(q_child_process);
+    q_child_process = NULL;
+    CloseHandle(q_child_thread);
+    q_child_thread = NULL;
+
+#else
+
+    assert(q_child_pid != -1);
+    assert(q_child_tty_fd != -1);
+
+    /* Close pty */
+    close(q_child_tty_fd);
+    q_child_tty_fd = -1;
+    Xfree(q_child_ttyname, __FILE__, __LINE__);
+    wait4(q_child_pid, &status, WNOHANG, NULL);
+    if (WIFEXITED(status)) {
+        qlog(_("Connection exited with RC=%u\n"), WEXITSTATUS(status));
+        if (q_status.exit_on_disconnect == Q_TRUE) {
+            q_exitrc = WEXITSTATUS(status);
+        }
+    } else if (WIFSIGNALED(status)) {
+        qlog(_("Connection exited with signal=%u\n"), WTERMSIG(status));
+    }
+    q_child_pid = -1;
+
+#endif /* Q_PDCURSES_WIN32 */
+}
+
+/**
+ * Cleanup connection resources, called AFTER read() has returned 0.
+ */
+static void cleanup_connection() {
 
     DLOG(("cleanup_connection()\n"));
 
@@ -1390,109 +1564,11 @@ static void cleanup_connection() {
         }
 
     } else {
-
-#ifndef Q_NO_SERIAL
-        assert(q_status.dial_method != Q_DIAL_METHOD_MODEM);
-#endif
-
-        switch (q_status.dial_method) {
-        case Q_DIAL_METHOD_SOCKET:
-            /* Fall through... */
-        case Q_DIAL_METHOD_TELNET:
-            /* Fall through... */
-        case Q_DIAL_METHOD_RLOGIN:
-            /* Fall through... */
-        case Q_DIAL_METHOD_SSH:
-            /* Fall through... */
-
-            /*
-             * The remote side initiated the close, this is the ideal closing
-             * sequence.
-             */
-            if (net_is_connected() == Q_TRUE) {
-                if (q_status.dial_method == Q_DIAL_METHOD_SOCKET) {
-                    net_force_close();
-                } else {
-                    net_close();
-                }
-            }
-
-#ifdef Q_PDCURSES_WIN32
-            closesocket(q_child_tty_fd);
-#else
-            close(q_child_tty_fd);
-#endif
-            q_child_tty_fd = -1;
-            qlog(_("Connection closed.\n"));
-            break;
-
-        case Q_DIAL_METHOD_COMMANDLINE:
-            /* Fall through... */
-        case Q_DIAL_METHOD_SHELL:
-
-#ifdef Q_PDCURSES_WIN32
-
-            assert(q_child_tty_fd == -1);
-
-            if (GetExitCodeProcess(q_child_process, &status) == TRUE) {
-                /* Got return code */
-                if (status == STILL_ACTIVE) {
-                    /*
-                     * Process thinks it's still running, DIE!
-                     */
-                    TerminateProcess(q_child_process, -1);
-                    status = -1;
-                    qlog(_("Connection forcibly terminated: still thinks it is alive.\n"));
-                } else {
-                    qlog(_("Connection exited with RC=%u\n"), status);
-                }
-            } else {
-                /*
-                 * Can't get process exit code
-                 */
-                TerminateProcess(q_child_process, -1);
-                qlog(_("Connection forcibly terminated: unable to get exit code.\n"));
-            }
-
-            /* Close pipes */
-            CloseHandle(q_child_stdin);
-            q_child_stdin = NULL;
-            CloseHandle(q_child_stdout);
-            q_child_stdout = NULL;
-            CloseHandle(q_child_process);
-            q_child_process = NULL;
-            CloseHandle(q_child_thread);
-            q_child_thread = NULL;
-
-#else
-
-            /* Close pty */
-            close(q_child_tty_fd);
-            q_child_tty_fd = -1;
-            Xfree(q_child_ttyname, __FILE__, __LINE__);
-            wait4(q_child_pid, &status, WNOHANG, NULL);
-            if (WIFEXITED(status)) {
-                qlog(_("Connection exited with RC=%u\n"), WEXITSTATUS(status));
-                if (q_status.exit_on_disconnect == Q_TRUE) {
-                    q_exitrc = WEXITSTATUS(status);
-                }
-            } else if (WIFSIGNALED(status)) {
-                qlog(_("Connection exited with signal=%u\n"), WTERMSIG(status));
-            }
-            q_child_pid = -1;
-
-#endif /* Q_PDCURSES_WIN32 */
-
-            break;
-
-#ifndef Q_NO_SERIAL
-        case Q_DIAL_METHOD_MODEM:
-            /* BUG */
-            abort();
-            break;
-#endif
-
-        }
+        /*
+         * Call the appropriate close function.
+         */
+        assert(close_function != NULL);
+        close_function();
 
         /* Increment stats */
         if (q_current_dial_entry != NULL) {
@@ -1526,6 +1602,13 @@ void close_connection() {
          */
         if ((q_program_state != Q_STATE_HOST) &&
             (q_status.dial_method == Q_DIAL_METHOD_SOCKET)
+#ifdef Q_SSH_CRYPTLIB
+            /*
+             * Cryptlib does not return 0 on the next read() after
+             * cryptDestroySession(), so treat it like socket.
+             */
+            || (q_status.dial_method == Q_DIAL_METHOD_SSH)
+#endif
         ) {
             cleanup_connection();
             net_force_close();
@@ -1553,6 +1636,7 @@ void close_connection() {
     assert(q_child_pid != -1);
     kill(q_child_pid, SIGHUP);
 #endif /* Q_PDCURSES_WIN32 */
+
 }
 
 /**
@@ -2493,6 +2577,18 @@ static void data_handler() {
 #ifdef Q_PDCURSES_WIN32
             }
 #endif
+#if defined(__linux) && defined(Q_ENABLE_GPM)
+            /*
+             * If we have GPM running, select on its descriptor.
+             */
+            if ((q_gpm_mouse == Q_TRUE) && (gpm_fd > 2)) {
+                DLOG(("GPM FD = %d\n", gpm_fd));
+                FD_SET(gpm_fd, &readfds);
+                if (gpm_fd > select_fd_max) {
+                    select_fd_max = gpm_fd;
+                }
+            }
+#endif
             break;
         case Q_STATE_DOWNLOAD_MENU:
         case Q_STATE_UPLOAD_MENU:
@@ -2936,6 +3032,20 @@ static void data_handler() {
             /* Process incoming data */
             process_incoming_data();
         }
+
+#if defined(__linux) && defined(Q_ENABLE_GPM)
+        /*
+         * If GPM has data, process it.
+         */
+        if ((q_gpm_mouse == Q_TRUE) && FD_ISSET(gpm_fd, &readfds)) {
+            DLOG(("GPM is readable, check it...\n"));
+            Gpm_Event event;
+            if (Gpm_GetEvent(&event) > 0) {
+                DLOG(("Gpm_GetEvent() > 0, call gpm_handle_mouse()\n"));
+                gpm_handle_mouse(&event, 0);
+            }
+        }
+#endif
         break;
     }
 
@@ -2998,7 +3108,7 @@ char * get_datadir_filename(const char * filename) {
 }
 
 /**
- * Get the full path to a filename in the wirking directory.  Note that the
+ * Get the full path to a filename in the working directory.  Note that the
  * string returned is a single static buffer, i.e. this is NOT thread-safe.
  *
  * @param filename a relative filename
@@ -3134,6 +3244,7 @@ static void reset_global_state() {
     q_status.doorway_mode           = Q_DOORWAY_MODE_OFF;
     q_status.zmodem_autostart       = Q_TRUE;
     q_status.zmodem_escape_ctrl     = Q_FALSE;
+    q_status.zmodem_zchallenge      = Q_FALSE;
 
     q_status.kermit_autostart               = Q_TRUE;
     q_status.kermit_robust_filename         = Q_FALSE;
@@ -3287,6 +3398,15 @@ int qodem_main(int argc, char * const argv[]) {
 #endif /* ENABLE_NLS && HAVE_GETTEXT */
 
     /*
+     * We reduce ESCDELAY on the assumption that local console is VERY fast.
+     * However, if the user has already set ESCDELAY, we don't want to change
+     * it.
+     */
+    if (getenv("ESCDELAY") == NULL) {
+        putenv("ESCDELAY=20");
+    }
+
+    /*
      * If the user asked for help or version, do that and bail out before
      * doing anything else like reading or writing to disk.
      */
@@ -3345,6 +3465,7 @@ int qodem_main(int argc, char * const argv[]) {
     initial_call.port           = "22";
     initial_call.password       = L"";
     initial_call.emulation      = Q_EMUL_XTERM_UTF8;
+    initial_call.method         = Q_DIAL_METHOD_SSH;
     initial_call.codepage       = default_codepage(initial_call.emulation);
     initial_call.notes          = NULL;
     initial_call.script_filename            = "";
@@ -3470,15 +3591,6 @@ int qodem_main(int argc, char * const argv[]) {
     setup_help();
 
     /*
-     * We reduce ESCDELAY on the assumption that local console is VERY fast.
-     * However, if the user has already set ESCDELAY, we don't want to change
-     * it.
-     */
-    if (getenv("ESCDELAY") == NULL) {
-        putenv("ESCDELAY=20");
-    }
-
-    /*
      * See if the user wants automatic capture/logging enabled.
      */
     if (strcasecmp(get_option(Q_OPTION_CAPTURE), "true") == 0) {
@@ -3512,8 +3624,6 @@ int qodem_main(int argc, char * const argv[]) {
         initial_call.name = Xstring_to_wcsdup(initial_call.address,
             __FILE__, __LINE__);
         goto no_initial_call;
-    } else {
-        initial_call.method = Q_DIAL_METHOD_SSH;
     }
 
     /*

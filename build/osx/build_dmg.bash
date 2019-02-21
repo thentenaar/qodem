@@ -17,7 +17,7 @@
 # qodem/build/osx.  It leaves behind the 'dmg' directory which can be
 # removed.
 
-VERSION=1.0.0
+VERSION=1.0.1
 
 if [ ! -f Qodem.app/Contents/MacOS/qodem-bin ]; then
     echo "Qodem binary not found.  Build it on a Mac first!"

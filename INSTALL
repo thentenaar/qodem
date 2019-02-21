@@ -48,6 +48,12 @@ following is the standard autoconf installation:
      files that `configure' created (so you can compile the package
      for a different kind of computer), type `make distclean'.
 
+Note that if you build Qodem directly from a source repository, you
+must have automake installed and use that to generate Makefile.in.
+You choose to execute `./autogen.sh` and skip step 1 above (as it
+already runs configure); or run `aclocal && automake && autoconf'
+before step 1 above.
+
 
 Visual C++ Project Files
 ------------------------

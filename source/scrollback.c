@@ -256,6 +256,7 @@ static void insert_scrollback_line(struct q_scrolline_struct * insert_point) {
     if (((q_scrollback_max > 0)
             && (q_status.scrollback_lines >= q_scrollback_max)) ||
         ((q_status.scrollback_enabled == Q_FALSE)
+            && (q_in_handle_resize == Q_FALSE)
             && (q_status.scrollback_lines > HEIGHT - STATUS_HEIGHT - 1))
         ) {
 
@@ -354,6 +355,7 @@ void new_scrollback_line() {
     if (((q_scrollback_max > 0)
             && (q_status.scrollback_lines >= q_scrollback_max)) ||
         ((q_status.scrollback_enabled == Q_FALSE)
+            && (q_in_handle_resize == Q_FALSE)
             && (q_status.scrollback_lines > HEIGHT - STATUS_HEIGHT - 1))
     ) {
 
@@ -1145,8 +1147,8 @@ void scrollback_keyboard_handler(const int keystroke, const int flags) {
          */
         line = q_scrollback_buffer;
         while (line != NULL) {
-            if (line->chars[Q_MAX_LINE_LENGTH - 1] != L'0') {
-                line->chars[Q_MAX_LINE_LENGTH - 1] = L'0';
+            if (line->chars[Q_MAX_LINE_LENGTH - 1] != 0) {
+                line->chars[Q_MAX_LINE_LENGTH - 1] = 0;
             }
             lower_line = Xwcsdup(line->chars, __FILE__, __LINE__);
             /*
@@ -1204,7 +1206,7 @@ void scrollback_keyboard_handler(const int keystroke, const int flags) {
             assert(line != NULL);
 
             q_scrollback_position = line;
-            for (row = 0; row < HEIGHT - STATUS_HEIGHT - 1; row++) {
+            for (row = 0; row < HEIGHT - STATUS_HEIGHT - 2; row++) {
                 if (q_scrollback_position->next == NULL) {
                     break;
                 }
@@ -1257,8 +1259,8 @@ void scrollback_keyboard_handler(const int keystroke, const int flags) {
              */
             line = q_scrollback_buffer;
             while (line != NULL) {
-                if (line->chars[Q_MAX_LINE_LENGTH - 1] != L'0') {
-                    line->chars[Q_MAX_LINE_LENGTH - 1] = L'0';
+                if (line->chars[Q_MAX_LINE_LENGTH - 1] != 0) {
+                    line->chars[Q_MAX_LINE_LENGTH - 1] = 0;
                 }
                 lower_line = Xwcsdup(line->chars, __FILE__, __LINE__);
                 /*

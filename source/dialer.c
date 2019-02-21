@@ -867,6 +867,7 @@ void dial_out(struct q_phone_struct * target) {
 
 #ifndef Q_NO_SERIAL
     if (target->method == Q_DIAL_METHOD_MODEM) {
+        close_function = NULL;
         /*
          * Modem dialup: just open the serial port and switch to
          * Q_STATE_DIALER.
@@ -910,6 +911,7 @@ void dial_out(struct q_phone_struct * target) {
         do_network_connect = Q_TRUE;
         setup_dial_screen();
         q_child_tty_fd = net_connect_start(target->address, target->port);
+        close_function = close_network_connection;
     } else if ((target->method == Q_DIAL_METHOD_RLOGIN) &&
                (q_status.external_rlogin == Q_FALSE)) {
         /*
@@ -919,6 +921,7 @@ void dial_out(struct q_phone_struct * target) {
         do_network_connect = Q_TRUE;
         setup_dial_screen();
         q_child_tty_fd = net_connect_start(target->address, "513");
+        close_function = close_network_connection;
     } else if (target->method == Q_DIAL_METHOD_SOCKET) {
         /*
          * Socket, requesting internal code.
@@ -926,6 +929,7 @@ void dial_out(struct q_phone_struct * target) {
         do_network_connect = Q_TRUE;
         setup_dial_screen();
         q_child_tty_fd = net_connect_start(target->address, target->port);
+        close_function = close_network_connection;
 #ifdef Q_SSH_CRYPTLIB
     } else if ((target->method == Q_DIAL_METHOD_SSH) &&
                (q_status.external_ssh == Q_FALSE)) {
@@ -935,6 +939,7 @@ void dial_out(struct q_phone_struct * target) {
         do_network_connect = Q_TRUE;
         setup_dial_screen();
         q_child_tty_fd = net_connect_start(target->address, target->port);
+        close_function = close_network_connection;
 #endif
 
 #ifdef Q_NO_SERIAL
@@ -946,6 +951,7 @@ void dial_out(struct q_phone_struct * target) {
         /*
          * Other connection methods: fork and execute.
          */
+        close_function = close_shell_connection;
 
         /*
          * Push all the data out to clear the soon-to-be child process's

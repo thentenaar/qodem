@@ -191,6 +191,19 @@ extern "C" {
  */
 extern attr_t q_current_color;
 
+#if defined(__linux) && defined(Q_ENABLE_GPM)
+#include <gpm.h>
+/**
+ * The GPM handler.
+ */
+extern int gpm_handle_mouse(Gpm_Event * event, void * data);
+#endif
+
+/**
+ * If true, we are currently inside handle_resize().
+ */
+extern Q_BOOL q_in_handle_resize;
+
 /* Functions -------------------------------------------------------------- */
 
 /**

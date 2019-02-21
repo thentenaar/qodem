@@ -484,7 +484,20 @@ static Q_BOOL upnp_init() {
      */
     device_list = upnpDiscover(2000, NULL, NULL, 0, 0, 2, NULL);
 #  else
-#    error "Unsupported miniupnpc API version.  Consider disabling UPNP (--disable-upnp), or file an issue at https://github.com/klamonte/qodem/issues" .
+#    if (MINIUPNPC_API_VERSION == 16)
+    /*
+     * Version 16
+     *
+     * upnpDiscover(int delay, const char * multicastif,
+     *              const char * minissdpdsock, int sameport,
+     *              int ipv6, unsigned char ttl,
+     *              int * error);
+     *
+     */
+    device_list = upnpDiscover(2000, NULL, NULL, 0, 0, 2, NULL);
+#    else
+#      error "Unsupported miniupnpc API version.  Consider disabling UPNP (--disable-upnp), or file an issue at https://github.com/klamonte/qodem/issues" .
+#    endif
 #  endif
 #endif
 
@@ -2789,6 +2802,7 @@ ssize_t telnet_read(const int fd, void * buf, size_t count) {
                     nvt.binary_mode = Q_FALSE;
                 }
                 break;
+
             case 1:
                 if (nvt.dowill_type == TELNET_WILL) {
                     DLOG(("** ECHO ON (we initiated) **\n"));
