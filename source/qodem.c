@@ -2163,7 +2163,7 @@ no_data:
          * console flood.
          */
         if (q_program_state == Q_STATE_CONSOLE) {
-            if (q_transfer_buffer_raw_n > 512) {
+            if (q_buffer_raw_n >= sizeof(q_buffer_raw) / 2) {
                 q_console_flood = Q_TRUE;
             } else {
                 q_console_flood = Q_FALSE;
