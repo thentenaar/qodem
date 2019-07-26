@@ -83,52 +83,53 @@ sub write_entry {
 };
 
 while ($line = <$in_file>) {
-    chomp($line);
+	chomp($line);
+	$line = trim($line);
 
-    if ($line =~ /^\[(.*)\]$/) {
-	    if ($first == 1) {
-		    $first = 0;
-	    }
-	    else {
-		    write_entry();
-	    }
-	    # Capture name, and reset the rest of the fields.
-	    $name = $1;
-	    $address = "";
-	    $port = "";
-	    $method = "";
-	    $username ="";
-	    $password = "";
-	    $codepage = "CP437";
-	    $times_on = "0";
-	    next;
-    }
+	if ($line =~ /^\[(.*)\]$/) {
+		if ($first == 1) {
+			$first = 0;
+		}
+		else {
+			write_entry();
+		}
+		# Capture name, and reset the rest of the fields.
+		$name = $1;
+		$address = "";
+		$port = "";
+		$method = "";
+		$username ="";
+		$password = "";
+		$codepage = "CP437";
+		$times_on = "0";
+		next;
+	}
 
-    if ($line =~ /^\t(.*)=(.*)$/) {
-	    my $left = trim($1);
-	    my $right = trim($2);
-	    if ($left eq "Address") {
-		    $address = $right;
-	    } elsif ($left eq "Port") {
-		    $port = $right;
-	    } elsif ($left eq "UserName") {
-		    $username = $right;
-	    } elsif ($left eq "Password") {
-		    $password = $right;
-	    } elsif ($left eq "TotalCalls") {
-		    $times_on = $right;
-	    } elsif ($left eq "ConnectionType") {
-		    if ($right eq "Shell") {
-			    $method = "CMDLINE";
-		    } elsif ($right eq "Telnet") {
-			    $method = "TELNET";
-		    } elsif ($right eq "RLogin") {
-			    $method = "RLOGIN";
-		    } elsif ($right eq "SSH") {
-			    $method = "SSH";
-		    }
-	    }
-    }
+	if ($line =~ /^(.*)=(.*)$/) {
+		my $left = trim($1);
+		my $right = trim($2);
+		if ($left eq "Address") {
+			$address = $right;
+		} elsif ($left eq "Port") {
+			$port = $right;
+		} elsif ($left eq "UserName") {
+			$username = $right;
+		} elsif ($left eq "Password") {
+			$password = $right;
+		} elsif ($left eq "TotalCalls") {
+			$times_on = $right;
+		} elsif ($left eq "ConnectionType") {
+			if ($right eq "Shell") {
+				$method = "CMDLINE";
+			} elsif ($right eq "Telnet") {
+				$method = "TELNET";
+			} elsif ($right eq "RLogin") {
+				$method = "RLOGIN";
+			} elsif ($right eq "SSH") {
+				$method = "SSH";
+			}
+		}
+	}
 }
 # Reading is finished.
 close($in_file);
