@@ -49,8 +49,8 @@ source/stamp-h1
 autom4te.cache/
 config.status
 config.log
+configure.lineno
 Makefile
-Makefile.in
 aclocal.m4
 lib/cryptlib/tools/endian
 build/osx/dmg
