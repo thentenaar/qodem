@@ -83,11 +83,11 @@ if test "x$enable_x11" = "xyes"; then
 else
     if test "x$Q_HAS_NCURSES" = "xyes"; then
         AC_MSG_NOTICE([ *** ncurses found *** ])
-        LIBS="-lncursesw $LIBS"
+        LIBS="-lncursesw -ltinfow $LIBS"
     else
         if test "x$Q_HAS_NCURSES_APPLE" = "xyes"; then
             AC_MSG_NOTICE([ *** ncurses found *** ])
-            LIBS="-lncurses $LIBS"
+            LIBS="-lncurses -ltinfo $LIBS"
         else
             AC_MSG_ERROR([ *** Error: the ncurses development library appears to be unavailable.  Please install the wide-char ncurses development library.  This is often called libncursesw5-dev, libncurses5w-dev, or ncurses-devel. ])
         fi
