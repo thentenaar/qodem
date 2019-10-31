@@ -86,6 +86,12 @@ static Q_BOOL private_mode_flag;
  */
 static Q_BOOL dec_private_mode_flag;
 
+/**
+ * If true, we saw a private mode byte that will not be supported.  For now
+ * that is only ' '.
+ */
+static Q_BOOL discard_mode_flag;
+
 /* ANSI music buffer */
 static unsigned char music_buffer[ANSI_MUSIC_BUFFER_SIZE];
 static int music_buffer_n;
@@ -107,6 +113,7 @@ void ansi_reset() {
     old_character_color = q_current_color;
     private_mode_flag = Q_FALSE;
     dec_private_mode_flag = Q_FALSE;
+    discard_mode_flag = Q_FALSE;
     DLOG(("ansi_reset()\n"));
 }
 
@@ -118,6 +125,7 @@ void ansi_reset() {
 static void clear_state(wchar_t * to_screen) {
     private_mode_flag = Q_FALSE;
     dec_private_mode_flag = Q_FALSE;
+    discard_mode_flag = Q_FALSE;
     q_emul_buffer_n = 0;
     q_emul_buffer_i = 0;
     memset(q_emul_buffer, 0, sizeof(q_emul_buffer));
@@ -1577,9 +1585,25 @@ Q_EMULATION_STATUS ansi(const unsigned char from_modem, wchar_t * to_screen) {
             return Q_EMUL_FSM_NO_CHAR_YET;
         }
 
+        if (from_modem == ' ') {
+            /*
+             * This is probably a "font selection" command for SyncTERM
+             */
+            discard_mode_flag = Q_TRUE;
+            return Q_EMUL_FSM_NO_CHAR_YET;
+        }
+
         if (from_modem == '!') {
             /*
              * This is a RIPScript query command, discard it
+             */
+            clear_state(to_screen);
+            return Q_EMUL_FSM_NO_CHAR_YET;
+        }
+
+        if ((from_modem == 'D') && (discard_mode_flag == Q_TRUE)) {
+            /*
+             * This was a "font selection" command, discard it
              */
             clear_state(to_screen);
             return Q_EMUL_FSM_NO_CHAR_YET;
@@ -1883,6 +1907,22 @@ Q_EMULATION_STATUS ansi(const unsigned char from_modem, wchar_t * to_screen) {
             return Q_EMUL_FSM_NO_CHAR_YET;
         }
 
+        if (from_modem == ' ') {
+            /*
+             * This is probably a "font selection" command for SyncTERM
+             */
+            discard_mode_flag = Q_TRUE;
+            return Q_EMUL_FSM_NO_CHAR_YET;
+        }
+
+        if ((from_modem == 'D') && (discard_mode_flag == Q_TRUE)) {
+            /*
+             * This was a "font selection" command, discard it
+             */
+            clear_state(to_screen);
+            return Q_EMUL_FSM_NO_CHAR_YET;
+        }
+
         if (from_modem == '!') {
             /*
              * This is a RIPScript query command, discard it
@@ -1933,6 +1973,22 @@ Q_EMULATION_STATUS ansi(const unsigned char from_modem, wchar_t * to_screen) {
                 break;
             }
 
+            clear_state(to_screen);
+            return Q_EMUL_FSM_NO_CHAR_YET;
+        }
+
+        if (from_modem == ' ') {
+            /*
+             * This is probably a "font selection" command for SyncTERM
+             */
+            discard_mode_flag = Q_TRUE;
+            return Q_EMUL_FSM_NO_CHAR_YET;
+        }
+
+        if ((from_modem == 'D') && (discard_mode_flag == Q_TRUE)) {
+            /*
+             * This was a "font selection" command, discard it
+             */
             clear_state(to_screen);
             return Q_EMUL_FSM_NO_CHAR_YET;
         }
