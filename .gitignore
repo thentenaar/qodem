@@ -47,11 +47,12 @@ source/.dirstamp
 source/config.h
 source/stamp-h1
 autom4te.cache/
+configure
 config.status
 config.log
 configure.lineno
 Makefile
-aclocal.m4
+Makefile.in
 lib/cryptlib/tools/endian
 build/osx/dmg
 build/osx/*.dmg

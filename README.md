@@ -125,7 +125,7 @@ BUILDING QODEM
 
 Qodem can be built in several ways:
 
-* An autoconf build is available: use `configure ; make` .
+* An autoconf build is available: use `./autogen.sh && make` .
 
 * A very simple barebones build is also provided via `make -f
   build/Makefile.generic`.
