@@ -300,6 +300,11 @@ static char * q_doorway_option = NULL;
 static char * q_emulation_option = NULL;
 
 /**
+ * The --capfile command line argument.
+ */
+static char * q_capfile_option = NULL;
+
+/**
  * The -x / --exit-on-completion command line argument.  We need it here
  * because of the sequence of read command line options, load_options(), then
  * set variables.
@@ -1203,10 +1208,6 @@ static void process_command_line_option(const char * option,
         q_program_state = Q_STATE_EXIT;
     }
 
-    if (strncmp(option, "capfile", strlen("capfile")) == 0) {
-        start_capture(value);
-    }
-
     if (strncmp(option, "logfile", strlen("logfile")) == 0) {
         start_logging(value);
     }
@@ -1271,6 +1272,10 @@ static void process_command_line_option(const char * option,
             set_status_line(Q_TRUE);
             status_line_disabled = Q_FALSE;
         }
+    }
+
+    if (strncmp(option, "capfile", strlen("capfile")) == 0) {
+        q_capfile_option = Xstrdup(value, __FILE__, __LINE__);
     }
 
     if (strncmp(option, "geometry", strlen("geometry")) == 0) {
@@ -1371,6 +1376,10 @@ static void resolve_command_line_options() {
     if (q_codepage_option != NULL) {
         q_status.codepage = codepage_from_string(q_codepage_option);
         initial_call.codepage = q_status.codepage;
+    }
+
+    if (q_capfile_option != NULL) {
+        start_capture(q_capfile_option);
     }
 
     q_status.exit_on_disconnect = q_exit_on_disconnect;
