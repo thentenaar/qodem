@@ -153,10 +153,10 @@ static void save_char(unsigned char keep_char, wchar_t * to_screen) {
  */
 static int ansi_ps(unsigned char ** count) {
     /*
-     * It's possible a terminal will have over 100 columns, but unlikely to
-     * have over 1000.  So we'll only count up to 999.
+     * People are using up to 4 digits in parameters in the wild.  Parse up
+     * to 6 digits.
      */
-    char ch[4] = "\0\0\0\0";
+    char ch[7] = "\0\0\0\0\0\0\0";
 
     /*
      * First digit
@@ -181,6 +181,30 @@ static int ansi_ps(unsigned char ** count) {
      */
     if (q_isdigit(**count)) {
         ch[2] = **count;
+        (*count)++;
+    }
+
+    /*
+     * See if the fourth char is a digit
+     */
+    if (q_isdigit(**count)) {
+        ch[3] = **count;
+        (*count)++;
+    }
+
+    /*
+     * See if the fifth char is a digit
+     */
+    if (q_isdigit(**count)) {
+        ch[4] = **count;
+        (*count)++;
+    }
+
+    /*
+     * See if the sixth char is a digit
+     */
+    if (q_isdigit(**count)) {
+        ch[5] = **count;
         (*count)++;
     }
 
