@@ -2347,6 +2347,15 @@ static void sgr() {
         return;
     }
 
+    if (q_emul_buffer_n > 0) {
+        if (q_emul_buffer[0] == '>') {
+            /*
+             * This is probably a modifyOtherKeys sequence, bail out.
+             */
+            return;
+        }
+    }
+
     DLOG(("sgr(): "));
 
     if ((is_default_color == Q_TRUE) &&
